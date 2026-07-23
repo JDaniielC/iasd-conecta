@@ -8,7 +8,15 @@ Rede social para os membros ativos da Igreja Adventista do Sétimo Dia do distri
 Qualquer pessoa sem cadastro. Pode ver Grupos e Ações livremente, mas não participar, votar ou criar nada — isso exige virar Usuário.
 
 **Usuário**:
-Pessoa cadastrada no app (cadastro simples, apenas para identificação). Dados: nome (moderado contra palavrões; se menor de idade, exibido como Apelido em vez do nome real), Igreja de origem (seletor entre as igrejas do distrito; pode ficar em branco — nem todo usuário é vinculado a uma igreja), telefone (opcional), gênero, idade (nunca exibida a outros usuários, reservada para uso futuro) e consentimento LGPD de uso desses dados.
+Pessoa cadastrada no app (cadastro simples, apenas para identificação). Dados: nome (moderado contra palavrões; se menor de idade, exibido como Apelido em vez do nome real), Igreja de origem (seletor entre as igrejas do distrito; pode ficar em branco — nem todo usuário é vinculado a uma igreja), telefone (opcional), gênero, idade (nunca exibida a outros usuários, reservada para uso futuro) e consentimento LGPD de uso desses dados. Todo Usuário começa como Perfil; só precisa virar Conta se for declarar-se Líder/Diretor.
+
+**Perfil**:
+Nível padrão de cadastro de um Usuário: sem credencial de login obrigatória (sem e-mail/senha exigidos). Cobre tudo que um Usuário comum faz — participar de Grupo, votar, propor Ação candidata, confirmar presença em Ação. Vive só no aparelho: se o Usuário reinstalar o app ou trocar de aparelho sem antes virar Conta, o Perfil se perde. Suficiente pra 100% das ações desta feature, exceto declarar-se Líder/Diretor.
+_Avoid_: Conta (não são sinônimos — Perfil é o padrão sem credencial, Conta é o upgrade com credencial)
+
+**Conta**:
+Upgrade opcional do Perfil: vincula uma credencial de login real (o que o Supabase oferecer — e-mail/senha, telefone, etc., a critério de implementação), tornando a identificação recuperável entre aparelhos. Só é exigida quando o Usuário quer se declarar Líder/Diretor de um Ministério — porque essa identificação é pública (visível até pra Visitante) e não pode se perder com reinstalação do app. Fora esse caso, Conta é sempre opcional.
+_Avoid_: Perfil, cadastro completo
 
 **Apelido**:
 Nome de exibição alternativo, sem informação identificável, usado no lugar do nome real quando o Usuário é menor de idade.
@@ -60,7 +68,7 @@ Nome numa lista simples mantida pelo Administrador do distrito, sem outros atrib
 Grupo que tem um Líder/Diretor. Grupos informais (ex: SevenBikers) não precisam de Líder; Ministério é o Grupo que tem. Identificação do Líder é pública na página do Ministério — visível até pra Visitante sem cadastro.
 
 **Líder/Diretor**:
-Papel de um Usuário num Ministério, com título anual: qualquer Usuário se autodeclara Líder de um Ministério, o Administrador do distrito vê a lista de declarações pendentes e confirma (ou não). Título expira todo mês de janeiro — precisa redeclarar e ser reconfirmado a cada ano. Independente do Dono do Grupo: Líder é identificação oficial exibida no Ministério (quem é o responsável perante a igreja), Dono do Grupo é quem administra o Grupo no app — podem ser pessoas diferentes.
+Papel de um Usuário num Ministério, com título anual: qualquer Usuário com Conta (não basta Perfil) se autodeclara Líder de um Ministério, o Administrador do distrito vê a lista de declarações pendentes e confirma (ou não). Título expira todo mês de janeiro — precisa redeclarar e ser reconfirmado a cada ano. Independente do Dono do Grupo: Líder é identificação oficial exibida no Ministério (quem é o responsável perante a igreja), Dono do Grupo é quem administra o Grupo no app — podem ser pessoas diferentes.
 _Avoid_: Pastor, responsável
 
 **Dupla Missionária**:

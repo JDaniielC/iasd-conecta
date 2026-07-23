@@ -1,0 +1,28 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../core/providers.dart';
+import '../perfil/domain/perfil.dart';
+import 'data/grupo_repository.dart';
+import 'domain/categoria_grupo.dart';
+import 'domain/grupo.dart';
+
+final grupoRepositoryProvider = Provider<GrupoRepository>((ref) {
+  return GrupoRepository(ref.watch(supabaseClientProvider));
+});
+
+final gruposProvider = FutureProvider.autoDispose<List<Grupo>>((ref) {
+  return ref.watch(grupoRepositoryProvider).fetchGrupos();
+});
+
+final categoriasGrupoProvider = FutureProvider<List<CategoriaGrupo>>((ref) {
+  return ref.watch(grupoRepositoryProvider).fetchCategorias();
+});
+
+final grupoProvider = FutureProvider.autoDispose.family<Grupo, String>((ref, id) {
+  return ref.watch(grupoRepositoryProvider).fetchGrupo(id);
+});
+
+final participantesProvider =
+    FutureProvider.autoDispose.family<List<PerfilPublico>, String>((ref, grupoId) {
+  return ref.watch(grupoRepositoryProvider).fetchParticipantes(grupoId);
+});

@@ -14,6 +14,14 @@ final authStateChangesProvider = StreamProvider<AuthState>((ref) {
   return ref.watch(supabaseClientProvider).auth.onAuthStateChange;
 });
 
+/// Id do Usuário da sessão atual — provider dedicado (em vez de acessar
+/// `supabaseClientProvider` direto nas telas) pra ficar fácil de sobrescrever
+/// em teste de widget sem precisar mockar `SupabaseClient`/`GoTrueClient`.
+final currentUserIdProvider = Provider<String?>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(supabaseClientProvider).auth.currentUser?.id;
+});
+
 final perfilRepositoryProvider = Provider<PerfilRepository>((ref) {
   return PerfilRepository(ref.watch(supabaseClientProvider));
 });

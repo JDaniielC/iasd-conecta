@@ -5,7 +5,10 @@ import 'package:go_router/go_router.dart';
 
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
-import 'features/home_page.dart';
+import 'features/grupo/presentation/criar_grupo_page.dart';
+import 'features/grupo/presentation/detalhe_grupo_page.dart';
+import 'features/grupo/presentation/editar_grupo_page.dart';
+import 'features/grupo/presentation/lista_grupos_page.dart';
 import 'features/perfil/presentation/cadastro_perfil_page.dart';
 import 'features/perfil/presentation/login_page.dart';
 import 'features/perfil/presentation/upgrade_conta_page.dart';
@@ -28,12 +31,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     redirect: (context, state) {
       final hasPerfil = ref.read(hasPerfilProvider).valueOrNull;
       if (hasPerfil == null) return null; // ainda carregando, fica onde está
-      final local = state.matchedLocation;
-      // /login fica fora do gate: é exatamente pra quem ainda não tem Perfil
-      // NESTE aparelho mas já tem Conta em outro (recuperação, US3).
-      if (local == '/login') return null;
-      if (!hasPerfil && local != '/cadastro') return '/cadastro';
-      if (hasPerfil && local == '/cadastro') return '/home';
+      // Visitante (sem Perfil) navega livremente por qualquer rota pública
+      // (Home, lista/detalhe de Grupo — FR-008 da 001, FR-005 da 002).
+      // Só ações concretas (Participar, Criar Grupo...) checam Perfil, via
+      // PerfilGuard.exigirPerfil no próprio botão — não aqui no redirect
+      // global. A única exceção é sair da tela de cadastro depois de já
+      // ter Perfil, pra não deixar a pessoa "presa" nela.
+      if (hasPerfil && state.matchedLocation == '/cadastro') return '/home';
       return null;
     },
     routes: [
@@ -44,7 +48,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const ListaGruposPage(),
       ),
       GoRoute(
         path: '/upgrade-conta',
@@ -53,6 +57,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginPage(),
+      ),
+      GoRoute(
+        path: '/grupos/novo',
+        builder: (context, state) => const CriarGrupoPage(),
+      ),
+      GoRoute(
+        path: '/grupos/:id',
+        builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/grupos/:id/editar',
+        builder: (context, state) => EditarGrupoPage(grupoId: state.pathParameters['id']!),
       ),
     ],
   );

@@ -39,8 +39,15 @@ depender de device/emulador.
   minimalista), providers Riverpod compartilhados
 - `lib/features/perfil/` — cadastro de Perfil, upgrade para Conta (feature
   001, ver [specs/001-cadastro-usuario](./specs/001-cadastro-usuario))
+- `lib/features/grupo/` — criar/descobrir/participar de Grupo, Dono
+  administra (feature 002, ver [specs/002-grupos](./specs/002-grupos))
 - `supabase/migrations/` — schema versionado (fonte de verdade em
-  `specs/001-cadastro-usuario/contracts/schema.sql`)
+  `specs/<feature>/contracts/schema.sql` de cada feature)
+
+## Rotas
+
+`/home` (lista de Grupos, pública) · `/cadastro` · `/login` ·
+`/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar`
 
 ## Documentação de processo
 

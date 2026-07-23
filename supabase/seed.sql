@@ -29,3 +29,26 @@ insert into public.palavras_bloqueadas (palavra) values
   ('imbecil'),
   ('babaca')
 on conflict (palavra) do nothing;
+
+-- Feature 002: categorias de Grupo (departamentos oficiais da IASD),
+-- ver CATEGORIAS-DE-ACAO.md — lista de sugestão, não obrigatória (FR-004).
+insert into public.categorias_grupo (nome) values
+  ('Desbravadores'),
+  ('Aventureiros'),
+  ('Ministério do Adolescente'),
+  ('Ministério Jovem'),
+  ('Ministério da Música'),
+  ('Ministério da Mulher'),
+  ('Ministério do Homem'),
+  ('Ministério da Família / Casais'),
+  ('Ministério da Criança'),
+  ('Escola Sabatina'),
+  ('Ação Solidária Adventista (ASA)'),
+  ('Ministério Pessoal / Evangelismo'),
+  ('Comunicação'),
+  ('Recepção'),
+  ('Mordomia Cristã'),
+  ('Publicações'),
+  ('Saúde'),
+  ('Serviço Voluntário Adventista')
+on conflict (nome) do nothing;

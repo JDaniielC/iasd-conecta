@@ -36,3 +36,20 @@ Future<void> limparUsuarioDeTeste(Connection conn, String id) async {
     parameters: {'id': id},
   );
 }
+
+/// Cria `auth.users` + `perfis` (feature 001) pra servir de Usuário de teste
+/// em outras features (ex.: `dono_id`/`usuario_id` de Grupo).
+Future<void> criarPerfilDeTeste(
+  Connection conn,
+  String id, {
+  String nome = 'Usuário de Teste',
+}) async {
+  await criarUsuarioDeTeste(conn, id);
+  await conn.execute(
+    Sql.named(
+      "insert into public.perfis (id, nome, genero, idade, consentimento_lgpd_aceito_em) "
+      "values (@id, @nome, 'feminino', 30, now()) on conflict (id) do nothing",
+    ),
+    parameters: {'id': id, 'nome': nome},
+  );
+}

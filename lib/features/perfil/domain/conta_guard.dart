@@ -1,11 +1,23 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Gate de FR-012: autodeclarar Líder/Diretor exige Conta, Perfil não basta.
+/// Gate de FR-012: papéis públicos de alto privilégio exigem Conta, Perfil
+/// não basta — nem Líder/Diretor nem Administrador do distrito podem se
+/// perder numa reinstalação de aparelho, já que a identificação de ambos é
+/// pública (visível até pra Visitante, no caso do Líder).
 ///
-/// O fluxo de autodeclaração em si é uma feature futura — isto só define a
-/// checagem que essa feature vai reusar, pra o requisito já existir desde já.
+/// Os fluxos em si (autodeclaração de Líder/Diretor, promoção a
+/// Administrador) são features futuras — isto só define a checagem que
+/// essas features vão reusar, pra o requisito já existir desde já.
 abstract final class ContaGuard {
-  static bool podeDeclararLideranca(User? usuario) {
+  static bool _temConta(User? usuario) {
     return usuario != null && usuario.isAnonymous == false;
   }
+
+  /// Líder/Diretor é sempre autodeclaração (o próprio Usuário se propõe).
+  static bool podeDeclararLideranca(User? usuario) => _temConta(usuario);
+
+  /// Administrador do distrito nunca é autodeclaração — só um Administrador
+  /// existente promove outro Usuário com Conta (ver CONTEXT.md).
+  static bool podeSerPromovidoAdministrador(User? candidato) =>
+      _temConta(candidato);
 }

@@ -123,7 +123,7 @@ Projeto Flutter único (ver plan.md § Project Structure): `lib/`, `supabase/`, 
 - [X] T032 [P] [US3] Implementar `AuthRepository.login(credencial, senha)` em `lib/features/perfil/data/auth_repository.dart`
 - [X] T033 [US3] Implementar `UpgradeContaPage` (acessível a qualquer momento, nunca bloqueante) em `lib/features/perfil/presentation/upgrade_conta_page.dart`
 - [X] T034 [US3] Implementar `LoginPage` para recuperar Perfil em outro aparelho em `lib/features/perfil/presentation/login_page.dart`
-- [X] T035 [US3] Implementar `ContaGuard` (exige `is_anonymous == false` antes de prosseguir; placeholder para a feature futura de autodeclaração de Líder/Diretor) em `lib/features/perfil/domain/conta_guard.dart`
+- [X] T035 [US3] Implementar `ContaGuard` (exige `is_anonymous == false` antes de prosseguir; placeholder para as features futuras de autodeclaração de Líder/Diretor e promoção a Administrador do distrito) em `lib/features/perfil/domain/conta_guard.dart` — testado em `test/unit/conta_guard_test.dart`
 
 **Checkpoint**: todas as user stories funcionam de forma independente.
 

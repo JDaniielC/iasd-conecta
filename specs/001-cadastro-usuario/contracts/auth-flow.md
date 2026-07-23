@@ -28,9 +28,10 @@ sem sessão ──signInAnonymously()──▶ sessão anônima (auth.users.is_a
    — nunca antes de `consentimento_lgpd_aceito_em` estar preenchido (FR-003) e
    nunca sem `apelido` se `idade < 18` (FR-005, garantido pela constraint).
 3. **Upgrade pra Conta** é sempre opcional e nunca bloqueia nenhuma tela desta
-   feature (FR-011). É oferecido/exigido só no fluxo de autodeclaração de
-   Líder/Diretor (FR-012, fora de escopo desta feature — aqui só a capacidade
-   existe).
+   feature (FR-011). É oferecido/exigido só nos fluxos de autodeclaração de
+   Líder/Diretor e de promoção a Administrador do distrito (FR-012, ambos
+   fora de escopo desta feature — aqui só a capacidade existe, via
+   `ContaGuard.podeDeclararLideranca` / `ContaGuard.podeSerPromovidoAdministrador`).
 4. **Login em outro aparelho**: só possível se `is_anonymous = false`
    (Conta). Client chama `signInWithPassword`/`signInWithOtp` normalmente; o
    `auth.uid()` retornado já resolve a mesma linha em `perfis` (FR-013).

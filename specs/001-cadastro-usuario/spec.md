@@ -127,6 +127,12 @@ Apelido, participações) em outro aparelho usando a credencial vinculada.
 - Usuário só com Perfil tenta se autodeclarar Líder/Diretor: sistema pede
   upgrade para Conta antes; o fluxo de autodeclaração e confirmação pelo
   Administrador do distrito em si é uma feature futura, fora de escopo aqui.
+- Administrador do distrito tenta promover um Usuário que só tem Perfil a
+  Administrador: sistema recusa até o Usuário fazer upgrade para Conta —
+  diferente do Líder/Diretor, essa promoção nunca é autodeclaração, só um
+  Administrador do distrito existente pode fazer (fluxo em si é feature
+  futura, fora de escopo aqui; o primeiro Administrador do distrito é criado
+  fora do app, via seed direto no banco, por não existir papel acima dele).
 
 ## Requirements *(mandatory)*
 
@@ -160,7 +166,8 @@ Apelido, participações) em outro aparelho usando a credencial vinculada.
   alterar os dados já cadastrados.
 - **FR-012**: Sistema DEVE exigir que o Usuário tenha Conta (Perfil sem
   credencial não é suficiente) antes de permitir a autodeclaração de
-  Líder/Diretor de um Ministério.
+  Líder/Diretor de um Ministério, ou a promoção de um Usuário a
+  Administrador do distrito.
 - **FR-013**: Sistema DEVE permitir que um Usuário com Conta recupere seu
   Perfil (mesmos dados e participações) em outro aparelho ao informar a
   credencial vinculada.
@@ -177,8 +184,9 @@ Apelido, participações) em outro aparelho usando a credencial vinculada.
 - **Perfil**: nível padrão de um Usuário, sem credencial de login. Local ao
   aparelho — perdido se o app for reinstalado sem upgrade prévio para Conta.
 - **Conta**: upgrade opcional do Perfil que adiciona uma credencial de login
-  recuperável entre aparelhos. Pré-requisito exclusivo para se autodeclarar
-  Líder/Diretor.
+  recuperável entre aparelhos. Pré-requisito para se autodeclarar
+  Líder/Diretor e para ser promovido a Administrador do distrito — os dois
+  únicos papéis públicos de alto privilégio do domínio.
 - **Igreja**: nome de uma igreja do distrito, mantido pelo Administrador do
   distrito. Usada apenas como opção selecionável no cadastro nesta feature.
 

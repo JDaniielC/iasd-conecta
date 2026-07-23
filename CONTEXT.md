@@ -62,7 +62,7 @@ Escolher entre Ações candidatas de uma Rodada de votação. Restrito aos Usuá
 Nome numa lista simples mantida pelo Administrador do distrito, sem outros atributos. Usuário escolhe uma no cadastro, ou nenhuma. Grupo e Ação também carregam uma Igreja, limitada à igreja do próprio criador (não escolhe qualquer uma das 15+ do distrito) — usada pra destaque/distribuição: Usuário da Igreja X vê em destaque Grupos/Ações vinculados à Igreja X, mas continua vendo normalmente os vinculados a outras igrejas. Não é restrição de acesso.
 
 **Administrador do distrito**:
-Único papel com privilégio acima dos Usuários comuns. Gerencia a lista de Igrejas do distrito, cuida de moderação e casos excepcionais, e pode cancelar qualquer Ação (além de quem a criou). Escopo exato de moderação ainda não detalhado.
+Único papel com privilégio acima dos Usuários comuns. Gerencia a lista de Igrejas do distrito, cuida de moderação e casos excepcionais, e pode cancelar qualquer Ação (além de quem a criou). Escopo exato de moderação ainda não detalhado. Exige Conta (não basta Perfil) — mesmo motivo do Líder/Diretor: papel público de alto privilégio, não pode se perder com reinstalação de aparelho. Diferente do Líder/Diretor: nunca autodeclaração — só um Administrador do distrito existente promove outro Usuário com Conta a Administrador. O primeiro Administrador do distrito é criado fora do fluxo normal do app (seed direto no banco/painel), já que não existe papel acima dele para aprovar.
 
 **Ministério**:
 Grupo que tem um Líder/Diretor. Grupos informais (ex: SevenBikers) não precisam de Líder; Ministério é o Grupo que tem. Identificação do Líder é pública na página do Ministério — visível até pra Visitante sem cadastro.

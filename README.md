@@ -41,13 +41,17 @@ depender de device/emulador.
   001, ver [specs/001-cadastro-usuario](./specs/001-cadastro-usuario))
 - `lib/features/grupo/` — criar/descobrir/participar de Grupo, Dono
   administra (feature 002, ver [specs/002-grupos](./specs/002-grupos))
+- `lib/features/acao/` — criar Ação avulsa, confirmar presença, fila de
+  espera, cancelar (feature 003, ver
+  [specs/003-acao-avulsa](./specs/003-acao-avulsa))
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 
 ## Rotas
 
 `/home` (lista de Grupos, pública) · `/cadastro` · `/login` ·
-`/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar`
+`/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar` ·
+`/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id`
 
 ## Documentação de processo
 

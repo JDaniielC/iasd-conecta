@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
+import 'features/acao/presentation/criar_acao_page.dart';
+import 'features/acao/presentation/detalhe_acao_page.dart';
+import 'features/acao/presentation/lista_acoes_page.dart';
 import 'features/grupo/presentation/criar_grupo_page.dart';
 import 'features/grupo/presentation/detalhe_grupo_page.dart';
 import 'features/grupo/presentation/editar_grupo_page.dart';
@@ -69,6 +72,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/grupos/:id/editar',
         builder: (context, state) => EditarGrupoPage(grupoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/acoes',
+        builder: (context, state) => const ListaAcoesPage(),
+      ),
+      GoRoute(
+        path: '/acoes/novo',
+        builder: (context, state) => const CriarAcaoPage(),
+      ),
+      GoRoute(
+        path: '/acoes/:id',
+        builder: (context, state) => DetalheAcaoPage(acaoId: state.pathParameters['id']!),
       ),
     ],
   );

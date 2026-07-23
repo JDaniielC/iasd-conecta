@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
-import '../../../core/theme/app_theme.dart';
 import '../../perfil/domain/perfil_guard.dart';
+import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
 import '../grupo_providers.dart';
 
 /// Home do app: lista de Grupos, visível a Visitante e Usuário igualmente
@@ -22,6 +22,11 @@ class ListaGruposPage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Grupos'),
         actions: [
+          IconButton(
+            tooltip: 'Ações',
+            icon: const Icon(Icons.event_outlined),
+            onPressed: () => context.push('/acoes'),
+          ),
           if (hasPerfil && !temConta)
             IconButton(
               tooltip: 'Virar Conta',
@@ -40,23 +45,7 @@ class ListaGruposPage extends ConsumerWidget {
       ),
       body: Column(
         children: [
-          if (!hasPerfil)
-            Container(
-              width: double.infinity,
-              color: AppColors.surface,
-              padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
-                children: [
-                  const Expanded(
-                    child: Text('Crie um Perfil pra participar dos Grupos.'),
-                  ),
-                  TextButton(
-                    onPressed: () => context.push('/cadastro'),
-                    child: const Text('Criar Perfil'),
-                  ),
-                ],
-              ),
-            ),
+          const PerfilAusenteBanner(),
           Expanded(
             child: gruposAsync.when(
               data: (grupos) {

@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../domain/igreja.dart';
+import '../domain/church.dart';
 import '../domain/perfil.dart';
 
 /// Único ponto de acesso a `public.perfis` e `public.igrejas`.
@@ -24,9 +24,9 @@ class PerfilRepository {
     return row != null;
   }
 
-  Future<List<Igreja>> fetchIgrejas() async {
+  Future<List<Church>> fetchChurches() async {
     final rows = await _client.from('igrejas').select().order('nome');
-    return rows.map(Igreja.fromMap).toList();
+    return rows.map(Church.fromMap).toList();
   }
 
   Future<void> criarPerfil(Perfil perfil) async {

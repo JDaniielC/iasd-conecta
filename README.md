@@ -46,6 +46,10 @@ depender de device/emulador.
   apuração com sorteio de empate (feature 004) — ver
   [specs/003-acao-avulsa](./specs/003-acao-avulsa) e
   [specs/004-rodada-votacao](./specs/004-rodada-votacao)
+- `lib/features/district_admin/` — promover Administrador do distrito,
+  gerenciar Igrejas (adicionar/arquivar), cancelar qualquer Ação (feature
+  005, primeira com código Dart em inglês) — ver
+  [specs/005-administrador-distrito](./specs/005-administrador-distrito)
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 
@@ -55,15 +59,17 @@ depender de device/emulador.
 `/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar` ·
 `/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id` ·
 `/grupos/:id/rodadas` · `/grupos/:id/rodadas/novo` · `/rodadas/:id` ·
-`/rodadas/:id/candidatas/novo`
+`/rodadas/:id/candidatas/novo` · `/district-admin/promote` ·
+`/district-admin/churches`
 
 ## Convenção de idioma
 
 Banco de dados (tabelas/colunas/funções) e toda string visível ao usuário:
 **português**, seguindo o glossário em `CONTEXT.md`. Identificadores em Dart
-(classes/variáveis/métodos/arquivos): **inglês**, a partir da feature 005 —
-código Dart das features 001-004 ainda está em português e é traduzido
-gradualmente, ao tocar cada arquivo (ver Princípio I da
+(classes/variáveis/métodos/arquivos): **inglês**, a partir da feature 005
+(`district_admin/`, `Church`) — código Dart das features 001-004 ainda está
+majoritariamente em português e é traduzido gradualmente, ao tocar cada
+arquivo (ver Princípio I da
 [constituição](./.specify/memory/constitution.md)).
 
 ## Documentação de processo

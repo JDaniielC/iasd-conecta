@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../district_admin/district_admin_providers.dart';
 import '../../grupo/grupo_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../acao_providers.dart';
@@ -49,7 +50,13 @@ class DetalheAcaoPage extends ConsumerWidget {
           final souDonoDoGrupo = acao.grupoId == null
               ? false
               : (ref.watch(grupoProvider(acao.grupoId!)).valueOrNull?.souDono(uid) ?? false);
-          final podeCancelar = acao.podeCancelar(uid, souDonoDoGrupo: souDonoDoGrupo);
+          final souAdministradorDoDistrito =
+              ref.watch(isDistrictAdminProvider).valueOrNull ?? false;
+          final podeCancelar = acao.podeCancelar(
+            uid,
+            souDonoDoGrupo: souDonoDoGrupo,
+            souAdministradorDoDistrito: souAdministradorDoDistrito,
+          );
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(

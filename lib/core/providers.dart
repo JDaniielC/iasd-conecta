@@ -3,7 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../features/perfil/data/auth_repository.dart';
 import '../features/perfil/data/perfil_repository.dart';
-import '../features/perfil/domain/igreja.dart';
+import '../features/perfil/domain/church.dart';
 import 'supabase_client.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -33,8 +33,8 @@ final hasPerfilProvider = FutureProvider<bool>((ref) async {
   return ref.watch(perfilRepositoryProvider).hasPerfil();
 });
 
-final igrejasProvider = FutureProvider<List<Igreja>>((ref) async {
-  return ref.watch(perfilRepositoryProvider).fetchIgrejas();
+final churchesProvider = FutureProvider<List<Church>>((ref) async {
+  return ref.watch(perfilRepositoryProvider).fetchChurches();
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {

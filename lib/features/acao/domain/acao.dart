@@ -83,11 +83,19 @@ class Acao {
   bool souCriador(String? usuarioAtualId) =>
       usuarioAtualId != null && usuarioAtualId == criadorId;
 
-  /// FR-016: quem propôs (criador) OU o Dono do Grupo cancela uma Ação de
-  /// Grupo. `souDonoDoGrupo` é resolvido por quem chama (o repositório sabe
-  /// quem é o Dono do `grupoId`), não pelo modelo em si.
-  bool podeCancelar(String? usuarioAtualId, {required bool souDonoDoGrupo}) =>
-      souCriador(usuarioAtualId) || (grupoId != null && souDonoDoGrupo);
+  /// FR-016 (004): quem propôs (criador) OU o Dono do Grupo cancela uma
+  /// Ação de Grupo. FR-009 (005): Administrador do distrito cancela
+  /// qualquer Ação. Ambos os booleanos são resolvidos por quem chama (o
+  /// repositório/provider sabe quem é o Dono do `grupoId` e quem é
+  /// Administrador), não pelo modelo em si.
+  bool podeCancelar(
+    String? usuarioAtualId, {
+    required bool souDonoDoGrupo,
+    bool souAdministradorDoDistrito = false,
+  }) =>
+      souAdministradorDoDistrito ||
+      souCriador(usuarioAtualId) ||
+      (grupoId != null && souDonoDoGrupo);
 
   factory Acao.fromMap(Map<String, dynamic> map) {
     return Acao(

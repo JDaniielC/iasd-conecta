@@ -12,6 +12,8 @@ import 'features/acao/presentation/detalhe_acao_page.dart';
 import 'features/acao/presentation/detalhe_rodada_page.dart';
 import 'features/acao/presentation/lista_acoes_page.dart';
 import 'features/acao/presentation/lista_rodadas_page.dart';
+import 'features/district_admin/presentation/manage_churches_page.dart';
+import 'features/district_admin/presentation/promote_admin_page.dart';
 import 'features/grupo/presentation/criar_grupo_page.dart';
 import 'features/grupo/presentation/detalhe_grupo_page.dart';
 import 'features/grupo/presentation/editar_grupo_page.dart';
@@ -104,6 +106,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/rodadas/:id',
         builder: (context, state) => DetalheRodadaPage(rodadaId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/district-admin/promote',
+        builder: (context, state) => const PromoteAdminPage(),
+      ),
+      GoRoute(
+        path: '/district-admin/churches',
+        builder: (context, state) => const ManageChurchesPage(),
       ),
     ],
   );

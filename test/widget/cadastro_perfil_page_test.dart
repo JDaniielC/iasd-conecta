@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_distrito_vsa/core/providers.dart';
 import 'package:iasd_distrito_vsa/features/perfil/data/perfil_repository.dart';
-import 'package:iasd_distrito_vsa/features/perfil/domain/igreja.dart';
+import 'package:iasd_distrito_vsa/features/perfil/domain/church.dart';
 import 'package:iasd_distrito_vsa/features/perfil/presentation/cadastro_perfil_page.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -14,7 +14,7 @@ Future<void> _pumpPage(WidgetTester tester, PerfilRepository repo) async {
     ProviderScope(
       overrides: [
         perfilRepositoryProvider.overrideWithValue(repo),
-        igrejasProvider.overrideWith((ref) async => <Igreja>[]),
+        churchesProvider.overrideWith((ref) async => <Church>[]),
       ],
       child: const MaterialApp(home: CadastroPerfilPage()),
     ),

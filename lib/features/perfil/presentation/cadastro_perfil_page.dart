@@ -97,7 +97,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
 
   @override
   Widget build(BuildContext context) {
-    final igrejasAsync = ref.watch(igrejasProvider);
+    final churchesAsync = ref.watch(churchesProvider);
     final idade = int.tryParse(_idadeController.text);
     final precisaApelido = idade != null && idade < 18;
 
@@ -147,14 +147,14 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSpacing.md),
-              igrejasAsync.when(
-                data: (igrejas) => DropdownButtonFormField<String>(
+              churchesAsync.when(
+                data: (churches) => DropdownButtonFormField<String>(
                   initialValue: _igrejaId,
                   decoration:
                       const InputDecoration(labelText: 'Igreja de origem (opcional)'),
-                  items: igrejas
-                      .map((i) =>
-                          DropdownMenuItem(value: i.id, child: Text(i.nome)))
+                  items: churches
+                      .map((c) =>
+                          DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
                   onChanged: (id) => setState(() => _igrejaId = id),
                 ),

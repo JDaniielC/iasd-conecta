@@ -1,0 +1,52 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../domain/suggested_action.dart';
+
+/// Único ponto de acesso a `public.acoes_sugeridas`. Escrita restrita a
+/// Administrador do distrito só por RLS (sem função `SECURITY DEFINER` —
+/// ver research.md).
+class SuggestedActionRepository {
+  SuggestedActionRepository(this._client);
+
+  final SupabaseClient _client;
+
+  /// FR-004: sugestões pra Ação candidata — a Categoria vem do Grupo pai
+  /// (`grupos.categoria`, texto), então primeiro resolve o id da
+  /// Categoria por nome, depois busca as sugestões por esse id. Sem
+  /// Categoria com esse nome cadastrada, retorna lista vazia (FR-008).
+  Future<List<SuggestedAction>> fetchByCategoryName(String categoryName) async {
+    final categoria = await _client
+        .from('categorias_grupo')
+        .select('id')
+        .eq('nome', categoryName)
+        .maybeSingle();
+    if (categoria == null) return [];
+    return fetchByCategoryId(categoria['id'] as String);
+  }
+
+  /// FR-005: sugestões filtradas pela Categoria escolhida na tela de Ação
+  /// avulsa (nunca persistida, FR-006).
+  Future<List<SuggestedAction>> fetchByCategoryId(String categoryId) async {
+    final rows = await _client
+        .from('acoes_sugeridas')
+        .select()
+        .eq('categoria_id', categoryId);
+    return rows.map(SuggestedAction.fromMap).toList();
+  }
+
+  Future<List<SuggestedAction>> fetchAll() async {
+    final rows = await _client.from('acoes_sugeridas').select().order('nome');
+    return rows.map(SuggestedAction.fromMap).toList();
+  }
+
+  Future<void> create({required String categoryId, required String name}) async {
+    await _client.from('acoes_sugeridas').insert({
+      'categoria_id': categoryId,
+      'nome': name.trim(),
+    });
+  }
+
+  Future<void> delete(String id) async {
+    await _client.from('acoes_sugeridas').delete().eq('id', id);
+  }
+}

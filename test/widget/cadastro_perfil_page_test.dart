@@ -25,6 +25,15 @@ Future<void> _pumpPage(WidgetTester tester, PerfilRepository repo) async {
 ElevatedButton _submitButton(WidgetTester tester) =>
     tester.widget<ElevatedButton>(find.byType(ElevatedButton));
 
+/// Rola o formulário até o Checkbox de consentimento antes de tocar nele —
+/// a página cresceu com os links de Política de Privacidade/Termos de Uso
+/// (integração da tarefa de LGPD) e o Checkbox nem sempre cabe na viewport
+/// padrão de teste sem rolar.
+Future<void> _tapConsentimento(WidgetTester tester) async {
+  await tester.ensureVisible(find.byType(CheckboxListTile));
+  await tester.tap(find.byType(CheckboxListTile));
+}
+
 void main() {
   late MockPerfilRepository repo;
 
@@ -50,7 +59,7 @@ void main() {
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Ana Souza');
       await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '30');
-      await tester.tap(find.byType(CheckboxListTile));
+      await _tapConsentimento(tester);
       await tester.pump();
 
       expect(_submitButton(tester).onPressed, isNotNull);
@@ -64,7 +73,7 @@ void main() {
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Maria Silva');
       await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '15');
-      await tester.tap(find.byType(CheckboxListTile));
+      await _tapConsentimento(tester);
       await tester.pump();
 
       expect(

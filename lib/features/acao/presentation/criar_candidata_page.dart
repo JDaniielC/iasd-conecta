@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../acao_sugerida/suggested_action_providers.dart';
 import '../domain/acao.dart';
 import '../rodada_providers.dart';
 
@@ -93,6 +94,12 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
 
   @override
   Widget build(BuildContext context) {
+    final rodadaAsync = ref.watch(rodadaProvider(widget.rodadaId));
+    final groupId = rodadaAsync.valueOrNull?.grupoId;
+    final suggestionsAsync =
+        groupId == null ? null : ref.watch(suggestionsForGroupProvider(groupId));
+    final suggestions = suggestionsAsync?.valueOrNull ?? const [];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Propor Ação Candidata')),
       body: SingleChildScrollView(
@@ -102,6 +109,20 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (suggestions.isNotEmpty) ...[
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  children: suggestions
+                      .map(
+                        (s) => ActionChip(
+                          label: Text(s.name),
+                          onPressed: () => setState(() => _nomeController.text = s.name),
+                        ),
+                      )
+                      .toList(),
+                ),
+                const SizedBox(height: AppSpacing.md),
+              ],
               TextFormField(
                 controller: _nomeController,
                 decoration: const InputDecoration(labelText: 'Nome da candidata'),

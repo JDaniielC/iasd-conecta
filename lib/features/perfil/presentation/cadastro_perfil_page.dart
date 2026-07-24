@@ -184,10 +184,29 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
                 ),
               ],
               const SizedBox(height: AppSpacing.lg),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    TextButton(
+                      onPressed: () => context.push('/privacidade'),
+                      child: const Text('Política de Privacidade'),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/termos'),
+                      child: const Text('Termos de Uso'),
+                    ),
+                  ],
+                ),
+              ),
               CheckboxListTile(
                 value: _consentimentoLgpd,
                 onChanged: (v) => setState(() => _consentimentoLgpd = v ?? false),
-                title: const Text('Aceito o uso dos meus dados (LGPD)'),
+                title: const Text(
+                  'Li e aceito o uso dos meus dados descrito na Política de '
+                  'Privacidade (LGPD)',
+                ),
                 controlAffinity: ListTileControlAffinity.leading,
               ),
               if (_erro != null) ...[

@@ -56,6 +56,10 @@ depender de device/emulador.
   Administrador do distrito confirma/rejeita, identificação pública na
   página do Grupo, expiração anual preguiçosa (feature 006, código Dart em
   inglês) — ver [specs/006-lider-diretor](./specs/006-lider-diretor)
+- `lib/features/acao_sugerida/` — atalho de nome pré-cadastrado por
+  Categoria de Grupo ao criar Ação avulsa ou propor Ação candidata,
+  mantido pelo Administrador do distrito (feature 008, código Dart em
+  inglês) — ver [specs/008-acao-sugerida](./specs/008-acao-sugerida)
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 
@@ -67,7 +71,7 @@ depender de device/emulador.
 `/grupos/:id/rodadas` · `/grupos/:id/rodadas/novo` · `/rodadas/:id` ·
 `/rodadas/:id/candidatas/novo` · `/district-admin/promote` ·
 `/district-admin/churches` · `/grupos/:id/leadership/declare` ·
-`/leadership/pending`
+`/leadership/pending` · `/district-admin/suggested-actions`
 
 ## Convenção de idioma
 

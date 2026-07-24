@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../acao_sugerida/suggested_action_providers.dart';
+import '../../grupo/grupo_providers.dart';
 import '../acao_providers.dart';
 import '../domain/acao.dart';
 
@@ -27,6 +29,7 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
   String? _erro;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
+  String? _categoriaFiltroId;
 
   @override
   void dispose() {
@@ -89,6 +92,12 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
 
   @override
   Widget build(BuildContext context) {
+    final categoriasAsync = ref.watch(categoriasGrupoProvider);
+    final suggestionsAsync = _categoriaFiltroId == null
+        ? null
+        : ref.watch(suggestionsForCategoryProvider(_categoriaFiltroId!));
+    final suggestions = suggestionsAsync?.valueOrNull ?? const [];
+
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Ação')),
       body: SingleChildScrollView(
@@ -98,6 +107,35 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              categoriasAsync.when(
+                data: (categorias) => DropdownButtonFormField<String>(
+                  initialValue: _categoriaFiltroId,
+                  decoration: const InputDecoration(
+                    labelText: 'Categoria (só pra filtrar sugestões, opcional)',
+                  ),
+                  items: categorias
+                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.nome)))
+                      .toList(),
+                  onChanged: (v) => setState(() => _categoriaFiltroId = v),
+                ),
+                loading: () => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
+              ),
+              if (suggestions.isNotEmpty) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Wrap(
+                  spacing: AppSpacing.sm,
+                  children: suggestions
+                      .map(
+                        (s) => ActionChip(
+                          label: Text(s.name),
+                          onPressed: () => setState(() => _nomeController.text = s.name),
+                        ),
+                      )
+                      .toList(),
+                ),
+              ],
+              const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _nomeController,
                 decoration: const InputDecoration(labelText: 'Nome da Ação'),

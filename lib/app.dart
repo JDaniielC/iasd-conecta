@@ -12,6 +12,7 @@ import 'features/acao/presentation/detalhe_acao_page.dart';
 import 'features/acao/presentation/detalhe_rodada_page.dart';
 import 'features/acao/presentation/lista_acoes_page.dart';
 import 'features/acao/presentation/lista_rodadas_page.dart';
+import 'features/acao_sugerida/presentation/manage_suggested_actions_page.dart';
 import 'features/district_admin/presentation/manage_churches_page.dart';
 import 'features/district_admin/presentation/promote_admin_page.dart';
 import 'features/grupo/presentation/criar_grupo_page.dart';
@@ -20,6 +21,8 @@ import 'features/grupo/presentation/editar_grupo_page.dart';
 import 'features/grupo/presentation/lista_grupos_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
+import 'features/legal/presentation/privacy_policy_page.dart';
+import 'features/legal/presentation/terms_of_use_page.dart';
 import 'features/perfil/presentation/cadastro_perfil_page.dart';
 import 'features/perfil/presentation/login_page.dart';
 import 'features/perfil/presentation/upgrade_conta_page.dart';
@@ -125,6 +128,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/leadership/pending',
         builder: (context, state) => const PendingDeclarationsPage(),
+      ),
+      GoRoute(
+        path: '/district-admin/suggested-actions',
+        builder: (context, state) => const ManageSuggestedActionsPage(),
+      ),
+      GoRoute(
+        path: '/privacidade',
+        builder: (context, state) => const PrivacyPolicyPage(),
+      ),
+      GoRoute(
+        path: '/termos',
+        builder: (context, state) => const TermsOfUsePage(),
       ),
     ],
   );

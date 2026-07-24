@@ -45,6 +45,11 @@ class ListaGruposPage extends ConsumerWidget {
               icon: const Icon(Icons.pending_actions_outlined),
               onPressed: () => context.push('/leadership/pending'),
             ),
+            IconButton(
+              tooltip: 'Ações Sugeridas',
+              icon: const Icon(Icons.lightbulb_outline),
+              onPressed: () => context.push('/district-admin/suggested-actions'),
+            ),
           ],
           if (hasPerfil && !temConta)
             IconButton(
@@ -52,6 +57,11 @@ class ListaGruposPage extends ConsumerWidget {
               icon: const Icon(Icons.cloud_upload_outlined),
               onPressed: () => context.push('/upgrade-conta'),
             ),
+          IconButton(
+            tooltip: 'Política de Privacidade e Termos de Uso',
+            icon: const Icon(Icons.privacy_tip_outlined),
+            onPressed: () => context.push('/privacidade'),
+          ),
         ],
       ),
       floatingActionButton: FloatingActionButton(

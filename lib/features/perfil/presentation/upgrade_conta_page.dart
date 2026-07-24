@@ -43,8 +43,10 @@ class _UpgradeContaPageState extends ConsumerState<UpgradeContaPage> {
             senha: _senhaController.text,
           );
       if (mounted) Navigator.of(context).pop(true);
-    } on AuthException catch (e) {
-      setState(() => _erro = e.message);
+    } on AuthException catch (_) {
+      // Mensagem genérica: nunca revela se o e-mail já tem Conta
+      // (mesmo cuidado do login_page.dart, FR-014 da feature 001).
+      setState(() => _erro = 'Não deu pra virar Conta com esses dados. Tente de novo.');
     } finally {
       if (mounted) setState(() => _enviando = false);
     }

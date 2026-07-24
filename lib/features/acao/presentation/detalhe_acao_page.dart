@@ -18,6 +18,10 @@ class DetalheAcaoPage extends ConsumerWidget {
 
   final String acaoId;
 
+  void _mostrarErro(BuildContext context, String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+  }
+
   Future<void> _confirmar(BuildContext context, WidgetRef ref) async {
     if (!PerfilGuard.exigirPerfil(context, ref)) return;
     try {
@@ -25,22 +29,28 @@ class DetalheAcaoPage extends ConsumerWidget {
       ref.invalidate(confirmadosProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Não deu pra confirmar — composição inválida para esta Dupla Missionária.'),
-        ),
-      );
+      _mostrarErro(context, 'Não deu pra confirmar presença. Tente de novo.');
     }
   }
 
-  Future<void> _desistir(WidgetRef ref) async {
-    await ref.read(acaoRepositoryProvider).desistir(acaoId);
-    ref.invalidate(confirmadosProvider(acaoId));
+  Future<void> _desistir(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(acaoRepositoryProvider).desistir(acaoId);
+      ref.invalidate(confirmadosProvider(acaoId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(context, 'Não deu pra desistir agora. Tente de novo.');
+    }
   }
 
-  Future<void> _cancelar(WidgetRef ref) async {
-    await ref.read(acaoRepositoryProvider).cancelarAcao(acaoId);
-    ref.invalidate(acaoProvider(acaoId));
+  Future<void> _cancelar(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(acaoRepositoryProvider).cancelarAcao(acaoId);
+      ref.invalidate(acaoProvider(acaoId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(context, 'Não deu pra cancelar agora. Tente de novo.');
+    }
   }
 
   @override
@@ -83,7 +93,7 @@ class DetalheAcaoPage extends ConsumerWidget {
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Cancelar Ação',
-                        onPressed: () => _cancelar(ref),
+                        onPressed: () => _cancelar(context, ref),
                       ),
                   ],
                 ),
@@ -128,7 +138,7 @@ class DetalheAcaoPage extends ConsumerWidget {
                 if (!acao.cancelada)
                   ElevatedButton(
                     onPressed: minhaConfirmacao != null
-                        ? () => _desistir(ref)
+                        ? () => _desistir(context, ref)
                         : () => _confirmar(context, ref),
                     child: Text(
                       minhaConfirmacao == null

@@ -15,15 +15,32 @@ class DetalheGrupoPage extends ConsumerWidget {
 
   final String grupoId;
 
-  Future<void> _participar(BuildContext context, WidgetRef ref) async {
-    if (!PerfilGuard.exigirPerfil(context, ref)) return;
-    await ref.read(grupoRepositoryProvider).participar(grupoId);
-    ref.invalidate(participantesProvider(grupoId));
+  void _mostrarErro(BuildContext context, String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
-  Future<void> _sair(WidgetRef ref) async {
-    await ref.read(grupoRepositoryProvider).sair(grupoId);
-    ref.invalidate(participantesProvider(grupoId));
+  Future<void> _participar(BuildContext context, WidgetRef ref) async {
+    if (!PerfilGuard.exigirPerfil(context, ref)) return;
+    try {
+      await ref.read(grupoRepositoryProvider).participar(grupoId);
+      ref.invalidate(participantesProvider(grupoId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(context, 'Não deu pra participar agora. Tente de novo.');
+    }
+  }
+
+  Future<void> _sair(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(grupoRepositoryProvider).sair(grupoId);
+      ref.invalidate(participantesProvider(grupoId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(
+        context,
+        'Não deu pra sair do Grupo. Se você é o Dono, transfira a posse antes.',
+      );
+    }
   }
 
   @override
@@ -78,7 +95,7 @@ class DetalheGrupoPage extends ConsumerWidget {
                 _LeadersSection(grupoId: grupoId),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: participa ? () => _sair(ref) : () => _participar(context, ref),
+                  onPressed: participa ? () => _sair(context, ref) : () => _participar(context, ref),
                   child: Text(participa ? 'Sair do Grupo' : 'Participar'),
                 ),
                 const SizedBox(height: AppSpacing.lg),

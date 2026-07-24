@@ -12,12 +12,24 @@ import '../leadership_providers.dart';
 class PendingDeclarationsPage extends ConsumerWidget {
   const PendingDeclarationsPage({super.key});
 
-  Future<void> _decide(WidgetRef ref, String declarationId, bool approve) async {
-    await ref.read(leadershipRepositoryProvider).decide(
-          declarationId: declarationId,
-          approve: approve,
-        );
-    ref.invalidate(pendingDeclarationsProvider);
+  Future<void> _decide(
+    BuildContext context,
+    WidgetRef ref,
+    String declarationId,
+    bool approve,
+  ) async {
+    try {
+      await ref.read(leadershipRepositoryProvider).decide(
+            declarationId: declarationId,
+            approve: approve,
+          );
+      ref.invalidate(pendingDeclarationsProvider);
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Não deu pra decidir agora. Tente de novo.')),
+      );
+    }
   }
 
   @override
@@ -39,8 +51,8 @@ class PendingDeclarationsPage extends ConsumerWidget {
               final declaration = declarations[index];
               return _PendingCard(
                 declaration: declaration,
-                onApprove: () => _decide(ref, declaration.id, true),
-                onReject: () => _decide(ref, declaration.id, false),
+                onApprove: () => _decide(context, ref, declaration.id, true),
+                onReject: () => _decide(context, ref, declaration.id, false),
               );
             },
           );

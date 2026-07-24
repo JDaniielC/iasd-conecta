@@ -14,17 +14,31 @@ class DetalheRodadaPage extends ConsumerWidget {
 
   final String rodadaId;
 
-  Future<void> _votar(BuildContext context, WidgetRef ref, String candidataId) async {
-    if (!PerfilGuard.exigirPerfil(context, ref)) return;
-    await ref.read(rodadaRepositoryProvider).votar(rodadaId, candidataId);
-    ref.invalidate(meuVotoProvider(rodadaId));
-    ref.invalidate(candidatasProvider(rodadaId));
+  void _mostrarErro(BuildContext context, String mensagem) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
-  Future<void> _encerrar(WidgetRef ref) async {
-    await ref.read(rodadaRepositoryProvider).fecharSeDevido(rodadaId, forcar: true);
-    ref.invalidate(rodadaProvider(rodadaId));
-    ref.invalidate(candidatasProvider(rodadaId));
+  Future<void> _votar(BuildContext context, WidgetRef ref, String candidataId) async {
+    if (!PerfilGuard.exigirPerfil(context, ref)) return;
+    try {
+      await ref.read(rodadaRepositoryProvider).votar(rodadaId, candidataId);
+      ref.invalidate(meuVotoProvider(rodadaId));
+      ref.invalidate(candidatasProvider(rodadaId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(context, 'Não deu pra votar agora. A Rodada ainda está aberta?');
+    }
+  }
+
+  Future<void> _encerrar(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(rodadaRepositoryProvider).fecharSeDevido(rodadaId, forcar: true);
+      ref.invalidate(rodadaProvider(rodadaId));
+      ref.invalidate(candidatasProvider(rodadaId));
+    } catch (_) {
+      if (!context.mounted) return;
+      _mostrarErro(context, 'Não deu pra encerrar agora. Tente de novo.');
+    }
   }
 
   @override
@@ -61,7 +75,7 @@ class DetalheRodadaPage extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       OutlinedButton(
-                        onPressed: () => _encerrar(ref),
+                        onPressed: () => _encerrar(context, ref),
                         child: const Text('Encerrar Rodada'),
                       ),
                     ],

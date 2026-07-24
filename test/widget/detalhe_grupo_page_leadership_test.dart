@@ -1,0 +1,120 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
+import 'package:iasd_distrito_vsa/core/providers.dart';
+import 'package:iasd_distrito_vsa/features/grupo/data/grupo_repository.dart';
+import 'package:iasd_distrito_vsa/features/grupo/domain/grupo.dart';
+import 'package:iasd_distrito_vsa/features/grupo/grupo_providers.dart';
+import 'package:iasd_distrito_vsa/features/grupo/presentation/detalhe_grupo_page.dart';
+import 'package:iasd_distrito_vsa/features/leadership/domain/leadership_declaration.dart';
+import 'package:iasd_distrito_vsa/features/leadership/leadership_providers.dart';
+import 'package:iasd_distrito_vsa/features/perfil/domain/perfil.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockGrupoRepository extends Mock implements GrupoRepository {}
+
+const _grupo = Grupo(
+  id: 'g1',
+  nome: 'Ministério de Louvor',
+  categoria: 'Ministério',
+  horario: 'sábados 9h',
+  local: 'Templo',
+  donoId: 'dono-1',
+);
+
+LeadershipDeclaration _confirmed(String id, String userId) {
+  return LeadershipDeclaration(
+    id: id,
+    groupId: 'g1',
+    userId: userId,
+    year: DateTime.now().year,
+    declaredAt: DateTime(2026, 1, 1),
+    confirmedAt: DateTime(2026, 1, 2),
+    confirmedBy: 'admin-1',
+  );
+}
+
+void main() {
+  testWidgets(
+    'FR-006/FR-007: exibe todos os Líderes confirmados do ano corrente (codireção)',
+    (tester) async {
+      final grupoRepo = MockGrupoRepository();
+      when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
+      when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
+        (_) async => const [PerfilPublico(id: 'dono-1', nomeExibido: 'Dono')],
+      );
+
+      final router = GoRouter(
+        initialLocation: '/grupos/g1',
+        routes: [
+          GoRoute(
+            path: '/grupos/:id',
+            builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasPerfilProvider.overrideWith((ref) async => false),
+            currentUserIdProvider.overrideWithValue(null),
+            grupoRepositoryProvider.overrideWithValue(grupoRepo),
+            currentLeadersProvider('g1').overrideWith(
+              (ref) async => [_confirmed('l1', 'lider-1'), _confirmed('l2', 'lider-2')],
+            ),
+            perfilPublicoProvider('lider-1').overrideWith(
+              (ref) async => const PerfilPublico(id: 'lider-1', nomeExibido: 'Ana Líder'),
+            ),
+            perfilPublicoProvider('lider-2').overrideWith(
+              (ref) async => const PerfilPublico(id: 'lider-2', nomeExibido: 'Beto Diretor'),
+            ),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Líder/Diretor'), findsOneWidget);
+      expect(find.text('Ana Líder'), findsOneWidget);
+      expect(find.text('Beto Diretor'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'sem Líder confirmado, a seção não aparece',
+    (tester) async {
+      final grupoRepo = MockGrupoRepository();
+      when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
+      when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
+        (_) async => const [PerfilPublico(id: 'dono-1', nomeExibido: 'Dono')],
+      );
+
+      final router = GoRouter(
+        initialLocation: '/grupos/g1',
+        routes: [
+          GoRoute(
+            path: '/grupos/:id',
+            builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasPerfilProvider.overrideWith((ref) async => false),
+            currentUserIdProvider.overrideWithValue(null),
+            grupoRepositoryProvider.overrideWithValue(grupoRepo),
+            currentLeadersProvider('g1').overrideWith((ref) async => []),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('Líder/Diretor'), findsNothing);
+    },
+  );
+}

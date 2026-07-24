@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../leadership/leadership_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../grupo_providers.dart';
 
@@ -52,6 +53,11 @@ class DetalheGrupoPage extends ConsumerWidget {
                       tooltip: 'Rodadas de Votação',
                       onPressed: () => context.push('/grupos/$grupoId/rodadas'),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.badge_outlined),
+                      tooltip: 'Líder/Diretor de Ministério',
+                      onPressed: () => context.push('/grupos/$grupoId/leadership/declare'),
+                    ),
                     if (souDono)
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
@@ -68,6 +74,8 @@ class DetalheGrupoPage extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.md),
                   Text(grupo.detalhes!),
                 ],
+                const SizedBox(height: AppSpacing.md),
+                _LeadersSection(grupoId: grupoId),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
                   onPressed: participa ? () => _sair(ref) : () => _participar(context, ref),
@@ -94,5 +102,42 @@ class DetalheGrupoPage extends ConsumerWidget {
         error: (_, _) => const Center(child: Text('Grupo não encontrado.')),
       ),
     );
+  }
+}
+
+/// FR-006/FR-007: identificação pública do(s) Líder(es)/Diretor(es)
+/// confirmado(s) do ano corrente — visível até pra Visitante sem cadastro.
+/// Sem confirmado nenhum, a seção não aparece (Grupo comum, não Ministério).
+class _LeadersSection extends ConsumerWidget {
+  const _LeadersSection({required this.grupoId});
+
+  final String grupoId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final leadersAsync = ref.watch(currentLeadersProvider(grupoId));
+    final leaders = leadersAsync.valueOrNull ?? const [];
+    if (leaders.isEmpty) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('Líder/Diretor', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: AppSpacing.sm),
+        ...leaders.map((leader) => _LeaderName(userId: leader.userId)),
+      ],
+    );
+  }
+}
+
+class _LeaderName extends ConsumerWidget {
+  const _LeaderName({required this.userId});
+
+  final String userId;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final perfilAsync = ref.watch(perfilPublicoProvider(userId));
+    return Text(perfilAsync.valueOrNull?.nomeExibido ?? '...');
   }
 }

@@ -18,6 +18,8 @@ import 'features/grupo/presentation/criar_grupo_page.dart';
 import 'features/grupo/presentation/detalhe_grupo_page.dart';
 import 'features/grupo/presentation/editar_grupo_page.dart';
 import 'features/grupo/presentation/lista_grupos_page.dart';
+import 'features/leadership/presentation/declare_leadership_page.dart';
+import 'features/leadership/presentation/pending_declarations_page.dart';
 import 'features/perfil/presentation/cadastro_perfil_page.dart';
 import 'features/perfil/presentation/login_page.dart';
 import 'features/perfil/presentation/upgrade_conta_page.dart';
@@ -114,6 +116,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/district-admin/churches',
         builder: (context, state) => const ManageChurchesPage(),
+      ),
+      GoRoute(
+        path: '/grupos/:id/leadership/declare',
+        builder: (context, state) =>
+            DeclareLeadershipPage(groupId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/leadership/pending',
+        builder: (context, state) => const PendingDeclarationsPage(),
       ),
     ],
   );

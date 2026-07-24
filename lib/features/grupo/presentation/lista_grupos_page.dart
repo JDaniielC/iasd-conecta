@@ -40,6 +40,11 @@ class ListaGruposPage extends ConsumerWidget {
               icon: const Icon(Icons.admin_panel_settings_outlined),
               onPressed: () => context.push('/district-admin/promote'),
             ),
+            IconButton(
+              tooltip: 'Declarações de Líder/Diretor pendentes',
+              icon: const Icon(Icons.pending_actions_outlined),
+              onPressed: () => context.push('/leadership/pending'),
+            ),
           ],
           if (hasPerfil && !temConta)
             IconButton(

@@ -50,6 +50,10 @@ depender de device/emulador.
   gerenciar Igrejas (adicionar/arquivar), cancelar qualquer Ação (feature
   005, primeira com código Dart em inglês) — ver
   [specs/005-administrador-distrito](./specs/005-administrador-distrito)
+- `lib/features/leadership/` — autodeclarar Líder/Diretor de Ministério,
+  Administrador do distrito confirma/rejeita, identificação pública na
+  página do Grupo, expiração anual preguiçosa (feature 006, código Dart em
+  inglês) — ver [specs/006-lider-diretor](./specs/006-lider-diretor)
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 
@@ -60,7 +64,8 @@ depender de device/emulador.
 `/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id` ·
 `/grupos/:id/rodadas` · `/grupos/:id/rodadas/novo` · `/rodadas/:id` ·
 `/rodadas/:id/candidatas/novo` · `/district-admin/promote` ·
-`/district-admin/churches`
+`/district-admin/churches` · `/grupos/:id/leadership/declare` ·
+`/leadership/pending`
 
 ## Convenção de idioma
 

@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../features/perfil/data/auth_repository.dart';
 import '../features/perfil/data/perfil_repository.dart';
 import '../features/perfil/domain/church.dart';
+import '../features/perfil/domain/perfil.dart';
 import 'supabase_client.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {
@@ -39,4 +40,8 @@ final churchesProvider = FutureProvider<List<Church>>((ref) async {
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.watch(supabaseClientProvider));
+});
+
+final perfilPublicoProvider = FutureProvider.autoDispose.family<PerfilPublico, String>((ref, id) {
+  return ref.watch(perfilRepositoryProvider).fetchPerfilPublico(id);
 });

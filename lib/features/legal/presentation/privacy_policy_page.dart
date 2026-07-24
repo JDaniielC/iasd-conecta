@@ -45,11 +45,12 @@ class PrivacyPolicyPage extends StatelessWidget {
 
             const LegalHeading('Quem é responsável pelos seus dados'),
             const LegalParagraph(
-              '[PREENCHER: nome ou razão social de quem mantém o app] cria e '
-              'mantém este app, e é responsável pelos dados tratados aqui '
-              '(o que a lei chama de "controlador"). Para qualquer dúvida ou '
-              'pedido sobre os seus dados, escreva para: '
-              '[PREENCHER: e-mail de contato].',
+              '${LegalMetadata.controllerName} cria e mantém este app, e é '
+              'responsável pelos dados tratados aqui (o que a lei chama de '
+              '"controlador"). Para qualquer dúvida ou pedido sobre os seus '
+              'dados, escreva para: ${LegalMetadata.contactEmail} — é '
+              'também o contato do encarregado (DPO) pela proteção de '
+              'dados deste app.',
             ),
 
             const LegalHeading('O que pedimos no cadastro, e por quê'),
@@ -89,10 +90,12 @@ class PrivacyPolicyPage extends StatelessWidget {
               'desses dados, registrada junto do cadastro.',
             ),
             const LegalNote(
-              'A LGPD trata dado sobre filiação religiosa como uma categoria '
-              'mais protegida. "Igreja de origem" pode se enquadrar aí — por '
-              'isso esse campo é opcional: você participa do app inteiro sem '
-              'preenchê-lo.',
+              'A LGPD trata dado sobre filiação a organização religiosa '
+              'como uma categoria mais protegida (dado sensível). "Igreja '
+              'de origem" se enquadra aí. Por isso esse campo é opcional — '
+              'você participa do app inteiro sem preenchê-lo — e o '
+              'consentimento que você dá no cadastro cobre expressamente '
+              'esse uso, sempre que você optar por preencher.',
             ),
             const LegalParagraph(
               'Se você optar por criar uma Conta (e-mail e senha, para '
@@ -137,10 +140,9 @@ class PrivacyPolicyPage extends StatelessWidget {
             const LegalHeading('Com quem compartilhamos'),
             const LegalBullet(
               'Supabase — provedor que guarda o banco de dados e cuida do '
-              'login. [PREENCHER: região do servidor em produção]. '
-              '[PREENCHER: se o servidor ficar fora do Brasil, isso é '
-              'transferência internacional de dado e precisa de uma frase '
-              'específica aqui sobre a base legal usada.]',
+              'login. O servidor fica na região ${LegalMetadata.hostingRegion}. '
+              'O dado não sai do Brasil, então não há transferência '
+              'internacional de dado a declarar aqui.',
             ),
             const LegalParagraph(
               'Não vendemos, não alugamos e não compartilhamos seus dados '
@@ -161,9 +163,9 @@ class PrivacyPolicyPage extends StatelessWidget {
             const LegalHeading('Seus direitos e como usar cada um'),
             const LegalBullet(
               'Confirmar o que temos sobre você (acesso): escreva para '
-              '[PREENCHER: e-mail]. Hoje isso é respondido manualmente — '
-              'ainda não existe uma tela própria de "meu perfil" para '
-              'conferir sozinho.',
+              '${LegalMetadata.contactEmail}. Hoje isso é respondido '
+              'manualmente — ainda não existe uma tela própria de "meu '
+              'perfil" para conferir sozinho.',
             ),
             const LegalBullet(
               'Corrigir um dado errado: mesmo canal, por e-mail, enquanto '
@@ -208,10 +210,14 @@ class PrivacyPolicyPage extends StatelessWidget {
               'proteções automaticamente a partir dela.',
             ),
             const LegalParagraph(
-              'Se você é pai, mãe ou responsável por uma criança ou '
-              'adolescente que vai se cadastrar, o cadastro deve ser feito '
-              'com o seu acompanhamento — leia esta política e os Termos de '
-              'Uso com ela antes do aceite.',
+              'O Apelido protege quem já está cadastrado de ter o nome '
+              'exposto — mas não substitui a autorização de um responsável. '
+              'Se você é pai, mãe ou responsável por uma criança (até 12 '
+              'anos), o cadastro dela precisa ser feito por você ou com '
+              'você presente, e é você quem aceita esta política e os '
+              'Termos de Uso em nome dela. Para adolescente (13 a 17 anos), '
+              'recomendamos o mesmo acompanhamento, mesmo quando a lei '
+              'permite alguma flexibilidade nessa faixa.',
             ),
 
             const LegalHeading('Alterações nesta política'),
@@ -225,8 +231,7 @@ class PrivacyPolicyPage extends StatelessWidget {
 
             const LegalHeading('Fale com a gente'),
             const LegalParagraph(
-              '[PREENCHER: e-mail de contato do responsável/encarregado '
-              'pelos dados].',
+              '${LegalMetadata.controllerName} — ${LegalMetadata.contactEmail}.',
             ),
           ],
         ),

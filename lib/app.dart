@@ -6,8 +6,12 @@ import 'package:go_router/go_router.dart';
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
 import 'features/acao/presentation/criar_acao_page.dart';
+import 'features/acao/presentation/criar_candidata_page.dart';
+import 'features/acao/presentation/criar_rodada_page.dart';
 import 'features/acao/presentation/detalhe_acao_page.dart';
+import 'features/acao/presentation/detalhe_rodada_page.dart';
 import 'features/acao/presentation/lista_acoes_page.dart';
+import 'features/acao/presentation/lista_rodadas_page.dart';
 import 'features/grupo/presentation/criar_grupo_page.dart';
 import 'features/grupo/presentation/detalhe_grupo_page.dart';
 import 'features/grupo/presentation/editar_grupo_page.dart';
@@ -84,6 +88,22 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/acoes/:id',
         builder: (context, state) => DetalheAcaoPage(acaoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/grupos/:id/rodadas',
+        builder: (context, state) => ListaRodadasPage(grupoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/grupos/:id/rodadas/novo',
+        builder: (context, state) => CriarRodadaPage(grupoId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/rodadas/:id/candidatas/novo',
+        builder: (context, state) => CriarCandidataPage(rodadaId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/rodadas/:id',
+        builder: (context, state) => DetalheRodadaPage(rodadaId: state.pathParameters['id']!),
       ),
     ],
   );

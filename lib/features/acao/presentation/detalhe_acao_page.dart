@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../grupo/grupo_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../acao_providers.dart';
 import '../domain/acao.dart';
@@ -44,7 +46,10 @@ class DetalheAcaoPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Ação')),
       body: acaoAsync.when(
         data: (acao) {
-          final souCriador = acao.souCriador(uid);
+          final souDonoDoGrupo = acao.grupoId == null
+              ? false
+              : (ref.watch(grupoProvider(acao.grupoId!)).valueOrNull?.souDono(uid) ?? false);
+          final podeCancelar = acao.podeCancelar(uid, souDonoDoGrupo: souDonoDoGrupo);
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -58,7 +63,7 @@ class DetalheAcaoPage extends ConsumerWidget {
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
-                    if (souCriador && !acao.cancelada)
+                    if (podeCancelar && !acao.cancelada && acao.confirmada)
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Cancelar Ação',
@@ -71,6 +76,20 @@ class DetalheAcaoPage extends ConsumerWidget {
                   Text(
                     'Cancelada',
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
+                  ),
+                ],
+                if (acao.ehCandidataEmVotacao) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text('Ação candidata — ainda em votação numa Rodada.'),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push('/rodadas/${acao.rodadaId}'),
+                        child: const Text('Ver Rodada'),
+                      ),
+                    ],
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),

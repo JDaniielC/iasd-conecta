@@ -1,19 +1,25 @@
 <!--
 Sync Impact Report
-Version change: [TEMPLATE] → 1.0.0 (initial ratification)
-Modified principles: n/a (first fill of template placeholders)
-Added sections: all 5 Core Principles, Requisitos de Domínio e Compliance,
-  Fluxo de Desenvolvimento, Governance
+Version change: 1.0.0 → 1.1.0
+Modified principles: I. Linguagem Ubíqua do Domínio — adicionada a subseção
+  "Fronteira de idioma (código Dart)": identificadores Dart em inglês (tradução
+  consistente do glossário), banco de dados e strings de UI continuam em
+  português. Nenhuma remoção/redefinição incompatível — é expansão de escopo,
+  daí MINOR, não MAJOR.
+Added sections: none (subseção dentro do Princípio I existente)
 Removed sections: none
 Templates requiring updates:
-  ✅ .specify/templates/plan-template.md — Constitution Check gate is generic
-     ("[Gates determined based on constitution file]"), no edit needed
-  ✅ .specify/templates/spec-template.md — no constitution-specific references found
-  ✅ .specify/templates/tasks-template.md — no constitution-specific references found
-  ✅ .claude/skills/speckit-*/SKILL.md — no CLAUDE-only or stale agent references found
+  ✅ .specify/templates/plan-template.md — Constitution Check gate é genérico,
+     nenhuma edição necessária
+  ✅ .specify/templates/spec-template.md — specs continuam em português, sem
+     referência a identificadores Dart, nenhuma edição necessária
+  ✅ .specify/templates/tasks-template.md — nenhuma referência específica de
+     idioma de código, nenhuma edição necessária
+  ✅ .claude/skills/speckit-*/SKILL.md — nenhuma referência desatualizada
 Follow-up TODOs:
-  - TODO(RATIFICATION_DATE): original adoption date unknown; using constitution
-    creation date as placeholder until confirmed by project owner.
+  - TODO(RATIFICATION_DATE): data de adoção original ainda desconhecida.
+  - Código Dart das features 001-004 permanece com identificadores em
+    português; tradução é gradual, ao tocar cada arquivo (ver Princípio I).
 -->
 
 # Rede IASD Vitória de Santo Antão Constitution
@@ -26,9 +32,20 @@ O glossário em `CONTEXT.md` é a fonte de verdade dos termos do domínio (Visit
 Usuário, Apelido, Categoria de Grupo, Ação sugerida, Grupo, Participar do Grupo,
 Dono do Grupo, Ação, Ação candidata, Rodada de votação, Votar, Igreja,
 Administrador do distrito, Ministério, Líder/Diretor, Dupla Missionária). Specs,
-código, nomes de tabelas/colunas, endpoints e mensagens de UI DEVEM usar esses
-termos exatos e DEVEM evitar os sinônimos listados em cada entrada "_Avoid_". Um
-termo novo ou renomeado só entra em código depois de atualizado em `CONTEXT.md`.
+schema do banco (tabelas/colunas/funções/triggers) e mensagens de UI DEVEM usar
+esses termos exatos, em português, e DEVEM evitar os sinônimos listados em cada
+entrada "_Avoid_". Um termo novo ou renomeado só entra em código depois de
+atualizado em `CONTEXT.md`.
+
+**Fronteira de idioma (código Dart)**: identificadores em Dart (classes,
+variáveis, métodos, nomes de arquivo) DEVEM ser escritos em inglês, usando uma
+tradução consistente do termo do glossário (ex.: Grupo→Group, Ação→Action,
+Perfil→Profile, Rodada de votação→VotingRound) — a mesma tradução em todo o
+código, nunca duas traduções diferentes pro mesmo conceito. O banco de dados
+(tabelas/colunas/funções/triggers) e toda string visível ao usuário continuam em
+português, sem exceção. Código Dart já existente escrito em português não
+precisa de um passe de tradução dedicado; ao tocar um arquivo por outro motivo,
+traduza os identificadores daquele arquivo pro inglês como parte da mudança.
 
 **Rationale**: o domínio tem distinções sutis e fáceis de confundir (Ação vs.
 Grupo, Dono do Grupo vs. Líder/Diretor, Participar do Grupo vs. Participar de uma
@@ -123,4 +140,4 @@ regra. Todo `/speckit-plan` DEVE incluir o Constitution Check preenchido contra
 os cinco princípios; violação não justificada em Complexity Tracking bloqueia a
 fase seguinte.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar data original de adoção | **Last Amended**: 2026-07-23
+**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar data original de adoção | **Last Amended**: 2026-07-24

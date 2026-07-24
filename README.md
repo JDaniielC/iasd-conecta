@@ -42,8 +42,10 @@ depender de device/emulador.
 - `lib/features/grupo/` — criar/descobrir/participar de Grupo, Dono
   administra (feature 002, ver [specs/002-grupos](./specs/002-grupos))
 - `lib/features/acao/` — criar Ação avulsa, confirmar presença, fila de
-  espera, cancelar (feature 003, ver
-  [specs/003-acao-avulsa](./specs/003-acao-avulsa))
+  espera, cancelar (feature 003); Rodada de votação, Ação candidata, votar,
+  apuração com sorteio de empate (feature 004) — ver
+  [specs/003-acao-avulsa](./specs/003-acao-avulsa) e
+  [specs/004-rodada-votacao](./specs/004-rodada-votacao)
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 
@@ -51,7 +53,18 @@ depender de device/emulador.
 
 `/home` (lista de Grupos, pública) · `/cadastro` · `/login` ·
 `/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar` ·
-`/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id`
+`/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id` ·
+`/grupos/:id/rodadas` · `/grupos/:id/rodadas/novo` · `/rodadas/:id` ·
+`/rodadas/:id/candidatas/novo`
+
+## Convenção de idioma
+
+Banco de dados (tabelas/colunas/funções) e toda string visível ao usuário:
+**português**, seguindo o glossário em `CONTEXT.md`. Identificadores em Dart
+(classes/variáveis/métodos/arquivos): **inglês**, a partir da feature 005 —
+código Dart das features 001-004 ainda está em português e é traduzido
+gradualmente, ao tocar cada arquivo (ver Princípio I da
+[constituição](./.specify/memory/constitution.md)).
 
 ## Documentação de processo
 

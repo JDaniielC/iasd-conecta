@@ -47,6 +47,11 @@ class DetalheGrupoPage extends ConsumerWidget {
                     Expanded(
                       child: Text(grupo.nome, style: Theme.of(context).textTheme.headlineMedium),
                     ),
+                    IconButton(
+                      icon: const Icon(Icons.how_to_vote_outlined),
+                      tooltip: 'Rodadas de Votação',
+                      onPressed: () => context.push('/grupos/$grupoId/rodadas'),
+                    ),
                     if (souDono)
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),

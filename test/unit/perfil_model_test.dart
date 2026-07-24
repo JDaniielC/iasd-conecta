@@ -6,6 +6,8 @@ Perfil _perfil({
   bool consentimento = true,
   String? apelido,
   String nome = 'Ana Souza',
+  String? igrejaId,
+  bool consentimentoIgreja = false,
 }) {
   return Perfil(
     nome: nome,
@@ -13,6 +15,8 @@ Perfil _perfil({
     idade: idade,
     consentimentoLgpdAceito: consentimento,
     apelido: apelido,
+    igrejaId: igrejaId,
+    consentimentoLgpdIgrejaAceito: consentimentoIgreja,
   );
 }
 
@@ -61,6 +65,14 @@ void main() {
     test('verdadeiro pra menor com apelido definido', () {
       expect(_perfil(idade: 15, apelido: 'Mari').prontoParaEnviar, isTrue);
     });
+
+    test('falso com igreja escolhida sem consentimento destacado (LGPD art. 11 I)', () {
+      expect(_perfil(igrejaId: 'igreja-1', consentimentoIgreja: false).prontoParaEnviar, isFalse);
+    });
+
+    test('verdadeiro com igreja escolhida e consentimento destacado aceito', () {
+      expect(_perfil(igrejaId: 'igreja-1', consentimentoIgreja: true).prontoParaEnviar, isTrue);
+    });
   });
 
   group('Perfil.toInsertMap', () {
@@ -71,6 +83,17 @@ void main() {
       expect(map['telefone'], isNull);
       expect(map['genero'], 'feminino');
       expect(map['consentimento_lgpd_aceito_em'], isNotNull);
+    });
+
+    test('consentimento_lgpd_igreja_aceito_em é null sem igreja escolhida', () {
+      final map = _perfil().toInsertMap(id: 'abc');
+      expect(map['consentimento_lgpd_igreja_aceito_em'], isNull);
+    });
+
+    test('consentimento_lgpd_igreja_aceito_em é preenchido com igreja + consentimento', () {
+      final map = _perfil(igrejaId: 'igreja-1', consentimentoIgreja: true).toInsertMap(id: 'abc');
+      expect(map['igreja_id'], 'igreja-1');
+      expect(map['consentimento_lgpd_igreja_aceito_em'], isNotNull);
     });
   });
 }

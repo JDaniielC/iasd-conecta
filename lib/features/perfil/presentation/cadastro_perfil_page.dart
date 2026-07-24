@@ -33,6 +33,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
   Genero _genero = Genero.feminino;
   String? _igrejaId;
   bool _consentimentoLgpd = false;
+  bool _consentimentoIgreja = false;
   bool _enviando = false;
   String? _erro;
 
@@ -56,6 +57,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
       apelido: _apelidoController.text,
       igrejaId: _igrejaId,
       telefone: _telefoneController.text,
+      consentimentoLgpdIgrejaAceito: _consentimentoIgreja,
     );
   }
 
@@ -91,6 +93,9 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
     }
     if (e.message.contains('apelido_obrigatorio_menor')) {
       return 'Menores de idade precisam definir um Apelido.';
+    }
+    if (e.message.contains('consentimento_igreja_destacado')) {
+      return 'Marque o consentimento específico para usar a igreja de origem.';
     }
     return 'Não deu pra concluir o cadastro agora. Tente de novo.';
   }
@@ -156,11 +161,34 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
                       .map((c) =>
                           DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
-                  onChanged: (id) => setState(() => _igrejaId = id),
+                  onChanged: (id) => setState(() {
+                    _igrejaId = id;
+                    // Trocar ou remover a igreja invalida o consentimento
+                    // anterior — força reafirmar (LGPD art. 11 I).
+                    _consentimentoIgreja = false;
+                  }),
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text('Não deu pra carregar as igrejas agora.'),
               ),
+              if (_igrejaId != null) ...[
+                const SizedBox(height: AppSpacing.sm),
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Theme.of(context).colorScheme.primary),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: CheckboxListTile(
+                    value: _consentimentoIgreja,
+                    onChanged: (v) => setState(() => _consentimentoIgreja = v ?? false),
+                    title: const Text(
+                      'Autorizo o uso da minha igreja de origem para destacar '
+                      'Grupos e Ações dela para mim (dado sensível — LGPD art. 11, I).',
+                    ),
+                    controlAffinity: ListTileControlAffinity.leading,
+                  ),
+                ),
+              ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
                 controller: _telefoneController,

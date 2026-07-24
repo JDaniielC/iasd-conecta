@@ -34,8 +34,11 @@ create table public.perfis (
   genero text not null check (genero in ('masculino', 'feminino')),
   idade integer not null check (idade >= 0),
   consentimento_lgpd_aceito_em timestamptz not null,
+  consentimento_lgpd_igreja_aceito_em timestamptz,
   created_at timestamptz not null default now(),
-  constraint apelido_obrigatorio_menor check (idade >= 18 or apelido is not null)
+  constraint apelido_obrigatorio_menor check (idade >= 18 or apelido is not null),
+  constraint consentimento_igreja_destacado
+    check (igreja_id is null or consentimento_lgpd_igreja_aceito_em is not null)
 );
 
 create function public.perfil_publico(p_id uuid)

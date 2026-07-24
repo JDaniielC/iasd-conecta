@@ -21,6 +21,7 @@ class Perfil {
     this.apelido,
     this.igrejaId,
     this.telefone,
+    this.consentimentoLgpdIgrejaAceito = false,
   });
 
   final String nome;
@@ -31,14 +32,26 @@ class Perfil {
   final String? igrejaId;
   final String? telefone;
 
+  /// Consentimento destacado e recusável independentemente pro uso de
+  /// "Igreja de origem" (dado sensível, LGPD art. 11 I) — só é exigido
+  /// quando uma Igreja é escolhida (ver `consentimento_igreja_destacado`
+  /// no banco).
+  final bool consentimentoLgpdIgrejaAceito;
+
   bool get menorDeIdade => idade < _idadeMaioridade;
 
   bool get precisaDeApelido => menorDeIdade && (apelido == null || apelido!.trim().isEmpty);
 
+  bool get precisaConsentimentoIgreja => igrejaId != null && igrejaId!.trim().isNotEmpty;
+
   /// Verdadeiro só quando o formulário está pronto para ser enviado —
-  /// consentimento aceito, nome preenchido, e Apelido presente se for menor.
+  /// consentimento aceito, nome preenchido, Apelido presente se for menor,
+  /// e consentimento destacado de Igreja presente se uma foi escolhida.
   bool get prontoParaEnviar =>
-      consentimentoLgpdAceito && nome.trim().isNotEmpty && !precisaDeApelido;
+      consentimentoLgpdAceito &&
+      nome.trim().isNotEmpty &&
+      !precisaDeApelido &&
+      (!precisaConsentimentoIgreja || consentimentoLgpdIgrejaAceito);
 
   Map<String, dynamic> toInsertMap({required String id}) {
     return {
@@ -50,6 +63,8 @@ class Perfil {
       'genero': genero.valorBanco,
       'idade': idade,
       'consentimento_lgpd_aceito_em': DateTime.now().toUtc().toIso8601String(),
+      'consentimento_lgpd_igreja_aceito_em':
+          precisaConsentimentoIgreja ? DateTime.now().toUtc().toIso8601String() : null,
     };
   }
 }

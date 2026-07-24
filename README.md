@@ -43,9 +43,11 @@ depender de device/emulador.
   administra (feature 002, ver [specs/002-grupos](./specs/002-grupos))
 - `lib/features/acao/` — criar Ação avulsa, confirmar presença, fila de
   espera, cancelar (feature 003); Rodada de votação, Ação candidata, votar,
-  apuração com sorteio de empate (feature 004) — ver
-  [specs/003-acao-avulsa](./specs/003-acao-avulsa) e
-  [specs/004-rodada-votacao](./specs/004-rodada-votacao)
+  apuração com sorteio de empate (feature 004); Dupla Missionária —
+  composição por gênero, 2 vagas fixas (feature 007) — ver
+  [specs/003-acao-avulsa](./specs/003-acao-avulsa),
+  [specs/004-rodada-votacao](./specs/004-rodada-votacao) e
+  [specs/007-dupla-missionaria](./specs/007-dupla-missionaria)
 - `lib/features/district_admin/` — promover Administrador do distrito,
   gerenciar Igrejas (adicionar/arquivar), cancelar qualquer Ação (feature
   005, primeira com código Dart em inglês) — ver

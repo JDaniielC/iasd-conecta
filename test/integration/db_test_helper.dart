@@ -45,14 +45,15 @@ Future<void> criarPerfilDeTeste(
   Connection conn,
   String id, {
   String nome = 'Usuário de Teste',
+  String genero = 'feminino',
 }) async {
   await criarUsuarioDeTeste(conn, id);
   await conn.execute(
     Sql.named(
       "insert into public.perfis (id, nome, genero, idade, consentimento_lgpd_aceito_em) "
-      "values (@id, @nome, 'feminino', 30, now()) on conflict (id) do nothing",
+      "values (@id, @nome, @genero, 30, now()) on conflict (id) do nothing",
     ),
-    parameters: {'id': id, 'nome': nome},
+    parameters: {'id': id, 'nome': nome, 'genero': genero},
   );
 }
 

@@ -20,8 +20,17 @@ class DetalheAcaoPage extends ConsumerWidget {
 
   Future<void> _confirmar(BuildContext context, WidgetRef ref) async {
     if (!PerfilGuard.exigirPerfil(context, ref)) return;
-    await ref.read(acaoRepositoryProvider).confirmarPresenca(acaoId);
-    ref.invalidate(confirmadosProvider(acaoId));
+    try {
+      await ref.read(acaoRepositoryProvider).confirmarPresenca(acaoId);
+      ref.invalidate(confirmadosProvider(acaoId));
+    } catch (_) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não deu pra confirmar — composição inválida para esta Dupla Missionária.'),
+        ),
+      );
+    }
   }
 
   Future<void> _desistir(WidgetRef ref) async {
@@ -102,6 +111,14 @@ class DetalheAcaoPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(DateFormat('dd/MM/yyyy HH:mm').format(acao.dataHora)),
                 Text(acao.local),
+                if (acao.isMissionaryPair) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Dupla Missionária — visita a um(a) '
+                    '${acao.visitedGender == VisitedGender.male ? 'homem' : 'mulher'}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
                 if (acao.limiteVagas != null) Text('Vagas: ${acao.limiteVagas}'),
                 if (acao.detalhes != null) ...[
                   const SizedBox(height: AppSpacing.md),

@@ -25,6 +25,8 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
   DateTime? _dataHora;
   bool _enviando = false;
   String? _erro;
+  bool _isMissionaryPair = false;
+  VisitedGender? _visitedGender;
 
   @override
   void dispose() {
@@ -59,6 +61,8 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
       local: _localController.text,
       detalhes: _detalhesController.text,
       limiteVagas: int.tryParse(_limiteVagasController.text),
+      isMissionaryPair: _isMissionaryPair,
+      visitedGender: _visitedGender,
     );
   }
 
@@ -121,14 +125,32 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
                 maxLines: 3,
               ),
               const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _limiteVagasController,
-                decoration: const InputDecoration(
-                  labelText: 'Limite de vagas (opcional)',
-                  helperText: 'Deixe em branco pra vagas ilimitadas',
-                ),
-                keyboardType: TextInputType.number,
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Dupla Missionária'),
+                subtitle: const Text('Visita com regra de composição por gênero, 2 vagas fixas'),
+                value: _isMissionaryPair,
+                onChanged: (v) => setState(() => _isMissionaryPair = v),
               ),
+              if (_isMissionaryPair)
+                DropdownButtonFormField<VisitedGender>(
+                  initialValue: _visitedGender,
+                  decoration: const InputDecoration(labelText: 'Gênero da pessoa visitada'),
+                  items: const [
+                    DropdownMenuItem(value: VisitedGender.male, child: Text('Homem')),
+                    DropdownMenuItem(value: VisitedGender.female, child: Text('Mulher')),
+                  ],
+                  onChanged: (v) => setState(() => _visitedGender = v),
+                )
+              else
+                TextFormField(
+                  controller: _limiteVagasController,
+                  decoration: const InputDecoration(
+                    labelText: 'Limite de vagas (opcional)',
+                    helperText: 'Deixe em branco pra vagas ilimitadas',
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
               if (_erro != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

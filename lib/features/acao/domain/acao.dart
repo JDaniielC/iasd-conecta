@@ -3,6 +3,8 @@ import '../../perfil/domain/perfil.dart';
 /// Dados de uma Ação avulsa ainda não enviada ao banco (formulário de
 /// criação). `criadorId` é preenchido pelo repositório a partir da sessão
 /// atual (FR-001/FR-013).
+enum VisitedGender { male, female }
+
 class NovaAcao {
   const NovaAcao({
     required this.nome,
@@ -11,6 +13,8 @@ class NovaAcao {
     this.detalhes,
     this.limiteVagas,
     this.rodadaId,
+    this.isMissionaryPair = false,
+    this.visitedGender,
   });
 
   final String nome;
@@ -24,10 +28,16 @@ class NovaAcao {
   /// sempre derivado da Rodada pelo trigger `acoes_candidata_checar_regras`.
   final String? rodadaId;
 
+  /// Dupla Missionária (feature 007): quando `true`, exige [visitedGender]
+  /// e o limite de vagas é sempre 2, ignorando [limiteVagas] informado.
+  final bool isMissionaryPair;
+  final VisitedGender? visitedGender;
+
   bool get prontoParaEnviar =>
       nome.trim().isNotEmpty &&
       local.trim().isNotEmpty &&
-      (limiteVagas == null || limiteVagas! > 0);
+      (limiteVagas == null || limiteVagas! > 0) &&
+      (!isMissionaryPair || visitedGender != null);
 
   Map<String, dynamic> toInsertMap({required String criadorId}) {
     return {
@@ -35,9 +45,15 @@ class NovaAcao {
       'data_hora': dataHora.toUtc().toIso8601String(),
       'local': local.trim(),
       'detalhes': (detalhes?.trim().isEmpty ?? true) ? null : detalhes!.trim(),
-      'limite_vagas': limiteVagas,
+      'limite_vagas': isMissionaryPair ? 2 : limiteVagas,
       'criador_id': criadorId,
       if (rodadaId != null) 'rodada_id': rodadaId,
+      'eh_dupla_missionaria': isMissionaryPair,
+      'genero_visitado': switch (visitedGender) {
+        VisitedGender.male => 'masculino',
+        VisitedGender.female => 'feminino',
+        null => null,
+      },
     };
   }
 }
@@ -55,6 +71,8 @@ class Acao {
     this.grupoId,
     this.rodadaId,
     this.confirmada = true,
+    this.isMissionaryPair = false,
+    this.visitedGender,
   });
 
   final String id;
@@ -75,6 +93,11 @@ class Acao {
   /// `false` só enquanto é candidata em votação; sempre `true` pra Ação
   /// avulsa e pra Ação de Grupo já vencedora (feature 004).
   final bool confirmada;
+
+  /// Dupla Missionária (feature 007): composição de gênero validada no
+  /// banco a cada confirmação de presença (ver migration).
+  final bool isMissionaryPair;
+  final VisitedGender? visitedGender;
 
   bool get cancelada => canceladaEm != null;
 
@@ -111,6 +134,12 @@ class Acao {
       grupoId: map['grupo_id'] as String?,
       rodadaId: map['rodada_id'] as String?,
       confirmada: map['confirmada'] as bool? ?? true,
+      isMissionaryPair: map['eh_dupla_missionaria'] as bool? ?? false,
+      visitedGender: switch (map['genero_visitado'] as String?) {
+        'masculino' => VisitedGender.male,
+        'feminino' => VisitedGender.female,
+        _ => null,
+      },
     );
   }
 }

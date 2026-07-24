@@ -23,6 +23,34 @@ Pra reaplicar o schema do zero (depois de mudar uma migration):
 supabase db reset
 ```
 
+## Testando manualmente
+
+Além de `flutter run`, útil pra explorar o app com a mão:
+
+- **Supabase Studio** (`http://127.0.0.1:54323`): inspeciona/edita qualquer
+  tabela direto, sem SQL — o jeito mais rápido de conferir o que uma ação
+  gravou de verdade.
+- **Semear Administrador do distrito**: nenhum Perfil vira Administrador
+  pelo fluxo normal do app (só admin promove admin). Cadastre um Perfil,
+  vire Conta ("Virar Conta" no app — precisa ter Conta, Perfil sozinho o
+  trigger recusa), pegue o `id` no Studio (tabela `perfis`) e rode:
+
+  ```bash
+  docker exec -i supabase_db_iasd psql -U postgres -d postgres <<'SQL'
+  alter table public.administradores_distrito disable trigger administradores_distrito_checar_regras_trigger;
+  insert into public.administradores_distrito (usuario_id, promovido_por)
+  values ('<seu-uuid-aqui>', '<seu-uuid-aqui>')
+  on conflict (usuario_id) do nothing;
+  alter table public.administradores_distrito enable trigger administradores_distrito_checar_regras_trigger;
+  SQL
+  ```
+- **Testar com múltiplos usuários** (fila de espera, votação, Dupla
+  Missionária/codireção, Líder confirmando outro Líder): Perfil vive local
+  na sessão/device — use abas anônimas do Chrome (`flutter run -d chrome`,
+  cada aba anônima = sessão nova) pra simular pessoas diferentes ao mesmo
+  tempo, já que reinstalar o app no macOS entre testes perde o Perfil
+  atual.
+
 ## Testes
 
 ```bash

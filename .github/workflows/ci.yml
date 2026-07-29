@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  fast:
+    name: fast (analyze + unit/widget)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test test/unit test/widget
+
+  integration:
+    name: integration (Supabase local)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - run: supabase start
+
+      - run: flutter pub get
+      - run: dart test test/integration
+
+      - if: always()
+        run: supabase stop
+
+  build-web:
+    name: build-web
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+
+      - run: cp .env.example .env
+
+      - run: flutter pub get
+      - run: flutter build web

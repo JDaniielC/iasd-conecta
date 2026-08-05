@@ -1,10 +1,54 @@
-# Rede IASD Vitória de Santo Antão
+# IASD Conecta
 
-Rede social para os membros ativos da Igreja Adventista do Sétimo Dia do
-distrito de Vitória de Santo Antão descobrirem e se conectarem através de
-Grupos e Ações. Domínio e vocabulário completos em [CONTEXT.md](./CONTEXT.md).
+Rede social para os membros ativos da Igreja Adventista do Sétimo Dia
+descobrirem e se conectarem através de Grupos e Ações. A primeira implantação
+é o distrito de Vitória de Santo Antão (PE); cada distrito roda o próprio
+deploy, com o próprio banco. Domínio e vocabulário completos em
+[CONTEXT.md](./CONTEXT.md).
 
 Stack: Flutter + Dart + Supabase (Postgres com Row Level Security).
+
+Projeto independente, mantido por [@JDaniielC](https://github.com/JDaniielC).
+Não é software oficial da Igreja Adventista do Sétimo Dia nem de nenhuma de
+suas entidades administrativas.
+
+## Arquitetura
+
+Não existe servidor de aplicação próprio. O app Flutter fala direto com o
+Supabase, que empacota três papéis:
+
+- **Banco**: Postgres. Schema versionado em `supabase/migrations/`, fonte de
+  verdade em `specs/<feature>/contracts/schema.sql` de cada feature.
+- **Auth**: GoTrue (serviço de autenticação do Supabase). Todo Perfil começa
+  com uma sessão anônima (`signInAnonymously`, `lib/core/supabase_client.dart`)
+  — sem senha, sem tela de login — e pode fazer "upgrade" pra Conta com
+  email/senha depois. Regra de negócio (FR-001) descrita em
+  [specs/001-cadastro-usuario](./specs/001-cadastro-usuario).
+- **API**: PostgREST, gerado automaticamente a partir do schema — não tem
+  rota escrita à mão nem Edge Function no projeto. Toda leitura/escrita do
+  app é: `select`/`insert`/`update` direto numa tabela, ou chamada a uma
+  função Postgres (`rpc()`) quando a lógica precisa rodar no banco (ex.:
+  `perfil_publico(uuid)`, que expõe só id/nome/igreja e nunca idade/telefone).
+
+Segurança e regra de negócio moram no banco, não no client: Row Level
+Security decide quem lê/escreve cada linha, e funções `SECURITY DEFINER` +
+triggers cobrem os casos que RLS sozinha não modela (ex.: constraint
+`idade >= 18 OR apelido IS NOT NULL`, decisão em
+[specs/001-cadastro-usuario/research.md](./specs/001-cadastro-usuario/research.md)).
+O client Dart confia nisso e não revalida — é defesa em profundidade, a
+validação do lado do app é só UX.
+
+No app, `lib/core/supabase_client.dart` inicializa e expõe o
+`SupabaseClient` único (`AppSupabase.client`); `lib/core/providers.dart`
+publica esse client e os repositórios (`*_repository.dart`, um por feature
+em `lib/features/*/data/`) via Riverpod. Uma tela (`presentation/`) observa
+um provider, o provider chama o repositório, o repositório fala com o
+Supabase — sem camada de rede própria no meio.
+
+Local (`supabase start`) e produção usam a mesma peça: Postgres + GoTrue +
+PostgREST em containers Docker. A diferença é só onde os containers moram —
+decidido: **Supabase Cloud gerenciado** (região `sa-east-1`), não
+self-hosted (ver `.tickets/IASD-03.md`, descartado 2026-08-05).
 
 ## Rodando localmente
 
@@ -31,19 +75,19 @@ Além de `flutter run`, útil pra explorar o app com a mão:
   tabela direto, sem SQL — o jeito mais rápido de conferir o que uma ação
   gravou de verdade.
 - **Semear Administrador do distrito**: nenhum Perfil vira Administrador
-  pelo fluxo normal do app (só admin promove admin). Cadastre um Perfil,
-  vire Conta ("Virar Conta" no app — precisa ter Conta, Perfil sozinho o
-  trigger recusa), pegue o `id` no Studio (tabela `perfis`) e rode:
+  pelo fluxo normal do app (só admin promove admin) — a primeira linha é
+  bootstrap (ver `docs/plans/2026-08-04-bootstrap-admin-design.md`).
+  Preencha `ADMIN_EMAIL`/`ADMIN_SENHA`/`ADMIN_NOME`/`ADMIN_GENERO`/
+  `ADMIN_IDADE` e `SUPABASE_SERVICE_ROLE_KEY` (valor de `supabase status`)
+  no `.env` e rode:
 
   ```bash
-  docker exec -i supabase_db_iasd psql -U postgres -d postgres <<'SQL'
-  alter table public.administradores_distrito disable trigger administradores_distrito_checar_regras_trigger;
-  insert into public.administradores_distrito (usuario_id, promovido_por)
-  values ('<seu-uuid-aqui>', '<seu-uuid-aqui>')
-  on conflict (usuario_id) do nothing;
-  alter table public.administradores_distrito enable trigger administradores_distrito_checar_regras_trigger;
-  SQL
+  ./scripts/bootstrap_admin.sh
   ```
+
+  Idempotente — rodar de novo com o mesmo `ADMIN_EMAIL` não faz nada. Mesmo
+  script serve pra produção self-hosted quando D-1/IASD-03 decidir onde a
+  instância mora.
 - **Testar com múltiplos usuários** (fila de espera, votação, Dupla
   Missionária/codireção, Líder confirmando outro Líder): Perfil vive local
   na sessão/device — use abas anônimas do Chrome (`flutter run -d chrome`,

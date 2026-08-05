@@ -3,6 +3,14 @@
 .env.*
 !.env.example
 
+# Artefatos de processo — ficam no disco de quem trabalha, não no repo público.
+# REVISAO-JURIDICA.md é levantamento de risco interno (itens [EM ABERTO] de
+# conformidade LGPD); publicar seria entregar o mapa de onde ainda não se cumpre.
+REVISAO-JURIDICA.md
+.tickets/
+docs/
+graphify-out/
+
 # Miscellaneous
 *.class
 *.log

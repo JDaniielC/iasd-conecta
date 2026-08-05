@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/perfil/domain/conta_guard.dart';
+import 'package:iasd_conecta/features/perfil/domain/conta_guard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 User _usuario({required bool isAnonymous}) {

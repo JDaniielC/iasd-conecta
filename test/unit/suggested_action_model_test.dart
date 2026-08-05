@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/acao_sugerida/domain/suggested_action.dart';
+import 'package:iasd_conecta/features/acao_sugerida/domain/suggested_action.dart';
 
 void main() {
   group('SuggestedAction.fromMap', () {

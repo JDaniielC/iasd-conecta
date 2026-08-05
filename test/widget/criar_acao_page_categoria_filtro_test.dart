@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/acao/presentation/criar_acao_page.dart';
-import 'package:iasd_distrito_vsa/features/acao_sugerida/data/suggested_action_repository.dart';
-import 'package:iasd_distrito_vsa/features/acao_sugerida/domain/suggested_action.dart';
-import 'package:iasd_distrito_vsa/features/acao_sugerida/suggested_action_providers.dart';
-import 'package:iasd_distrito_vsa/features/grupo/domain/categoria_grupo.dart';
-import 'package:iasd_distrito_vsa/features/grupo/grupo_providers.dart';
+import 'package:iasd_conecta/features/acao/presentation/criar_acao_page.dart';
+import 'package:iasd_conecta/features/acao_sugerida/data/suggested_action_repository.dart';
+import 'package:iasd_conecta/features/acao_sugerida/domain/suggested_action.dart';
+import 'package:iasd_conecta/features/acao_sugerida/suggested_action_providers.dart';
+import 'package:iasd_conecta/features/grupo/domain/categoria_grupo.dart';
+import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSuggestedActionRepository extends Mock implements SuggestedActionRepository {}

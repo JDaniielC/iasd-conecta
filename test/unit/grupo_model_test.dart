@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/grupo/domain/grupo.dart';
+import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
 
 void main() {
   group('NovoGrupo.prontoParaEnviar', () {

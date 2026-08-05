@@ -4,10 +4,10 @@ project(runner LANGUAGES CXX)
 
 # The name of the executable created for the application. Change this to change
 # the on-disk name of your application.
-set(BINARY_NAME "iasd_distrito_vsa")
+set(BINARY_NAME "iasd_conecta")
 # The unique GTK application identifier for this application. See:
 # https://wiki.gnome.org/HowDoI/ChooseApplicationID
-set(APPLICATION_ID "br.org.iasd.distritovsa.iasd_distrito_vsa")
+set(APPLICATION_ID "com.github.jdaniielc.iasdconecta")
 
 # Explicitly opt in to modern CMake behaviors to avoid warnings with recent
 # versions of CMake.

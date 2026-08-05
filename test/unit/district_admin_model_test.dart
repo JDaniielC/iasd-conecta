@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/district_admin/domain/district_admin.dart';
+import 'package:iasd_conecta/features/district_admin/domain/district_admin.dart';
 
 void main() {
   group('DistrictAdmin.fromMap', () {

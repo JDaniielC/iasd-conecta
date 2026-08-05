@@ -89,13 +89,13 @@ BEGIN
     BEGIN
         BLOCK "040904e4"
         BEGIN
-            VALUE "CompanyName", "br.org.iasd.distritovsa" "\0"
-            VALUE "FileDescription", "iasd_distrito_vsa" "\0"
+            VALUE "CompanyName", "com.github.jdaniielc.iasdconecta" "\0"
+            VALUE "FileDescription", "IASD Conecta" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
-            VALUE "InternalName", "iasd_distrito_vsa" "\0"
-            VALUE "LegalCopyright", "Copyright (C) 2026 br.org.iasd.distritovsa. All rights reserved." "\0"
-            VALUE "OriginalFilename", "iasd_distrito_vsa.exe" "\0"
-            VALUE "ProductName", "iasd_distrito_vsa" "\0"
+            VALUE "InternalName", "iasd_conecta" "\0"
+            VALUE "LegalCopyright", "Copyright (C) 2026 Jose Daniel Silva do Carmo. All rights reserved." "\0"
+            VALUE "OriginalFilename", "iasd_conecta.exe" "\0"
+            VALUE "ProductName", "IASD Conecta" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

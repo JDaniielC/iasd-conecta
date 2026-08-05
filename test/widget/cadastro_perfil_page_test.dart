@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/core/providers.dart';
-import 'package:iasd_distrito_vsa/features/perfil/data/perfil_repository.dart';
-import 'package:iasd_distrito_vsa/features/perfil/domain/church.dart';
-import 'package:iasd_distrito_vsa/features/perfil/presentation/cadastro_perfil_page.dart';
+import 'package:iasd_conecta/core/providers.dart';
+import 'package:iasd_conecta/features/perfil/data/perfil_repository.dart';
+import 'package:iasd_conecta/features/perfil/domain/church.dart';
+import 'package:iasd_conecta/features/perfil/presentation/cadastro_perfil_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockPerfilRepository extends Mock implements PerfilRepository {}

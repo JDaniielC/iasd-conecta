@@ -5,7 +5,7 @@ plugins {
 }
 
 android {
-    namespace = "br.org.iasd.distritovsa.iasd_distrito_vsa"
+    namespace = "com.github.jdaniielc.iasdconecta"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -16,7 +16,7 @@ android {
 
     defaultConfig {
         // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "br.org.iasd.distritovsa.iasd_distrito_vsa"
+        applicationId = "com.github.jdaniielc.iasdconecta"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

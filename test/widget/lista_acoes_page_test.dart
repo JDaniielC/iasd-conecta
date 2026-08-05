@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/core/providers.dart';
-import 'package:iasd_distrito_vsa/features/acao/acao_providers.dart';
-import 'package:iasd_distrito_vsa/features/acao/data/acao_repository.dart';
-import 'package:iasd_distrito_vsa/features/acao/domain/acao.dart';
-import 'package:iasd_distrito_vsa/features/acao/presentation/lista_acoes_page.dart';
+import 'package:iasd_conecta/core/providers.dart';
+import 'package:iasd_conecta/features/acao/acao_providers.dart';
+import 'package:iasd_conecta/features/acao/data/acao_repository.dart';
+import 'package:iasd_conecta/features/acao/domain/acao.dart';
+import 'package:iasd_conecta/features/acao/presentation/lista_acoes_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAcaoRepository extends Mock implements AcaoRepository {}

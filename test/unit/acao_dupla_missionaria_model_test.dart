@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/acao/domain/acao.dart';
+import 'package:iasd_conecta/features/acao/domain/acao.dart';
 
 void main() {
   final dataFutura = DateTime.now().add(const Duration(days: 7));

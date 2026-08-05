@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/perfil/domain/perfil.dart';
+import 'package:iasd_conecta/features/perfil/domain/perfil.dart';
 
 Perfil _perfil({
   int idade = 30,

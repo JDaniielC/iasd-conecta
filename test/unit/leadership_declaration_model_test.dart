@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/features/leadership/domain/leadership_declaration.dart';
+import 'package:iasd_conecta/features/leadership/domain/leadership_declaration.dart';
 
 LeadershipDeclaration _declaration({DateTime? confirmedAt, DateTime? rejectedAt, int year = 2026}) {
   return LeadershipDeclaration(

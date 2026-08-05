@@ -5,10 +5,10 @@
 // 'flutter create' template.
 
 // The application's name. By default this is also the title of the Flutter window.
-PRODUCT_NAME = iasd_distrito_vsa
+PRODUCT_NAME = iasd_conecta
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = br.org.iasd.distritovsa.iasdDistritoVsa
+PRODUCT_BUNDLE_IDENTIFIER = com.github.jdaniielc.iasdconecta
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 br.org.iasd.distritovsa. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 Jose Daniel Silva do Carmo. All rights reserved.

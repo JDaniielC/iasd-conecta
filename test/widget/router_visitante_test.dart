@@ -1,11 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_distrito_vsa/app.dart';
-import 'package:iasd_distrito_vsa/core/providers.dart';
-import 'package:iasd_distrito_vsa/features/grupo/data/grupo_repository.dart';
-import 'package:iasd_distrito_vsa/features/grupo/domain/grupo.dart';
-import 'package:iasd_distrito_vsa/features/grupo/grupo_providers.dart';
-import 'package:iasd_distrito_vsa/features/perfil/data/auth_repository.dart';
+import 'package:iasd_conecta/app.dart';
+import 'package:iasd_conecta/core/providers.dart';
+import 'package:iasd_conecta/features/grupo/data/grupo_repository.dart';
+import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
+import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
+import 'package:iasd_conecta/features/perfil/data/auth_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GrupoRepository {}

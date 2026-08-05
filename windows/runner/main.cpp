@@ -27,7 +27,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"iasd_distrito_vsa", origin, size)) {
+  if (!window.Create(L"IASD Conecta", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

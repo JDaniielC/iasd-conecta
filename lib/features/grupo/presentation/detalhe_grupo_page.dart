@@ -84,9 +84,11 @@ class DetalheGrupoPage extends ConsumerWidget {
                 ),
                 const SizedBox(height: AppSpacing.sm),
                 Text(grupo.categoria),
-                const SizedBox(height: AppSpacing.md),
-                Text('Horário: ${grupo.horario}'),
-                Text('Local: ${grupo.local}'),
+                if (grupo.horario != null || grupo.local != null) ...[
+                  const SizedBox(height: AppSpacing.md),
+                  if (grupo.horario != null) Text('Horário: ${grupo.horario}'),
+                  if (grupo.local != null) Text('Local: ${grupo.local}'),
+                ],
                 if (grupo.detalhes != null) ...[
                   const SizedBox(height: AppSpacing.md),
                   Text(grupo.detalhes!),

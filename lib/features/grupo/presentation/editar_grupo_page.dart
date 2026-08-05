@@ -20,8 +20,6 @@ class EditarGrupoPage extends ConsumerStatefulWidget {
 
 class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
   final _nomeController = TextEditingController();
-  final _horarioController = TextEditingController();
-  final _localController = TextEditingController();
   final _detalhesController = TextEditingController();
   bool _carregouCampos = false;
   String? _erro;
@@ -29,8 +27,6 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
   @override
   void dispose() {
     _nomeController.dispose();
-    _horarioController.dispose();
-    _localController.dispose();
     _detalhesController.dispose();
     super.dispose();
   }
@@ -40,8 +36,6 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
       await ref.read(grupoRepositoryProvider).editarGrupo(
             widget.grupoId,
             nome: _nomeController.text,
-            horario: _horarioController.text,
-            local: _localController.text,
             detalhes: _detalhesController.text,
           );
       ref.invalidate(grupoProvider(widget.grupoId));
@@ -86,8 +80,6 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
           }
           if (!_carregouCampos) {
             _nomeController.text = grupo.nome;
-            _horarioController.text = grupo.horario;
-            _localController.text = grupo.local;
             _detalhesController.text = grupo.detalhes ?? '';
             _carregouCampos = true;
           }
@@ -99,16 +91,6 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
                 TextFormField(
                   controller: _nomeController,
                   decoration: const InputDecoration(labelText: 'Nome'),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _horarioController,
-                  decoration: const InputDecoration(labelText: 'Horário'),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                TextFormField(
-                  controller: _localController,
-                  decoration: const InputDecoration(labelText: 'Local'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(

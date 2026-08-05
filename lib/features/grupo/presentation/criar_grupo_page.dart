@@ -18,37 +18,33 @@ class CriarGrupoPage extends ConsumerStatefulWidget {
 class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
-  final _horarioController = TextEditingController();
-  final _localController = TextEditingController();
+  final _categoriaController = TextEditingController();
+  final _categoriaFocusNode = FocusNode();
   final _detalhesController = TextEditingController();
-  String? _categoria;
   bool _enviando = false;
   String? _erro;
 
   @override
   void dispose() {
     _nomeController.dispose();
-    _horarioController.dispose();
-    _localController.dispose();
+    _categoriaController.dispose();
+    _categoriaFocusNode.dispose();
     _detalhesController.dispose();
     super.dispose();
   }
 
-  NovoGrupo? get _grupoAtual {
-    if (_categoria == null) return null;
+  NovoGrupo get _grupoAtual {
     return NovoGrupo(
       nome: _nomeController.text,
-      categoria: _categoria!,
-      horario: _horarioController.text,
-      local: _localController.text,
+      categoria: _categoriaController.text,
       detalhes: _detalhesController.text,
     );
   }
 
   Future<void> _criar() async {
     final grupo = _grupoAtual;
-    if (_formKey.currentState?.validate() != true || grupo == null || !grupo.prontoParaEnviar) {
-      setState(() => _erro = 'Preencha nome, Categoria, horário e local.');
+    if (_formKey.currentState?.validate() != true || !grupo.prontoParaEnviar) {
+      setState(() => _erro = 'Preencha nome e Categoria.');
       return;
     }
     setState(() {
@@ -86,32 +82,59 @@ class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               categoriasAsync.when(
-                data: (categorias) => DropdownButtonFormField<String>(
-                  initialValue: _categoria,
-                  decoration: const InputDecoration(labelText: 'Categoria'),
-                  items: categorias
-                      .map((c) => DropdownMenuItem(value: c.nome, child: Text(c.nome)))
-                      .toList(),
-                  onChanged: (v) => setState(() => _categoria = v),
-                  validator: (v) => (v == null || v.isEmpty) ? 'Escolha uma Categoria' : null,
+                data: (categorias) => RawAutocomplete<String>(
+                  textEditingController: _categoriaController,
+                  focusNode: _categoriaFocusNode,
+                  optionsBuilder: (value) {
+                    if (value.text.trim().isEmpty) {
+                      return categorias.map((c) => c.nome);
+                    }
+                    return categorias
+                        .map((c) => c.nome)
+                        .where((nome) => nome.toLowerCase().contains(value.text.toLowerCase()));
+                  },
+                  fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
+                    return TextFormField(
+                      controller: controller,
+                      focusNode: focusNode,
+                      decoration: const InputDecoration(
+                        labelText: 'Categoria',
+                        helperText: 'Escolha uma sugestão ou digite livremente',
+                      ),
+                      validator: (v) =>
+                          (v == null || v.trim().isEmpty) ? 'Informe uma Categoria' : null,
+                    );
+                  },
+                  optionsViewBuilder: (context, onSelected, options) {
+                    return Align(
+                      alignment: Alignment.topLeft,
+                      child: Material(
+                        elevation: 4,
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxHeight: 200),
+                          child: ListView(
+                            shrinkWrap: true,
+                            children: options
+                                .map(
+                                  (nome) => ListTile(
+                                    title: Text(nome),
+                                    onTap: () => onSelected(nome),
+                                  ),
+                                )
+                                .toList(),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
                 ),
                 loading: () => const LinearProgressIndicator(),
-                error: (_, _) => const Text('Não deu pra carregar as categorias agora.'),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _horarioController,
-                decoration: const InputDecoration(
-                  labelText: 'Horário padrão de encontro',
-                  helperText: 'ex.: sábados às 16h',
+                error: (_, _) => TextFormField(
+                  controller: _categoriaController,
+                  decoration: const InputDecoration(labelText: 'Categoria'),
+                  validator: (v) =>
+                      (v == null || v.trim().isEmpty) ? 'Informe uma Categoria' : null,
                 ),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o horário' : null,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              TextFormField(
-                controller: _localController,
-                decoration: const InputDecoration(labelText: 'Local'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o local' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(

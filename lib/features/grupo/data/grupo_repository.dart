@@ -46,15 +46,11 @@ class GrupoRepository {
     String id, {
     String? nome,
     String? categoria,
-    String? horario,
-    String? local,
     String? detalhes,
   }) async {
     final valores = <String, dynamic>{
       if (nome != null) 'nome': nome.trim(),
       if (categoria != null) 'categoria': categoria.trim(),
-      if (horario != null) 'horario': horario.trim(),
-      if (local != null) 'local': local.trim(),
       if (detalhes != null) 'detalhes': detalhes.trim().isEmpty ? null : detalhes.trim(),
     };
     if (valores.isEmpty) return;

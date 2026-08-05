@@ -13,7 +13,7 @@ class MockGrupoRepository extends Mock implements GrupoRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
-const _grupos = [
+final _grupos = [
   Grupo(
     id: 'g1',
     nome: 'SevenBikers',
@@ -21,6 +21,7 @@ const _grupos = [
     horario: 'sábados 6h',
     local: 'Praça Central',
     donoId: 'dono-1',
+    createdAt: DateTime(2026, 1, 1),
   ),
   Grupo(
     id: 'g2',
@@ -29,6 +30,7 @@ const _grupos = [
     horario: 'quartas 19h',
     local: 'Sede',
     donoId: 'dono-2',
+    createdAt: DateTime(2026, 1, 2),
   ),
 ];
 

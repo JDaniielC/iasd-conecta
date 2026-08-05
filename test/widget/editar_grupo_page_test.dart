@@ -11,13 +11,14 @@ import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GrupoRepository {}
 
-const _grupo = Grupo(
+final _grupo = Grupo(
   id: 'g1',
   nome: 'SevenBikers',
   categoria: 'Ministério Jovem',
   horario: 'sábados 6h',
   local: 'Praça Central',
   donoId: 'dono-1',
+  createdAt: DateTime(2026, 1, 1),
 );
 
 Future<void> _pump(WidgetTester tester, {required String? uid}) async {

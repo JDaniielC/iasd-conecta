@@ -17,8 +17,8 @@ picker — `grupos.categoria` não tem FK pra cá (FR-004 permite texto livre).
 | `id` | `uuid` | PK, default `gen_random_uuid()` |
 | `nome` | `text` | `NOT NULL`, `CHECK (length(trim(nome)) > 0)` |
 | `categoria` | `text` | `NOT NULL` — livre ou da lista de referência |
-| `horario` | `text` | `NOT NULL` — descrição do encontro recorrente (ex.: "toda terça, 19h") |
-| `local` | `text` | `NOT NULL` |
+| `horario` | `text` | nullable, legado — agenda concreta agora vive na Ação |
+| `local` | `text` | nullable, legado — agenda concreta agora vive na Ação |
 | `detalhes` | `text` | nullable |
 | `igreja_id` | `uuid` | nullable, `REFERENCES igrejas(id)` — herdada do criador, pode ser nula |
 | `dono_id` | `uuid` | `NOT NULL`, `REFERENCES perfis(id)` |

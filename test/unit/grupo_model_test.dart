@@ -4,17 +4,17 @@ import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
 void main() {
   group('NovoGrupo.prontoParaEnviar', () {
     test('falso sem nome', () {
-      const grupo = NovoGrupo(nome: '  ', categoria: 'Jovem', horario: '19h', local: 'Sede');
+      const grupo = NovoGrupo(nome: '  ', categoria: 'Jovem');
       expect(grupo.prontoParaEnviar, isFalse);
     });
 
     test('falso sem categoria', () {
-      const grupo = NovoGrupo(nome: 'Grupo', categoria: '', horario: '19h', local: 'Sede');
+      const grupo = NovoGrupo(nome: 'Grupo', categoria: '');
       expect(grupo.prontoParaEnviar, isFalse);
     });
 
-    test('verdadeiro com os quatro campos obrigatórios preenchidos', () {
-      const grupo = NovoGrupo(nome: 'Grupo', categoria: 'Jovem', horario: '19h', local: 'Sede');
+    test('verdadeiro com nome e categoria preenchidos, sem horário/local', () {
+      const grupo = NovoGrupo(nome: 'Grupo', categoria: 'Jovem');
       expect(grupo.prontoParaEnviar, isTrue);
     });
 
@@ -22,8 +22,6 @@ void main() {
       const grupo = NovoGrupo(
         nome: 'Grupo',
         categoria: 'Jovem',
-        horario: '19h',
-        local: 'Sede',
         detalhes: null,
       );
       expect(grupo.prontoParaEnviar, isTrue);
@@ -35,12 +33,12 @@ void main() {
       const grupo = NovoGrupo(
         nome: ' Grupo ',
         categoria: 'Jovem',
-        horario: '19h',
-        local: 'Sede',
         detalhes: '   ',
       );
       final map = grupo.toInsertMap(donoId: 'abc', igrejaId: 'igreja-1');
       expect(map['nome'], 'Grupo');
+      expect(map['horario'], isNull);
+      expect(map['local'], isNull);
       expect(map['detalhes'], isNull);
       expect(map['dono_id'], 'abc');
       expect(map['igreja_id'], 'igreja-1');
@@ -48,13 +46,12 @@ void main() {
   });
 
   group('Grupo.souDono', () {
-    const grupo = Grupo(
+    final grupo = Grupo(
       id: 'g1',
       nome: 'Grupo',
       categoria: 'Jovem',
-      horario: '19h',
-      local: 'Sede',
       donoId: 'dono-1',
+      createdAt: DateTime(2026, 1, 1),
     );
 
     test('verdadeiro quando o id bate com dono_id', () {

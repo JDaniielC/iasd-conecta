@@ -15,7 +15,7 @@ abstract final class PerfilGuard {
   /// navega pra `/cadastro` e retorna `false` — quem chama deve checar o
   /// retorno antes de continuar a ação.
   static bool exigirPerfil(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.read(hasPerfilProvider).valueOrNull ?? false;
+    final hasPerfil = ref.read(hasPerfilProvider).value ?? false;
     if (hasPerfil) return true;
     context.push('/cadastro');
     return false;

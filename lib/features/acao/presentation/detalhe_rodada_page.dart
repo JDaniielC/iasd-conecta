@@ -86,7 +86,7 @@ class DetalheRodadaPage extends ConsumerWidget {
                 Expanded(
                   child: candidatasAsync.when(
                     data: (candidatas) {
-                      final meuVoto = meuVotoAsync.valueOrNull;
+                      final meuVoto = meuVotoAsync.value;
                       if (candidatas.isEmpty) {
                         return const Center(child: Text('Nenhuma candidata ainda.'));
                       }

@@ -95,10 +95,10 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
   @override
   Widget build(BuildContext context) {
     final rodadaAsync = ref.watch(rodadaProvider(widget.rodadaId));
-    final groupId = rodadaAsync.valueOrNull?.grupoId;
+    final groupId = rodadaAsync.value?.grupoId;
     final suggestionsAsync =
         groupId == null ? null : ref.watch(suggestionsForGroupProvider(groupId));
-    final suggestions = suggestionsAsync?.valueOrNull ?? const [];
+    final suggestions = suggestionsAsync?.value ?? const [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Propor Ação Candidata')),

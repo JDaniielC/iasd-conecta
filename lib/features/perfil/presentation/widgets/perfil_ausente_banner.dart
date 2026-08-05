@@ -13,7 +13,7 @@ class PerfilAusenteBanner extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.watch(hasPerfilProvider).valueOrNull ?? false;
+    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
     if (hasPerfil) return const SizedBox.shrink();
 
     return Container(

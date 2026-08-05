@@ -96,7 +96,7 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
     final suggestionsAsync = _categoriaFiltroId == null
         ? null
         : ref.watch(suggestionsForCategoryProvider(_categoriaFiltroId!));
-    final suggestions = suggestionsAsync?.valueOrNull ?? const [];
+    final suggestions = suggestionsAsync?.value ?? const [];
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Ação')),

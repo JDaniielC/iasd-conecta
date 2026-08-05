@@ -59,7 +59,7 @@ class DetalheAcaoPage extends ConsumerWidget {
     final confirmadosAsync = ref.watch(confirmadosProvider(acaoId));
     final uid = ref.watch(currentUserIdProvider);
     final minhasConfirmacoes =
-        confirmadosAsync.valueOrNull?.where((c) => c.perfil.id == uid) ?? const [];
+        confirmadosAsync.value?.where((c) => c.perfil.id == uid) ?? const [];
     final minhaConfirmacao = minhasConfirmacoes.isEmpty ? null : minhasConfirmacoes.first;
 
     return Scaffold(
@@ -68,9 +68,9 @@ class DetalheAcaoPage extends ConsumerWidget {
         data: (acao) {
           final souDonoDoGrupo = acao.grupoId == null
               ? false
-              : (ref.watch(grupoProvider(acao.grupoId!)).valueOrNull?.souDono(uid) ?? false);
+              : (ref.watch(grupoProvider(acao.grupoId!)).value?.souDono(uid) ?? false);
           final souAdministradorDoDistrito =
-              ref.watch(isDistrictAdminProvider).valueOrNull ?? false;
+              ref.watch(isDistrictAdminProvider).value ?? false;
           final podeCancelar = acao.podeCancelar(
             uid,
             souDonoDoGrupo: souDonoDoGrupo,

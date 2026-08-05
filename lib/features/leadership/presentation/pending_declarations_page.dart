@@ -87,10 +87,10 @@ class _PendingCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              grupoAsync.valueOrNull?.nome ?? 'Grupo',
+              grupoAsync.value?.nome ?? 'Grupo',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            Text('Declarante: ${declaranteAsync.valueOrNull?.nomeExibido ?? '...'}'),
+            Text('Declarante: ${declaranteAsync.value?.nomeExibido ?? '...'}'),
             Text('Ano: ${declaration.year}'),
             const SizedBox(height: AppSpacing.sm),
             Row(

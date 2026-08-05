@@ -48,7 +48,7 @@ class DetalheGrupoPage extends ConsumerWidget {
     final grupoAsync = ref.watch(grupoProvider(grupoId));
     final participantesAsync = ref.watch(participantesProvider(grupoId));
     final uid = ref.watch(currentUserIdProvider);
-    final participa = participantesAsync.valueOrNull?.any((p) => p.id == uid) ?? false;
+    final participa = participantesAsync.value?.any((p) => p.id == uid) ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Grupo')),
@@ -133,7 +133,7 @@ class _LeadersSection extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final leadersAsync = ref.watch(currentLeadersProvider(grupoId));
-    final leaders = leadersAsync.valueOrNull ?? const [];
+    final leaders = leadersAsync.value ?? const [];
     if (leaders.isEmpty) return const SizedBox.shrink();
 
     return Column(
@@ -155,6 +155,6 @@ class _LeaderName extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final perfilAsync = ref.watch(perfilPublicoProvider(userId));
-    return Text(perfilAsync.valueOrNull?.nomeExibido ?? '...');
+    return Text(perfilAsync.value?.nomeExibido ?? '...');
   }
 }

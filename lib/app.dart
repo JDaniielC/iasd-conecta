@@ -43,7 +43,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final hasPerfil = ref.read(hasPerfilProvider).valueOrNull;
+      final hasPerfil = ref.read(hasPerfilProvider).value;
       if (hasPerfil == null) return null; // ainda carregando, fica onde está
       // Visitante (sem Perfil) navega livremente por qualquer rota pública
       // (Home, lista/detalhe de Grupo — FR-008 da 001, FR-005 da 002).

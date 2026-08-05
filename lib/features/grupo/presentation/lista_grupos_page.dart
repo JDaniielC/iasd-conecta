@@ -15,9 +15,9 @@ class ListaGruposPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.watch(hasPerfilProvider).valueOrNull ?? false;
+    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
     final temConta = hasPerfil && ref.watch(authRepositoryProvider).temConta;
-    final isDistrictAdmin = ref.watch(isDistrictAdminProvider).valueOrNull ?? false;
+    final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
     final gruposAsync = ref.watch(gruposProvider);
 
     return Scaffold(

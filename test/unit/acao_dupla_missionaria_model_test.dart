@@ -60,6 +60,7 @@ void main() {
         'data_hora': dataFutura.toIso8601String(),
         'local': 'Casa',
         'criador_id': 'c1',
+        'created_at': dataFutura.toIso8601String(),
         'limite_vagas': 2,
         'eh_dupla_missionaria': true,
         'genero_visitado': 'masculino',
@@ -75,6 +76,7 @@ void main() {
         'data_hora': dataFutura.toIso8601String(),
         'local': 'Sede',
         'criador_id': 'c1',
+        'created_at': dataFutura.toIso8601String(),
       });
       expect(acao.isMissionaryPair, isFalse);
       expect(acao.visitedGender, isNull);

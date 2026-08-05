@@ -65,6 +65,7 @@ class Acao {
     required this.dataHora,
     required this.local,
     required this.criadorId,
+    required this.createdAt,
     this.detalhes,
     this.limiteVagas,
     this.canceladaEm,
@@ -82,6 +83,7 @@ class Acao {
   final String? detalhes;
   final int? limiteVagas;
   final String criadorId;
+  final DateTime createdAt;
   final DateTime? canceladaEm;
 
   /// Não-nulo quando é uma Ação de Grupo (candidata ou já confirmada).
@@ -129,6 +131,7 @@ class Acao {
       detalhes: map['detalhes'] as String?,
       limiteVagas: map['limite_vagas'] as int?,
       criadorId: map['criador_id'] as String,
+      createdAt: DateTime.parse(map['created_at'] as String),
       canceladaEm:
           map['cancelada_em'] == null ? null : DateTime.parse(map['cancelada_em'] as String),
       grupoId: map['grupo_id'] as String?,
@@ -142,6 +145,53 @@ class Acao {
       },
     );
   }
+}
+
+/// Ação com a Igreja já resolvida — via `grupos.igreja_id` (Ação de Grupo)
+/// ou `perfis.igreja_id` do criador (Ação avulsa). Usado só pra agrupar/
+/// filtrar a lista por Igreja; a Ação em si não guarda `igreja_id`.
+class AcaoComIgreja {
+  const AcaoComIgreja({required this.acao, this.igrejaId});
+
+  final Acao acao;
+  final String? igrejaId;
+}
+
+enum PeriodoAcao { sabado, hoje, essaSemana, outras }
+
+/// Sábado adventista: sexta 17:30 até sábado 17:30 — aproximação de
+/// pôr-do-sol por horário fixo (não calcula pôr-do-sol real por data/local).
+bool acaoNoSabado(DateTime dataHora) {
+  final minutosDoDia = dataHora.hour * 60 + dataHora.minute;
+  const inicioSabado = 17 * 60 + 30;
+  if (dataHora.weekday == DateTime.friday) return minutosDoDia >= inicioSabado;
+  if (dataHora.weekday == DateTime.saturday) return minutosDoDia < inicioSabado;
+  return false;
+}
+
+DateTime _inicioDaSemana(DateTime data) {
+  final dia = DateTime(data.year, data.month, data.day);
+  // Semana começa domingo (weekday: seg=1 ... dom=7 -> dom vira 0).
+  return dia.subtract(Duration(days: dia.weekday % 7));
+}
+
+/// Classifica [dataHora] em relação a [agora] pra agrupar `ListaAcoesPage`
+/// por período. Sábado tem prioridade sobre Hoje/Essa semana — é o destaque
+/// que a comunidade adventista mais procura, mesmo caindo também "hoje".
+PeriodoAcao periodoDaAcao(DateTime dataHora, DateTime agora) {
+  if (acaoNoSabado(dataHora)) return PeriodoAcao.sabado;
+
+  final hoje = DateTime(agora.year, agora.month, agora.day);
+  final dia = DateTime(dataHora.year, dataHora.month, dataHora.day);
+  if (dia == hoje) return PeriodoAcao.hoje;
+
+  final inicioSemana = _inicioDaSemana(agora);
+  final fimSemana = inicioSemana.add(const Duration(days: 7));
+  if (!dataHora.isBefore(inicioSemana) && dataHora.isBefore(fimSemana)) {
+    return PeriodoAcao.essaSemana;
+  }
+
+  return PeriodoAcao.outras;
 }
 
 enum StatusConfirmacao { confirmado, fila }

@@ -17,6 +17,7 @@ final _acao = Acao(
   dataHora: DateTime(2027, 3, 10, 8, 0),
   local: 'Sítio',
   criadorId: 'dono-1',
+  createdAt: DateTime(2026, 1, 1),
 );
 
 void main() {

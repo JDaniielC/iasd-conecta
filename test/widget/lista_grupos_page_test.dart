@@ -7,19 +7,24 @@ import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
 import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
 import 'package:iasd_conecta/features/grupo/presentation/lista_grupos_page.dart';
 import 'package:iasd_conecta/features/perfil/data/auth_repository.dart';
+import 'package:iasd_conecta/features/perfil/domain/church.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GrupoRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
+const _churches = [
+  Church(id: 'igreja-1', name: 'Central'),
+  Church(id: 'igreja-2', name: 'Pombos'),
+];
+
 final _grupos = [
   Grupo(
     id: 'g1',
     nome: 'SevenBikers',
     categoria: 'Ministério Jovem',
-    horario: 'sábados 6h',
-    local: 'Praça Central',
+    igrejaId: 'igreja-1',
     donoId: 'dono-1',
     createdAt: DateTime(2026, 1, 1),
   ),
@@ -27,8 +32,7 @@ final _grupos = [
     id: 'g2',
     nome: 'Coral',
     categoria: 'Ministério da Música',
-    horario: 'quartas 19h',
-    local: 'Sede',
+    igrejaId: 'igreja-2',
     donoId: 'dono-2',
     createdAt: DateTime(2026, 1, 2),
   ),
@@ -46,6 +50,7 @@ Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
         hasPerfilProvider.overrideWith((ref) async => hasPerfil),
         grupoRepositoryProvider.overrideWithValue(grupoRepo),
         authRepositoryProvider.overrideWithValue(authRepo),
+        churchesProvider.overrideWith((ref) async => _churches),
       ],
       child: const MaterialApp(home: ListaGruposPage()),
     ),
@@ -67,5 +72,12 @@ void main() {
 
     expect(find.text('SevenBikers'), findsOneWidget);
     expect(find.text('Criar Perfil'), findsNothing);
+  });
+
+  testWidgets('agrupa os Grupos por Igreja com cabeçalho de seção', (tester) async {
+    await _pump(tester, hasPerfil: false);
+
+    expect(find.text('Central'), findsOneWidget);
+    expect(find.text('Pombos'), findsOneWidget);
   });
 }

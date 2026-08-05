@@ -64,6 +64,7 @@ void main() {
       dataHora: dataFutura,
       local: 'Sede',
       criadorId: 'criador-1',
+      createdAt: dataFutura,
     );
 
     test('verdadeiro quando o id bate com criador_id', () {
@@ -87,6 +88,7 @@ void main() {
         dataHora: dataFutura,
         local: 'Sede',
         criadorId: 'c1',
+        createdAt: dataFutura,
       );
       expect(acao.cancelada, isFalse);
     });
@@ -98,6 +100,7 @@ void main() {
         dataHora: dataFutura,
         local: 'Sede',
         criadorId: 'c1',
+        createdAt: dataFutura,
         canceladaEm: DateTime.now(),
       );
       expect(acao.cancelada, isTrue);

@@ -81,7 +81,19 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
       await ref.read(perfilRepositoryProvider).criarPerfil(perfil);
       ref.invalidate(hasPerfilProvider);
     } on PostgrestException catch (e) {
-      setState(() => _erro = _mensagemDeErro(e));
+      if (e.code == '23505') {
+        // Chave primária de perfis é o uid — duplicidade só pode significar
+        // que uma tentativa anterior já criou o Perfil (ex.: resposta se
+        // perdeu por timeout de rede, mas o insert chegou no banco). Não é
+        // erro do usuário: só seguir em frente, senão ele fica preso
+        // tentando de novo pra sempre.
+        ref.invalidate(hasPerfilProvider);
+      } else {
+        setState(() => _erro = _mensagemDeErro(e));
+      }
+    } catch (_) {
+      setState(() => _erro =
+          'Não deu pra concluir o cadastro agora. Verifique sua conexão e tente de novo.');
     } finally {
       if (mounted) setState(() => _enviando = false);
     }

@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/perfil/data/perfil_repository.dart';
 import 'package:iasd_conecta/features/perfil/domain/church.dart';
+import 'package:iasd_conecta/features/perfil/domain/perfil.dart';
 import 'package:iasd_conecta/features/perfil/presentation/cadastro_perfil_page.dart';
 import 'package:mocktail/mocktail.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockPerfilRepository extends Mock implements PerfilRepository {}
 
@@ -42,6 +46,12 @@ Future<void> _tapConsentimento(WidgetTester tester) async {
 
 void main() {
   late MockPerfilRepository repo;
+
+  setUpAll(() {
+    registerFallbackValue(
+      const Perfil(nome: '', genero: Genero.feminino, idade: 0, consentimentoLgpdAceito: false),
+    );
+  });
 
   setUp(() => repo = MockPerfilRepository());
 
@@ -127,6 +137,53 @@ void main() {
       await tester.pump();
 
       expect(_submitButton(tester).onPressed, isNotNull);
+    },
+  );
+
+  Future<void> preencherEEnviar(WidgetTester tester) async {
+    await _pumpPage(tester, repo);
+    await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Ana Souza');
+    await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '30');
+    await _tapConsentimento(tester);
+    await tester.pump();
+    await tester.tap(find.byType(ElevatedButton));
+    await tester.pump();
+  }
+
+  testWidgets(
+    'falha de rede na 1a tentativa mostra feedback (não fica muda)',
+    (tester) async {
+      when(() => repo.criarPerfil(any()))
+          .thenThrow(const SocketException('Operation not permitted'));
+
+      await preencherEEnviar(tester);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text('Não deu pra concluir o cadastro agora. '
+            'Verifique sua conexão e tente de novo.'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'retentativa após duplicidade de chave (uid) segue em frente em vez de travar o usuário',
+    (tester) async {
+      when(() => repo.criarPerfil(any())).thenThrow(
+        const PostgrestException(
+          message: 'duplicate key value violates unique constraint "perfis_pkey"',
+          code: '23505',
+        ),
+      );
+
+      await preencherEEnviar(tester);
+      await tester.pumpAndSettle();
+
+      expect(tester.takeException(), isNull);
+      expect(find.text('Não deu pra concluir o cadastro agora. Tente de novo.'), findsNothing);
+      expect(find.textContaining('Não deu pra concluir'), findsNothing);
     },
   );
 }

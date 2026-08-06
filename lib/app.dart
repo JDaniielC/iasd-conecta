@@ -25,6 +25,7 @@ import 'features/legal/presentation/privacy_policy_page.dart';
 import 'features/legal/presentation/terms_of_use_page.dart';
 import 'features/perfil/presentation/cadastro_perfil_page.dart';
 import 'features/perfil/presentation/login_page.dart';
+import 'features/perfil/presentation/delete_account_page.dart';
 import 'features/perfil/presentation/upgrade_conta_page.dart';
 
 /// Notifica o [GoRouter] pra reavaliar `redirect` sempre que [hasPerfilProvider]
@@ -67,6 +68,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/upgrade-conta',
         builder: (context, state) => const UpgradeContaPage(),
+      ),
+      GoRoute(
+        path: '/delete-account',
+        builder: (context, state) => const DeleteAccountPage(),
       ),
       GoRoute(
         path: '/login',

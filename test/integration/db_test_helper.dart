@@ -30,7 +30,19 @@ Future<String> criarUsuarioDeTeste(Connection conn, String id) async {
   return id;
 }
 
+/// Apaga o Usuário de teste — `perfis` primeiro, `auth.users` depois.
+///
+/// A ordem e a primeira linha existem desde a feature 009: a FK
+/// `perfis.id -> auth.users` era `on delete cascade` e apagar o login levava o
+/// Perfil junto. Ela foi derrubada para que o Perfil anonimizado sobreviva ao
+/// fim do login, então nada mais cascateia e o `perfis` de teste precisa ser
+/// apagado explicitamente — senão ele vaza entre execuções e o próximo insert
+/// colide na chave primária.
 Future<void> limparUsuarioDeTeste(Connection conn, String id) async {
+  await conn.execute(
+    Sql.named('delete from public.perfis where id = @id'),
+    parameters: {'id': id},
+  );
   await conn.execute(
     Sql.named('delete from auth.users where id = @id'),
     parameters: {'id': id},

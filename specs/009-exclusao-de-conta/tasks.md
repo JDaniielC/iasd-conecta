@@ -63,25 +63,25 @@ em `lib/features/`, testes em `test/{unit,widget,integration}/`. Ver
 
 ### Banco
 
-- [ ] T010 [US1] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, criar `public.excluir_minha_conta()` `SECURITY DEFINER` com `set search_path = public, pg_temp`, validando `auth.uid()` não nulo e existência do Perfil, conforme [contracts/schema.sql](./contracts/schema.sql) § 3
-- [ ] T011 [US1] Na mesma função, adicionar uma guarda temporária que recusa a exclusão quando a pessoa é Dona de Grupo ou tem Rodada aberta — a herança chega em US2, e sem isso US1 sozinha deixaria Grupo com dono anonimizado. **Esta guarda é removida em T021.**
-- [ ] T012 [US1] Na mesma função, apagar os vínculos vivos: votos em Rodadas com `fechada_em is null`, confirmações de Ações com `data_hora > now()`, participações em Grupo, declarações próprias de Líder/Diretor e a linha de `administradores_distrito`
-- [ ] T013 [US1] Na mesma função, anonimizar `perfis` (`nome = 'Membro removido'`, `apelido`/`telefone`/`igreja_id`/`genero`/`idade` nulos, `anonimizado_em = now()`) e apagar `auth.users`, nessa ordem
-- [ ] T014 [US1] Na mesma função, `revoke all ... from public` e `grant execute ... to authenticated`
+- [X] T010 [US1] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, criar `public.excluir_minha_conta()` `SECURITY DEFINER` com `set search_path = public, pg_temp`, validando `auth.uid()` não nulo e existência do Perfil, conforme [contracts/schema.sql](./contracts/schema.sql) § 3
+- [X] T011 [US1] Na mesma função, adicionar uma guarda temporária que recusa a exclusão quando a pessoa é Dona de Grupo ou tem Rodada aberta — a herança chega em US2, e sem isso US1 sozinha deixaria Grupo com dono anonimizado. **Esta guarda é removida em T021.**
+- [X] T012 [US1] Na mesma função, apagar os vínculos vivos: votos em Rodadas com `fechada_em is null`, confirmações de Ações com `data_hora > now()`, participações em Grupo, declarações próprias de Líder/Diretor e a linha de `administradores_distrito`
+- [X] T013 [US1] Na mesma função, anonimizar `perfis` (`nome = 'Membro removido'`, `apelido`/`telefone`/`igreja_id`/`genero`/`idade` nulos, `anonimizado_em = now()`) e apagar `auth.users`, nessa ordem
+- [X] T014 [US1] Na mesma função, `revoke all ... from public` e `grant execute ... to authenticated`
 
 ### Testes de integração
 
-- [ ] T015 [P] [US1] Em `test/integration/account_deletion_test.dart`, cenários 1 e 2 do [quickstart](./quickstart.md): exclusão de Perfil sem posse anonimiza a linha, apaga `auth.users`, e `perfil_publico(uid)` devolve `'Membro removido'` — este último trava o `coalesce(apelido, nome)` contra "simplificação" futura
-- [ ] T016 [P] [US1] No mesmo arquivo, cenário 3: confirmação em Ação passada permanece, confirmação em Ação futura some
-- [ ] T017 [P] [US1] No mesmo arquivo, cenário 4 (**Princípio IV — fila de espera**): Ação futura lotada com alguém na fila; depois da exclusão, quem estava na fila está confirmado, provando que `confirmacoes_acao_promover_fila` disparou sem código novo nesta feature
-- [ ] T018 [P] [US1] No mesmo arquivo, **Princípio IV — Dupla Missionária**: Perfil anonimizado não permanece em vaga de Dupla futura, e a validação de composição por gênero continua recusando dupla inválida
+- [X] T015 [P] [US1] Em `test/integration/account_deletion_test.dart`, cenários 1 e 2 do [quickstart](./quickstart.md): exclusão de Perfil sem posse anonimiza a linha, apaga `auth.users`, e `perfil_publico(uid)` devolve `'Membro removido'` — este último trava o `coalesce(apelido, nome)` contra "simplificação" futura
+- [X] T016 [P] [US1] No mesmo arquivo, cenário 3: confirmação em Ação passada permanece, confirmação em Ação futura some
+- [X] T017 [P] [US1] No mesmo arquivo, cenário 4 (**Princípio IV — fila de espera**): Ação futura lotada com alguém na fila; depois da exclusão, quem estava na fila está confirmado, provando que `confirmacoes_acao_promover_fila` disparou sem código novo nesta feature
+- [X] T018 [P] [US1] No mesmo arquivo, **Princípio IV — Dupla Missionária**: Perfil anonimizado não permanece em vaga de Dupla futura, e a validação de composição por gênero continua recusando dupla inválida
 
 Todos os testes desta seção rodam como role `authenticated`, nunca como superusuário — superusuário tem `BYPASSRLS` e não veria falha de policy. Padrão em `test/integration/security_nome_valido_rls_test.dart`.
 
 ### App
 
-- [ ] T019 [US1] Em `lib/features/perfil/data/perfil_repository.dart`, adicionar `deleteMyAccount()` chamando `rpc('excluir_minha_conta')` e, no sucesso, `signOut()` — sem o `signOut()` o JWT já emitido segue válido até expirar e o app parece logado (FR-004)
-- [ ] T020 [US1] Criar `lib/features/perfil/presentation/delete_account_page.dart` com confirmação explícita, descrevendo o que é apagado, o que fica como histórico e que não tem volta (FR-002), e registrar a rota `/delete-account` em `lib/app.dart`
+- [X] T019 [US1] Em `lib/features/perfil/data/perfil_repository.dart`, adicionar `deleteMyAccount()` chamando `rpc('excluir_minha_conta')` e, no sucesso, `signOut()` — sem o `signOut()` o JWT já emitido segue válido até expirar e o app parece logado (FR-004)
+- [X] T020 [US1] Criar `lib/features/perfil/presentation/delete_account_page.dart` com confirmação explícita, descrevendo o que é apagado, o que fica como histórico e que não tem volta (FR-002), e registrar a rota `/delete-account` em `lib/app.dart`
 
 **Checkpoint**: MVP entregue — a maioria dos Usuários já consegue exercer o art. 18, VI sozinha.
 

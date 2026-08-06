@@ -34,6 +34,19 @@ class PerfilRepository {
     await _client.from('perfis').insert(perfil.toInsertMap(id: uid));
   }
 
+  /// Exclusão de conta (feature 009, LGPD art. 18 VI). Toda a regra vive na
+  /// função `excluir_minha_conta()`, numa transação só — o cliente não
+  /// orquestra nada, senão uma queda de rede no meio deixaria um Perfil
+  /// parcialmente anonimizado.
+  ///
+  /// O `signOut()` não é decorativo: apagar o `auth.users` invalida o refresh
+  /// token, mas o JWT já emitido continua válido até expirar, e sem isto o app
+  /// seguiria parecendo logado (FR-004).
+  Future<void> deleteMyAccount() async {
+    await _client.rpc('excluir_minha_conta');
+    await _client.auth.signOut();
+  }
+
   Future<PublicProfile> fetchPerfilPublico(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;

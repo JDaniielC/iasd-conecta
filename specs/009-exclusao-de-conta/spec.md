@@ -89,10 +89,12 @@ Grupo e Rodada continuam funcionando sob o novo responsável.
 
 ### User Story 3 - Recusa quando não há quem herde (Priority: P3)
 
-A única Administradora do distrito pede exclusão. Como não sobraria ninguém
-para receber os Grupos e as Rodadas abertas, o app recusa e explica o
-motivo em linguagem que ela entende, dizendo o que precisa acontecer antes
-— promover outro Administrador. Nada é apagado, nada fica pela metade.
+A única Administradora do distrito pede exclusão. Mesmo que ela não seja
+Dona de nada, o app recusa: sem nenhum Administrador, o distrito perde quem
+cadastra Igreja e quem promove o próximo Administrador, e não há caminho de
+volta pelo app. A recusa explica, em linguagem que ela entende, o que
+precisa acontecer antes — promover outro Administrador. Nada é apagado,
+nada fica pela metade.
 
 **Why this priority**: é o caso raro, mas é o único em que a alternativa
 seria deixar Grupo órfão ou dado meio apagado. Precisa existir antes da
@@ -182,8 +184,12 @@ o estado do banco não muda.
 - **FR-009**: Quando quem sai é o Administrador do distrito mais antigo, o
   sistema MUST eleger como herdeiro o Administrador seguinte em ordem de
   antiguidade.
-- **FR-010**: O sistema MUST recusar a exclusão, sem alterar nada, quando
-  não houver nenhum Administrador do distrito apto a herdar, e MUST
+- **FR-010**: O sistema MUST recusar a exclusão, sem alterar nada, em dois
+  casos, com mensagens distintas: (a) quem pede é o único Administrador do
+  distrito — mesmo sem ter nada a herdar, porque um distrito sem
+  Administrador não consegue promover outro e não sai desse estado sem
+  intervenção fora do app; (b) há Grupo ou Rodada aberta a transferir e não
+  existe nenhum Administrador do distrito. Em ambos, o sistema MUST
   explicar ao Usuário o que precisa acontecer antes.
 - **FR-011**: O sistema MUST manter atribuídos ao Perfil anonimizado, como
   histórico, as Ações que a pessoa criou, as Rodadas que ela abriu e já

@@ -78,9 +78,11 @@ mensagens distintas:
   `grupos_dono_vira_participante` só cobre `INSERT`.
 - **Fila de espera anda quando vaga é liberada** — garantida por
   `confirmacoes_acao_promover_fila` (`AFTER DELETE`), sem código novo.
-- **Dupla Missionária tem composição de gênero válida** — garantida
-  indiretamente: Perfil anonimizado nunca permanece em vaga futura, então o
-  trigger nunca lê gênero nulo de quem está confirmado.
+- **Dupla Missionária tem composição de gênero válida em Ação futura** —
+  garantida indiretamente: Perfil anonimizado nunca permanece em vaga
+  futura, então o trigger nunca lê gênero nulo ao validar uma Dupla que
+  ainda vai acontecer. Em Ação passada o gênero nulo é alcançável, sem
+  consequência prática — ver `research.md` § 4.
 - **Nome exibido é moderado** — `'Membro removido'` passa em `nome_valido()`.
 - **Exibição pública** — `perfil_publico()` devolve
   `coalesce(apelido, nome)`; com apelido nulo, exibe `'Membro removido'` sem

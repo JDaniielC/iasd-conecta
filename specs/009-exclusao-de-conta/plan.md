@@ -89,7 +89,7 @@ distrito); nenhuma preocupação de volume ou concorrência
 
 | Princípio | Situação | Como esta feature atende |
 |---|---|---|
-| I. Linguagem Ubíqua (NON-NEGOTIABLE) | PASSA | Banco e strings de UI em português (`excluir_minha_conta`, `anonimizado_em`, `'Membro removido'`). Código Dart novo em inglês, conforme v1.1.0 — mas o arquivo vive em `lib/features/perfil/`, que é de 001 e está em português; segue-se a regra de tradução gradual ao tocar o arquivo, sem renomear o que já existe. |
+| I. Linguagem Ubíqua (NON-NEGOTIABLE) | PASSA | Banco e strings de UI em português (`excluir_minha_conta`, `anonimizado_em`, `'Membro removido'`). Todo artefato Dart **novo** desta feature é em inglês, incluindo nome de arquivo, conforme a Fronteira de idioma da v1.1.0 — a cláusula de tradução gradual vale para arquivo já existente e não isenta arquivo novo. Tradução usada: Perfil→Profile, exclusão de conta→account deletion. `perfil.dart` é tocado por esta feature, então sua tradução é obrigatória; ela sai em commit separado (T006) para não afogar o diff da feature em 211 renomeações. |
 | II. Privacidade e LGPD (NON-NEGOTIABLE) | PASSA | É a feature que torna o art. 18, VI exercível. Nenhum dado novo é coletado. `anonimizado_em` é metadado de processo, não dado pessoal. A seção "Dados pessoais tratados" da spec cumpre a exigência de declaração. |
 | III. Desenvolvimento Guiado por Spec | PASSA | Spec 009 escrita e validada antes deste plano; a única ambiguidade real (voto em Rodada aberta) foi resolvida como FR-018 antes do plano, não durante a implementação. |
 | IV. Integridade das Regras de Domínio Testada (NON-NEGOTIABLE) | PASSA, com atenção | A feature toca quatro das regras listadas no princípio: promoção da fila de espera, revogação de presença, revogação de voto e composição de Dupla Missionária. Todas exigem teste de integração próprio — ver `quickstart.md`. Nenhuma delas é reimplementada: a feature `delete`ia e deixa os triggers existentes agirem. |
@@ -144,25 +144,25 @@ supabase/migrations/
 
 lib/features/perfil/
 ├── data/
-│   └── perfil_repository.dart              # + excluirMinhaConta()
+│   └── perfil_repository.dart              # + deleteMyAccount()
 ├── domain/
-│   └── perfil.dart                         # genero e idade viram anuláveis
+│   └── profile.dart                        # renomeado em T005b; gender/age anuláveis
 └── presentation/
-    └── excluir_conta_page.dart             # nova: confirmação explícita
+    └── delete_account_page.dart            # nova: confirmação explícita
 
 lib/features/legal/presentation/
 ├── privacy_policy_page.dart                # FR-016: reescrever a ressalva
 └── terms_of_use_page.dart                  # FR-016: reescrever a ressalva
 
-lib/app.dart                                 # + rota /excluir-conta
+lib/app.dart                                 # + rota /delete-account
 
 test/
 ├── integration/
-│   └── exclusao_de_conta_test.dart          # nova: regras no banco
+│   └── account_deletion_test.dart           # nova: regras no banco
 ├── unit/
-│   └── perfil_model_test.dart               # ajuste: genero/idade anuláveis
+│   └── profile_model_test.dart              # ajuste: gender/age anuláveis
 └── widget/
-    └── excluir_conta_page_test.dart         # nova: confirmação e recusa
+    └── delete_account_page_test.dart        # nova: confirmação e recusa
 ```
 
 **Structure Decision**: a feature mora em `lib/features/perfil/`, que é

@@ -86,9 +86,13 @@ lógica de promoção nesta feature.
 **Rationale**: `confirmacoes_acao_promover_fila` já é `AFTER DELETE` e
 chama `promover_fila_acao()` — verificado no banco local. Reimplementar
 promoção aqui duplicaria a regra do Princípio IV em dois lugares. Pelo mesmo
-caminho, a composição de Dupla Missionária se resolve sozinha: como um
-Perfil anonimizado nunca permanece em vaga futura (FR-013), o trigger que
-lê `perfis.genero` de quem está confirmado nunca encontra gênero nulo.
+caminho, a composição de Dupla Missionária fica protegida **onde importa**:
+como um Perfil anonimizado nunca permanece em vaga futura (FR-013), nenhuma
+Dupla que ainda vai acontecer é validada contra gênero nulo. Em Ação já
+passada o Perfil anonimizado continua confirmado, e `promover_fila_acao()`
+lê `perfis.genero` sem filtrar por data — ali o gênero nulo é alcançável. O
+impacto é nulo na prática (o evento já ocorreu), mas a invariante não é
+universal e não deve ser documentada como se fosse.
 
 **Alternativas consideradas**:
 

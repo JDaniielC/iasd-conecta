@@ -66,6 +66,8 @@ set search_path = public, pg_temp
 as $$
 declare
   v_uid uuid := auth.uid();
+  v_herdeiro uuid;
+  v_tem_heranca boolean;
 begin
   if v_uid is null then
     raise exception 'é preciso estar autenticado para excluir a própria conta';
@@ -75,15 +77,49 @@ begin
     raise exception 'não há Perfil para excluir';
   end if;
 
-  -- GUARDA TEMPORÁRIA: a herança de posse chega na próxima fatia da feature
-  -- (US2). Sem ela, quem é Dono de Grupo sairia deixando o Grupo com um dono
-  -- anonimizado, que ninguém consegue operar.
-  if exists (select 1 from public.grupos where dono_id = v_uid)
-     or exists (
-       select 1 from public.rodadas_votacao
-       where aberta_por = v_uid and fechada_em is null
-     ) then
-    raise exception 'ainda não é possível excluir a conta de quem é Dono de Grupo ou tem Rodada de votação aberta';
+  -- Herdeiro: Administrador do distrito mais antigo entre os que ficam. O
+  -- desempate por usuario_id existe só pra a eleição ser determinística quando
+  -- dois Administradores nascem no mesmo instante (bootstrap).
+  select usuario_id into v_herdeiro
+  from public.administradores_distrito
+  where usuario_id <> v_uid
+  order by created_at, usuario_id
+  limit 1;
+
+  v_tem_heranca :=
+    exists (select 1 from public.grupos where dono_id = v_uid)
+    or exists (
+      select 1 from public.rodadas_votacao
+      where aberta_por = v_uid and fechada_em is null
+    );
+
+  if v_herdeiro is null then
+    -- Recusa mesmo sem nada a herdar: sem Administrador nenhum, o distrito
+    -- fica sem quem cadastre Igreja e sem quem promova outro Administrador, e
+    -- administradores_distrito_checar_regras exige um admin pré-existente pra
+    -- promover — só a migration de bootstrap sairia desse buraco.
+    if exists (select 1 from public.administradores_distrito where usuario_id = v_uid) then
+      raise exception 'você é o único Administrador do distrito; promova outro Administrador antes de excluir sua conta';
+    end if;
+    if v_tem_heranca then
+      raise exception 'não há Administrador do distrito para receber seus Grupos e Rodadas de votação abertas';
+    end if;
+  end if;
+
+  -- Transferência: participação primeiro, senão grupos_dono_deve_participar
+  -- (BEFORE UPDATE) recusa o update. grupos_dono_vira_participante só cobre
+  -- INSERT, então não adianta esperar que ela apareça sozinha.
+  if v_tem_heranca then
+    insert into public.participacoes_grupo (grupo_id, usuario_id)
+    select g.id, v_herdeiro
+    from public.grupos g
+    where g.dono_id = v_uid
+    on conflict do nothing;
+
+    update public.grupos set dono_id = v_herdeiro where dono_id = v_uid;
+
+    update public.rodadas_votacao set aberta_por = v_herdeiro
+    where aberta_por = v_uid and fechada_em is null;
   end if;
 
   -- Vínculos vivos: somem. Vínculos históricos (acoes.criador_id, rodadas

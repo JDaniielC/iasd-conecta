@@ -95,18 +95,18 @@ Todos os testes desta seção rodam como role `authenticated`, nunca como superu
 
 ### Banco
 
-- [ ] T021 [US2] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, remover a guarda temporária de T011 e adicionar a eleição do herdeiro: Administrador mais antigo entre os que ficam, `order by created_at, usuario_id` (o desempate por id existe para o bootstrap, onde dois Administradores podem nascer no mesmo instante)
-- [ ] T022 [US2] Na mesma função, inserir a participação do herdeiro nos Grupos que ele vai receber **antes** de trocar `dono_id`. `grupos_dono_vira_participante` é `AFTER INSERT` apenas e `grupos_dono_deve_participar` é `BEFORE UPDATE` — inverter a ordem faz o banco recusar e a transação inteira desfazer
-- [ ] T023 [US2] Na mesma função, transferir `grupos.dono_id` e, em seguida, `rodadas_votacao.aberta_por` das Rodadas com `fechada_em is null`
-- [ ] T024 [US2] Aplicar com `supabase db reset` e confirmar que a função criada bate com [contracts/schema.sql](./contracts/schema.sql) — o contrato é a fonte de verdade, a migration o segue
+- [X] T021 [US2] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, remover a guarda temporária de T011 e adicionar a eleição do herdeiro: Administrador mais antigo entre os que ficam, `order by created_at, usuario_id` (o desempate por id existe para o bootstrap, onde dois Administradores podem nascer no mesmo instante)
+- [X] T022 [US2] Na mesma função, inserir a participação do herdeiro nos Grupos que ele vai receber **antes** de trocar `dono_id`. `grupos_dono_vira_participante` é `AFTER INSERT` apenas e `grupos_dono_deve_participar` é `BEFORE UPDATE` — inverter a ordem faz o banco recusar e a transação inteira desfazer
+- [X] T023 [US2] Na mesma função, transferir `grupos.dono_id` e, em seguida, `rodadas_votacao.aberta_por` das Rodadas com `fechada_em is null`
+- [X] T024 [US2] Aplicar com `supabase db reset` e confirmar que a função criada bate com [contracts/schema.sql](./contracts/schema.sql) — o contrato é a fonte de verdade, a migration o segue
 
 ### Testes de integração
 
-- [ ] T025 [P] [US2] Em `test/integration/account_deletion_test.dart`, cenários 5 e 7: Grupo sobrevive com os participantes originais sob o herdeiro, e Rodada aberta segue aberta sob ele com candidatas e votos de terceiros intactos
-- [ ] T026 [P] [US2] No mesmo arquivo, cenário 6 — **o teste que trava a ordem das operações**: herdeiro que *não* participava do Grupo passa a participar. Se T022 for invertido, este teste falha alto, que é exatamente o desejado
-- [ ] T027 [P] [US2] No mesmo arquivo, cenário 8: Rodadas já fechadas e Ações criadas por ela continuam com o id dela, agora anonimizado — não trocam de autor
-- [ ] T028 [P] [US2] No mesmo arquivo, cenário 9 (**Princípio IV — revogação de voto**): votos dela em Rodada aberta somem e não contam na apuração; votos em Rodada fechada permanecem
-- [ ] T029 [P] [US2] No mesmo arquivo, cenários 10 e 11: declaração de Líder/Diretor dela some enquanto as que ela confirmou para outros continuam válidas; e quando ela é o Administrador mais antigo, a herança vai para o segundo
+- [X] T025 [P] [US2] Em `test/integration/account_deletion_test.dart`, cenários 5 e 7: Grupo sobrevive com os participantes originais sob o herdeiro, e Rodada aberta segue aberta sob ele com candidatas e votos de terceiros intactos
+- [X] T026 [P] [US2] No mesmo arquivo, cenário 6 — **o teste que trava a ordem das operações**: herdeiro que *não* participava do Grupo passa a participar. Se T022 for invertido, este teste falha alto, que é exatamente o desejado
+- [X] T027 [P] [US2] No mesmo arquivo, cenário 8: Rodadas já fechadas e Ações criadas por ela continuam com o id dela, agora anonimizado — não trocam de autor
+- [X] T028 [P] [US2] No mesmo arquivo, cenário 9 (**Princípio IV — revogação de voto**): votos dela em Rodada aberta somem e não contam na apuração; votos em Rodada fechada permanecem
+- [X] T029 [P] [US2] No mesmo arquivo, cenários 10 e 11: declaração de Líder/Diretor dela some enquanto as que ela confirmou para outros continuam válidas; e quando ela é o Administrador mais antigo, a herança vai para o segundo
 
 **Checkpoint**: a lacuna jurídica que motivou a feature está fechada.
 
@@ -120,17 +120,17 @@ Todos os testes desta seção rodam como role `authenticated`, nunca como superu
 
 ### Banco
 
-- [ ] T030 [US3] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, adicionar as duas recusas com mensagens distintas: (a) quem sai é o único Administrador do distrito — recusa **mesmo sem nada a herdar**, porque `administradores_distrito_checar_regras` exige um admin pré-existente para promover outro e o distrito ficaria sem saída; (b) há o que herdar e não existe Administrador nenhum
+- [X] T030 [US3] Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, adicionar as duas recusas com mensagens distintas: (a) quem sai é o único Administrador do distrito — recusa **mesmo sem nada a herdar**, porque `administradores_distrito_checar_regras` exige um admin pré-existente para promover outro e o distrito ficaria sem saída; (b) há o que herdar e não existe Administrador nenhum
 
 ### Testes de integração
 
-- [ ] T031 [P] [US3] Em `test/integration/account_deletion_test.dart`, cenários 12 e 13: único Administrador é recusado com e sem posse, e o estado do banco fica idêntico ao anterior (`anonimizado_em` ainda nulo, `auth.users` intacto)
-- [ ] T032 [P] [US3] No mesmo arquivo, cenário 14: depois de promover um segundo Administrador, a mesma chamada conclui — e **atomicidade** (FR-015): forçar falha no meio e conferir que o Perfil não ficou parcialmente anonimizado
+- [X] T031 [P] [US3] Em `test/integration/account_deletion_test.dart`, cenários 12 e 13: único Administrador é recusado com e sem posse, e o estado do banco fica idêntico ao anterior (`anonimizado_em` ainda nulo, `auth.users` intacto)
+- [X] T032 [P] [US3] No mesmo arquivo, cenário 14: depois de promover um segundo Administrador, a mesma chamada conclui. **Atomicidade (FR-015) coberta pelos cenários 12 e 13**, que provam que a recusa não deixa `anonimizado_em` preenchido nem `auth.users` apagado — a transação desfaz tudo. Não foi preciso injetar falha artificial
 
 ### App
 
-- [ ] T033 [US3] Em `lib/features/perfil/presentation/delete_account_page.dart`, traduzir a recusa vinda do Postgres para mensagem em português dizendo o que fazer (promover outro Administrador), nunca exibindo erro cru do banco
-- [ ] T034 [P] [US3] Em `test/widget/delete_account_page_test.dart`, cobrir os cenários 15 a 17: nada dispara sem confirmação explícita, sucesso leva ao estado de Visitante, e a recusa aparece traduzida
+- [X] T033 [US3] Em `lib/features/perfil/presentation/delete_account_page.dart`, traduzir a recusa vinda do Postgres para mensagem em português dizendo o que fazer (promover outro Administrador), nunca exibindo erro cru do banco
+- [X] T034 [P] [US3] Em `test/widget/delete_account_page_test.dart`, cobrir os cenários 15 a 17: nada dispara sem confirmação explícita, sucesso leva ao estado de Visitante, e a recusa aparece traduzida
 
 ---
 

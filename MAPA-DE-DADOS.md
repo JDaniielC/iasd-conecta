@@ -86,26 +86,34 @@ tabela inteira — a política de privacidade descreve o nível de acesso real
 
 ## Retenção e exclusão
 
-- `perfis.id references auth.users(id) on delete cascade`
-  (`20260723191202_perfis_igrejas.sql:29`) — apagar o usuário no Supabase
-  Auth cascateia para `perfis`, e daí para `participacoes_grupo`,
-  `confirmacoes_acao`, `votos` (todos com `on delete cascade` nas FKs para
-  `perfis(id)`: `grupos.sql:23`, `acoes.sql:18`, `rodada_votacao.sql:23`).
-- **Mas**: `grupos.dono_id`, `acoes.criador_id`, `rodadas_votacao.aberta_por`,
-  `administradores_distrito.usuario_id`/`promovido_por`, `liderancas.usuario_id`/
-  `confirmado_por` referenciam `perfis(id)` **sem `on delete cascade`** (FK
-  default = `NO ACTION`) — `20260723220703_grupos.sql:17`,
-  `20260723230639_acoes.sql:11`, `20260724084300_rodada_votacao.sql:7`,
-  `20260724092132_district_admin.sql:5-7`, `20260724100000_leadership.sql:6-9`.
-  Isso significa: **apagar a conta de quem é Dono de Grupo, criador de Ação,
-  abriu Rodada, é Administrador ou tem declaração de Líder falha por
-  violação de FK**, a menos que essas responsabilidades sejam transferidas
-  ou removidas antes. Ver achado A-4.
-- **Não existe rota nem tela de "excluir conta" no app** — confirmado por
-  ausência em `lib/app.dart` (todas as `GoRoute` listadas, nenhuma de
-  exclusão) e por `grep -rniE "exclu|delet|apaga"` não retornar nenhuma
-  chamada de exclusão de perfil/conta em `lib/features/perfil/`. O único
-  caminho hoje é manual, direto no painel do Supabase. Ver achado A-4.
+- **A exclusão de conta existe e é autoatendida** desde a feature 009
+  (`20260806140000_exclusao_de_conta.sql`, rota `/delete-account`). A função
+  `excluir_minha_conta()` roda numa transação só: anonimiza a linha de
+  `perfis` (nome vira `'Membro removido'`; apelido, telefone, igreja, gênero
+  e idade viram nulos; `anonimizado_em` marca o estado), apaga os vínculos
+  vivos e apaga o `auth.users`.
+- `perfis.id` **não referencia mais** `auth.users(id)`. A FK era
+  `on delete cascade` e apagar o login levava o Perfil junto — o oposto do
+  que a anonimização precisa, já que é a linha anonimizada que ancora o
+  histórico de terceiros. Consequência aceita: passa a existir legitimamente
+  linha de `perfis` sem `auth.users` correspondente, que é justamente o
+  estado "anonimizado". Ver `specs/009-exclusao-de-conta/research.md` § 2.
+- As FKs sem `on delete cascade` — `grupos.dono_id`, `acoes.criador_id`,
+  `rodadas_votacao.aberta_por`, `administradores_distrito.usuario_id`/
+  `promovido_por`, `liderancas.usuario_id`/`confirmado_por` — continuam como
+  estavam, e **deixaram de ser um problema**: nada é apagado de `perfis`, a
+  linha permanece anonimizada. O que exige alguém capaz de agir (posse de
+  Grupo, Rodada ainda aberta) é transferido ao Administrador do distrito
+  mais antigo; o resto permanece apontando pro Perfil anonimizado, como
+  histórico. **O achado A-4 está resolvido.**
+- Única recusa possível: quem sai é o único Administrador do distrito. Sem
+  nenhum Administrador, o distrito não consegue promover outro
+  (`administradores_distrito_checar_regras` exige um pré-existente) e não
+  sairia desse estado sem rodar migration.
+- `genero` e `idade` passaram a aceitar nulo em `perfis`, exclusivamente para
+  a anonimização: num distrito pequeno, gênero + idade + quais Grupos a
+  pessoa participava reidentifica, e o art. 16 da LGPD só dispensa a exclusão
+  quando o dado está de fato anonimizado.
 - **Não existe tela de "meu perfil"/editar cadastro** — `perfis_update_own`
   permite `UPDATE` via RLS (`20260723191202_perfis_igrejas.sql:76-79`), mas
   nenhuma página em `lib/features/perfil/presentation/` usa esse caminho

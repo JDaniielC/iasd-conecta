@@ -138,7 +138,7 @@ depender de device/emulador.
 ## Rotas
 
 `/home` (lista de Grupos, pública) · `/cadastro` · `/login` ·
-`/upgrade-conta` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar` ·
+`/upgrade-conta` · `/delete-account` · `/grupos/novo` · `/grupos/:id` · `/grupos/:id/editar` ·
 `/acoes` (lista, pública) · `/acoes/novo` · `/acoes/:id` ·
 `/grupos/:id/rodadas` · `/grupos/:id/rodadas/novo` · `/rodadas/:id` ·
 `/rodadas/:id/candidatas/novo` · `/district-admin/promote` ·

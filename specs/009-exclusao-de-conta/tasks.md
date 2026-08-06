@@ -81,7 +81,7 @@ Todos os testes desta seção rodam como role `authenticated`, nunca como superu
 ### App
 
 - [X] T019 [US1] Em `lib/features/perfil/data/perfil_repository.dart`, adicionar `deleteMyAccount()` chamando `rpc('excluir_minha_conta')` e, no sucesso, `signOut()` — sem o `signOut()` o JWT já emitido segue válido até expirar e o app parece logado (FR-004)
-- [X] T020 [US1] Criar `lib/features/perfil/presentation/delete_account_page.dart` com confirmação explícita, descrevendo o que é apagado, o que fica como histórico e que não tem volta (FR-002), e registrar a rota `/delete-account` em `lib/app.dart`
+- [X] T020 [US1] Criar `lib/features/perfil/presentation/delete_account_page.dart` com confirmação explícita, descrevendo o que é apagado, o que fica como histórico e que não tem volta (FR-002), e registrar a rota `/delete-account` em `lib/app.dart`. **Acrescentado na implementação**: o ponto de entrada. Rota registrada sem link nenhum deixaria a tela inalcançável e FR-001 descumprida — o botão vive no fim da Política de Privacidade, ao lado do texto que descreve o direito e longe de toque acidental na barra principal
 
 **Checkpoint**: MVP entregue — a maioria dos Usuários já consegue exercer o art. 18, VI sozinha.
 
@@ -136,13 +136,13 @@ Todos os testes desta seção rodam como role `authenticated`, nunca como superu
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T035 [P] Em `lib/features/legal/presentation/privacy_policy_page.dart`, reescrever a ressalva de que pode ser necessário transferir responsabilidades antes de sair — ela deixa de ser verdade (FR-016)
-- [ ] T036 [P] Em `lib/features/legal/presentation/terms_of_use_page.dart`, alinhar a seção "Encerramento de conta" ao comportamento real
-- [ ] T037 Atualizar a versão e a data em `lib/features/legal/legal_metadata.dart`, já que a Política mudou de conteúdo material
-- [ ] T038 [P] Conferir com `grep` que nenhum texto legal ainda promete a ressalva antiga — cenário 18 do [quickstart](./quickstart.md); verificar, não confiar na memória
-- [ ] T039 [P] Adicionar ao `README.md` a rota `/delete-account` na seção Rotas
-- [ ] T040 Rodar os gates completos e registrar os números reais: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration`
-- [ ] T041 Atualizar `MAPA-DE-DADOS.md` § Retenção e exclusão, que hoje documenta o bloqueio de chave estrangeira como problema em aberto
+- [X] T035 [P] Em `lib/features/legal/presentation/privacy_policy_page.dart`, reescrever a ressalva de que pode ser necessário transferir responsabilidades antes de sair — ela deixa de ser verdade (FR-016)
+- [X] T036 [P] Em `lib/features/legal/presentation/terms_of_use_page.dart`, alinhar a seção "Encerramento de conta" ao comportamento real
+- [X] T037 Atualizar a versão e a data em `lib/features/legal/legal_metadata.dart`, já que a Política mudou de conteúdo material
+- [X] T038 [P] Conferir com `grep` que nenhum texto legal ainda promete a ressalva antiga — cenário 18 do [quickstart](./quickstart.md); verificar, não confiar na memória
+- [X] T039 [P] Adicionar ao `README.md` a rota `/delete-account` na seção Rotas
+- [X] T040 Rodar os gates completos e registrar os números reais: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration`
+- [X] T041 Atualizar `MAPA-DE-DADOS.md` § Retenção e exclusão, que hoje documenta o bloqueio de chave estrangeira como problema em aberto
 
 ---
 

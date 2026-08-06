@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../core/providers.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../legal_metadata.dart';
@@ -11,11 +15,12 @@ import 'widgets/legal_text.dart';
 /// `arquivo:linha` de cada afirmação. O que o código não faz, este texto não
 /// promete (ver REVISAO-JURIDICA.md para o que ainda depende de confirmação
 /// jurídica ou de decisão do responsável pelo app).
-class PrivacyPolicyPage extends StatelessWidget {
+class PrivacyPolicyPage extends ConsumerWidget {
   const PrivacyPolicyPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
     return Scaffold(
       appBar: AppBar(title: const Text('Política de Privacidade')),
       body: SingleChildScrollView(
@@ -157,7 +162,8 @@ class PrivacyPolicyPage extends StatelessWidget {
               'voto numa Rodada aberta, o registro antigo é apagado na '
               'hora — não fica arquivado escondido. Hoje não existe uma '
               'rotina automática que apague cadastro de quem parou de usar '
-              'o app: o dado fica guardado até você pedir a exclusão.',
+              'o app: o dado fica guardado até você pedir a exclusão, o que '
+              'você pode fazer sozinho pelo app a qualquer momento.',
             ),
 
             const LegalHeading('Seus direitos e como usar cada um'),
@@ -172,12 +178,24 @@ class PrivacyPolicyPage extends StatelessWidget {
               'não existe tela de edição de perfil dentro do app.',
             ),
             const LegalBullet(
-              'Apagar sua conta e os dados dela: peça pelo mesmo e-mail. Se '
-              'você for Dono de um Grupo, tiver criado uma Ação, ou for '
-              'Administrador do distrito ou Líder/Diretor confirmado, pode '
-              'ser necessário passar essa responsabilidade para outra '
-              'pessoa antes, porque essa informação continua ligada a '
-              'Grupos e Ações que outras pessoas usam.',
+              'Apagar sua conta e os dados dela: você mesmo faz, pelo app, em '
+              '"Excluir conta". Apagamos seu nome, Apelido, telefone, Igreja '
+              'de origem, gênero e idade, e seu acesso é encerrado na hora. '
+              'Você sai dos Grupos de que participa e deixa de ocupar vaga em '
+              'Ações que ainda vão acontecer. Se você for Dono de um Grupo ou '
+              'tiver uma Rodada de votação aberta, elas passam para o '
+              'Administrador do distrito — você não precisa transferir nada '
+              'antes. A única situação em que o app recusa é quando você é o '
+              'único Administrador do distrito: aí é preciso promover outro '
+              'antes, senão o distrito fica sem quem o administre.',
+            ),
+            const LegalBullet(
+              'O que continua existindo depois disso: o registro das Ações que '
+              'já aconteceram, incluindo quem esteve presente, porque ele '
+              'conta a história de outras pessoas também. Nesses registros '
+              'você aparece como "Membro removido", sem nada que identifique '
+              'quem era. Não há como desfazer nem recuperar — voltar significa '
+              'um cadastro novo, sem ligação com o anterior.',
             ),
             const LegalBullet(
               'Retirar o consentimento a qualquer momento: mesmo canal — '
@@ -233,6 +251,20 @@ class PrivacyPolicyPage extends StatelessWidget {
             const LegalParagraph(
               '${LegalMetadata.controllerName} — ${LegalMetadata.contactEmail}.',
             ),
+
+            // O direito de exclusão só é exercível se houver caminho até ele
+            // dentro do app (FR-001). Enquanto não existe tela de "meu
+            // perfil", este é o lugar coerente: fica ao lado do texto que
+            // descreve o direito, e longe de um toque acidental na barra
+            // principal.
+            if (hasPerfil) ...[
+              const SizedBox(height: AppSpacing.lg),
+              OutlinedButton(
+                onPressed: () => context.push('/delete-account'),
+                style: OutlinedButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Excluir minha conta'),
+              ),
+            ],
           ],
         ),
       ),

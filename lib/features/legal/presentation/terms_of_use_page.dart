@@ -140,9 +140,13 @@ class TermsOfUsePage extends StatelessWidget {
 
             const LegalHeading('Encerramento de conta'),
             const LegalParagraph(
-              'Você pode pedir a exclusão da sua conta a qualquer momento '
-              '— veja como, e as ressalvas quando você tiver papel de Dono '
-              'de Grupo, Administrador ou Líder/Diretor, na Política de '
+              'Você pode excluir sua conta a qualquer momento, sozinho, pelo '
+              'app. Se você for Dono de um Grupo ou tiver uma Rodada de '
+              'votação aberta, elas passam automaticamente para o '
+              'Administrador do distrito, para que ninguém perca o Grupo de '
+              'que participa. A exclusão é definitiva, e o registro das Ações '
+              'que já aconteceram permanece, com você identificado apenas '
+              'como "Membro removido". Os detalhes estão na Política de '
               'Privacidade.',
             ),
             Padding(

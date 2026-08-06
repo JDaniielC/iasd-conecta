@@ -1,7 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/church.dart';
-import '../domain/perfil.dart';
+import '../domain/profile.dart';
 
 /// Único ponto de acesso a `public.perfis` e `public.igrejas`.
 ///
@@ -29,14 +29,14 @@ class PerfilRepository {
     return rows.map(Church.fromMap).toList();
   }
 
-  Future<void> criarPerfil(Perfil perfil) async {
+  Future<void> criarPerfil(Profile perfil) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('perfis').insert(perfil.toInsertMap(id: uid));
   }
 
-  Future<PerfilPublico> fetchPerfilPublico(String id) async {
+  Future<PublicProfile> fetchPerfilPublico(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
-    return PerfilPublico.fromMap(row);
+    return PublicProfile.fromMap(row);
   }
 }

@@ -111,7 +111,7 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
                     children: participantes.map((p) {
                       final ehODono = p.id == grupo.donoId;
                       return ListTile(
-                        title: Text(p.nomeExibido),
+                        title: Text(p.displayName),
                         subtitle: ehODono ? const Text('Dono') : null,
                         trailing: ehODono
                             ? null

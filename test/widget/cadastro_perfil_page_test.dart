@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/perfil/data/perfil_repository.dart';
 import 'package:iasd_conecta/features/perfil/domain/church.dart';
-import 'package:iasd_conecta/features/perfil/domain/perfil.dart';
+import 'package:iasd_conecta/features/perfil/domain/profile.dart';
 import 'package:iasd_conecta/features/perfil/presentation/cadastro_perfil_page.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -49,7 +49,7 @@ void main() {
 
   setUpAll(() {
     registerFallbackValue(
-      const Perfil(nome: '', genero: Genero.feminino, idade: 0, consentimentoLgpdAceito: false),
+      const Profile(name: '', gender: Gender.female, age: 0, lgpdConsentAccepted: false),
     );
   });
 

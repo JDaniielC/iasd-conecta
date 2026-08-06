@@ -90,7 +90,7 @@ class _PendingCard extends ConsumerWidget {
               grupoAsync.value?.nome ?? 'Grupo',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            Text('Declarante: ${declaranteAsync.value?.nomeExibido ?? '...'}'),
+            Text('Declarante: ${declaranteAsync.value?.displayName ?? '...'}'),
             Text('Ano: ${declaration.year}'),
             const SizedBox(height: AppSpacing.sm),
             Row(

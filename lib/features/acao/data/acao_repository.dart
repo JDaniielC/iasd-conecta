@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../perfil/domain/perfil.dart';
+import '../../perfil/domain/profile.dart';
 import '../domain/acao.dart';
 
 /// Único ponto de acesso a `acoes` e `confirmacoes_acao`.
@@ -74,9 +74,9 @@ class AcaoRepository {
     return resultados;
   }
 
-  Future<PerfilPublico> _fetchPerfilPublico(String id) async {
+  Future<PublicProfile> _fetchPerfilPublico(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
-    return PerfilPublico.fromMap(row);
+    return PublicProfile.fromMap(row);
   }
 }

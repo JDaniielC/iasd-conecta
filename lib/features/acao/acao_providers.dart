@@ -26,7 +26,7 @@ final acoesComIgrejaProvider = FutureProvider.autoDispose<List<AcaoComIgreja>>((
   final criadoresSemGrupo =
       acoes.where((a) => a.grupoId == null).map((a) => a.criadorId).toSet();
   final perfis = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPerfilPublico));
-  final igrejaPorCriador = {for (final p in perfis) p.id: p.igrejaId};
+  final igrejaPorCriador = {for (final p in perfis) p.id: p.churchId};
 
   return acoes.map((acao) {
     final igrejaId =

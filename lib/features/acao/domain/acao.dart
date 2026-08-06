@@ -1,4 +1,4 @@
-import '../../perfil/domain/perfil.dart';
+import '../../perfil/domain/profile.dart';
 
 /// Dados de uma Ação avulsa ainda não enviada ao banco (formulário de
 /// criação). `criadorId` é preenchido pelo repositório a partir da sessão
@@ -199,6 +199,6 @@ enum StatusConfirmacao { confirmado, fila }
 class ConfirmacaoComPerfil {
   const ConfirmacaoComPerfil({required this.perfil, required this.status});
 
-  final PerfilPublico perfil;
+  final PublicProfile perfil;
   final StatusConfirmacao status;
 }

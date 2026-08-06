@@ -6,7 +6,7 @@ import 'package:iasd_conecta/features/grupo/data/grupo_repository.dart';
 import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
 import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
 import 'package:iasd_conecta/features/grupo/presentation/editar_grupo_page.dart';
-import 'package:iasd_conecta/features/perfil/domain/perfil.dart';
+import 'package:iasd_conecta/features/perfil/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GrupoRepository {}
@@ -25,7 +25,7 @@ Future<void> _pump(WidgetTester tester, {required String? uid}) async {
   final grupoRepo = MockGrupoRepository();
   when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
   when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
-    (_) async => const [PerfilPublico(id: 'dono-1', nomeExibido: 'Dono')],
+    (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
   );
 
   await tester.pumpWidget(

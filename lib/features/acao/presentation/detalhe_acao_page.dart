@@ -161,12 +161,12 @@ class DetalheAcaoPage extends ConsumerWidget {
                           .toList();
                       return ListView(
                         children: [
-                          ...vagas.map((c) => ListTile(title: Text(c.perfil.nomeExibido))),
+                          ...vagas.map((c) => ListTile(title: Text(c.perfil.displayName))),
                           if (fila.isNotEmpty) ...[
                             const Divider(),
                             const Text('Fila de espera'),
                             ...fila.map((c) => ListTile(
-                                  title: Text(c.perfil.nomeExibido),
+                                  title: Text(c.perfil.displayName),
                                   dense: true,
                                 )),
                           ],

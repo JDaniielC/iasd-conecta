@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/nome_moderation.dart';
-import '../domain/perfil.dart';
+import '../domain/profile.dart';
 
 /// Formulário de criação de Perfil (User Story 1) com etapa condicional de
 /// Apelido para menores de idade (User Story 2, FR-005).
@@ -30,7 +30,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
   // Cache local mínima — a checagem que vale é a constraint no banco.
   final _moderacao = const NomeModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
 
-  Genero _genero = Genero.feminino;
+  Gender _genero = Gender.female;
   String? _igrejaId;
   bool _consentimentoLgpd = false;
   bool _consentimentoIgreja = false;
@@ -46,29 +46,29 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
     super.dispose();
   }
 
-  Perfil? get _perfilAtual {
+  Profile? get _perfilAtual {
     final idade = int.tryParse(_idadeController.text);
     if (idade == null) return null;
-    return Perfil(
-      nome: _nomeController.text,
-      genero: _genero,
-      idade: idade,
-      consentimentoLgpdAceito: _consentimentoLgpd,
-      apelido: _apelidoController.text,
-      igrejaId: _igrejaId,
-      telefone: _telefoneController.text,
-      consentimentoLgpdIgrejaAceito: _consentimentoIgreja,
+    return Profile(
+      name: _nomeController.text,
+      gender: _genero,
+      age: idade,
+      lgpdConsentAccepted: _consentimentoLgpd,
+      nickname: _apelidoController.text,
+      churchId: _igrejaId,
+      phone: _telefoneController.text,
+      churchLgpdConsentAccepted: _consentimentoIgreja,
     );
   }
 
   Future<void> _enviar() async {
     final perfil = _perfilAtual;
     if (_formKey.currentState?.validate() != true || perfil == null) return;
-    if (!_moderacao.valido(perfil.nome)) {
+    if (!_moderacao.valido(perfil.name)) {
       setState(() => _erro = 'Esse nome não pode ser usado. Tente outro.');
       return;
     }
-    if (!perfil.prontoParaEnviar) {
+    if (!perfil.readyToSubmit) {
       setState(() => _erro = 'Revise o formulário antes de continuar.');
       return;
     }
@@ -140,13 +140,13 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
                 onChanged: (_) => setState(() {}),
               ),
               const SizedBox(height: AppSpacing.md),
-              DropdownButtonFormField<Genero>(
+              DropdownButtonFormField<Gender>(
                 initialValue: _genero,
                 decoration: const InputDecoration(labelText: 'Gênero'),
-                items: Genero.values
+                items: Gender.values
                     .map((g) => DropdownMenuItem(
                           value: g,
-                          child: Text(g == Genero.masculino ? 'Masculino' : 'Feminino'),
+                          child: Text(g == Gender.male ? 'Masculino' : 'Feminino'),
                         ))
                     .toList(),
                 onChanged: (g) => setState(() => _genero = g ?? _genero),
@@ -255,7 +255,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: (_enviando || _perfilAtual?.prontoParaEnviar != true)
+                onPressed: (_enviando || _perfilAtual?.readyToSubmit != true)
                     ? null
                     : _enviar,
                 child: _enviando

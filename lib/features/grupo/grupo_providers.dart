@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
-import '../perfil/domain/perfil.dart';
+import '../perfil/domain/profile.dart';
 import 'data/grupo_repository.dart';
 import 'domain/categoria_grupo.dart';
 import 'domain/grupo.dart';
@@ -23,6 +23,6 @@ final grupoProvider = FutureProvider.autoDispose.family<Grupo, String>((ref, id)
 });
 
 final participantesProvider =
-    FutureProvider.autoDispose.family<List<PerfilPublico>, String>((ref, grupoId) {
+    FutureProvider.autoDispose.family<List<PublicProfile>, String>((ref, grupoId) {
   return ref.watch(grupoRepositoryProvider).fetchParticipantes(grupoId);
 });

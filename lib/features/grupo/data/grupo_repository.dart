@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../perfil/domain/perfil.dart';
+import '../../perfil/domain/profile.dart';
 import '../domain/categoria_grupo.dart';
 import '../domain/grupo.dart';
 
@@ -65,16 +65,16 @@ class GrupoRepository {
     return rows.map((r) => r['usuario_id'] as String).toList();
   }
 
-  Future<List<PerfilPublico>> fetchParticipantes(String grupoId) async {
+  Future<List<PublicProfile>> fetchParticipantes(String grupoId) async {
     final ids = await fetchParticipanteIds(grupoId);
     final perfis = await Future.wait(ids.map((id) => _fetchPerfilPublico(id)));
     return perfis;
   }
 
-  Future<PerfilPublico> _fetchPerfilPublico(String id) async {
+  Future<PublicProfile> _fetchPerfilPublico(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
-    return PerfilPublico.fromMap(row);
+    return PublicProfile.fromMap(row);
   }
 
   /// FR-013: idempotente — participar de novo não é erro nem duplica.

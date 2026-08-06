@@ -9,7 +9,7 @@ import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
 import 'package:iasd_conecta/features/grupo/presentation/detalhe_grupo_page.dart';
 import 'package:iasd_conecta/features/leadership/domain/leadership_declaration.dart';
 import 'package:iasd_conecta/features/leadership/leadership_providers.dart';
-import 'package:iasd_conecta/features/perfil/domain/perfil.dart';
+import 'package:iasd_conecta/features/perfil/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GrupoRepository {}
@@ -43,7 +43,7 @@ void main() {
       final grupoRepo = MockGrupoRepository();
       when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
       when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
-        (_) async => const [PerfilPublico(id: 'dono-1', nomeExibido: 'Dono')],
+        (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
 
       final router = GoRouter(
@@ -66,10 +66,10 @@ void main() {
               (ref) async => [_confirmed('l1', 'lider-1'), _confirmed('l2', 'lider-2')],
             ),
             perfilPublicoProvider('lider-1').overrideWith(
-              (ref) async => const PerfilPublico(id: 'lider-1', nomeExibido: 'Ana Líder'),
+              (ref) async => const PublicProfile(id: 'lider-1', displayName: 'Ana Líder'),
             ),
             perfilPublicoProvider('lider-2').overrideWith(
-              (ref) async => const PerfilPublico(id: 'lider-2', nomeExibido: 'Beto Diretor'),
+              (ref) async => const PublicProfile(id: 'lider-2', displayName: 'Beto Diretor'),
             ),
           ],
           child: MaterialApp.router(routerConfig: router),
@@ -89,7 +89,7 @@ void main() {
       final grupoRepo = MockGrupoRepository();
       when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
       when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
-        (_) async => const [PerfilPublico(id: 'dono-1', nomeExibido: 'Dono')],
+        (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
 
       final router = GoRouter(

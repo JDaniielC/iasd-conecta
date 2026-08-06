@@ -106,7 +106,7 @@ class DetalheGrupoPage extends ConsumerWidget {
                   child: participantesAsync.when(
                     data: (participantes) => ListView(
                       children: participantes
-                          .map((p) => ListTile(title: Text(p.nomeExibido)))
+                          .map((p) => ListTile(title: Text(p.displayName)))
                           .toList(),
                     ),
                     loading: () => const Center(child: CircularProgressIndicator()),
@@ -157,6 +157,6 @@ class _LeaderName extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final perfilAsync = ref.watch(perfilPublicoProvider(userId));
-    return Text(perfilAsync.value?.nomeExibido ?? '...');
+    return Text(perfilAsync.value?.displayName ?? '...');
   }
 }

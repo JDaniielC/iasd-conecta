@@ -32,8 +32,8 @@ em `lib/features/`, testes em `test/{unit,widget,integration}/`. Ver
 
 **Purpose**: preparar o terreno. Não há projeto novo a inicializar.
 
-- [ ] T001 Criar o arquivo de migration vazio `supabase/migrations/20260806140000_exclusao_de_conta.sql` com o cabeçalho de comentário explicando o problema que a feature resolve, seguindo o padrão de `supabase/migrations/20260806090000_nome_valido_security_definer.sql`
-- [ ] T002 [P] Confirmar que o Supabase local está de pé e limpo com `supabase db reset`, e registrar a contagem atual de testes (`flutter test test/unit test/widget` e `dart test test/integration`) como linha de base
+- [X] T001 Criar o arquivo de migration vazio `supabase/migrations/20260806140000_exclusao_de_conta.sql` com o cabeçalho de comentário explicando o problema que a feature resolve, seguindo o padrão de `supabase/migrations/20260806090000_nome_valido_security_definer.sql`
+- [X] T002 [P] Confirmar que o Supabase local está de pé e limpo com `supabase db reset`, e registrar a contagem atual de testes (`flutter test test/unit test/widget` e `dart test test/integration`) como linha de base
 
 ---
 
@@ -43,13 +43,13 @@ em `lib/features/`, testes em `test/{unit,widget,integration}/`. Ver
 
 **⚠️ CRITICAL**: nenhuma user story começa antes desta fase fechar.
 
-- [ ] T003 Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, derrubar a constraint `perfis_id_fkey`, comentando no próprio SQL por que nenhuma variação de `ON DELETE` resolve (ver [research.md](./research.md) § 2)
-- [ ] T004 No mesmo arquivo, relaxar `not null` de `perfis.genero` e `perfis.idade` e adicionar a coluna `perfis.anonimizado_em timestamptz`, conforme [contracts/schema.sql](./contracts/schema.sql) § 2
-- [ ] T005 Aplicar com `supabase db reset` e verificar no banco que as três mudanças existem e que as 15 migrations anteriores continuam aplicando limpo
-- [ ] T006 Traduzir `lib/features/perfil/domain/perfil.dart` para inglês (`perfil.dart`→`profile.dart`, `Perfil`→`Profile`, `genero`→`gender`, `idade`→`age`, `apelido`→`nickname`, `igrejaId`→`churchId`, `menorDeIdade`→`isMinor`) e propagar aos 29 arquivos que o referenciam. **Commit separado**, sem mudança de comportamento: o Princípio I manda traduzir o arquivo que se toca, e 211 renomeações no mesmo commit da mudança de nulidade tornariam o diff da feature ilegível e o `git bisect` inútil. Gate: `flutter analyze` limpo e a suíte inteira verde antes e depois, com a mesma contagem de testes
-- [ ] T007 Em `lib/features/perfil/domain/profile.dart`, tornar `gender` e `age` anuláveis, definir `isMinor` como `false` quando `age` é nula, e ajustar `fromMap`/`toInsertMap`
-- [ ] T008 Em `test/unit/profile_model_test.dart`, cobrir o Profile anonimizado: `gender` e `age` nulos, `isMinor` falso, e nome exibido como `'Membro removido'`
-- [ ] T009 Rodar `flutter analyze` e corrigir todo call-site que passou a receber `gender`/`age` anuláveis — o compilador é quem lista, não adivinhe
+- [X] T003 Em `supabase/migrations/20260806140000_exclusao_de_conta.sql`, derrubar a constraint `perfis_id_fkey`, comentando no próprio SQL por que nenhuma variação de `ON DELETE` resolve (ver [research.md](./research.md) § 2)
+- [X] T004 No mesmo arquivo, relaxar `not null` de `perfis.genero` e `perfis.idade` e adicionar a coluna `perfis.anonimizado_em timestamptz`, conforme [contracts/schema.sql](./contracts/schema.sql) § 2
+- [X] T005 Aplicar com `supabase db reset` e verificar no banco que as três mudanças existem e que as 15 migrations anteriores continuam aplicando limpo
+- [X] T006 Traduzir `lib/features/perfil/domain/perfil.dart` para inglês (`perfil.dart`→`profile.dart`, `Perfil`→`Profile`, `genero`→`gender`, `idade`→`age`, `apelido`→`nickname`, `igrejaId`→`churchId`, `menorDeIdade`→`isMinor`) e propagar aos 29 arquivos que o referenciam. **Commit separado**, sem mudança de comportamento: o Princípio I manda traduzir o arquivo que se toca, e 211 renomeações no mesmo commit da mudança de nulidade tornariam o diff da feature ilegível e o `git bisect` inútil. Gate: `flutter analyze` limpo e a suíte inteira verde antes e depois, com a mesma contagem de testes
+- [X] T007 ~~Tornar `gender` e `age` anuláveis em `profile.dart`~~ **CANCELADA na implementação.** `Profile` é write-only: só é construído pelo formulário de cadastro (`cadastro_perfil_page.dart:52`), `hasPerfil()` seleciona apenas `id`, e leitura de terceiros passa por `perfil_publico` → `PublicProfile`, que por design não devolve gênero nem idade (FR-004). O nulo existe só na linha do banco, que o Dart nunca carrega. Torná-los anuláveis enfraqueceria a invariante do cadastro sem nenhum ganho
+- [X] T008 Em `test/unit/profile_model_test.dart`, cobrir o que de fato chega ao Dart de um Perfil anonimizado: `PublicProfile.fromMap` com `nome_exibido = 'Membro removido'` e `igreja_id` nulo — a projeção pública é o único caminho pelo qual o app enxerga quem saiu
+- [X] T009 Rodar `flutter analyze` e a suíte, confirmando que a Fase 2 não mudou comportamento nenhum no app
 
 **Checkpoint**: schema novo aplicado, modelo Dart compilando, testes unitários verdes.
 

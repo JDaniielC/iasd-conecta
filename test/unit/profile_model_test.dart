@@ -96,4 +96,19 @@ void main() {
       expect(map['consentimento_lgpd_igreja_aceito_em'], isNotNull);
     });
   });
+
+  group('PublicProfile de um Perfil anonimizado (feature 009)', () {
+    // Um Perfil anonimizado nunca é carregado num Profile — este é o único
+    // caminho pelo qual o app enxerga quem excluiu a conta.
+    test('exibe "Membro removido" e nenhuma Igreja', () {
+      final publicProfile = PublicProfile.fromMap(const {
+        'id': 'uid-que-saiu',
+        'nome_exibido': 'Membro removido',
+        'igreja_id': null,
+      });
+
+      expect(publicProfile.displayName, 'Membro removido');
+      expect(publicProfile.churchId, isNull);
+    });
+  });
 }

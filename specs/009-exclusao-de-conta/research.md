@@ -122,10 +122,14 @@ conservar a linha frágil. Verificado que os `check` existentes toleram nulo:
 `apelido_obrigatorio_menor` (`idade >= 18 or apelido is not null`) avalia
 como nulo, e no Postgres um `check` que resulta em nulo passa.
 
-**Consequência**: o modelo Dart `Perfil` passa a ter `genero` e `idade`
-anuláveis, e `menorDeIdade` precisa de um comportamento definido para
-Perfil anonimizado (proposta: `false`, já que não há menor a proteger — não
-existe mais pessoa por trás).
+**Consequência no Dart: nenhuma** — verificado na implementação, corrigindo
+o que este documento afirmava antes. `Profile` é write-only: só nasce do
+formulário de cadastro, `hasPerfil()` seleciona apenas `id`, e a leitura de
+terceiros passa por `perfil_publico`, que por design nunca devolve gênero
+nem idade (FR-004). A linha anonimizada nunca é carregada num `Profile`, de
+modo que os campos continuam não-anuláveis no modelo do formulário, onde
+sempre estão preenchidos. O que o app enxerga de quem saiu é
+`PublicProfile`, com `displayName = 'Membro removido'`.
 
 **Alternativas consideradas**:
 

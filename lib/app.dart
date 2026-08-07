@@ -50,9 +50,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // (Home, lista/detalhe de Grupo — FR-008 da 001, FR-005 da 002).
       // Só ações concretas (Participar, Criar Grupo...) checam Perfil, via
       // PerfilGuard.exigirPerfil no próprio botão — não aqui no redirect
-      // global. A única exceção é sair da tela de cadastro depois de já
-      // ter Perfil, pra não deixar a pessoa "presa" nela.
+      // global. As exceções são sair de /cadastro e de /login depois do
+      // objetivo da tela estar cumprido, pra não deixar a pessoa "presa" nela
+      // — nenhuma das duas navega sozinha, ambas só invalidam
+      // `hasPerfilProvider` e esperam este redirect.
       if (hasPerfil && state.matchedLocation == '/cadastro') return '/home';
+      // /login sai por sessão deixar de ser anônima, não por ter Perfil:
+      // quem entra numa Conta sem Perfil vira Visitante em /home (rota
+      // pública), em vez de ficar preso na tela de entrar.
+      if (ref.read(isAnonymousProvider) == false &&
+          state.matchedLocation == '/login') {
+        return '/home';
+      }
       return null;
     },
     routes: [

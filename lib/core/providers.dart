@@ -23,6 +23,15 @@ final currentUserIdProvider = Provider<String?>((ref) {
   return ref.watch(supabaseClientProvider).auth.currentUser?.id;
 });
 
+/// Sessão atual é anônima? Nulo enquanto não há sessão nenhuma. Provider
+/// dedicado pelo mesmo motivo de [currentUserIdProvider]: o roteamento
+/// depende disso (sair de /login) e teste de widget precisa sobrescrever sem
+/// mockar `SupabaseClient`/`GoTrueClient`.
+final isAnonymousProvider = Provider<bool?>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(supabaseClientProvider).auth.currentUser?.isAnonymous;
+});
+
 final perfilRepositoryProvider = Provider<PerfilRepository>((ref) {
   return PerfilRepository(ref.watch(supabaseClientProvider));
 });

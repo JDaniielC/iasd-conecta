@@ -65,11 +65,22 @@ if [ -z "${user_id}" ] || [ "${user_id}" = "null" ]; then
   exit 1
 fi
 
+# Guardado como JSON (`null` ou `"uuid"` com aspas), não como texto cru:
+# vai direto pro `--argjson` do jq lá embaixo.
 igreja_id="null"
 if [ -n "${ADMIN_IGREJA:-}" ]; then
-  igreja_id=$(curl -sS "${auth_header[@]}" \
-    "${SUPABASE_URL}/rest/v1/igrejas?nome=eq.${ADMIN_IGREJA}&select=id" \
-    | jq -r '.[0].id // "null"')
+  # -G/--data-urlencode em vez de interpolar na URL: nome de Igreja tem
+  # espaço e acento ("Alto José Leal"), e curl não percent-encoda o que já
+  # veio na URL — o request sai malformado e o lookup devolve nada.
+  igreja_id=$(curl -sS -G "${auth_header[@]}" \
+    --data-urlencode "nome=eq.${ADMIN_IGREJA}" \
+    --data "select=id" \
+    "${SUPABASE_URL}/rest/v1/igrejas" \
+    | jq -c '.[0].id // null')
+  if [ "${igreja_id}" = "null" ]; then
+    echo "bootstrap_admin: Igreja '${ADMIN_IGREJA}' não existe no banco — confira o nome exato." >&2
+    exit 1
+  fi
 fi
 
 post_upsert() {
@@ -85,10 +96,17 @@ post_upsert() {
   fi
 }
 
+# O consentimento de vincular o Perfil a uma Igreja é destacado do
+# consentimento geral (constraint `consentimento_igreja_destacado`, migration
+# 20260724140000). Aqui ele é gravado porque quem roda o bootstrap preenche
+# ADMIN_IGREJA para o próprio Perfil — é a pessoa consentindo por si mesma,
+# não um terceiro sendo vinculado. Sem ADMIN_IGREJA, fica nulo dos dois lados.
 post_upsert perfis "$(jq -n \
   --arg id "$user_id" --arg nome "$ADMIN_NOME" --arg genero "$ADMIN_GENERO" \
   --argjson idade "$ADMIN_IDADE" --argjson igreja_id "$igreja_id" \
-  '{id: $id, nome: $nome, genero: $genero, idade: $idade, igreja_id: $igreja_id, consentimento_lgpd_aceito_em: (now | todate)}')"
+  '{id: $id, nome: $nome, genero: $genero, idade: $idade, igreja_id: $igreja_id,
+    consentimento_lgpd_aceito_em: (now | todate),
+    consentimento_lgpd_igreja_aceito_em: (if $igreja_id == null then null else (now | todate) end)}')"
 
 post_upsert administradores_distrito "$(jq -n --arg id "$user_id" '{usuario_id: $id, promovido_por: $id}')"
 

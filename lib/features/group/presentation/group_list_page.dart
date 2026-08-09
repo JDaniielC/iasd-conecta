@@ -16,10 +16,13 @@ enum _GroupSortOrder { maisRecentes, name, category }
 
 const _allChurches = '__todas__';
 
-/// Home do app: lista de Grupos, visível a Visitante e Usuário igualmente
+/// Lista de Grupos, em `/grupos`, visível a Visitante e Usuário igualmente
 /// (FR-005/FR-008 — sem exigir Perfil pra essa visualização). Agrupada por
 /// Igreja, com filtro de Igreja e ordenação — um distrito com várias Igrejas
 /// rapidamente vira uma lista longa e sem estrutura sem isso.
+///
+/// Deixou de ser a primeira tela na feature 010: a rota inicial passou a ser a
+/// Home de propósito, e esta lista ganhou endereço próprio.
 class GroupListPage extends ConsumerStatefulWidget {
   const GroupListPage({super.key});
 

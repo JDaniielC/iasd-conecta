@@ -19,6 +19,7 @@ import 'features/group/presentation/create_group_page.dart';
 import 'features/group/presentation/group_detail_page.dart';
 import 'features/group/presentation/edit_group_page.dart';
 import 'features/group/presentation/group_list_page.dart';
+import 'features/home/presentation/home_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
 import 'features/legal/presentation/privacy_policy_page.dart';
@@ -72,7 +73,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const GroupListPage(),
+        builder: (context, state) => const HomePage(),
       ),
       GoRoute(
         path: '/upgrade-conta',
@@ -85,6 +86,12 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/login',
         builder: (context, state) => const LoginPage(),
+      ),
+      // `/grupos` vem antes de `/grupos/:id`: go_router casa na ordem de
+      // declaração, e a listagem não pode competir com o parâmetro de id.
+      GoRoute(
+        path: '/grupos',
+        builder: (context, state) => const GroupListPage(),
       ),
       GoRoute(
         path: '/grupos/novo',

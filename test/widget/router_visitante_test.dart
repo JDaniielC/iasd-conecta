@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/app.dart';
@@ -8,33 +9,61 @@ import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/profile/data/auth_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GroupRepository {}
+class MockGroupRepository extends Mock implements GroupRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
+/// Monta o app inteiro como Visitante (sem Perfil), a partir da rota inicial.
+Future<void> _pumpAppAsVisitor(WidgetTester tester) async {
+  final groupRepo = MockGroupRepository();
+  when(() => groupRepo.fetchGroups()).thenAnswer((_) async => <Group>[]);
+  final authRepo = MockAuthRepository();
+  when(() => authRepo.hasAccount).thenReturn(false);
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hasProfileProvider.overrideWith((ref) async => false),
+        // O `redirect` de app.dart lê `isAnonymousProvider` sempre, e ele
+        // chega no cliente Supabase, que não existe em teste. Sem este
+        // override, a primeira navegação depois do estado de Perfil resolver
+        // estoura e o router cai na página de erro.
+        isAnonymousProvider.overrideWithValue(true),
+        groupRepositoryProvider.overrideWithValue(groupRepo),
+        authRepositoryProvider.overrideWithValue(authRepo),
+      ],
+      child: const App(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
 void main() {
   testWidgets(
-    'Visitante (sem Perfil) cai direto na lista de Grupos, sem ser forçado ao cadastro',
+    'Visitante (sem Perfil) cai na Home, não é forçado ao cadastro (FR-001)',
     (tester) async {
-      final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGroups()).thenAnswer((_) async => <Group>[]);
-      final authRepo = MockAuthRepository();
-      when(() => authRepo.hasAccount).thenReturn(false);
+      await _pumpAppAsVisitor(tester);
 
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            hasProfileProvider.overrideWith((ref) async => false),
-            groupRepositoryProvider.overrideWithValue(grupoRepo),
-            authRepositoryProvider.overrideWithValue(authRepo),
-          ],
-          child: const App(),
-        ),
-      );
+      // A rota inicial passou a ser a Home de propósito (feature 010).
+      expect(find.text('A Deus seja a glória'), findsOneWidget);
+      // O que este caso sempre protegeu: ninguém é empurrado pro cadastro.
+      expect(find.text('Criar Perfil'), findsWidgets);
+    },
+  );
+
+  testWidgets(
+    'Visitante alcança a lista de Grupos a partir da Home, sem cadastro',
+    (tester) async {
+      await _pumpAppAsVisitor(tester);
+
+      // O viewport padrão do teste tem 600px de altura e a chamada fica
+      // abaixo da dobra — só a doxologia precisa estar visível sem rolar.
+      await tester.ensureVisible(find.text('Ver Grupos'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ver Grupos'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Grupos'), findsOneWidget);
-      expect(find.text('Criar Perfil'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Grupos'), findsOneWidget);
     },
   );
 }

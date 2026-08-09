@@ -60,12 +60,12 @@ void main() {
   });
 
   test('FR-005/FR-006: 2 homens visitando mulher é recusada', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidHomem1, generoVisitado: 'feminino');
+    final actionId = await _criarDuplaMissionaria(conn, creatorId: _uidHomem1, generoVisitado: 'feminino');
     await expectLater(
       _comoUsuario(conn, _uidHomem2, () async {
         await conn.execute(
           Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-          parameters: {'acao': acaoId, 'uid': _uidHomem2},
+          parameters: {'acao': actionId, 'uid': _uidHomem2},
         );
       }),
       throwsA(isA<ServerException>()),
@@ -73,12 +73,12 @@ void main() {
   });
 
   test('FR-005/FR-006: 2 mulheres visitando homem é recusada', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidMulher1, generoVisitado: 'masculino');
+    final actionId = await _criarDuplaMissionaria(conn, creatorId: _uidMulher1, generoVisitado: 'masculino');
     await expectLater(
       _comoUsuario(conn, _uidMulher2, () async {
         await conn.execute(
           Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-          parameters: {'acao': acaoId, 'uid': _uidMulher2},
+          parameters: {'acao': actionId, 'uid': _uidMulher2},
         );
       }),
       throwsA(isA<ServerException>()),

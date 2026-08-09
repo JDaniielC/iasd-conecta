@@ -22,7 +22,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
   @override
   void dispose() {
@@ -35,7 +35,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
     if (_formKey.currentState?.validate() != true) return;
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(authRepositoryProvider).upgradeToAccount(
@@ -46,7 +46,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
     } on AuthException catch (_) {
       // Mensagem genérica: nunca revela se o e-mail já tem Conta
       // (mesmo cuidado do login_page.dart, FR-014 da feature 001).
-      setState(() => _erro = 'Não deu pra virar Conta com esses dados. Tente de novo.');
+      setState(() => _error = 'Não deu pra virar Conta com esses dados. Tente de novo.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -85,9 +85,9 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
                     ? 'Senha precisa de ao menos 6 caracteres'
                     : null,
               ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

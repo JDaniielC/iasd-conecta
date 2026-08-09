@@ -38,34 +38,34 @@ class ActionRepository {
   }
 
   /// FR-012: idempotente — confirmar de novo não é erro nem duplica.
-  Future<void> confirmAttendance(String acaoId) async {
+  Future<void> confirmAttendance(String actionId) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('confirmacoes_acao').upsert(
-      {'acao_id': acaoId, 'usuario_id': uid},
+      {'acao_id': actionId, 'usuario_id': uid},
       onConflict: 'acao_id,usuario_id',
       ignoreDuplicates: true,
     );
   }
 
   /// FR-004: sempre auto-serviço; a promoção da fila é automática no banco.
-  Future<void> withdraw(String acaoId) async {
+  Future<void> withdraw(String actionId) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('confirmacoes_acao')
         .delete()
-        .eq('acao_id', acaoId)
+        .eq('acao_id', actionId)
         .eq('usuario_id', uid);
   }
 
-  Future<List<AttendanceWithProfile>> fetchAttendees(String acaoId) async {
+  Future<List<AttendanceWithProfile>> fetchAttendees(String actionId) async {
     final rows = await _client
         .from('confirmacoes_acao')
         .select('usuario_id, status')
-        .eq('acao_id', acaoId)
+        .eq('acao_id', actionId)
         .order('created_at');
 
     final results = await Future.wait(rows.map((row) async {
-      final profile = await _fetchPerfilPublico(row['usuario_id'] as String);
+      final profile = await _fetchPublicProfile(row['usuario_id'] as String);
       final status = row['status'] == 'confirmado'
           ? AttendanceStatus.confirmed
           : AttendanceStatus.waitlist;
@@ -74,7 +74,7 @@ class ActionRepository {
     return results;
   }
 
-  Future<PublicProfile> _fetchPerfilPublico(String id) async {
+  Future<PublicProfile> _fetchPublicProfile(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
     return PublicProfile.fromMap(row);

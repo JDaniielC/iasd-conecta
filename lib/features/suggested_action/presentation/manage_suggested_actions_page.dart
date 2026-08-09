@@ -19,7 +19,7 @@ class ManageSuggestedActionsPage extends ConsumerStatefulWidget {
 
 class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActionsPage> {
   final _nameController = TextEditingController();
-  String? _categoriaId;
+  String? _categoryId;
   bool _sending = false;
   String? _error;
 
@@ -31,7 +31,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
 
   Future<void> _create() async {
     final name = _nameController.text.trim();
-    if (name.isEmpty || _categoriaId == null) {
+    if (name.isEmpty || _categoryId == null) {
       setState(() => _error = 'Escolha uma Categoria e informe um nome.');
       return;
     }
@@ -42,7 +42,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
     try {
       await ref
           .read(suggestedActionRepositoryProvider)
-          .create(categoryId: _categoriaId!, name: name);
+          .create(categoryId: _categoryId!, name: name);
       ref.invalidate(allSuggestedActionsProvider);
       _nameController.clear();
     } catch (_) {
@@ -63,7 +63,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(groupCategoriesProvider);
+    final categoriesAsync = ref.watch(groupCategoriesProvider);
     final suggestionsAsync = ref.watch(allSuggestedActionsProvider);
 
     return Scaffold(
@@ -73,14 +73,14 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            categoriasAsync.when(
+            categoriesAsync.when(
               data: (categories) => DropdownButtonFormField<String>(
-                initialValue: _categoriaId,
+                initialValue: _categoryId,
                 decoration: const InputDecoration(labelText: 'Categoria'),
                 items: categories
                     .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
-                onChanged: (v) => setState(() => _categoriaId = v),
+                onChanged: (v) => setState(() => _categoryId = v),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (_, _) => const Text('Não deu pra carregar as categorias.'),
@@ -107,16 +107,16 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
             ],
             const SizedBox(height: AppSpacing.lg),
             Expanded(
-              child: categoriasAsync.when(
+              child: categoriesAsync.when(
                 data: (categories) => suggestionsAsync.when(
                   data: (suggestions) {
-                    final categoriaNome = {for (final c in categories) c.id: c.name};
+                    final categoryName = {for (final c in categories) c.id: c.name};
                     return ListView(
                       children: suggestions
                           .map(
                             (s) => ListTile(
                               title: Text(s.name),
-                              subtitle: Text(categoriaNome[s.categoryId] ?? ''),
+                              subtitle: Text(categoryName[s.categoryId] ?? ''),
                               trailing: IconButton(
                                 icon: const Icon(Icons.delete_outline),
                                 onPressed: () => _delete(s.id),

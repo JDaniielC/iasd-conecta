@@ -58,7 +58,7 @@ class Group {
   final String ownerId;
   final DateTime createdAt;
 
-  bool isOwner(String? usuarioAtualId) => usuarioAtualId != null && usuarioAtualId == ownerId;
+  bool isOwner(String? currentUserId) => currentUserId != null && currentUserId == ownerId;
 
   factory Group.fromMap(Map<String, dynamic> map) {
     return Group(

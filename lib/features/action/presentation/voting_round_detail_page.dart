@@ -43,13 +43,13 @@ class VotingRoundDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rodadaAsync = ref.watch(votingRoundProvider(votingRoundId));
-    final candidatasAsync = ref.watch(candidatesProvider(votingRoundId));
-    final meuVotoAsync = ref.watch(myVoteProvider(votingRoundId));
+    final votingRoundAsync = ref.watch(votingRoundProvider(votingRoundId));
+    final candidatesAsync = ref.watch(candidatesProvider(votingRoundId));
+    final myVoteAsync = ref.watch(myVoteProvider(votingRoundId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rodada de Votação')),
-      body: rodadaAsync.when(
+      body: votingRoundAsync.when(
         data: (votingRound) {
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
@@ -84,9 +84,9 @@ class VotingRoundDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Candidatas', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
-                  child: candidatasAsync.when(
+                  child: candidatesAsync.when(
                     data: (candidates) {
-                      final myVote = meuVotoAsync.value;
+                      final myVote = myVoteAsync.value;
                       if (candidates.isEmpty) {
                         return const Center(child: Text('Nenhuma candidata ainda.'));
                       }

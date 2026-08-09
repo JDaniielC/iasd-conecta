@@ -26,7 +26,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
   final _capacityController = TextEditingController();
   DateTime? _dateTime;
   bool _submitting = false;
-  String? _erro;
+  String? _error;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
   String? _categoryFilterId;
@@ -72,19 +72,19 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
   Future<void> _submit() async {
     final action = _currentAction;
     if (_formKey.currentState?.validate() != true || action == null || !action.isReadyToSubmit) {
-      setState(() => _erro = 'Preencha nome, data/hora e local.');
+      setState(() => _error = 'Preencha nome, data/hora e local.');
       return;
     }
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(actionRepositoryProvider).createAction(action);
       ref.invalidate(actionsProvider);
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra criar a Ação agora. Tente de novo.');
+      setState(() => _error = 'Não deu pra criar a Ação agora. Tente de novo.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -92,7 +92,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(groupCategoriesProvider);
+    final categoriesAsync = ref.watch(groupCategoriesProvider);
     final suggestionsAsync = _categoryFilterId == null
         ? null
         : ref.watch(suggestionsForCategoryProvider(_categoryFilterId!));
@@ -107,7 +107,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              categoriasAsync.when(
+              categoriesAsync.when(
                 data: (categories) => DropdownButtonFormField<String>(
                   initialValue: _categoryFilterId,
                   decoration: const InputDecoration(
@@ -189,9 +189,9 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
                   ),
                   keyboardType: TextInputType.number,
                 ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

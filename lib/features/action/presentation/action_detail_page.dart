@@ -14,9 +14,9 @@ import '../domain/action.dart';
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
 /// (FR-010). Confirmar/desistir exige Perfil (FR-003/FR-004/FR-011).
 class ActionDetailPage extends ConsumerWidget {
-  const ActionDetailPage({super.key, required this.acaoId});
+  const ActionDetailPage({super.key, required this.actionId});
 
-  final String acaoId;
+  final String actionId;
 
   void _showError(BuildContext context, String message) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
@@ -25,8 +25,8 @@ class ActionDetailPage extends ConsumerWidget {
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
-      await ref.read(actionRepositoryProvider).confirmAttendance(acaoId);
-      ref.invalidate(attendeesProvider(acaoId));
+      await ref.read(actionRepositoryProvider).confirmAttendance(actionId);
+      ref.invalidate(attendeesProvider(actionId));
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra confirmar presença. Tente de novo.');
@@ -35,8 +35,8 @@ class ActionDetailPage extends ConsumerWidget {
 
   Future<void> _withdraw(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(actionRepositoryProvider).withdraw(acaoId);
-      ref.invalidate(attendeesProvider(acaoId));
+      await ref.read(actionRepositoryProvider).withdraw(actionId);
+      ref.invalidate(attendeesProvider(actionId));
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra desistir agora. Tente de novo.');
@@ -45,8 +45,8 @@ class ActionDetailPage extends ConsumerWidget {
 
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(actionRepositoryProvider).cancelAction(acaoId);
-      ref.invalidate(actionProvider(acaoId));
+      await ref.read(actionRepositoryProvider).cancelAction(actionId);
+      ref.invalidate(actionProvider(actionId));
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra cancelar agora. Tente de novo.');
@@ -55,8 +55,8 @@ class ActionDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final acaoAsync = ref.watch(actionProvider(acaoId));
-    final attendeesAsync = ref.watch(attendeesProvider(acaoId));
+    final actionAsync = ref.watch(actionProvider(actionId));
+    final attendeesAsync = ref.watch(attendeesProvider(actionId));
     final uid = ref.watch(currentUserIdProvider);
     final myAttendances =
         attendeesAsync.value?.where((c) => c.profile.id == uid) ?? const [];
@@ -64,17 +64,17 @@ class ActionDetailPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ação')),
-      body: acaoAsync.when(
+      body: actionAsync.when(
         data: (action) {
-          final souDonoDoGrupo = action.groupId == null
+          final isGroupOwner = action.groupId == null
               ? false
               : (ref.watch(groupProvider(action.groupId!)).value?.isOwner(uid) ?? false);
-          final souAdministradorDoDistrito =
+          final isDistrictAdmin =
               ref.watch(isDistrictAdminProvider).value ?? false;
           final canCancel = action.canCancel(
             uid,
-            souDonoDoGrupo: souDonoDoGrupo,
-            souAdministradorDoDistrito: souAdministradorDoDistrito,
+            isGroupOwner: isGroupOwner,
+            isDistrictAdmin: isDistrictAdmin,
           );
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),

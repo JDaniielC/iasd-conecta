@@ -21,7 +21,7 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 void main() {
   late Connection conn;
-  late String acaoId;
+  late String actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -40,12 +40,12 @@ void main() {
       ),
       parameters: {'criador': _uidHomemA},
     );
-    acaoId = rows.single.toColumnMap()['id']! as String;
+    actionId = rows.single.toColumnMap()['id']! as String;
 
     await _comoUsuario(conn, _uidMulherB, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidMulherB},
+        parameters: {'acao': actionId, 'uid': _uidMulherB},
       );
     });
 
@@ -53,14 +53,14 @@ void main() {
     await _comoUsuario(conn, _uidHomemC, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidHomemC},
+        parameters: {'acao': actionId, 'uid': _uidHomemC},
       );
     });
     // D (mulher) entra na fila depois — formaria 2M visitando mulher, válido.
     await _comoUsuario(conn, _uidMulherD, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidMulherD},
+        parameters: {'acao': actionId, 'uid': _uidMulherD},
       );
     });
   });
@@ -81,12 +81,12 @@ void main() {
       () async {
     await conn.execute(
       Sql.named('delete from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid'),
-      parameters: {'acao': acaoId, 'uid': _uidMulherB},
+      parameters: {'acao': actionId, 'uid': _uidMulherB},
     );
 
     final rows = await conn.execute(
       Sql.named('select usuario_id, status from public.confirmacoes_acao where acao_id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     final statusMap = {for (final r in rows) r.toColumnMap()['usuario_id']: r.toColumnMap()['status']};
 

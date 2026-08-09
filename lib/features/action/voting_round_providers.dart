@@ -24,7 +24,7 @@ final votingRoundProvider = FutureProvider.autoDispose.family<VotingRound, Strin
 
 final candidatesProvider =
     FutureProvider.autoDispose.family<List<Action>, String>((ref, votingRoundId) {
-  return ref.watch(votingRoundRepositoryProvider).fetchCandidatas(votingRoundId);
+  return ref.watch(votingRoundRepositoryProvider).fetchCandidates(votingRoundId);
 });
 
 final myVoteProvider = FutureProvider.autoDispose.family<Vote?, String>((ref, votingRoundId) {

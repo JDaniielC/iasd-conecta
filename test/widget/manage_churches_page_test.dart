@@ -22,13 +22,13 @@ void main() {
   testWidgets(
     'ManageChurchesPage lista ativas e arquivadas, com botão Arquivar só nas ativas',
     (tester) async {
-      final perfilRepo = MockPerfilRepository();
-      when(() => perfilRepo.fetchChurches()).thenAnswer((_) async => _churches);
+      final profileRepo = MockPerfilRepository();
+      when(() => profileRepo.fetchChurches()).thenAnswer((_) async => _churches);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            profileRepositoryProvider.overrideWithValue(perfilRepo),
+            profileRepositoryProvider.overrideWithValue(profileRepo),
             districtAdminRepositoryProvider.overrideWithValue(MockDistrictAdminRepository()),
           ],
           child: const MaterialApp(home: ManageChurchesPage()),

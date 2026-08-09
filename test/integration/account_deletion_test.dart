@@ -66,12 +66,12 @@ void main() {
     return rows.single.first! as String;
   }
 
-  Future<void> confirmAttendance(String acaoId, String userId) async {
+  Future<void> confirmAttendance(String actionId, String userId) async {
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
       ),
-      parameters: {'acao': acaoId, 'usuario': userId},
+      parameters: {'acao': actionId, 'usuario': userId},
     );
   }
 
@@ -178,7 +178,7 @@ void main() {
     const donoVaga = '95100000-0000-0000-0000-000000000004';
     const naFila = '95100000-0000-0000-0000-000000000005';
     const creatorId = '95100000-0000-0000-0000-000000000006';
-    late String acaoId;
+    late String actionId;
 
     setUpAll(() async {
       await criarPerfilDeTeste(conn, creatorId, name: 'Criadora da Lotada');
@@ -186,9 +186,9 @@ void main() {
       await criarPerfilDeTeste(conn, naFila, name: 'Quem Espera');
       // limite 2 porque o criador da Ação já nasce confirmado por trigger:
       // com 1 vaga, ela seria dele e ninguém mais ficaria confirmado.
-      acaoId = await createAction(creatorId, futura: true, capacity: 2);
-      await confirmAttendance(acaoId, donoVaga);
-      await confirmAttendance(acaoId, naFila);
+      actionId = await createAction(creatorId, futura: true, capacity: 2);
+      await confirmAttendance(actionId, donoVaga);
+      await confirmAttendance(actionId, naFila);
       await excluirConta(donoVaga);
     });
 
@@ -212,7 +212,7 @@ void main() {
         Sql.named(
           'select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid',
         ),
-        parameters: {'acao': acaoId, 'uid': naFila},
+        parameters: {'acao': actionId, 'uid': naFila},
       );
       expect(rows.single.first, 'confirmado');
     });
@@ -221,19 +221,19 @@ void main() {
   group('Dupla Missionária não fica com vaga de quem saiu (Princípio IV)', () {
     const quemSai = '95100000-0000-0000-0000-000000000007';
     const creatorId = '95100000-0000-0000-0000-000000000008';
-    late String acaoId;
+    late String actionId;
 
     setUpAll(() async {
       await criarPerfilDeTeste(conn, creatorId, name: 'Criadora da Dupla');
       await criarPerfilDeTeste(conn, quemSai, name: 'Missionária Que Sai');
-      acaoId = await createAction(
+      actionId = await createAction(
         creatorId,
         futura: true,
         capacity: 2, // a constraint da Dupla exige exatamente 2
         duplaMissionaria: true,
         generoVisitado: 'feminino',
       );
-      await confirmAttendance(acaoId, quemSai);
+      await confirmAttendance(actionId, quemSai);
       await excluirConta(quemSai);
     });
 
@@ -256,7 +256,7 @@ void main() {
         await contar(
           'select count(*) from public.confirmacoes_acao '
           'where acao_id = @acao and usuario_id = @uid',
-          {'acao': acaoId, 'uid': quemSai},
+          {'acao': actionId, 'uid': quemSai},
         ),
         0,
       );

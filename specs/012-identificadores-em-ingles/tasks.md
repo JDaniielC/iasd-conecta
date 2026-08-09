@@ -260,3 +260,23 @@ referenciam). **Rodar antes de mergear**:
 ```bash
 supabase start && dart test test/integration
 ```
+
+
+### Correção — resíduo encontrado depois do merge
+
+Ao começar a feature 010 apareceu `ActionDetailPage(acaoId: ...)` em `lib/app.dart`.
+A varredura que declarou SC-001 cumprido tinha um defeito de regex: a classe inicial
+`[a-zA-Z_]` consumia a primeira letra, então identificador que **começa** com a
+palavra portuguesa escapava — `acaoId`, `grupoAsync`, `fetchParticipantes`,
+`souDonoDoGrupo`, `nomeIgreja`.
+
+Eram **44 identificadores**, não zero. A afirmação anterior de SC-001 estava errada.
+
+Corrigido em `refactor(012): resíduo de identificadores em português`, 315
+renomeações. Nova varredura, com o regex certo (`\b\w*(PT)\w*\b`), acusa só dois
+falsos positivos do lexer: `Cancelada` (texto de UI dentro de interpolação aninhada)
+e `_periodOrder` (casa com "periodo" por acidente de caixa).
+
+**Lição registrada porque vai acontecer de novo**: a verificação de uma refatoração
+vale o que vale a busca que a sustenta. Um regex frouxo produz um "0" que parece
+prova e não é.

@@ -21,9 +21,9 @@ class CreateVotingRoundPage extends ConsumerStatefulWidget {
 class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
   DateTime? _deadline;
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
-  Future<void> _escolherPrazo() async {
+  Future<void> _pickDeadline() async {
     final now = DateTime.now();
     final data = await showDatePicker(
       context: context,
@@ -42,24 +42,24 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
   Future<void> _abrir() async {
     final deadline = _deadline;
     if (deadline == null) {
-      setState(() => _erro = 'Escolha um prazo.');
+      setState(() => _error = 'Escolha um prazo.');
       return;
     }
     final votingRound = NewVotingRound(deadline: deadline);
     if (!votingRound.isReadyToSubmit) {
-      setState(() => _erro = 'O prazo precisa ser no futuro.');
+      setState(() => _error = 'O prazo precisa ser no futuro.');
       return;
     }
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(votingRoundRepositoryProvider).openRound(votingRound, groupId: widget.groupId);
       ref.invalidate(groupVotingRoundsProvider(widget.groupId));
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra abrir a Rodada agora. Você participa deste Grupo?');
+      setState(() => _error = 'Não deu pra abrir a Rodada agora. Você participa deste Grupo?');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -77,16 +77,16 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
             const Text('Escolha até quando a votação fica aberta.'),
             const SizedBox(height: AppSpacing.lg),
             OutlinedButton(
-              onPressed: _escolherPrazo,
+              onPressed: _pickDeadline,
               child: Text(
                 _deadline == null
                     ? 'Escolher prazo'
                     : DateFormat('dd/MM/yyyy HH:mm').format(_deadline!),
               ),
             ),
-            if (_erro != null) ...[
+            if (_error != null) ...[
               const SizedBox(height: AppSpacing.sm),
-              Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
             ],
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(

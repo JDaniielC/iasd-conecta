@@ -8,7 +8,7 @@ const _uidParticipante = '50000000-0000-0000-0000-000000000021';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -21,13 +21,13 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidParticipante);
@@ -40,7 +40,7 @@ void main() {
             'insert into public.confirmacoes_acao (acao_id, usuario_id) '
             'values (@acao, @usuario) on conflict (acao_id, usuario_id) do nothing',
           ),
-          parameters: {'acao': acaoId, 'usuario': _uidParticipante},
+          parameters: {'acao': actionId, 'usuario': _uidParticipante},
         );
 
     await confirmar();
@@ -51,7 +51,7 @@ void main() {
         'select count(*) as total from public.confirmacoes_acao '
         'where acao_id = @acao and usuario_id = @usuario',
       ),
-      parameters: {'acao': acaoId, 'usuario': _uidParticipante},
+      parameters: {'acao': actionId, 'usuario': _uidParticipante},
     );
     expect(rows.single.toColumnMap()['total'], 1);
   });

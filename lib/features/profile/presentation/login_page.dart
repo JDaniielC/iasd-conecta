@@ -20,7 +20,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
   @override
   void dispose() {
@@ -33,7 +33,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     if (_formKey.currentState?.validate() != true) return;
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(authRepositoryProvider).login(
@@ -43,7 +43,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       ref.invalidate(hasProfileProvider);
     } on AuthException {
       // FR-014: mensagem genérica, nunca revela qual campo errou.
-      setState(() => _erro = 'Credenciais inválidas.');
+      setState(() => _error = 'Credenciais inválidas.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -71,9 +71,9 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                 decoration: const InputDecoration(labelText: 'Senha'),
                 obscureText: true,
               ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

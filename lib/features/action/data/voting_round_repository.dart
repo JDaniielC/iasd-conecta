@@ -38,7 +38,7 @@ class VotingRoundRepository {
         .insert(votingRound.toInsertMap(groupId: groupId, openedBy: uid));
   }
 
-  Future<List<Action>> fetchCandidatas(String votingRoundId) async {
+  Future<List<Action>> fetchCandidates(String votingRoundId) async {
     final rows = await _client
         .from('acoes')
         .select()

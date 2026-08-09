@@ -108,7 +108,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/acoes/:id',
-        builder: (context, state) => ActionDetailPage(acaoId: state.pathParameters['id']!),
+        builder: (context, state) => ActionDetailPage(actionId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas',

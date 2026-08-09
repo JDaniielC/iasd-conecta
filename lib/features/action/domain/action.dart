@@ -105,8 +105,8 @@ class Action {
 
   bool get isCandidateInVoting => !isConfirmed;
 
-  bool isCreator(String? usuarioAtualId) =>
-      usuarioAtualId != null && usuarioAtualId == creatorId;
+  bool isCreator(String? currentUserId) =>
+      currentUserId != null && currentUserId == creatorId;
 
   /// FR-016 (004): quem propôs (criador) OU o Dono do Grupo cancela uma
   /// Ação de Grupo. FR-009 (005): Administrador do distrito cancela
@@ -114,13 +114,13 @@ class Action {
   /// repositório/provider sabe quem é o Dono do `grupoId` e quem é
   /// Administrador), não pelo modelo em si.
   bool canCancel(
-    String? usuarioAtualId, {
-    required bool souDonoDoGrupo,
-    bool souAdministradorDoDistrito = false,
+    String? currentUserId, {
+    required bool isGroupOwner,
+    bool isDistrictAdmin = false,
   }) =>
-      souAdministradorDoDistrito ||
-      isCreator(usuarioAtualId) ||
-      (groupId != null && souDonoDoGrupo);
+      isDistrictAdmin ||
+      isCreator(currentUserId) ||
+      (groupId != null && isGroupOwner);
 
   factory Action.fromMap(Map<String, dynamic> map) {
     return Action(
@@ -163,9 +163,9 @@ enum ActionPeriod { sabbath, hoje, essaSemana, outras }
 /// pôr-do-sol por horário fixo (não calcula pôr-do-sol real por data/local).
 bool isOnSabbath(DateTime dateTime) {
   final minutosDoDia = dateTime.hour * 60 + dateTime.minute;
-  const inicioSabado = 17 * 60 + 30;
-  if (dateTime.weekday == DateTime.friday) return minutosDoDia >= inicioSabado;
-  if (dateTime.weekday == DateTime.saturday) return minutosDoDia < inicioSabado;
+  const sabbathStart = 17 * 60 + 30;
+  if (dateTime.weekday == DateTime.friday) return minutosDoDia >= sabbathStart;
+  if (dateTime.weekday == DateTime.saturday) return minutosDoDia < sabbathStart;
   return false;
 }
 

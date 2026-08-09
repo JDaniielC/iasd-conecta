@@ -46,7 +46,7 @@ void main() {
       parameters: {'grupo': groupId, 'a': _uidProponente, 'b': _uidOutroParticipante},
     );
 
-    late Object acaoId;
+    late Object actionId;
     late Object votingRoundId;
     await comoUsuario(_uidProponente, () async {
       final rodadaRows = await conn.execute(
@@ -66,7 +66,7 @@ void main() {
         ),
         parameters: {'proponente': _uidProponente, 'rodada': votingRoundId},
       );
-      acaoId = candRows.single.toColumnMap()['id']!;
+      actionId = candRows.single.toColumnMap()['id']!;
     });
 
     // fecha a rodada forçado pelo dono — a única candidata vira Ação de Grupo confirmada
@@ -77,7 +77,7 @@ void main() {
       );
     });
 
-    acaoConfirmadaId = acaoId;
+    acaoConfirmadaId = actionId;
   });
 
   tearDownAll(() async {

@@ -18,17 +18,17 @@ class CreateGroupPage extends ConsumerStatefulWidget {
 class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _categoriaController = TextEditingController();
-  final _categoriaFocusNode = FocusNode();
+  final _categoryController = TextEditingController();
+  final _categoryFocusNode = FocusNode();
   final _detailsController = TextEditingController();
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
   @override
   void dispose() {
     _nameController.dispose();
-    _categoriaController.dispose();
-    _categoriaFocusNode.dispose();
+    _categoryController.dispose();
+    _categoryFocusNode.dispose();
     _detailsController.dispose();
     super.dispose();
   }
@@ -36,7 +36,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   NewGroup get _currentGroup {
     return NewGroup(
       name: _nameController.text,
-      category: _categoriaController.text,
+      category: _categoryController.text,
       details: _detailsController.text,
     );
   }
@@ -44,19 +44,19 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   Future<void> _submit() async {
     final group = _currentGroup;
     if (_formKey.currentState?.validate() != true || !group.isReadyToSubmit) {
-      setState(() => _erro = 'Preencha nome e Categoria.');
+      setState(() => _error = 'Preencha nome e Categoria.');
       return;
     }
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(groupRepositoryProvider).createGroup(group);
       ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra criar o Grupo agora. Tente de novo.');
+      setState(() => _error = 'Não deu pra criar o Grupo agora. Tente de novo.');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -64,7 +64,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(groupCategoriesProvider);
+    final categoriesAsync = ref.watch(groupCategoriesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Grupo')),
@@ -81,10 +81,10 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
               ),
               const SizedBox(height: AppSpacing.md),
-              categoriasAsync.when(
+              categoriesAsync.when(
                 data: (categories) => RawAutocomplete<String>(
-                  textEditingController: _categoriaController,
-                  focusNode: _categoriaFocusNode,
+                  textEditingController: _categoryController,
+                  focusNode: _categoryFocusNode,
                   optionsBuilder: (value) {
                     if (value.text.trim().isEmpty) {
                       return categories.map((c) => c.name);
@@ -130,7 +130,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => TextFormField(
-                  controller: _categoriaController,
+                  controller: _categoryController,
                   decoration: const InputDecoration(labelText: 'Categoria'),
                   validator: (v) =>
                       (v == null || v.trim().isEmpty) ? 'Informe uma Categoria' : null,
@@ -142,9 +142,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                 decoration: const InputDecoration(labelText: 'Detalhes (opcional)'),
                 maxLines: 3,
               ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

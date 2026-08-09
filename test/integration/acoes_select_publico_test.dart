@@ -7,7 +7,7 @@ const _uidCriador = '50000000-0000-0000-0000-000000000022';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -19,13 +19,13 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await conn.close();
@@ -36,7 +36,7 @@ void main() {
     try {
       final rows = await conn.execute(
         Sql.named('select nome from public.acoes where id = @id'),
-        parameters: {'id': acaoId},
+        parameters: {'id': actionId},
       );
       expect(rows.single.toColumnMap()['nome'], 'Ação Pública');
     } finally {
@@ -49,7 +49,7 @@ void main() {
     try {
       final rows = await conn.execute(
         Sql.named('select usuario_id from public.confirmacoes_acao where acao_id = @id'),
-        parameters: {'id': acaoId},
+        parameters: {'id': actionId},
       );
       expect(rows, isNotEmpty);
     } finally {
@@ -65,7 +65,7 @@ void main() {
           Sql.named(
             "insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @criador)",
           ),
-          parameters: {'acao': acaoId, 'criador': _uidCriador},
+          parameters: {'acao': actionId, 'criador': _uidCriador},
         ),
         throwsA(isA<ServerException>()),
       );

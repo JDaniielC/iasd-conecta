@@ -33,7 +33,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/acoes/:id',
-            builder: (context, state) => ActionDetailPage(acaoId: state.pathParameters['id']!),
+            builder: (context, state) => ActionDetailPage(actionId: state.pathParameters['id']!),
           ),
           GoRoute(path: '/cadastro', builder: (context, state) => const Text('TELA_CADASTRO')),
         ],

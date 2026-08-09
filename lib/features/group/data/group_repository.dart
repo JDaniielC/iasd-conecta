@@ -25,7 +25,7 @@ class GroupRepository {
     return Group.fromMap(row);
   }
 
-  Future<List<GroupCategory>> fetchCategorias() async {
+  Future<List<GroupCategory>> fetchCategories() async {
     final rows = await _client.from('categorias_grupo').select().order('nome');
     return rows.map(GroupCategory.fromMap).toList();
   }
@@ -57,7 +57,7 @@ class GroupRepository {
     await _client.from('grupos').update(valores).eq('id', id);
   }
 
-  Future<List<String>> fetchParticipanteIds(String groupId) async {
+  Future<List<String>> fetchMemberIds(String groupId) async {
     final rows = await _client
         .from('participacoes_grupo')
         .select('usuario_id')
@@ -65,13 +65,13 @@ class GroupRepository {
     return rows.map((r) => r['usuario_id'] as String).toList();
   }
 
-  Future<List<PublicProfile>> fetchParticipantes(String groupId) async {
-    final ids = await fetchParticipanteIds(groupId);
-    final profiles = await Future.wait(ids.map((id) => _fetchPerfilPublico(id)));
+  Future<List<PublicProfile>> fetchMembers(String groupId) async {
+    final ids = await fetchMemberIds(groupId);
+    final profiles = await Future.wait(ids.map((id) => _fetchPublicProfile(id)));
     return profiles;
   }
 
-  Future<PublicProfile> _fetchPerfilPublico(String id) async {
+  Future<PublicProfile> _fetchPublicProfile(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
     return PublicProfile.fromMap(row);
@@ -109,7 +109,7 @@ class GroupRepository {
 
   /// FR-011: só transfere pra quem já participa (garantido pelo trigger
   /// `grupos_dono_deve_participar` no banco).
-  Future<void> transferOwnership(String groupId, String novoDonoId) async {
-    await _client.from('grupos').update({'dono_id': novoDonoId}).eq('id', groupId);
+  Future<void> transferOwnership(String groupId, String newOwnerId) async {
+    await _client.from('grupos').update({'dono_id': newOwnerId}).eq('id', groupId);
   }
 }

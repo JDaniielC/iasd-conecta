@@ -45,14 +45,14 @@ class GroupDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grupoAsync = ref.watch(groupProvider(groupId));
-    final participantesAsync = ref.watch(membersProvider(groupId));
+    final groupAsync = ref.watch(groupProvider(groupId));
+    final membersAsync = ref.watch(membersProvider(groupId));
     final uid = ref.watch(currentUserIdProvider);
-    final participa = participantesAsync.value?.any((p) => p.id == uid) ?? false;
+    final participa = membersAsync.value?.any((p) => p.id == uid) ?? false;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Grupo')),
-      body: grupoAsync.when(
+      body: groupAsync.when(
         data: (group) {
           final isOwner = group.isOwner(uid);
           return Padding(
@@ -103,7 +103,7 @@ class GroupDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
-                  child: participantesAsync.when(
+                  child: membersAsync.when(
                     data: (members) => ListView(
                       children: members
                           .map((p) => ListTile(title: Text(p.displayName)))
@@ -156,7 +156,7 @@ class _LeaderName extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final perfilAsync = ref.watch(publicProfileProvider(userId));
-    return Text(perfilAsync.value?.displayName ?? '...');
+    final profileAsync = ref.watch(publicProfileProvider(userId));
+    return Text(profileAsync.value?.displayName ?? '...');
   }
 }

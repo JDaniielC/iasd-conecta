@@ -8,7 +8,7 @@ const _uidSegundo = '50000000-0000-0000-0000-000000000031';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -23,13 +23,13 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidSegundo);
@@ -41,14 +41,14 @@ void main() {
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
       ),
-      parameters: {'acao': acaoId, 'usuario': _uidSegundo},
+      parameters: {'acao': actionId, 'usuario': _uidSegundo},
     );
 
     final rows = await conn.execute(
       Sql.named(
         'select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @usuario',
       ),
-      parameters: {'acao': acaoId, 'usuario': _uidSegundo},
+      parameters: {'acao': actionId, 'usuario': _uidSegundo},
     );
     expect(rows.single.toColumnMap()['status'], 'fila');
   });

@@ -8,7 +8,7 @@ const _uidOutro = '50000000-0000-0000-0000-000000000041';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -22,13 +22,13 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidOutro);
@@ -51,13 +51,13 @@ void main() {
     await comoUsuario(_uidOutro, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
-        parameters: {'acao': acaoId},
+        parameters: {'acao': actionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNull);
   });
@@ -66,13 +66,13 @@ void main() {
     await comoUsuario(_uidCriador, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
-        parameters: {'acao': acaoId},
+        parameters: {'acao': actionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNotNull);
   });

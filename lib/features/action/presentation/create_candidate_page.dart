@@ -27,7 +27,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   final _capacityController = TextEditingController();
   DateTime? _dateTime;
   bool _submitting = false;
-  String? _erro;
+  String? _error;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
 
@@ -74,19 +74,19 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
     if (_formKey.currentState?.validate() != true ||
         candidate == null ||
         !candidate.isReadyToSubmit) {
-      setState(() => _erro = 'Preencha nome, data/hora e local.');
+      setState(() => _error = 'Preencha nome, data/hora e local.');
       return;
     }
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(votingRoundRepositoryProvider).proposeCandidate(widget.votingRoundId, candidate);
       ref.invalidate(candidatesProvider(widget.votingRoundId));
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra propor agora. A Rodada ainda está aberta?');
+      setState(() => _error = 'Não deu pra propor agora. A Rodada ainda está aberta?');
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -94,8 +94,8 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
 
   @override
   Widget build(BuildContext context) {
-    final rodadaAsync = ref.watch(votingRoundProvider(widget.votingRoundId));
-    final groupId = rodadaAsync.value?.groupId;
+    final votingRoundAsync = ref.watch(votingRoundProvider(widget.votingRoundId));
+    final groupId = votingRoundAsync.value?.groupId;
     final suggestionsAsync =
         groupId == null ? null : ref.watch(suggestionsForGroupProvider(groupId));
     final suggestions = suggestionsAsync?.value ?? const [];
@@ -173,9 +173,9 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
                   decoration: const InputDecoration(labelText: 'Limite de vagas (opcional)'),
                   keyboardType: TextInputType.number,
                 ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

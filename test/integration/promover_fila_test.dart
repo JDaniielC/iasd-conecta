@@ -9,7 +9,7 @@ const _uidTerceiro = '50000000-0000-0000-0000-000000000034';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -24,27 +24,27 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
 
     // dois entram na fila, em ordem
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @segundo)',
       ),
-      parameters: {'acao': acaoId, 'segundo': _uidSegundo},
+      parameters: {'acao': actionId, 'segundo': _uidSegundo},
     );
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @terceiro)',
       ),
-      parameters: {'acao': acaoId, 'terceiro': _uidTerceiro},
+      parameters: {'acao': actionId, 'terceiro': _uidTerceiro},
     );
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidSegundo);
@@ -58,7 +58,7 @@ void main() {
       Sql.named(
         'select usuario_id, status from public.confirmacoes_acao where acao_id = @acao order by created_at',
       ),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     expect(antes.map((r) => r.toColumnMap()['status']).toList(), ['confirmado', 'fila', 'fila']);
 
@@ -67,12 +67,12 @@ void main() {
       Sql.named(
         'delete from public.confirmacoes_acao where acao_id = @acao and usuario_id = @criador',
       ),
-      parameters: {'acao': acaoId, 'criador': _uidCriador},
+      parameters: {'acao': actionId, 'criador': _uidCriador},
     );
 
     final depois = await conn.execute(
       Sql.named('select usuario_id, status from public.confirmacoes_acao where acao_id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     final mapa = {
       for (final r in depois) r.toColumnMap()['usuario_id']: r.toColumnMap()['status'],

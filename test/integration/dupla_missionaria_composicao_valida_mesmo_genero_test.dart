@@ -62,7 +62,7 @@ void main() {
   });
 
   test('FR-004: 2 homens visitando homem é uma composição válida', () async {
-    final acaoId = await _criarDuplaMissionaria(
+    final actionId = await _criarDuplaMissionaria(
       conn,
       creatorId: _uidHomem1,
       generoVisitado: 'masculino',
@@ -70,18 +70,18 @@ void main() {
     await _comoUsuario(conn, _uidHomem2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidHomem2},
+        parameters: {'acao': actionId, 'uid': _uidHomem2},
       );
     });
     final rows = await conn.execute(
       Sql.named('select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid'),
-      parameters: {'acao': acaoId, 'uid': _uidHomem2},
+      parameters: {'acao': actionId, 'uid': _uidHomem2},
     );
     expect(rows.single.toColumnMap()['status'], 'confirmado');
   });
 
   test('FR-004: 2 mulheres visitando mulher é uma composição válida', () async {
-    final acaoId = await _criarDuplaMissionaria(
+    final actionId = await _criarDuplaMissionaria(
       conn,
       creatorId: _uidMulher1,
       generoVisitado: 'feminino',
@@ -89,12 +89,12 @@ void main() {
     await _comoUsuario(conn, _uidMulher2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidMulher2},
+        parameters: {'acao': actionId, 'uid': _uidMulher2},
       );
     });
     final rows = await conn.execute(
       Sql.named('select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid'),
-      parameters: {'acao': acaoId, 'uid': _uidMulher2},
+      parameters: {'acao': actionId, 'uid': _uidMulher2},
     );
     expect(rows.single.toColumnMap()['status'], 'confirmado');
   });

@@ -35,7 +35,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   bool _lgpdConsent = false;
   bool _churchConsent = false;
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
   @override
   void dispose() {
@@ -65,17 +65,17 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
     final profile = _currentProfile;
     if (_formKey.currentState?.validate() != true || profile == null) return;
     if (!_moderation.isValid(profile.name)) {
-      setState(() => _erro = 'Esse nome não pode ser usado. Tente outro.');
+      setState(() => _error = 'Esse nome não pode ser usado. Tente outro.');
       return;
     }
     if (!profile.readyToSubmit) {
-      setState(() => _erro = 'Revise o formulário antes de continuar.');
+      setState(() => _error = 'Revise o formulário antes de continuar.');
       return;
     }
 
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(profileRepositoryProvider).createProfile(profile);
@@ -89,10 +89,10 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
         // tentando de novo pra sempre.
         ref.invalidate(hasProfileProvider);
       } else {
-        setState(() => _erro = _errorMessage(e));
+        setState(() => _error = _errorMessage(e));
       }
     } catch (_) {
-      setState(() => _erro =
+      setState(() => _error =
           'Não deu pra concluir o cadastro agora. Verifique sua conexão e tente de novo.');
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -116,7 +116,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
     final age = int.tryParse(_ageController.text);
-    final precisaApelido = age != null && age < 18;
+    final needsNickname = age != null && age < 18;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Perfil')),
@@ -208,7 +208,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                     const InputDecoration(labelText: 'Telefone (opcional)'),
                 keyboardType: TextInputType.phone,
               ),
-              if (precisaApelido) ...[
+              if (needsNickname) ...[
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
                   controller: _nicknameController,
@@ -249,9 +249,9 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                 ),
                 controlAffinity: ListTileControlAffinity.leading,
               ),
-              if (_erro != null) ...[
+              if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
-                Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(

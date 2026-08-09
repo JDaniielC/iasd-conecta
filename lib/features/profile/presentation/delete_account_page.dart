@@ -20,18 +20,18 @@ class DeleteAccountPage extends ConsumerStatefulWidget {
 class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   bool _entendi = false;
   bool _submitting = false;
-  String? _erro;
+  String? _error;
 
   Future<void> _delete() async {
     setState(() {
       _submitting = true;
-      _erro = null;
+      _error = null;
     });
     try {
       await ref.read(profileRepositoryProvider).deleteMyAccount();
       ref.invalidate(hasProfileProvider);
     } catch (e) {
-      setState(() => _erro = _errorMessage(e));
+      setState(() => _error = _errorMessage(e));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
@@ -101,9 +101,9 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
               contentPadding: EdgeInsets.zero,
               title: const Text('Entendi que a exclusão é definitiva'),
             ),
-            if (_erro != null) ...[
+            if (_error != null) ...[
               const SizedBox(height: AppSpacing.md),
-              Text(_erro!, style: const TextStyle(color: Colors.red)),
+              Text(_error!, style: const TextStyle(color: Colors.red)),
             ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton(

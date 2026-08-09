@@ -9,7 +9,7 @@ const _uidTerceiro = '50000000-0000-0000-0000-000000000037';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -24,26 +24,26 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @segundo)',
       ),
-      parameters: {'acao': acaoId, 'segundo': _uidSegundo},
+      parameters: {'acao': actionId, 'segundo': _uidSegundo},
     );
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @terceiro)',
       ),
-      parameters: {'acao': acaoId, 'terceiro': _uidTerceiro},
+      parameters: {'acao': actionId, 'terceiro': _uidTerceiro},
     );
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidSegundo);
@@ -59,12 +59,12 @@ void main() {
         Sql.named(
           'delete from public.confirmacoes_acao where acao_id = @acao and usuario_id = @segundo',
         ),
-        parameters: {'acao': acaoId, 'segundo': _uidSegundo},
+        parameters: {'acao': actionId, 'segundo': _uidSegundo},
       );
 
       final rows = await conn.execute(
         Sql.named('select usuario_id, status from public.confirmacoes_acao where acao_id = @acao'),
-        parameters: {'acao': acaoId},
+        parameters: {'acao': actionId},
       );
       final mapa = {
         for (final r in rows) r.toColumnMap()['usuario_id']: r.toColumnMap()['status'],

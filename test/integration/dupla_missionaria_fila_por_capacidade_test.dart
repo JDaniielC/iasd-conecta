@@ -20,7 +20,7 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 void main() {
   late Connection conn;
-  late String acaoId;
+  late String actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -37,13 +37,13 @@ void main() {
       ),
       parameters: {'criador': _uidHomem1},
     );
-    acaoId = rows.single.toColumnMap()['id']! as String;
+    actionId = rows.single.toColumnMap()['id']! as String;
 
     // 1H + 1M já preenche as 2 vagas validamente.
     await _comoUsuario(conn, _uidMulher1, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidMulher1},
+        parameters: {'acao': actionId, 'uid': _uidMulher1},
       );
     });
   });
@@ -64,12 +64,12 @@ void main() {
     await _comoUsuario(conn, _uidTerceiro, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
-        parameters: {'acao': acaoId, 'uid': _uidTerceiro},
+        parameters: {'acao': actionId, 'uid': _uidTerceiro},
       );
     });
     final rows = await conn.execute(
       Sql.named('select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid'),
-      parameters: {'acao': acaoId, 'uid': _uidTerceiro},
+      parameters: {'acao': actionId, 'uid': _uidTerceiro},
     );
     expect(rows.single.toColumnMap()['status'], 'fila');
   });

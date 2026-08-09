@@ -36,11 +36,11 @@ void main() {
         ),
         parameters: {'criador': _uidCriador},
       );
-      final acaoId = rows.single.toColumnMap()['id'];
+      final actionId = rows.single.toColumnMap()['id'];
 
       final confirmacoes = await conn.execute(
         Sql.named('select usuario_id, status from public.confirmacoes_acao where acao_id = @acao'),
-        parameters: {'acao': acaoId},
+        parameters: {'acao': actionId},
       );
 
       expect(confirmacoes, hasLength(1));

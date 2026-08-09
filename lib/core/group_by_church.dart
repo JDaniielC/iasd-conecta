@@ -1,9 +1,9 @@
 /// Uma seção da lista (Grupos/Ações) — todos os itens de uma mesma Igreja,
 /// pra render com um cabeçalho + `Divider` entre seções.
 class ChurchSection<T> {
-  const ChurchSection({required this.nomeIgreja, required this.items});
+  const ChurchSection({required this.churchName, required this.items});
 
-  final String nomeIgreja;
+  final String churchName;
   final List<T> items;
 }
 
@@ -16,27 +16,27 @@ List<ChurchSection<T>> groupByChurch<T>(
   String? Function(T) churchIdOf,
   Map<String, String> nameByChurchId,
 ) {
-  const semIgreja = 'Sem Igreja';
+  const withoutChurch = 'Sem Igreja';
   const hiddenChurch = 'Outra Igreja';
 
-  final porNome = <String, List<T>>{};
+  final byName = <String, List<T>>{};
   for (final item in items) {
     final churchId = churchIdOf(item);
     final name = churchId == null
-        ? semIgreja
-        : _encurtarNomeIgreja(nameByChurchId[churchId] ?? hiddenChurch);
-    porNome.putIfAbsent(name, () => []).add(item);
+        ? withoutChurch
+        : _shortenChurchName(nameByChurchId[churchId] ?? hiddenChurch);
+    byName.putIfAbsent(name, () => []).add(item);
   }
 
-  final nomes = porNome.keys.toList()
+  final names = byName.keys.toList()
     ..sort((a, b) {
       if (a == b) return 0;
-      if (a == semIgreja || a == hiddenChurch) return 1;
-      if (b == semIgreja || b == hiddenChurch) return -1;
+      if (a == withoutChurch || a == hiddenChurch) return 1;
+      if (b == withoutChurch || b == hiddenChurch) return -1;
       return a.compareTo(b);
     });
 
-  return nomes.map((name) => ChurchSection<T>(nomeIgreja: name, items: porNome[name]!)).toList();
+  return names.map((name) => ChurchSection<T>(churchName: name, items: byName[name]!)).toList();
 }
 
 final _adventistChurchPrefix = RegExp(
@@ -47,7 +47,7 @@ final _adventistChurchPrefix = RegExp(
 /// Tira o prefixo "Igreja Adventista (de/do/da)" do nome — no cabeçalho de
 /// seção só interessa o que distingue uma Igreja da outra dentro do
 /// distrito (ex.: "Igreja Adventista de Pombos" -> "Pombos").
-String _encurtarNomeIgreja(String name) {
+String _shortenChurchName(String name) {
   final curto = name.replaceFirst(_adventistChurchPrefix, '').trim();
   return curto.isEmpty ? name : curto;
 }

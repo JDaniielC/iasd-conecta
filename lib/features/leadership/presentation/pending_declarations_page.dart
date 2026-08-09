@@ -77,7 +77,7 @@ class _PendingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grupoAsync = ref.watch(groupProvider(declaration.groupId));
+    final groupAsync = ref.watch(groupProvider(declaration.groupId));
     final declaranteAsync = ref.watch(publicProfileProvider(declaration.userId));
 
     return Card(
@@ -87,7 +87,7 @@ class _PendingCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              grupoAsync.value?.name ?? 'Grupo',
+              groupAsync.value?.name ?? 'Grupo',
               style: Theme.of(context).textTheme.titleMedium,
             ),
             Text('Declarante: ${declaranteAsync.value?.displayName ?? '...'}'),

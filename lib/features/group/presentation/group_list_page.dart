@@ -28,7 +28,7 @@ class GroupListPage extends ConsumerStatefulWidget {
 }
 
 class _GroupListPageState extends ConsumerState<GroupListPage> {
-  String _filtroIgrejaId = _allChurches;
+  String _churchFilterId = _allChurches;
   _GroupSortOrder _sortOrder = _GroupSortOrder.maisRecentes;
 
   @override
@@ -36,7 +36,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
     final hasProfile = ref.watch(hasProfileProvider).value ?? false;
     final hasAccount = hasProfile && ref.watch(authRepositoryProvider).hasAccount;
     final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
-    final gruposAsync = ref.watch(groupsProvider);
+    final groupsAsync = ref.watch(groupsProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final nameByChurchId = <String, String>{
       for (final c in churchesAsync.value ?? const []) c.id: c.name,
@@ -99,17 +99,17 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
           const MissingProfileBanner(),
           _FilterBar(
             churchesAsync: churchesAsync,
-            churchFilterId: _filtroIgrejaId,
+            churchFilterId: _churchFilterId,
             sortOrder: _sortOrder,
-            onFiltroIgrejaChanged: (v) => setState(() => _filtroIgrejaId = v),
+            onChurchFilterChanged: (v) => setState(() => _churchFilterId = v),
             onSortOrderChanged: (v) => setState(() => _sortOrder = v),
           ),
           Expanded(
-            child: gruposAsync.when(
+            child: groupsAsync.when(
               data: (groups) {
-                final filtered = _filtroIgrejaId == _allChurches
+                final filtered = _churchFilterId == _allChurches
                     ? groups
-                    : groups.where((g) => g.churchId == _filtroIgrejaId).toList();
+                    : groups.where((g) => g.churchId == _churchFilterId).toList();
                 if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhum Grupo ainda.'));
                 }
@@ -118,7 +118,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                 return ListView(
                   children: [
                     for (final section in sections) ...[
-                      _SectionHeader(name: section.nomeIgreja),
+                      _SectionHeader(name: section.churchName),
                       for (final group in section.items) _GroupCard(group: group),
                     ],
                   ],
@@ -150,14 +150,14 @@ class _FilterBar extends StatelessWidget {
     required this.churchesAsync,
     required this.churchFilterId,
     required this.sortOrder,
-    required this.onFiltroIgrejaChanged,
+    required this.onChurchFilterChanged,
     required this.onSortOrderChanged,
   });
 
   final AsyncValue<List<Church>> churchesAsync;
   final String churchFilterId;
   final _GroupSortOrder sortOrder;
-  final ValueChanged<String> onFiltroIgrejaChanged;
+  final ValueChanged<String> onChurchFilterChanged;
   final ValueChanged<_GroupSortOrder> onSortOrderChanged;
 
   @override
@@ -176,7 +176,7 @@ class _FilterBar extends StatelessWidget {
                 const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
                 for (final c in churches) DropdownMenuItem(value: c.id, child: Text(c.name)),
               ],
-              onChanged: (v) => v == null ? null : onFiltroIgrejaChanged(v),
+              onChanged: (v) => v == null ? null : onChurchFilterChanged(v),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),

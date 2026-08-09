@@ -44,7 +44,7 @@ void main() {
   test('FR-007: primeira confirmação (o próprio criador) é sempre aceita, qualquer gênero',
       () async {
     await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador PrimeiraConfirmacao', gender: 'masculino');
-    final acaoId = await _criarDuplaMissionaria(
+    final actionId = await _criarDuplaMissionaria(
       conn,
       creatorId: _uidCriador,
       generoVisitado: 'feminino',
@@ -54,7 +54,7 @@ void main() {
       Sql.named(
         'select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @uid',
       ),
-      parameters: {'acao': acaoId, 'uid': _uidCriador},
+      parameters: {'acao': actionId, 'uid': _uidCriador},
     );
     expect(rows.single.toColumnMap()['status'], 'confirmado');
   });

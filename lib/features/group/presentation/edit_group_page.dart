@@ -22,7 +22,7 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
   final _nameController = TextEditingController();
   final _detailsController = TextEditingController();
   bool _carregouCampos = false;
-  String? _erro;
+  String? _error;
 
   @override
   void dispose() {
@@ -42,38 +42,38 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
       ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra salvar. Você ainda é o Dono deste Grupo?');
+      setState(() => _error = 'Não deu pra salvar. Você ainda é o Dono deste Grupo?');
     }
   }
 
-  Future<void> _removerParticipante(String userId) async {
+  Future<void> _removeMember(String userId) async {
     try {
       await ref.read(groupRepositoryProvider).removeMember(widget.groupId, userId);
       ref.invalidate(membersProvider(widget.groupId));
     } catch (_) {
-      setState(() => _erro = 'Não deu pra remover esse participante.');
+      setState(() => _error = 'Não deu pra remover esse participante.');
     }
   }
 
-  Future<void> _transferirPosse(String novoDonoId) async {
+  Future<void> _transferOwnership(String newOwnerId) async {
     try {
-      await ref.read(groupRepositoryProvider).transferOwnership(widget.groupId, novoDonoId);
+      await ref.read(groupRepositoryProvider).transferOwnership(widget.groupId, newOwnerId);
       ref.invalidate(groupProvider(widget.groupId));
       if (mounted) context.pop();
     } catch (_) {
-      setState(() => _erro = 'Não deu pra transferir a posse.');
+      setState(() => _error = 'Não deu pra transferir a posse.');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final grupoAsync = ref.watch(groupProvider(widget.groupId));
-    final participantesAsync = ref.watch(membersProvider(widget.groupId));
+    final groupAsync = ref.watch(groupProvider(widget.groupId));
+    final membersAsync = ref.watch(membersProvider(widget.groupId));
     final uid = ref.watch(currentUserIdProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Grupo')),
-      body: grupoAsync.when(
+      body: groupAsync.when(
         data: (group) {
           if (!group.isOwner(uid)) {
             return const Center(child: Text('Você não é o Dono deste Grupo.'));
@@ -98,33 +98,33 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
                   decoration: const InputDecoration(labelText: 'Detalhes'),
                   maxLines: 3,
                 ),
-                if (_erro != null) ...[
+                if (_error != null) ...[
                   const SizedBox(height: AppSpacing.sm),
-                  Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(onPressed: _save, child: const Text('Salvar')),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
-                participantesAsync.when(
+                membersAsync.when(
                   data: (members) => Column(
                     children: members.map((p) {
-                      final ehODono = p.id == group.ownerId;
+                      final isTheOwner = p.id == group.ownerId;
                       return ListTile(
                         title: Text(p.displayName),
-                        subtitle: ehODono ? const Text('Dono') : null,
-                        trailing: ehODono
+                        subtitle: isTheOwner ? const Text('Dono') : null,
+                        trailing: isTheOwner
                             ? null
                             : Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
                                   TextButton(
-                                    onPressed: () => _transferirPosse(p.id),
+                                    onPressed: () => _transferOwnership(p.id),
                                     child: const Text('Tornar Dono'),
                                   ),
                                   IconButton(
                                     icon: const Icon(Icons.person_remove_outlined),
-                                    onPressed: () => _removerParticipante(p.id),
+                                    onPressed: () => _removeMember(p.id),
                                   ),
                                 ],
                               ),

@@ -24,7 +24,7 @@ final _grupo = Group(
 Future<void> _pump(WidgetTester tester, {required String? uid}) async {
   final grupoRepo = MockGrupoRepository();
   when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
-  when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
+  when(() => grupoRepo.fetchMembers('g1')).thenAnswer(
     (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
   );
 

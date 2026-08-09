@@ -20,17 +20,17 @@ final actionsProvider = FutureProvider.autoDispose<List<Action>>((ref) {
 final actionsWithChurchProvider = FutureProvider.autoDispose<List<ActionWithChurch>>((ref) async {
   final actions = await ref.watch(actionsProvider.future);
   final groups = await ref.watch(groupsProvider.future);
-  final igrejaPorGrupo = {for (final g in groups) g.id: g.churchId};
+  final churchByGroup = {for (final g in groups) g.id: g.churchId};
 
-  final perfilRepo = ref.watch(profileRepositoryProvider);
-  final criadoresSemGrupo =
+  final profileRepo = ref.watch(profileRepositoryProvider);
+  final creatorsWithoutGroup =
       actions.where((a) => a.groupId == null).map((a) => a.creatorId).toSet();
-  final profiles = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPublicProfile));
-  final igrejaPorCriador = {for (final p in profiles) p.id: p.churchId};
+  final profiles = await Future.wait(creatorsWithoutGroup.map(profileRepo.fetchPublicProfile));
+  final churchByCreator = {for (final p in profiles) p.id: p.churchId};
 
   return actions.map((action) {
     final churchId =
-        action.groupId != null ? igrejaPorGrupo[action.groupId] : igrejaPorCriador[action.creatorId];
+        action.groupId != null ? churchByGroup[action.groupId] : churchByCreator[action.creatorId];
     return ActionWithChurch(action: action, churchId: churchId);
   }).toList();
 });
@@ -40,6 +40,6 @@ final actionProvider = FutureProvider.autoDispose.family<Action, String>((ref, i
 });
 
 final attendeesProvider =
-    FutureProvider.autoDispose.family<List<AttendanceWithProfile>, String>((ref, acaoId) {
-  return ref.watch(actionRepositoryProvider).fetchAttendees(acaoId);
+    FutureProvider.autoDispose.family<List<AttendanceWithProfile>, String>((ref, actionId) {
+  return ref.watch(actionRepositoryProvider).fetchAttendees(actionId);
 });

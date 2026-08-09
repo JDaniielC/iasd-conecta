@@ -43,9 +43,9 @@ class ActionListPage extends ConsumerStatefulWidget {
 }
 
 class _ActionListPageState extends ConsumerState<ActionListPage> {
-  String _filtroIgrejaId = _allChurches;
+  String _churchFilterId = _allChurches;
   _ActionSortOrder _sortOrder = _ActionSortOrder.data;
-  bool _soSabado = false;
+  bool _sabbathOnly = false;
 
   @override
   Widget build(BuildContext context) {
@@ -77,20 +77,20 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
           const MissingProfileBanner(),
           _FilterBar(
             churchesAsync: churchesAsync,
-            churchFilterId: _filtroIgrejaId,
+            churchFilterId: _churchFilterId,
             sortOrder: _sortOrder,
-            sabbathOnly: _soSabado,
-            onFiltroIgrejaChanged: (v) => setState(() => _filtroIgrejaId = v),
+            sabbathOnly: _sabbathOnly,
+            onChurchFilterChanged: (v) => setState(() => _churchFilterId = v),
             onSortOrderChanged: (v) => setState(() => _sortOrder = v),
-            onSoSabadoChanged: (v) => setState(() => _soSabado = v),
+            onSabbathOnlyChanged: (v) => setState(() => _sabbathOnly = v),
           ),
           Expanded(
             child: actionsAsync.when(
               data: (items) {
-                var filtered = _filtroIgrejaId == _allChurches
+                var filtered = _churchFilterId == _allChurches
                     ? items
-                    : items.where((i) => i.churchId == _filtroIgrejaId).toList();
-                if (_soSabado) {
+                    : items.where((i) => i.churchId == _churchFilterId).toList();
+                if (_sabbathOnly) {
                   filtered = filtered
                       .where((i) => isOnSabbath(i.action.dateTime))
                       .toList();
@@ -145,18 +145,18 @@ class _FilterBar extends StatelessWidget {
     required this.churchFilterId,
     required this.sortOrder,
     required this.sabbathOnly,
-    required this.onFiltroIgrejaChanged,
+    required this.onChurchFilterChanged,
     required this.onSortOrderChanged,
-    required this.onSoSabadoChanged,
+    required this.onSabbathOnlyChanged,
   });
 
   final AsyncValue<List<Church>> churchesAsync;
   final String churchFilterId;
   final _ActionSortOrder sortOrder;
   final bool sabbathOnly;
-  final ValueChanged<String> onFiltroIgrejaChanged;
+  final ValueChanged<String> onChurchFilterChanged;
   final ValueChanged<_ActionSortOrder> onSortOrderChanged;
-  final ValueChanged<bool> onSoSabadoChanged;
+  final ValueChanged<bool> onSabbathOnlyChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -177,7 +177,7 @@ class _FilterBar extends StatelessWidget {
                     const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
                     for (final c in churches) DropdownMenuItem(value: c.id, child: Text(c.name)),
                   ],
-                  onChanged: (v) => v == null ? null : onFiltroIgrejaChanged(v),
+                  onChanged: (v) => v == null ? null : onChurchFilterChanged(v),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
@@ -201,7 +201,7 @@ class _FilterBar extends StatelessWidget {
             avatar: const Icon(Icons.nights_stay_outlined, size: 18),
             label: const Text('Só Sábado'),
             selected: sabbathOnly,
-            onSelected: onSoSabadoChanged,
+            onSelected: onSabbathOnlyChanged,
           ),
         ],
       ),

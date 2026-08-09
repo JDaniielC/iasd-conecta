@@ -8,7 +8,7 @@ const _uidOutro = '50000000-0000-0000-0000-000000000043';
 
 void main() {
   late Connection conn;
-  late Object acaoId;
+  late Object actionId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -22,18 +22,18 @@ void main() {
       ),
       parameters: {'criador': _uidCriador},
     );
-    acaoId = rows.single.toColumnMap()['id']!;
+    actionId = rows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where id = @acao'),
-      parameters: {'acao': acaoId},
+      parameters: {'acao': actionId},
     );
     await limparUsuarioDeTeste(conn, _uidCriador);
     await limparUsuarioDeTeste(conn, _uidOutro);
@@ -46,7 +46,7 @@ void main() {
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
         ),
-        parameters: {'acao': acaoId, 'usuario': _uidOutro},
+        parameters: {'acao': actionId, 'usuario': _uidOutro},
       ),
       throwsA(isA<ServerException>()),
     );

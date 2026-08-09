@@ -9,8 +9,8 @@ import '../../district_admin/district_admin_providers.dart';
 import '../../perfil/domain/church.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
-import '../domain/grupo.dart';
-import '../grupo_providers.dart';
+import '../domain/group.dart';
+import '../group_providers.dart';
 
 enum _OrdenacaoGrupo { maisRecentes, nome, categoria }
 

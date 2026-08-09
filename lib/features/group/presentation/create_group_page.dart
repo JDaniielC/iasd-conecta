@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../domain/grupo.dart';
-import '../grupo_providers.dart';
+import '../domain/group.dart';
+import '../group_providers.dart';
 
 /// Criação de Grupo (User Story 1). Quem cria vira Dono automaticamente
 /// (garantido pelo trigger `grupos_dono_vira_participante` no banco).

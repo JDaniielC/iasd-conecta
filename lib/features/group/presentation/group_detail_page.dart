@@ -6,7 +6,7 @@ import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../leadership/leadership_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
-import '../grupo_providers.dart';
+import '../group_providers.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
 /// (FR-005). Participar/sair exige Perfil (FR-006/FR-007/FR-008/FR-009).

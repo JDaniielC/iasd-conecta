@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../perfil/domain/profile.dart';
-import 'data/grupo_repository.dart';
-import 'domain/categoria_grupo.dart';
-import 'domain/grupo.dart';
+import 'data/group_repository.dart';
+import 'domain/group_category.dart';
+import 'domain/group.dart';
 
 final grupoRepositoryProvider = Provider<GrupoRepository>((ref) {
   return GrupoRepository(ref.watch(supabaseClientProvider));

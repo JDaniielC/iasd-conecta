@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
-import '../../grupo/grupo_providers.dart';
+import '../../group/group_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../acao_providers.dart';
 import '../domain/acao.dart';

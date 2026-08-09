@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../suggested_action/suggested_action_providers.dart';
-import '../../grupo/grupo_providers.dart';
+import '../../group/group_providers.dart';
 import '../acao_providers.dart';
 import '../domain/acao.dart';
 

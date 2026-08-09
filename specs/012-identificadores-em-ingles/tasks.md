@@ -78,8 +78,8 @@ funcionando e para a revisão conseguir separar "renomeou arquivo" de "mudou con
 Ensaio do método com risco quase zero: o interior do módulo **já está em inglês**, só a pasta
 está em português.
 
-- [ ] T005 [US2] `git mv lib/features/acao_sugerida lib/features/suggested_action` e ajustar os caminhos de import em todos os arquivos que apontam para o módulo (3 arquivos de `lib/` fora dele, 2 de teste). Commit isolado, só caminhos
-- [ ] T006 [US2] Rodar os gates da seção "Por etapa" de [quickstart.md](./quickstart.md): `flutter analyze` (0 issues), `flutter test test/unit test/widget` (mesma contagem da linha de base), `flutter build web`, mais as verificações negativas A (literais), B (rotas) e C (`supabase/` intocado). **No diff A, a única diferença aceitável é caminho de import**
+- [X] T005 [US2] `git mv lib/features/acao_sugerida lib/features/suggested_action` e ajustar os caminhos de import em todos os arquivos que apontam para o módulo (3 arquivos de `lib/` fora dele, 2 de teste). Commit isolado, só caminhos
+- [X] T006 [US2] Rodar os gates da seção "Por etapa" de [quickstart.md](./quickstart.md): `flutter analyze` (0 issues), `flutter test test/unit test/widget` (mesma contagem da linha de base), `flutter build web`, mais as verificações negativas A (literais), B (rotas) e C (`supabase/` intocado). **No diff A, a única diferença aceitável é caminho de import**
 
 ### Etapa 2 — `grupo/` → `group/` (superfície ~22)
 

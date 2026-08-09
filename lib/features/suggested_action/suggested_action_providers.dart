@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
-import '../grupo/grupo_providers.dart';
+import '../group/group_providers.dart';
 import 'data/suggested_action_repository.dart';
 import 'domain/suggested_action.dart';
 

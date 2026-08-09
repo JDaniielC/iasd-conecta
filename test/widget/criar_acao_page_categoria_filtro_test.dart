@@ -5,8 +5,8 @@ import 'package:iasd_conecta/features/acao/presentation/criar_acao_page.dart';
 import 'package:iasd_conecta/features/suggested_action/data/suggested_action_repository.dart';
 import 'package:iasd_conecta/features/suggested_action/domain/suggested_action.dart';
 import 'package:iasd_conecta/features/suggested_action/suggested_action_providers.dart';
-import 'package:iasd_conecta/features/grupo/domain/categoria_grupo.dart';
-import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
+import 'package:iasd_conecta/features/group/domain/group_category.dart';
+import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockSuggestedActionRepository extends Mock implements SuggestedActionRepository {}

@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../perfil/domain/profile.dart';
-import '../domain/categoria_grupo.dart';
-import '../domain/grupo.dart';
+import '../domain/group_category.dart';
+import '../domain/group.dart';
 
 /// Único ponto de acesso a `grupos`, `participacoes_grupo` e
 /// `categorias_grupo`.

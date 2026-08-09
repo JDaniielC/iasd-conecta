@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
-import '../grupo_providers.dart';
+import '../group_providers.dart';
 
 /// Administração do Grupo pelo Dono (User Story 3): editar campos, remover
 /// participante, transferir posse. RLS + triggers no banco são a garantia

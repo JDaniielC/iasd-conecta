@@ -2,9 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/app.dart';
 import 'package:iasd_conecta/core/providers.dart';
-import 'package:iasd_conecta/features/grupo/data/grupo_repository.dart';
-import 'package:iasd_conecta/features/grupo/domain/grupo.dart';
-import 'package:iasd_conecta/features/grupo/grupo_providers.dart';
+import 'package:iasd_conecta/features/group/data/group_repository.dart';
+import 'package:iasd_conecta/features/group/domain/group.dart';
+import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/perfil/data/auth_repository.dart';
 import 'package:mocktail/mocktail.dart';
 

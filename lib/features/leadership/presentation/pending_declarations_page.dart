@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../grupo/grupo_providers.dart';
+import '../../group/group_providers.dart';
 import '../domain/leadership_declaration.dart';
 import '../leadership_providers.dart';
 

@@ -190,4 +190,98 @@ void main() {
       expect(find.textContaining('Acontecendo agora'), findsNothing);
     });
   });
+
+  group('contagem de confirmados (US2)', () {
+    Future<void> pumpComContagem(
+      WidgetTester tester, {
+      required Action action,
+      required ConfirmationCounts counts,
+    }) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasProfileProvider.overrideWith((ref) async => true),
+            actionsWithChurchProvider.overrideWith(
+              (ref) async => [ActionWithChurch(churchId: 'igreja-1', action: action)],
+            ),
+            churchesProvider.overrideWith((ref) async => _churches),
+            clockProvider.overrideWithValue(() => _agora),
+            confirmationCountsProvider.overrideWith((ref) async => {action.id: counts}),
+          ],
+          child: const MaterialApp(home: ActionListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    Action acaoFutura({int? capacity}) => Action(
+          id: 'a1',
+          name: 'Culto Jovem',
+          dateTime: _agora.add(const Duration(days: 2)),
+          local: 'Templo',
+          creatorId: 'dono-1',
+          createdAt: DateTime(2026, 1, 1),
+          capacity: capacity,
+        );
+
+    testWidgets('3 confirmados aparecem como "3 confirmados" (FR-009)',
+        (tester) async {
+      await pumpComContagem(
+        tester,
+        action: acaoFutura(),
+        counts: const ConfirmationCounts(confirmed: 3),
+      );
+      expect(find.textContaining('3 confirmados'), findsOneWidget);
+    });
+
+    testWidgets('1 confirmado usa o singular (FR-010)', (tester) async {
+      await pumpComContagem(
+        tester,
+        action: acaoFutura(),
+        counts: const ConfirmationCounts(confirmed: 1),
+      );
+      expect(find.textContaining('1 confirmado'), findsOneWidget);
+      expect(find.textContaining('1 confirmados'), findsNothing);
+    });
+
+    testWidgets('zero vira frase, nunca o número solto (FR-011)', (tester) async {
+      await pumpComContagem(
+        tester,
+        action: acaoFutura(),
+        counts: const ConfirmationCounts(),
+      );
+      expect(find.textContaining('Ninguém confirmou ainda'), findsOneWidget);
+      expect(find.textContaining('0 confirmado'), findsNothing);
+    });
+
+    testWidgets('com limite, mostra confirmados e vagas (FR-012)', (tester) async {
+      await pumpComContagem(
+        tester,
+        action: acaoFutura(capacity: 10),
+        counts: const ConfirmationCounts(confirmed: 4),
+      );
+      expect(find.textContaining('4 de 10 vagas'), findsOneWidget);
+    });
+
+    testWidgets('lotada com fila mostra a fila separada da contagem (FR-013)',
+        (tester) async {
+      await pumpComContagem(
+        tester,
+        action: acaoFutura(capacity: 2),
+        counts: const ConfirmationCounts(confirmed: 2, waiting: 2),
+      );
+
+      final texto = tester
+          .widgetList<Text>(find.byType(Text))
+          .map((w) => w.data)
+          .whereType<String>()
+          .firstWhere((d) => d.contains('vagas'));
+
+      expect(texto, contains('2 de 2 vagas'));
+      expect(texto, contains('Lotada'));
+      expect(texto, contains('2 na fila de espera'));
+      // A fila NUNCA é somada aos confirmados (FR-013).
+      expect(texto, isNot(contains('4 de 2')));
+    });
+  });
 }

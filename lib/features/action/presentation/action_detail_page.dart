@@ -27,6 +27,9 @@ class ActionDetailPage extends ConsumerWidget {
     try {
       await ref.read(actionRepositoryProvider).confirmAttendance(actionId);
       ref.invalidate(attendeesProvider(actionId));
+      // FR-015: a contagem da listagem reflete confirmação, desistência e
+      // promoção da fila na próxima carga.
+      ref.invalidate(confirmationCountsProvider);
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra confirmar presença. Tente de novo.');
@@ -37,6 +40,9 @@ class ActionDetailPage extends ConsumerWidget {
     try {
       await ref.read(actionRepositoryProvider).withdraw(actionId);
       ref.invalidate(attendeesProvider(actionId));
+      // FR-015: a contagem da listagem reflete confirmação, desistência e
+      // promoção da fila na próxima carga.
+      ref.invalidate(confirmationCountsProvider);
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra desistir agora. Tente de novo.');

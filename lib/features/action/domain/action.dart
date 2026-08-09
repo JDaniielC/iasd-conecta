@@ -237,6 +237,20 @@ ActionPeriod actionPeriod(DateTime dateTime, DateTime now) {
 
 enum AttendanceStatus { confirmed, waitlist }
 
+/// Contagem agregada de presenças de uma Ação, para a listagem (FR-009).
+///
+/// [waiting] **nunca** é somado a [confirmed]: somar faria uma Ação de 10
+/// vagas parecer ter 15 participantes.
+class ConfirmationCounts {
+  const ConfirmationCounts({this.confirmed = 0, this.waiting = 0});
+
+  /// Quem tem vaga.
+  final int confirmed;
+
+  /// Quem está na fila de espera.
+  final int waiting;
+}
+
 class AttendanceWithProfile {
   const AttendanceWithProfile({required this.profile, required this.status});
 

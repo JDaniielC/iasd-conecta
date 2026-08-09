@@ -20,6 +20,38 @@ class ActionRepository {
     return rows.map(Action.fromMap).toList();
   }
 
+  /// Contagem de presenças de TODAS as Ações, numa consulta só (FR-009).
+  ///
+  /// A projeção é explícita de propósito: `select()` puro traria `usuario_id`
+  /// de todo mundo que confirmou presença no distrito para o cliente, e a
+  /// listagem só precisa de um número. `acao_id, status` é o mínimo — o número
+  /// existe sem que o cliente saiba quem é quem (Princípio II).
+  ///
+  /// Uma consulta para a lista inteira, não uma por Ação: reusar
+  /// `fetchAttendees` por Ação seria N+1 e, pior, traria a lista nominal
+  /// completa de cada uma para desenhar um número.
+  Future<Map<String, ConfirmationCounts>> fetchConfirmationCounts() async {
+    final rows = await _client.from('confirmacoes_acao').select('acao_id, status');
+
+    final confirmed = <String, int>{};
+    final waiting = <String, int>{};
+    for (final row in rows) {
+      final id = row['acao_id'] as String;
+      if (row['status'] == 'confirmado') {
+        confirmed[id] = (confirmed[id] ?? 0) + 1;
+      } else {
+        waiting[id] = (waiting[id] ?? 0) + 1;
+      }
+    }
+    return {
+      for (final id in {...confirmed.keys, ...waiting.keys})
+        id: ConfirmationCounts(
+          confirmed: confirmed[id] ?? 0,
+          waiting: waiting[id] ?? 0,
+        ),
+    };
+  }
+
   Future<Action> fetchAction(String id) async {
     final row = await _client.from('acoes').select().eq('id', id).single();
     return Action.fromMap(row);

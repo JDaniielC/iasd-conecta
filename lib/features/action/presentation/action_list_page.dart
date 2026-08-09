@@ -50,6 +50,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   @override
   Widget build(BuildContext context) {
     final actionsAsync = ref.watch(actionsWithChurchProvider);
+    final countsAsync = ref.watch(confirmationCountsProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final now = ref.watch(clockProvider)();
 
@@ -126,6 +127,8 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                                   now,
                                 ) ==
                                 ActionTimeStatus.happeningNow,
+                            counts: countsAsync.value?[item.action.id] ??
+                                const ConfirmationCounts(),
                           ),
                       ],
                   ],
@@ -263,6 +266,7 @@ class _ActionCard extends StatelessWidget {
     required this.action,
     this.sabbathHighlight = false,
     this.happeningNow = false,
+    this.counts = const ConfirmationCounts(),
   });
 
   final Action action;
@@ -271,6 +275,35 @@ class _ActionCard extends StatelessWidget {
   /// FR-002: entre a hora marcada e 4h depois, a Ação continua na lista e
   /// ganha sinalização — quem está a caminho precisa achá-la.
   final bool happeningNow;
+
+  /// FR-009 a FR-013: contagem agregada, sem identidade de ninguém.
+  final ConfirmationCounts counts;
+
+  /// Texto da contagem (FR-010 a FR-013).
+  ///
+  /// Nunca "0": zero confirmado vira uma frase, porque o número solto não
+  /// informa nada a quem está decidindo de qual Ação participar (FR-011).
+  String get _attendanceLabel {
+    final n = counts.confirmed;
+    final limite = action.capacity;
+
+    final base = switch ((n, limite)) {
+      (0, _) => 'Ninguém confirmou ainda',
+      (1, null) => '1 confirmado',
+      (_, null) => '$n confirmados',
+      _ => '$n de $limite vagas',
+    };
+
+    // Lotada com fila: a fila aparece separada da contagem, nunca somada
+    // (FR-013) — somar faria uma Ação de 10 vagas parecer ter 15 pessoas.
+    if (counts.waiting > 0) {
+      final fila = counts.waiting == 1
+          ? '1 na fila de espera'
+          : '${counts.waiting} na fila de espera';
+      return '$base · Lotada · $fila';
+    }
+    return base;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -287,11 +320,18 @@ class _ActionCard extends StatelessWidget {
       child: ListTile(
         leading: sabbathHighlight ? Icon(Icons.nights_stay, color: tertiary) : null,
         title: Text(action.name),
-        subtitle: Text(
-          '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.local}'
-          '${action.isCancelled ? ' · Cancelada' : ''}'
-          '${!action.isCancelled && happeningNow ? ' · Acontecendo agora' : ''}',
+        subtitle: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.local}'
+              '${action.isCancelled ? ' · Cancelada' : ''}'
+              '${!action.isCancelled && happeningNow ? ' · Acontecendo agora' : ''}',
+            ),
+            Text(_attendanceLabel),
+          ],
         ),
+        isThreeLine: true,
         onTap: () => context.push('/acoes/${action.id}'),
       ),
     );

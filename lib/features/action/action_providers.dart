@@ -43,3 +43,12 @@ final attendeesProvider =
     FutureProvider.autoDispose.family<List<AttendanceWithProfile>, String>((ref, actionId) {
   return ref.watch(actionRepositoryProvider).fetchAttendees(actionId);
 });
+
+/// Contagem de presenças por Ação, para a listagem (FR-009).
+///
+/// Uma consulta agregada para a lista inteira. Não traz identidade de ninguém
+/// — ver `ActionRepository.fetchConfirmationCounts`.
+final confirmationCountsProvider =
+    FutureProvider.autoDispose<Map<String, ConfirmationCounts>>((ref) {
+  return ref.watch(actionRepositoryProvider).fetchConfirmationCounts();
+});

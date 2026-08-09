@@ -86,14 +86,14 @@ verificar as contagens sem abrir nenhuma.
 
 ### Tests for User Story 2
 
-- [ ] T011 [US2] Em `test/widget/lista_acoes_page_test.dart`, adicionar: 3 confirmados → "3 confirmados"; 1 → singular; 0 → "Ninguém confirmou ainda" (nunca "0"); com limite → "4 de 10 vagas"; lotada com fila → indicação de lotada e tamanho da fila, separado da contagem (FR-009 a FR-013)
+- [X] T011 [US2] Em `test/widget/lista_acoes_page_test.dart`, adicionar: 3 confirmados → "3 confirmados"; 1 → singular; 0 → "Ninguém confirmou ainda" (nunca "0"); com limite → "4 de 10 vagas"; lotada com fila → indicação de lotada e tamanho da fila, separado da contagem (FR-009 a FR-013)
 
 ### Implementation for User Story 2
 
-- [ ] T012 [US2] Em `lib/features/action/domain/action.dart`, adicionar `class ConfirmationCounts { final int confirmed; final int waiting; }`. `waiting` **nunca** é somado a `confirmed` (data-model.md §2)
-- [ ] T013 [US2] Em `lib/features/action/data/action_repository.dart`, adicionar o método de contagem com **uma** consulta para a listagem inteira: `from('confirmacoes_acao').select('acao_id, status')`, agrupada em Dart por `acao_id`. **A projeção é explícita de propósito**: `select()` puro traria `usuario_id` de todo mundo do distrito para o cliente. Copiar o padrão de `fetchActions()` aqui é vazamento de identidade (Princípio II, risco 4 do plano)
-- [ ] T014 [US2] Em `lib/features/action/action_providers.dart`, adicionar o provider que expõe as contagens por Ação para a listagem
-- [ ] T015 [US2] Em `lib/features/action/presentation/action_list_page.dart`, exibir a contagem no `_ActionCard` com concordância de número, sem depender de cor ou ícone isolado para ser compreendida (FR-010), e com vagas restantes quando houver limite (FR-012)
+- [X] T012 [US2] Em `lib/features/action/domain/action.dart`, adicionar `class ConfirmationCounts { final int confirmed; final int waiting; }`. `waiting` **nunca** é somado a `confirmed` (data-model.md §2)
+- [X] T013 [US2] Em `lib/features/action/data/action_repository.dart`, adicionar o método de contagem com **uma** consulta para a listagem inteira: `from('confirmacoes_acao').select('acao_id, status')`, agrupada em Dart por `acao_id`. **A projeção é explícita de propósito**: `select()` puro traria `usuario_id` de todo mundo do distrito para o cliente. Copiar o padrão de `fetchActions()` aqui é vazamento de identidade (Princípio II, risco 4 do plano)
+- [X] T014 [US2] Em `lib/features/action/action_providers.dart`, adicionar o provider que expõe as contagens por Ação para a listagem
+- [X] T015 [US2] Em `lib/features/action/presentation/action_list_page.dart`, exibir a contagem no `_ActionCard` com concordância de número, sem depender de cor ou ícone isolado para ser compreendida (FR-010), e com vagas restantes quando houver limite (FR-012)
 
 **Checkpoint**: US1 + US2. A lista virou ferramenta de decisão.
 

@@ -21,20 +21,28 @@ supabase start            # sobe Postgres local com as migrations aplicadas
 `contracts/schema.sql` depende de duas premissas. Se qualquer uma cair, o plano A (política
 de acesso) não serve e vale o plano B de `research.md` D-003.
 
-```bash
-supabase db diff --help > /dev/null   # sanity: CLI disponível
-psql "$SUPABASE_DB_URL" -c "\
-  select p.proname, p.prosecdef as security_definer \
-  from pg_proc p join pg_namespace n on n.oid = p.pronamespace \
-  where n.nspname='public' and p.proname='excluir_conta';"
+Rodar **dentro do container** do Postgres. `psql` na porta 54322 a partir do host tem a
+conexão recusada, mesmo com o `supabase status` publicando a porta. Estes foram os comandos
+que funcionaram de fato:
 
-psql "$SUPABASE_DB_URL" -c "\
-  select relname, relrowsecurity, relforcerowsecurity \
-  from pg_class where relname in ('confirmacoes_acao','acoes');"
+```bash
+docker exec supabase_db_iasd psql -U postgres -d postgres -tAc \
+  "select p.proname||' | secdef='||p.prosecdef \
+   from pg_proc p join pg_namespace n on n.oid = p.pronamespace \
+   where n.nspname='public' and p.proname = 'excluir_minha_conta';"
+
+docker exec supabase_db_iasd psql -U postgres -d postgres -tAc \
+  "select relname||' | rls='||relrowsecurity||' | force='||relforcerowsecurity \
+   from pg_class where relname in ('confirmacoes_acao','acoes');"
 ```
 
-**Esperado**: `excluir_conta` com `security_definer = t`; `confirmacoes_acao` com
-`relrowsecurity = t` e `relforcerowsecurity = f`.
+**Esperado** — e o que foi medido em 2026-08-09:
+
+```
+excluir_minha_conta | secdef=true
+acoes | rls=true | force=false
+confirmacoes_acao | rls=true | force=false
+```
 
 **Se `relforcerowsecurity = t`**: parar e ir para o plano B. Seguir mesmo assim cria um bug
 de exclusão de conta (LGPD), não um bug de UX.
@@ -81,7 +89,7 @@ test/integration/dupla_missionaria_composicao_valida_mesmo_genero_test.dart
 | `test/widget/criar_acao_page_nome_test.dart` — nome do criador indisponível (RPC falhando) **não** bloqueia a criação | research D-005 |
 | `test/integration/acao_encerrada_nao_promove_fila_test.dart` — em Ação encerrada, o `delete` de `confirmacoes_acao` é recusado e ninguém sobe da fila | **FR-007, Princípio IV** |
 | `test/integration/acao_encerrada_nao_promove_fila_test.dart` — em Ação **não** encerrada, desistir ainda promove o próximo da fila | FR-006, não-regressão |
-| `test/integration/acao_encerrada_nao_promove_fila_test.dart` — `excluir_conta` continua apagando `confirmacoes_acao` de Ação encerrada | Risco 1 do plano — LGPD |
+| `test/integration/acao_encerrada_nao_promove_fila_test.dart` — `excluir_minha_conta` continua apagando `confirmacoes_acao` de Ação encerrada | Risco 1 do plano — LGPD |
 
 O último é o teste mais importante desta feature. Ele é o que impede o bloqueio de FR-007 de
 virar um bug de exclusão de conta.
@@ -122,7 +130,7 @@ flutter run -d chrome
 - [ ] Parte 0 conferida **antes** de escrever a migration, com a saída real das duas consultas
 - [ ] Parte 1 verde, com o número real de testes de cada suíte anotado
 - [ ] Os 5 testes de integração pré-existentes passando **sem edição**
-- [ ] O teste de `excluir_conta` em Ação encerrada passando
+- [ ] O teste de `excluir_minha_conta` em Ação encerrada passando
 - [ ] Item 8 conferido no tráfego real — é o único jeito de provar a invariante de privacidade
 - [ ] Parte 2, itens 1 a 18, conferidos
 - [ ] `CONTEXT.md` não precisou de alteração (nenhum termo novo de domínio)

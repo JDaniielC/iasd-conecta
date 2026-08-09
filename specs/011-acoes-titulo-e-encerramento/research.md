@@ -74,7 +74,7 @@ entre as duas como violação (Princípio IV e a seção "Fluxo de Desenvolvimen
 espera está na lista explícita de regras que exigem teste automatizado.
 
 **Por que política e não trigger — este é o ponto crítico da feature**: a feature 009 apaga a
-conta com `delete from public.confirmacoes_acao` dentro de `excluir_conta`
+conta com `delete from public.confirmacoes_acao` dentro de `excluir_minha_conta`
 (`supabase/migrations/20260806140000_exclusao_de_conta.sql:132`). Um
 `trigger before delete` genérico bloquearia esse delete para quem tivesse confirmação em
 Ação encerrada — ou seja, uma feature de UX criaria um bug de LGPD, impedindo a exclusão de
@@ -82,12 +82,12 @@ conta. Política de acesso não tem esse efeito: função `security definer` nã
 
 **Premissas a verificar antes de escrever a migration** (se qualquer uma cair, o plano muda):
 
-1. `public.excluir_conta` é `security definer`.
+1. `public.excluir_minha_conta` é `security definer`.
 2. Nenhuma das tabelas está com `force row level security` (que faria RLS valer até para o
    dono).
 
 **Plano B, se as premissas não valerem**: trigger `before insert or delete` que pula a
-verificação quando um sinalizador de sessão estiver ligado, e `excluir_conta` liga esse
+verificação quando um sinalizador de sessão estiver ligado, e `excluir_minha_conta` liga esse
 sinalizador com `set local`. Funciona, mas acopla duas features por uma variável de sessão —
 por isso é plano B, não plano A.
 

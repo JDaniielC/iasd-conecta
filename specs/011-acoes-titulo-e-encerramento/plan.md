@@ -139,16 +139,26 @@ compartilhada, não regra de Ação.
 
 ## Riscos e decisões que precisam de olho
 
-1. **O bloqueio de desistência pode quebrar a exclusão de conta (feature 009)**. A função
-   `excluir_conta` faz `delete from public.confirmacoes_acao` (migration
-   `20260806140000_exclusao_de_conta.sql:132`). Se o bloqueio de FR-007 for um
-   `trigger before delete` genérico, quem tiver confirmação numa Ação encerrada **não
-   consegue mais apagar a conta** — um bug de LGPD criado por uma feature de UX.
-   **Decisão**: o bloqueio vai em **política de acesso (RLS)**, não em trigger, porque
-   `excluir_conta` é `security definer` e não passa por RLS. **A verificar na
-   implementação**: que `excluir_conta` é mesmo `security definer` e que as tabelas não
-   estão com `force row level security`. Se qualquer uma das duas premissas cair, o plano
-   muda — ver `research.md` D-003 para o plano B.
+1. ~~**O bloqueio de desistência pode quebrar a exclusão de conta (feature 009)**~~ —
+   **RESOLVIDO na implementação, e o risco era menor do que este plano supunha.**
+
+   O medo original: se o bloqueio de FR-007 fosse um `trigger before delete` genérico, quem
+   tivesse confirmação numa Ação encerrada não conseguiria mais apagar a conta — bug de LGPD
+   criado por uma feature de UX. A decisão foi usar **política de acesso (RLS)** em vez de
+   trigger, porque `excluir_minha_conta` é `security definer` e não passa por RLS.
+
+   As duas premissas foram medidas contra o banco antes da migration (T001):
+   `excluir_minha_conta` tem `prosecdef = true`, e nem `confirmacoes_acao` nem `acoes` têm
+   `force row level security`. Confirmadas.
+
+   E ao escrever o teste apareceu uma **segunda razão, independente**, que ninguém tinha
+   notado: `excluir_minha_conta` só apaga confirmação de Ação **futura**
+   (`a.data_hora > now()`) — confirmação de Ação passada é mantida de propósito, como
+   histórico da feature 009. Ou seja, a política nunca atravessa o caminho da exclusão: Ação
+   futura não está encerrada, Ação encerrada não é tocada.
+
+   O teste `acao_encerrada_nao_promove_fila_test.dart` caso (c) trava as duas metades mesmo
+   assim — a razão de algo estar certo pode mudar sem aviso.
 2. **O limiar de 4 horas fica duplicado em Dart e em SQL**. Não há como derivar um do outro
    sem uma ida ao servidor a cada render. Mitigação: constante nomeada nos dois lados, cada
    uma com comentário apontando para a outra, e teste de integração que prova a fronteira no
@@ -197,7 +207,7 @@ Concluída:
 - [data-model.md](./data-model.md) — o estado derivado `ActionTimeStatus`, a agregação de
   contagem, e a declaração explícita de que nenhuma entidade nem coluna é criada.
 - [contracts/schema.sql](./contracts/schema.sql) — delta de migration: as duas políticas de
-  acesso apertadas, com a premissa sobre `excluir_conta` escrita no próprio arquivo.
+  acesso apertadas, com a premissa sobre `excluir_minha_conta` escrita no próprio arquivo.
 - [quickstart.md](./quickstart.md) — gates, o que cada teste prova, e a checagem manual.
 
 **Constitution Check pós-design**: reavaliado. Princípios II, IV e V seguem PASS — o design

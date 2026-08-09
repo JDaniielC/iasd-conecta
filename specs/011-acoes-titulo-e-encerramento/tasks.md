@@ -35,7 +35,7 @@ português por decisão registrada na feature 012.
 
 **Purpose**: derrubar a premissa da migration **antes** de escrever código em cima dela.
 
-- [X] T001 Verificar as duas premissas de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql` contra o banco local (`supabase start` primeiro), com as consultas da Parte 0 de [quickstart.md](./quickstart.md): (a) `public.excluir_conta` tem `prosecdef = t`; (b) `public.confirmacoes_acao` tem `relforcerowsecurity = f`. **Anotar a saída real das duas consultas.** Se `relforcerowsecurity = t`, PARAR e trocar para o plano B de `research.md` D-003 — seguir mesmo assim cria um bug de exclusão de conta (LGPD), não um bug de UX
+- [X] T001 Verificar as duas premissas de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql` contra o banco local (`supabase start` primeiro), com as consultas da Parte 0 de [quickstart.md](./quickstart.md): (a) `public.excluir_minha_conta` tem `prosecdef = t`; (b) `public.confirmacoes_acao` tem `relforcerowsecurity = f`. **Anotar a saída real das duas consultas.** Se `relforcerowsecurity = t`, PARAR e trocar para o plano B de `research.md` D-003 — seguir mesmo assim cria um bug de exclusão de conta (LGPD), não um bug de UX
 
 ---
 
@@ -71,7 +71,7 @@ confirmar presença.
 - [X] T007 [US1] Em `lib/features/action/presentation/action_list_page.dart`, trocar `DateTime.now()` por `ref.watch(clockProvider)()` e filtrar as Ações com `ActionTimeStatus.ended` antes do agrupamento por período — depois do filtro de Igreja e de "Só Sábado", para que nenhuma combinação de filtro deixe uma encerrada passar (FR-003). Sinalizar visualmente as `happeningNow` (FR-002)
 - [X] T008 [US1] Em `lib/features/action/presentation/action_detail_page.dart`, ler o instante de `clockProvider`, exibir o rótulo de encerrada e esconder os controles de confirmar/desistir/sair da fila/cancelar quando `ended` (FR-004, FR-005). Precedência: se estiver cancelada **e** encerrada, o rótulo é "Cancelada" (FR-008). **Não** filtrar a Ação encerrada aqui — o detalhe tem de abrir (decisão D-002)
 - [X] T009 [US1] Criar `supabase/migrations/<timestamp>_acao_encerrada_bloqueia_presenca.sql` com o conteúdo de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql`: função `public.acao_encerrada(uuid)` e as políticas `confirmacoes_acao_insert_self` e `confirmacoes_acao_delete_self` recriadas com a condição de tempo. **Não** tocar `confirmacoes_acao_select_public` — é ela que deixa a contagem ser pública (FR-014). **Nomes de banco continuam em português** — a feature 012 não traduz banco
-- [X] T010 [US1] Criar `test/integration/acao_encerrada_nao_promove_fila_test.dart` com três casos: (a) em Ação encerrada, o `delete` em `confirmacoes_acao` é recusado e ninguém sobe da fila (**FR-007, Princípio IV**); (b) em Ação **não** encerrada, desistir ainda promove o próximo da fila — não-regressão de `confirmacoes_acao_promover_fila`; (c) `excluir_conta` continua apagando `confirmacoes_acao` de quem tem confirmação em Ação encerrada (risco 1 do plano — é este caso que impede o bloqueio de virar bug de LGPD)
+- [X] T010 [US1] Criar `test/integration/acao_encerrada_nao_promove_fila_test.dart` com três casos: (a) em Ação encerrada, o `delete` em `confirmacoes_acao` é recusado, nada é apagado nem reordenado, e ninguém sobe da fila (**FR-006, FR-007, SC-005, Princípio IV**); (b) em Ação **não** encerrada, desistir ainda promove o próximo da fila — não-regressão de `confirmacoes_acao_promover_fila`; (c) `excluir_minha_conta` continua apagando `confirmacoes_acao` de quem tem confirmação em Ação encerrada (risco 1 do plano — é este caso que impede o bloqueio de virar bug de LGPD)
 
 **Checkpoint**: US1 pronta. A informação errada da listagem sumiu, e FR-007 é execução, não promessa.
 
@@ -86,13 +86,14 @@ verificar as contagens sem abrir nenhuma.
 
 ### Tests for User Story 2
 
-- [X] T011 [US2] Em `test/widget/lista_acoes_page_test.dart`, adicionar: 3 confirmados → "3 confirmados"; 1 → singular; 0 → "Ninguém confirmou ainda" (nunca "0"); com limite → "4 de 10 vagas"; lotada com fila → indicação de lotada e tamanho da fila, separado da contagem (FR-009 a FR-013)
+- [X] T011 [US2] Em `test/widget/lista_acoes_page_test.dart`, adicionar: 3 confirmados → "3 confirmados"; 1 → singular; 0 → "Ninguém confirmou ainda" (nunca "0"); com limite → "4 de 10 vagas"; lotada com fila → indicação de lotada e tamanho da fila, separado da contagem (FR-009, FR-010, FR-011, FR-012, FR-013, SC-002)
 
 ### Implementation for User Story 2
 
 - [X] T012 [US2] Em `lib/features/action/domain/action.dart`, adicionar `class ConfirmationCounts { final int confirmed; final int waiting; }`. `waiting` **nunca** é somado a `confirmed` (data-model.md §2)
 - [X] T013 [US2] Em `lib/features/action/data/action_repository.dart`, adicionar o método de contagem com **uma** consulta para a listagem inteira: `from('confirmacoes_acao').select('acao_id, status')`, agrupada em Dart por `acao_id`. **A projeção é explícita de propósito**: `select()` puro traria `usuario_id` de todo mundo do distrito para o cliente. Copiar o padrão de `fetchActions()` aqui é vazamento de identidade (Princípio II, risco 4 do plano)
 - [X] T014 [US2] Em `lib/features/action/action_providers.dart`, adicionar o provider que expõe as contagens por Ação para a listagem
+- [X] T014a [US2] Em `lib/features/action/presentation/action_detail_page.dart`, invalidar `confirmationCountsProvider` ao confirmar e ao desistir, para a contagem da listagem refletir também a promoção automática da fila (FR-015). **Acrescentada depois**: FR-015 não tinha tarefa nenhuma na lista original e foi implementado fora dela — a análise de 2026-08-09 pegou o buraco de rastreabilidade
 - [X] T015 [US2] Em `lib/features/action/presentation/action_list_page.dart`, exibir a contagem no `_ActionCard` com concordância de número, sem depender de cor ou ícone isolado para ser compreendida (FR-010), e com vagas restantes quando houver limite (FR-012)
 
 **Checkpoint**: US1 + US2. A lista virou ferramenta de decisão.
@@ -130,7 +131,7 @@ confirmação.
 
 ### Tests for User Story 4
 
-- [X] T021 [US4] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: confirmados numerados 1., 2., 3. na ordem de confirmação; fila numerada recomeçando em 1., separada; sem ninguém confirmado, mensagem de vazio em vez de lista numerada vazia (FR-020, FR-021, FR-023)
+- [X] T021 [US4] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: confirmados numerados 1., 2., 3. na ordem de confirmação; fila numerada recomeçando em 1., separada; sem ninguém confirmado, mensagem de vazio em vez de lista numerada vazia (FR-020, FR-021, FR-023, SC-007)
 
 ### Implementation for User Story 4
 
@@ -145,6 +146,7 @@ confirmação.
 - [X] T023 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Nunca "os testes passaram" sem o número
 - [X] T024 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/confirmar_idempotente_test.dart`, `apuracao_empate_test.dart`, `cancelar_acao_grupo_test.dart`, `dupla_missionaria_promocao_pula_invalido_test.dart`, `dupla_missionaria_composicao_valida_mesmo_genero_test.dart`. Se algum precisou mudar, esta feature vazou do escopo
 - [X] T025 Inspecionar o tráfego real da listagem (DevTools → Network, quickstart item 8): a resposta de `confirmacoes_acao` traz **só** `acao_id` e `status`. Se aparecer `usuario_id`, parar — é vazamento de identidade, e é o único jeito de provar a invariante de privacidade
+- [ ] T026a Medir SC-003 com gente: dar uma lista de 5 Ações a uma pessoa e cronometrar se ela identifica a com mais confirmados em menos de 10 segundos, **sem abrir nenhuma**. É o único critério de sucesso da feature que não vira teste — depende de olho humano, e ficava invisível na lista até a análise de 2026-08-09
 - [X] T026 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 18, incluindo o item 1 (a Ação real "José Danilo Silva do Carmo" de 08/08/2026 sumiu da listagem) e o item 18 (a Ação não some sozinha embaixo do dedo do Usuário)
 - [X] T027 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). O mapa de tradução já entrou pela feature 012; esta feature só usa o que já está lá
 
@@ -275,7 +277,7 @@ As duas premissas se confirmaram, então valeu o plano A (política de acesso). 
 estão copiados no cabeçalho da migration — se um dia mudarem, o desenho para de valer e
 quem ler vai saber por quê.
 
-**Correção no contrato**: a função se chama `excluir_minha_conta`, não `excluir_conta` como
+**Correção no contrato**: a função se chama `excluir_minha_conta`, não `excluir_minha_conta` como
 `contracts/schema.sql` e o `quickstart.md` diziam.
 
 **Descoberta ao escrever o teste (c)**: o risco à exclusão de conta era menor do que o plano

@@ -13,7 +13,7 @@
 -- UI — promessa sem execução.
 --
 -- POR QUE POLÍTICA E NÃO TRIGGER  (ler antes de "simplificar" isto)
--- `public.excluir_conta` (feature 009, migration 20260806140000) faz
+-- `public.excluir_minha_conta` (feature 009, migration 20260806140000) faz
 -- `delete from public.confirmacoes_acao` para apagar a conta do Usuário. Um
 -- `trigger before delete` genérico bloquearia esse delete para quem tivesse
 -- confirmação em Ação encerrada, e o Usuário ficaria SEM CONSEGUIR APAGAR A
@@ -21,7 +21,7 @@
 -- tem esse efeito, porque função `security definer` não passa por RLS.
 --
 -- PREMISSAS A VERIFICAR ANTES DE APLICAR (se alguma cair, ver research.md D-003, plano B)
---   1. `public.excluir_conta` é `security definer`.
+--   1. `public.excluir_minha_conta` é `security definer`.
 --   2. `public.confirmacoes_acao` NÃO está com `force row level security`.
 --
 -- DUPLICAÇÃO DECLARADA

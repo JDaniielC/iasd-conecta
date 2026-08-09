@@ -66,4 +66,28 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Grupos'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'o botão "Grupos" dentro de Ações leva à lista de Grupos, não de volta à Home',
+    (tester) async {
+      // Este é o bug silencioso do plano da 010: `action_list_page.dart`
+      // apontava pra `/home`, que era a lista de Grupos. Com a Home de
+      // propósito no lugar, o botão passaria a voltar pra Home — compila sem
+      // erro e nenhum outro teste pega. Por isso vira asserção, não checagem
+      // manual.
+      await _pumpAppAsVisitor(tester);
+
+      await tester.ensureVisible(find.text('Ver Ações'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Ver Ações'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Ações'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Grupos'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'Grupos'), findsOneWidget);
+      expect(find.text('A Deus seja a glória'), findsNothing);
+    },
+  );
 }

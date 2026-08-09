@@ -27,7 +27,7 @@ App Flutter organizado por feature: `lib/features/<nome>/presentation/`, testes 
 
 **Purpose**: criar o arquivo onde tudo o mais vai morar.
 
-- [ ] T001 Criar `lib/features/home/presentation/home_page.dart` com o esqueleto de `HomePage`: `ConsumerWidget` → `Scaffold` → `SafeArea` → `SingleChildScrollView` → `Column(crossAxisAlignment: start)`, corpo vazio, sem `AppBar`. Padrão copiado de `lib/features/legal/presentation/privacy_policy_page.dart` (decisão D-002). Identificadores em inglês (Princípio I): classe `HomePage`, arquivo `home_page.dart`
+- [X] T001 Criar `lib/features/home/presentation/home_page.dart` com o esqueleto de `HomePage`: `ConsumerWidget` → `Scaffold` → `SafeArea` → `SingleChildScrollView` → `Column(crossAxisAlignment: start)`, corpo vazio, sem `AppBar`. Padrão copiado de `lib/features/legal/presentation/privacy_policy_page.dart` (decisão D-002). Identificadores em inglês (Princípio I): classe `HomePage`, arquivo `home_page.dart`
 
 ---
 
@@ -38,11 +38,11 @@ junto** — deixar metade aplicada dá um app com botão "Grupos" que leva à Ho
 
 **⚠️ CRITICAL**: nenhuma user story começa antes desta fase fechar.
 
-- [ ] T002 Em `lib/app.dart`: trocar o `builder` da rota `/home` (linha ~74) de `GroupListPage` para `HomePage`, e adicionar `GoRoute(path: '/grupos', builder: GroupListPage)`. A rota `/grupos` DEVE ser declarada **antes** de `/grupos/:id` (decisão D-001) — `go_router` casa na ordem de declaração. Não mexer nos dois `redirect` das linhas 57 e 63: apontar pra Home depois do cadastro e depois de entrar na Conta é o comportamento desejado
-- [ ] T003 [P] Em `lib/features/action/presentation/action_list_page.dart:60`: trocar `context.go('/home')` por `context.go('/grupos')` no `IconButton` com tooltip "Grupos". **Sem isso o app compila e o botão fica errado** — é o bug silencioso registrado no risco 2 do plano
-- [ ] T004 [P] Em `lib/features/group/presentation/group_list_page.dart`: corrigir o comentário de topo, que hoje diz "Home do app: lista de Grupos". Só o comentário — nenhuma mudança de comportamento nesta tela
-- [ ] T005 Atualizar `test/widget/router_visitante_test.dart`: a asserção `expect(find.text('Grupos'), findsOneWidget)` na rota inicial passa a ser falsa. Afirmar que a rota inicial constrói a Home, e mover a verificação de "Visitante alcança a lista de Grupos" para depois da navegação. **Não apagar o caso** — o que ele protege (Visitante não é empurrado ao cadastro) continua valendo (FR-001)
-- [ ] T006 [P] Criar `test/widget/home_page_test.dart` com o helper de montagem: `ProviderScope` com `hasProfileProvider` sobrescrito, envolvendo `HomePage`. Os overrides de `groupRepositoryProvider`/`authRepositoryProvider` usados em `router_visitante_test.dart` servem de modelo
+- [X] T002 Em `lib/app.dart`: trocar o `builder` da rota `/home` (linha ~74) de `GroupListPage` para `HomePage`, e adicionar `GoRoute(path: '/grupos', builder: GroupListPage)`. A rota `/grupos` DEVE ser declarada **antes** de `/grupos/:id` (decisão D-001) — `go_router` casa na ordem de declaração. Não mexer nos dois `redirect` das linhas 57 e 63: apontar pra Home depois do cadastro e depois de entrar na Conta é o comportamento desejado
+- [X] T003 [P] Em `lib/features/action/presentation/action_list_page.dart:60`: trocar `context.go('/home')` por `context.go('/grupos')` no `IconButton` com tooltip "Grupos". **Sem isso o app compila e o botão fica errado** — é o bug silencioso registrado no risco 2 do plano
+- [X] T004 [P] Em `lib/features/group/presentation/group_list_page.dart`: corrigir o comentário de topo, que hoje diz "Home do app: lista de Grupos". Só o comentário — nenhuma mudança de comportamento nesta tela
+- [X] T005 Atualizar `test/widget/router_visitante_test.dart`: a asserção `expect(find.text('Grupos'), findsOneWidget)` na rota inicial passa a ser falsa. Afirmar que a rota inicial constrói a Home, e mover a verificação de "Visitante alcança a lista de Grupos" para depois da navegação. **Não apagar o caso** — o que ele protege (Visitante não é empurrado ao cadastro) continua valendo (FR-001)
+- [X] T006 [P] Criar `test/widget/home_page_test.dart` com o helper de montagem: `ProviderScope` com `hasProfileProvider` sobrescrito, envolvendo `HomePage`. Os overrides de `groupRepositoryProvider`/`authRepositoryProvider` usados em `router_visitante_test.dart` servem de modelo
 
 **Checkpoint**: `flutter analyze` limpo, `flutter test test/widget` verde, app abre na Home vazia e a lista de Grupos continua alcançável por `/grupos`.
 
@@ -61,14 +61,14 @@ visíveis sem rolar.
 
 ### Tests for User Story 1
 
-- [ ] T007 [US1] Em `test/widget/home_page_test.dart`, escrever os testes que devem falhar agora: (a) a frase exata `A Deus seja a glória` está presente — comparar caractere a caractere, com acento; (b) o nome do app e a frase de propósito estão presentes; (c) os textos citam **Grupo** e **Ação** com os termos exatos do glossário (FR-002, FR-003, FR-004, Princípio I)
-- [ ] T008 [US1] Em `test/widget/home_page_test.dart`, escrever o teste de ausência de dado pessoal: a Home monta e renderiza sem nenhum override de repositório de Perfil além de `hasProfileProvider`, provando que não consulta mais nada (FR-006, Princípio II)
+- [X] T007 [US1] Em `test/widget/home_page_test.dart`, escrever os testes que devem falhar agora: (a) a frase exata `A Deus seja a glória` está presente — comparar caractere a caractere, com acento; (b) o nome do app e a frase de propósito estão presentes; (c) os textos citam **Grupo** e **Ação** com os termos exatos do glossário (FR-002, FR-003, FR-004, Princípio I)
+- [X] T008 [US1] Em `test/widget/home_page_test.dart`, escrever o teste de ausência de dado pessoal: a Home monta e renderiza sem nenhum override de repositório de Perfil além de `hasProfileProvider`, provando que não consulta mais nada (FR-006, Princípio II)
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] Em `lib/features/home/presentation/home_page.dart`, implementar o bloco de identidade no topo: nome do app, frase de propósito citando o distrito de Vitória de Santo Antão e o que se faz ali, e `A Deus seja a glória` como `Text` comum — **não** marcar como `ExcludeSemantics`, a frase é lida por leitor de tela (FR-002, FR-003, decisão D-005). Bloco compacto: é ele que precisa caber sem rolagem em paisagem
-- [ ] T010 [US1] Em `lib/features/home/presentation/home_page.dart`, implementar os blocos curtos explicando **Grupo** (comunidade permanente em torno de atividade recorrente) e **Ação** (evento pontual com data, hora e local), e a frase dizendo que Visitante vê livremente mas participar/votar/criar exige cadastro (FR-004, FR-005). Usar só os termos do glossário — nada de "evento", "atividade", "comunidade" (Princípio I)
-- [ ] T011 [US1] Conferir o espaçamento com `AppSpacing` de `lib/core/theme/app_theme.dart` e a tipografia com `Theme.of(context).textTheme` — nenhuma cor nem tamanho literal na Home. O tema azul-marinho existente é o único (FR-018)
+- [X] T009 [US1] Em `lib/features/home/presentation/home_page.dart`, implementar o bloco de identidade no topo: nome do app, frase de propósito citando o distrito de Vitória de Santo Antão e o que se faz ali, e `A Deus seja a glória` como `Text` comum — **não** marcar como `ExcludeSemantics`, a frase é lida por leitor de tela (FR-002, FR-003, decisão D-005). Bloco compacto: é ele que precisa caber sem rolagem em paisagem
+- [X] T010 [US1] Em `lib/features/home/presentation/home_page.dart`, implementar os blocos curtos explicando **Grupo** (comunidade permanente em torno de atividade recorrente) e **Ação** (evento pontual com data, hora e local), e a frase dizendo que Visitante vê livremente mas participar/votar/criar exige cadastro (FR-004, FR-005). Usar só os termos do glossário — nada de "evento", "atividade", "comunidade" (Princípio I)
+- [X] T011 [US1] Conferir o espaçamento com `AppSpacing` de `lib/core/theme/app_theme.dart` e a tipografia com `Theme.of(context).textTheme` — nenhuma cor nem tamanho literal na Home. O tema azul-marinho existente é o único (FR-018)
 
 **Checkpoint**: US1 pronta. A Home já cumpre o motivo da feature existir, mesmo sem os caminhos de navegação.
 
@@ -82,11 +82,11 @@ visíveis sem rolar.
 
 ### Tests for User Story 2
 
-- [ ] T012 [US2] Em `test/widget/home_page_test.dart`, testar que existem controles rotulados com **texto** para Grupos e para Ações, e que acioná-los navega para `/grupos` e `/acoes` (FR-007)
+- [X] T012 [US2] Em `test/widget/home_page_test.dart`, testar que existem controles rotulados com **texto** para Grupos e para Ações, e que acioná-los navega para `/grupos` e `/acoes` (FR-007)
 
 ### Implementation for User Story 2
 
-- [ ] T013 [US2] Em `lib/features/home/presentation/home_page.dart`, implementar os dois caminhos. Rótulo em texto, não só ícone (FR-007). Ícone, se houver, só da família Material já usada no app — `Icons.groups_outlined` e `Icons.event_outlined`, os mesmos de `group_list_page.dart:51` e `action_list_page.dart:59`. Nada de emoji (FR-017). Alvo de toque ≥44×44pt e ≥8pt de separação: os botões do tema já entregam isso (FR-013, decisão D-005)
+- [X] T013 [US2] Em `lib/features/home/presentation/home_page.dart`, implementar os dois caminhos. Rótulo em texto, não só ícone (FR-007). Ícone, se houver, só da família Material já usada no app — `Icons.groups_outlined` e `Icons.event_outlined`, os mesmos de `group_list_page.dart:51` e `action_list_page.dart:59`. Nada de emoji (FR-017). Alvo de toque ≥44×44pt e ≥8pt de separação: os botões do tema já entregam isso (FR-013, decisão D-005)
 
 **Checkpoint**: US1 + US2 funcionando. Navegação completa, ainda sem chamada principal nem links legais.
 
@@ -104,12 +104,12 @@ observa um provider de rede. As fases anteriores são estáticas por construçã
 
 ### Tests for User Story 3
 
-- [ ] T014 [US3] Em `test/widget/home_page_test.dart`, testar a chamada principal nos três estados: `hasProfileProvider` resolvido em `false` → "Criar Perfil"; resolvido em `true` → "Ver Grupos"; **em erro** (`overrideWith((ref) async => throw Exception('offline'))`) → "Ver Grupos" **e todos os textos fixos da Home continuam presentes**. O terceiro caso é o que impede alguém, numa refatoração futura, de embrulhar a Home inteira num `.when` e quebrar o comportamento offline sem quebrar nenhum outro teste (FR-008, SC-005, decisão D-003)
+- [X] T014 [US3] Em `test/widget/home_page_test.dart`, testar a chamada principal nos três estados: `hasProfileProvider` resolvido em `false` → "Criar Perfil"; resolvido em `true` → "Ver Grupos"; **em erro** (`overrideWith((ref) async => throw Exception('offline'))`) → "Ver Grupos" **e todos os textos fixos da Home continuam presentes**. O terceiro caso é o que impede alguém, numa refatoração futura, de embrulhar a Home inteira num `.when` e quebrar o comportamento offline sem quebrar nenhum outro teste (FR-008, SC-005, decisão D-003)
 
 ### Implementation for User Story 3
 
-- [ ] T015 [US3] Em `lib/features/home/presentation/home_page.dart`, implementar a chamada principal única (FR-008) observando `hasProfileProvider` **num bloco isolado**, com a tabela de D-003: carregando ou erro → "Ver Grupos"; sem Perfil → "Criar Perfil"; com Perfil → "Ver Grupos". Todo o resto da Home fica **fora** de qualquer `AsyncValue`. A ação secundária acompanha, visualmente subordinada
-- [ ] T016 [US3] Em `lib/features/home/presentation/home_page.dart`, adicionar os caminhos para `/privacidade` e `/termos`, rotulados com texto (FR-009)
+- [X] T015 [US3] Em `lib/features/home/presentation/home_page.dart`, implementar a chamada principal única (FR-008) observando `hasProfileProvider` **num bloco isolado**, com a tabela de D-003: carregando ou erro → "Ver Grupos"; sem Perfil → "Criar Perfil"; com Perfil → "Ver Grupos". Todo o resto da Home fica **fora** de qualquer `AsyncValue`. A ação secundária acompanha, visualmente subordinada
+- [X] T016 [US3] Em `lib/features/home/presentation/home_page.dart`, adicionar os caminhos para `/privacidade` e `/termos`, rotulados com texto (FR-009)
 
 **Checkpoint**: as três histórias funcionando de forma independente.
 
@@ -117,12 +117,12 @@ observa um provider de rede. As fases anteriores são estáticas por construçã
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T017 Rodar os gates de CI e **anotar os números reais**: `flutter analyze` (0 issues), `flutter test test/unit test/widget` (N testes passando), `flutter build web`. Nunca reportar "os testes passaram" sem o número
-- [ ] T018 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 14. **O item 13 é obrigatório**: da Home → Ações → tocar "Grupos" e confirmar que vai para a lista de Grupos, não de volta à Home. É a verificação da T003, e nenhum teste automatizado a cobre
+- [X] T017 Rodar os gates de CI e **anotar os números reais**: `flutter analyze` (0 issues), `flutter test test/unit test/widget` (N testes passando), `flutter build web`. Nunca reportar "os testes passaram" sem o número
+- [X] T018 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 14. **O item 13 é obrigatório**: da Home → Ações → tocar "Grupos" e confirmar que vai para a lista de Grupos, não de volta à Home. É a verificação da T003, e nenhum teste automatizado a cobre
 - [ ] T019 Conferir a interpretação de SC-002 registrada no risco 1 do plano: em paisagem a ~375px de altura, com **fonte padrão**, a doxologia está visível sem rolar; com fonte no máximo, nada é cortado e a página rola (FR-014). Se a doxologia não couber nem em fonte padrão, encurtar o bloco de identidade — não reduzir tamanho de fonte
 - [ ] T020 Medir contraste dos pares texto/fundo e conferir alvos de toque (quickstart itens 7 e 8, FR-012, FR-013, SC-004). `AppColors.navy` sobre branco fica em torno de 13:1; a conferência importa se algum cinza claro tiver entrado
 - [ ] T021 Conferir leitor de tela (quickstart item 10, FR-020, FR-024): ordem de leitura acompanha a ordem visual e "A Deus seja a glória" é lida como texto
-- [ ] T022 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). Se precisou, a Home vazou de escopo
+- [X] T022 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). Se precisou, a Home vazou de escopo
 
 ---
 
@@ -195,3 +195,52 @@ confirmados no card).
 - Commit por tarefa ou por grupo lógico; a Fase 2 deve ir em um commit só
 - Regra que vale para toda a fase de implementação: **nenhuma cor, tamanho ou espaçamento
   literal** em `home_page.dart` — tudo por `AppTheme`/`AppSpacing`
+
+
+---
+
+## Registro de execução — 2026-08-09
+
+Implementado em `010-pagina-home`, sobre a 012 já mergeada.
+
+| Gate | Antes | Depois |
+|---|---|---|
+| `flutter analyze` | 0 issues | **0 issues** |
+| `flutter test test/unit test/widget` | 100 | **112 passando** |
+| `flutter build web` | ✅ | ✅ |
+| `CONTEXT.md` alterado | — | **não** (nenhum termo novo) |
+
+12 testes novos: 10 em `home_page_test.dart`, 2 em `router_visitante_test.dart`.
+
+**O item 13 do quickstart virou teste, em vez de checagem manual.** Era o bug
+silencioso do plano — `action_list_page.dart` apontava pra `/home`, que com a Home
+de propósito no lugar levaria de volta à Home em vez da lista de Grupos. Compila sem
+erro e nenhum outro teste pegava. Agora pega: revertida a linha, o teste falha;
+restaurada, passa. Verificado nos dois sentidos.
+
+**Achado no harness de teste, não no produto**: o `redirect` de `lib/app.dart:62` lê
+`isAnonymousProvider` sempre — é o operando à esquerda de um `&&` — e esse provider
+chega no cliente Supabase, que não existe em teste. Na primeira carga o redirect sai
+antes, no `hasProfile == null`; depois que o estado de Perfil resolve, **qualquer**
+navegação estoura e o router cai na página de erro. Estava latente: nenhum teste
+navegava depois do settle. Resolvido com override de `isAnonymousProvider`.
+
+### ⚠️ Não verificado: T019, T020, T021
+
+Precisam de olho humano ou de aparelho, e a extensão do Chrome não está conectada
+nesta máquina.
+
+| Tarefa | O que falta | Requisito |
+|---|---|---|
+| T019 | Paisagem a ~375px de altura: a doxologia cabe sem rolar, em fonte padrão? | SC-002 vs FR-014 |
+| T020 | Medir contraste dos pares texto/fundo e os alvos de toque | FR-012, FR-013, SC-004 |
+| T021 | Leitor de tela: ordem de leitura e a doxologia sendo lida | FR-020, FR-024 |
+
+Dado conhecido que reduz o risco de T019: no viewport de teste (800×600) a chamada
+principal fica em y=720, **abaixo da dobra** — a doxologia, não. É o comportamento
+que a spec pede, mas em fonte padrão e nesse tamanho só. Falta conferir em paisagem
+real.
+
+T020 tem margem grande: `AppColors.navy` (#17284C) sobre branco fica em torno de
+13:1, muito acima dos 4,5:1 exigidos, e os botões do tema já entregam 48dp de alvo.
+Mas margem grande não é medição.

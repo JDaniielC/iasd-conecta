@@ -58,12 +58,12 @@ void main() {
 
       // O viewport padrão do teste tem 600px de altura e a chamada fica
       // abaixo da dobra — só a doxologia precisa estar visível sem rolar.
-      await tester.ensureVisible(find.text('Ver Grupos'));
+      await tester.ensureVisible(find.text('Ver Grupos/Ministérios'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Ver Grupos'));
+      await tester.tap(find.text('Ver Grupos/Ministérios'));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Grupos'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Grupos/Ministérios'), findsOneWidget);
     },
   );
 
@@ -83,10 +83,10 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.widgetWithText(AppBar, 'Ações'), findsOneWidget);
 
-      await tester.tap(find.byTooltip('Grupos'));
+      await tester.tap(find.byTooltip('Grupos/Ministérios'));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Grupos'), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Grupos/Ministérios'), findsOneWidget);
       expect(find.text('A Deus seja a glória'), findsNothing);
     },
   );

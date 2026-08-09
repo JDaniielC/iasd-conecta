@@ -16,8 +16,8 @@ Uma pessoa da igreja recebe o link do app pelo grupo de WhatsApp do distrito e a
 primeira vez, sem cadastro. Hoje ela cai direto numa lista de Grupos e precisa deduzir o
 que o app é. Nesta feature, ela chega numa Home que diz, em uma frase, o que o app é —
 uma rede do distrito de Vitória de Santo Antão para descobrir e participar de Grupos e
-Ações — mostra a frase "A Deus seja a glória" junto da identidade do app, e explica em
-poucos blocos o que ela pode fazer ali.
+Ações — explica em poucos blocos o que ela pode fazer ali, e fecha a página com "A Deus
+seja a glória" no rodapé.
 
 **Why this priority**: é o motivo da feature existir. Sem ela, a primeira impressão do app
 é uma lista sem contexto, e o Visitante não sabe se aquilo é para ele. Entregue sozinha,
@@ -25,18 +25,20 @@ já resolve o problema: uma Home que explica o propósito é útil mesmo que a n
 continue como está hoje.
 
 **Independent Test**: abrir o app sem Perfil, na rota inicial, e verificar que o propósito
-do app e a frase "A Deus seja a glória" estão visíveis sem nenhuma interação prévia.
+do app está visível sem nenhuma interação prévia, e que "A Deus seja a glória" fecha a
+página no rodapé.
 
 **Acceptance Scenarios**:
 
 1. **Given** um Visitante sem Perfil, **When** abre o app pela primeira vez, **Then** a
-   primeira tela é a Home, com o nome do app, uma frase de propósito e a frase "A Deus
-   seja a glória" visíveis sem rolar a tela.
-2. **Given** a Home aberta, **When** o Visitante lê a tela, **Then** encontra explicação
+   primeira tela é a Home, com o nome do app e uma frase de propósito visíveis sem rolar.
+2. **Given** a Home aberta, **When** o Visitante rola até o fim, **Then** encontra "A Deus
+   seja a glória" fechando a página.
+3. **Given** a Home aberta, **When** o Visitante lê a tela, **Then** encontra explicação
    do que são Grupos e do que são Ações, em linguagem do glossário e sem jargão técnico.
-3. **Given** um Usuário com Perfil, **When** abre o app, **Then** vê a mesma Home, sem
+4. **Given** um Usuário com Perfil, **When** abre o app, **Then** vê a mesma Home, sem
    nenhum dado pessoal dele ou de terceiros exibido na tela.
-4. **Given** a Home aberta em um aparelho com fonte do sistema no tamanho máximo, **When**
+5. **Given** a Home aberta em um aparelho com fonte do sistema no tamanho máximo, **When**
    a tela é renderizada, **Then** todo o texto continua legível e nenhum texto é cortado.
 
 ---
@@ -117,12 +119,12 @@ Privacidade e os Termos de Uso.
 
 - **FR-001**: A rota inicial do app DEVE apresentar a Home; a lista de Grupos deixa de ser
   a primeira tela e passa a ser um destino alcançável a partir da Home.
-- **FR-002**: A Home DEVE exibir o nome do app e uma frase de propósito que identifique
-  (a) a comunidade atendida — membros das igrejas do distrito de Vitória de Santo Antão —
-  e (b) o que se faz ali — descobrir e participar de Grupos e Ações.
+- **FR-002**: A Home DEVE exibir o nome do app — **Conecta IASD** — e uma frase de propósito
+  que identifique (a) a comunidade atendida — membros das igrejas do distrito de Vitória de
+  Santo Antão — e (b) o que se faz ali — descobrir e participar de Grupos e Ações.
 - **FR-003**: A Home DEVE exibir a frase exata "A Deus seja a glória", com acentuação e
-  capitalização idênticas, junto ao bloco de identidade do app, visível sem rolagem na
-  primeira renderização.
+  capitalização idênticas, **no rodapé da página**, como fecho — e não no bloco de
+  identidade.
 - **FR-004**: A Home DEVE explicar, em blocos curtos, o que é um Grupo (comunidade
   permanente em torno de uma atividade recorrente) e o que é uma Ação (evento pontual com
   data, hora e local), usando os termos exatos do glossário em `CONTEXT.md`.
@@ -136,6 +138,10 @@ Privacidade e os Termos de Uso.
 
 - **FR-007**: Usuários e Visitantes DEVEM conseguir alcançar a lista de Grupos e a lista de
   Ações a partir da Home, por controles rotulados com texto (não apenas ícone).
+- **FR-007a**: Os **rótulos de tela** que hoje dizem "Grupo" — título de página, botão,
+  rótulo de campo e tooltip — DEVEM dizer "Grupo/Ministério" (ou "Grupos/Ministérios" no
+  plural). Vale só para rótulo: prosa explicativa, mensagem de erro e páginas legais
+  continuam usando "Grupo", o termo do glossário.
 - **FR-008**: A Home DEVE ter exatamente uma chamada principal, visualmente destacada
   acima das demais: cadastrar-se, para quem não tem Perfil; explorar Grupos, para quem já
   tem.
@@ -195,8 +201,8 @@ de Usuário (com Perfil), distinção que já existe.
 - **SC-001**: Uma pessoa que nunca viu o app consegue dizer, em uma frase e em até 30
   segundos na Home, para quem o app serve e o que se faz nele — verificado com no mínimo 5
   membros da igreja, com 4 dos 5 acertando.
-- **SC-002**: A frase "A Deus seja a glória" está visível na primeira renderização da Home,
-  sem rolagem, em telas a partir de 375px de largura, em retrato e em paisagem.
+- **SC-002**: A frase "A Deus seja a glória" está presente no rodapé da Home, alcançável
+  rolando até o fim, em telas a partir de 375px de largura, em retrato e em paisagem.
 - **SC-003**: A partir da Home, a lista de Grupos e a lista de Ações são alcançadas em um
   único toque cada.
 - **SC-004**: 100% dos pares texto/fundo da Home atingem contraste de 4,5:1, e 100% dos
@@ -226,3 +232,29 @@ de Usuário (com Perfil), distinção que já existe.
   claro existente; suporte a modo escuro é decisão de produto separada, para o app inteiro.
 - **Nada muda nos dados**: nenhum dado armazenado é criado, lido, alterado ou apagado por
   esta feature.
+
+
+## Emendas
+
+**2026-08-09 — nome do app, doxologia no rodapé e rótulo Grupo/Ministério**
+
+Pedido do responsável pelo app, depois da primeira implementação:
+
+1. **FR-002**: o nome passa a ser **Conecta IASD**, em vez de "Rede IASD Vitória de Santo
+   Antão". Aplicado também ao título da janela, ao `manifest.json` e ao `index.html`.
+2. **FR-003 e SC-002**: "A Deus seja a glória" sai do bloco de identidade e vai para o
+   **rodapé**. Deixa de ser exigida sem rolagem. Efeito colateral bom: some o conflito que o
+   `plan.md` registrava entre SC-002 e FR-014 — não há mais como a doxologia e a fonte no
+   tamanho máximo brigarem pelo mesmo espaço em paisagem.
+3. **FR-007a** (novo): rótulo de tela diz "Grupo/Ministério".
+4. **Ícone do app**: `web/favicon.png` e os quatro `web/icons/` passam a ter uma marca
+   própria do Conecta IASD — três nós ligados, no azul-marinho do tema. **Não** usa o
+   símbolo oficial da Igreja Adventista do Sétimo Dia, que é marca registrada de uma
+   organização real; desenhar uma imitação de memória e chamá-la de oficial seria errado.
+   Se o arquivo oficial for fornecido, é só substituir os cinco PNGs.
+
+**Tensão registrada no item 3**: Grupo e Ministério são entradas **distintas** do glossário —
+Ministério é um Grupo que tem Líder/Diretor, e Grupo informal não é Ministério. Juntá-los no
+rótulo funde dois conceitos que o Princípio I manda manter separados. A decisão foi do
+responsável pelo app, o escopo ficou restrito a rótulo (nunca a identificador, banco, prosa
+ou texto legal), e `CONTEXT.md` registra a convenção para que glossário e tela não divirjam.

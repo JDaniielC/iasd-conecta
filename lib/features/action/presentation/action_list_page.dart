@@ -58,7 +58,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
         title: const Text('Ações'),
         actions: [
           IconButton(
-            tooltip: 'Grupos',
+            tooltip: 'Grupos/Ministérios',
             icon: const Icon(Icons.groups_outlined),
             onPressed: () => context.go('/grupos'),
           ),

@@ -1,11 +1,11 @@
 {
-    "name": "IASD Conecta",
-    "short_name": "IASD Conecta",
+    "name": "Conecta IASD",
+    "short_name": "Conecta IASD",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#17284C",
+    "theme_color": "#17284C",
+    "description": "Rede dos membros das igrejas do distrito de Vitória de Santo Antão para descobrir e participar de Grupos e Ações.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

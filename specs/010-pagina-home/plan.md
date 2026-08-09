@@ -141,7 +141,9 @@ explícito do plano por isso.
 
 ## Riscos e decisões que precisam de olho
 
-1. **SC-002 vs. FR-014 (conflito real na spec)**. SC-002 exige a frase "A Deus seja a glória"
+1. ~~**SC-002 vs. FR-014 (conflito real na spec)**~~ — **RESOLVIDO** pela emenda de 2026-08-09: a doxologia foi para o rodapé e deixou de disputar espaço com a fonte ampliada. O texto abaixo fica como registro do que era.
+
+   **SC-002 vs. FR-014 (conflito real na spec)**. SC-002 exige a frase "A Deus seja a glória"
    visível sem rolagem "em retrato e em paisagem" a partir de 375px. FR-014 exige suportar a
    fonte do sistema no tamanho máximo. Em paisagem (~375px de altura) com fonte no máximo,
    nome do app + frase de propósito + doxologia não cabem — é fisicamente impossível atender

@@ -47,7 +47,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Grupos'),
+        title: const Text('Grupos/Ministérios'),
         actions: [
           IconButton(
             tooltip: 'Ações',

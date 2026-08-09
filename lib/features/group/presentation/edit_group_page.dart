@@ -72,7 +72,7 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
     final uid = ref.watch(currentUserIdProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Editar Grupo')),
+      appBar: AppBar(title: const Text('Editar Grupo/Ministério')),
       body: groupAsync.when(
         data: (group) {
           if (!group.isOwner(uid)) {

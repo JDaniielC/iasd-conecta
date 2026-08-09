@@ -67,7 +67,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
     final categoriesAsync = ref.watch(groupCategoriesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Criar Grupo')),
+      appBar: AppBar(title: const Text('Criar Grupo/Ministério')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         child: Form(
@@ -77,7 +77,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
             children: [
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome do Grupo'),
+                decoration: const InputDecoration(labelText: 'Nome do Grupo/Ministério'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
               ),
               const SizedBox(height: AppSpacing.md),
@@ -155,7 +155,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                         width: 20,
                         child: CircularProgressIndicator(strokeWidth: 2),
                       )
-                    : const Text('Criar Grupo'),
+                    : const Text('Criar Grupo/Ministério'),
               ),
             ],
           ),

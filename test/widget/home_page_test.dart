@@ -61,7 +61,7 @@ void main() {
   group('navegação (US2)', () {
     testWidgets('oferece caminhos rotulados com texto (FR-007)', (tester) async {
       await _pumpHome(tester, profileState: true);
-      expect(find.text('Ver Grupos'), findsOneWidget);
+      expect(find.text('Ver Grupos/Ministérios'), findsOneWidget);
       expect(find.text('Ver Ações'), findsOneWidget);
     });
   });
@@ -76,7 +76,7 @@ void main() {
     testWidgets('com Perfil, a chamada principal é Ver Grupos (FR-008)',
         (tester) async {
       await _pumpHome(tester, profileState: true);
-      expect(find.widgetWithText(ElevatedButton, 'Ver Grupos'), findsOneWidget);
+      expect(find.widgetWithText(ElevatedButton, 'Ver Grupos/Ministérios'), findsOneWidget);
     });
 
     testWidgets(
@@ -89,7 +89,7 @@ void main() {
 
         expect(find.text('A Deus seja a glória'), findsOneWidget);
         expect(find.textContaining('Vitória de Santo Antão'), findsWidgets);
-        expect(find.widgetWithText(ElevatedButton, 'Ver Grupos'), findsOneWidget);
+        expect(find.widgetWithText(ElevatedButton, 'Ver Grupos/Ministérios'), findsOneWidget);
       },
     );
 

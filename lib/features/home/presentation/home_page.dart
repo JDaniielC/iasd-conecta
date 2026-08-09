@@ -32,27 +32,18 @@ class HomePage extends ConsumerWidget {
             children: [
               // Bloco de identidade — compacto de propósito: é ele que precisa
               // caber sem rolagem em paisagem, em tamanho de fonte padrão.
-              Text(
-                'Rede IASD Vitória de Santo Antão',
-                style: text.headlineMedium,
-              ),
+              Text('Conecta IASD', style: text.headlineMedium),
               const SizedBox(height: AppSpacing.xs),
               Text(
                 'O app dos membros das igrejas do distrito de Vitória de Santo '
                 'Antão para descobrir e participar de Grupos e Ações.',
                 style: text.bodyLarge,
               ),
-              const SizedBox(height: AppSpacing.md),
-              // Texto comum, não decoração: leitor de tela precisa ler.
-              Text(
-                'A Deus seja a glória',
-                style: text.titleLarge?.copyWith(fontStyle: FontStyle.italic),
-              ),
 
               const SizedBox(height: AppSpacing.xl),
               const _ConceptCard(
                 icon: Icons.groups_outlined,
-                title: 'Grupo',
+                title: 'Grupo/Ministério',
                 body: 'Comunidade permanente em torno de uma atividade que se '
                     'repete — um ministério, um time, uma turma. Tem horário, '
                     'local e gente que participa.',
@@ -87,6 +78,20 @@ class HomePage extends ConsumerWidget {
                 onPressed: () => context.push('/termos'),
                 child: const Text('Termos de Uso'),
               ),
+
+              const SizedBox(height: AppSpacing.lg),
+              // Rodapé. Texto comum, não decoração: leitor de tela precisa ler,
+              // então nada de ExcludeSemantics aqui.
+              Center(
+                child: Text(
+                  'A Deus seja a glória',
+                  style: text.titleMedium?.copyWith(
+                    fontStyle: FontStyle.italic,
+                    color: AppColors.navy,
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -161,13 +166,13 @@ class _MainCallToAction extends ConsumerWidget {
         else
           ElevatedButton(
             onPressed: () => context.go('/grupos'),
-            child: const Text('Ver Grupos'),
+            child: const Text('Ver Grupos/Ministérios'),
           ),
         const SizedBox(height: AppSpacing.sm),
         if (needsSignup)
           OutlinedButton(
             onPressed: () => context.go('/grupos'),
-            child: const Text('Ver Grupos'),
+            child: const Text('Ver Grupos/Ministérios'),
           ),
         if (needsSignup) const SizedBox(height: AppSpacing.sm),
         OutlinedButton(

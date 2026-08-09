@@ -173,7 +173,7 @@ class App extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(goRouterProvider);
     return MaterialApp.router(
-      title: 'IASD Distrito Vitória de Santo Antão',
+      title: 'Conecta IASD',
       debugShowCheckedModeBanner: kDebugMode,
       theme: AppTheme.light(),
       routerConfig: router,

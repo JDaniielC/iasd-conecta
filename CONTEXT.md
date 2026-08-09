@@ -99,6 +99,11 @@ _EN_: `SuggestedAction`
 Comunidade permanente organizada em torno de uma atividade recorrente (ex: SevenBikers, Asafe). Tem nome, horário padrão de encontro (recorrente, não um evento único), local e detalhes. Existe para que seus participantes possam propor e votar Ações.
 _Avoid_: Comunidade, time
 _EN_: `Group`
+_Rótulo de tela_: título de página, botão, rótulo de campo e tooltip dizem "Grupo/Ministério"
+(plural "Grupos/Ministérios"), porque a comunidade chama de ministério o que o app chama de
+Grupo. Vale **só para rótulo** — prosa, mensagem de erro, página legal, identificador Dart e
+banco continuam usando "Grupo". Convenção decidida na feature 010; ver a seção Emendas de
+`specs/010-pagina-home/spec.md`.
 
 **Participar do Grupo**:
 Associação leve e revogável de um Usuário a um Grupo — não é filiação formal nem permanente, o usuário entra e sai quando quiser. Concede três direitos: aparecer identificado no Grupo, propor Ação candidata no Grupo, e votar nas Ações candidatas do Grupo.

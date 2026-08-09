@@ -51,7 +51,7 @@ class GroupDetailPage extends ConsumerWidget {
     final participa = membersAsync.value?.any((p) => p.id == uid) ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Grupo')),
+      appBar: AppBar(title: const Text('Grupo/Ministério')),
       body: groupAsync.when(
         data: (group) {
           final isOwner = group.isOwner(uid);
@@ -98,7 +98,7 @@ class GroupDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
                   onPressed: participa ? () => _sair(context, ref) : () => _join(context, ref),
-                  child: Text(participa ? 'Sair do Grupo' : 'Participar'),
+                  child: Text(participa ? 'Sair do Grupo/Ministério' : 'Participar'),
                 ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),

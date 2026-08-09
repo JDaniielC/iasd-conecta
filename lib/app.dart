@@ -23,10 +23,10 @@ import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
 import 'features/legal/presentation/privacy_policy_page.dart';
 import 'features/legal/presentation/terms_of_use_page.dart';
-import 'features/perfil/presentation/cadastro_perfil_page.dart';
-import 'features/perfil/presentation/login_page.dart';
-import 'features/perfil/presentation/delete_account_page.dart';
-import 'features/perfil/presentation/upgrade_conta_page.dart';
+import 'features/profile/presentation/profile_signup_page.dart';
+import 'features/profile/presentation/login_page.dart';
+import 'features/profile/presentation/delete_account_page.dart';
+import 'features/profile/presentation/upgrade_account_page.dart';
 
 /// Notifica o [GoRouter] pra reavaliar `redirect` sempre que [hasPerfilProvider]
 /// muda (ex.: cadastro concluído, upgrade pra Conta).

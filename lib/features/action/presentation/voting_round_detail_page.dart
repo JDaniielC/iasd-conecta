@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../perfil/domain/perfil_guard.dart';
+import '../../profile/domain/profile_guard.dart';
 import '../voting_round_providers.dart';
 
 /// Detalhes de uma Rodada de votação: candidatas + votar (User Story 2) +

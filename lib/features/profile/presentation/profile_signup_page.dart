@@ -5,7 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
-import '../domain/nome_moderation.dart';
+import '../domain/name_moderation.dart';
 import '../domain/profile.dart';
 
 /// Formulário de criação de Perfil (User Story 1) com etapa condicional de

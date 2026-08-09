@@ -7,7 +7,7 @@ import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
 import '../../group/group_providers.dart';
-import '../../perfil/domain/perfil_guard.dart';
+import '../../profile/domain/profile_guard.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
 

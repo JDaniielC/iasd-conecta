@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../leadership/leadership_providers.dart';
-import '../../perfil/domain/perfil_guard.dart';
+import '../../profile/domain/profile_guard.dart';
 import '../group_providers.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente

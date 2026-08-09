@@ -1,4 +1,4 @@
-import '../../perfil/domain/profile.dart';
+import '../../profile/domain/profile.dart';
 
 /// Dados de uma Ação avulsa ainda não enviada ao banco (formulário de
 /// criação). `criadorId` é preenchido pelo repositório a partir da sessão

@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../../perfil/domain/perfil_guard.dart';
+import '../../profile/domain/profile_guard.dart';
 import '../voting_round_providers.dart';
 
 /// Lista de Rodadas de votação de um Grupo — visível a Visitante e Usuário

@@ -6,7 +6,7 @@ import 'package:iasd_conecta/features/group/data/group_repository.dart';
 import 'package:iasd_conecta/features/group/domain/group.dart';
 import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/group/presentation/edit_group_page.dart';
-import 'package:iasd_conecta/features/perfil/domain/profile.dart';
+import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GroupRepository {}

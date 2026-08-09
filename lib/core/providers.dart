@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../features/perfil/data/auth_repository.dart';
-import '../features/perfil/data/perfil_repository.dart';
-import '../features/perfil/domain/church.dart';
-import '../features/perfil/domain/profile.dart';
+import '../features/profile/data/auth_repository.dart';
+import '../features/profile/data/profile_repository.dart';
+import '../features/profile/domain/church.dart';
+import '../features/profile/domain/profile.dart';
 import 'supabase_client.dart';
 
 final supabaseClientProvider = Provider<SupabaseClient>((ref) {

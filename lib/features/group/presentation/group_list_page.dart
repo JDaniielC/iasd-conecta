@@ -6,9 +6,9 @@ import '../../../core/agrupar_por_igreja.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
-import '../../perfil/domain/church.dart';
-import '../../perfil/domain/perfil_guard.dart';
-import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
+import '../../profile/domain/church.dart';
+import '../../profile/domain/profile_guard.dart';
+import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
 

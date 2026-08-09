@@ -1,6 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../../perfil/domain/profile.dart';
+import '../../profile/domain/profile.dart';
 import '../domain/group_category.dart';
 import '../domain/group.dart';
 

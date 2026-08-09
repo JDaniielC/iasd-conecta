@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_conecta/features/perfil/presentation/upgrade_conta_page.dart';
+import 'package:iasd_conecta/features/profile/presentation/upgrade_account_page.dart';
 
 void main() {
   testWidgets(

@@ -5,7 +5,7 @@ import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/action/action_providers.dart';
 import 'package:iasd_conecta/features/action/domain/action.dart';
 import 'package:iasd_conecta/features/action/presentation/action_list_page.dart';
-import 'package:iasd_conecta/features/perfil/domain/church.dart';
+import 'package:iasd_conecta/features/profile/domain/church.dart';
 
 const _churches = [Church(id: 'igreja-1', name: 'Central')];
 

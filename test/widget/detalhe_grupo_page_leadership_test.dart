@@ -9,7 +9,7 @@ import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/group/presentation/group_detail_page.dart';
 import 'package:iasd_conecta/features/leadership/domain/leadership_declaration.dart';
 import 'package:iasd_conecta/features/leadership/leadership_providers.dart';
-import 'package:iasd_conecta/features/perfil/domain/profile.dart';
+import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGrupoRepository extends Mock implements GroupRepository {}

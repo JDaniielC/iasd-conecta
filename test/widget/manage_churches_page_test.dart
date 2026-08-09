@@ -5,8 +5,8 @@ import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/district_admin/data/district_admin_repository.dart';
 import 'package:iasd_conecta/features/district_admin/district_admin_providers.dart';
 import 'package:iasd_conecta/features/district_admin/presentation/manage_churches_page.dart';
-import 'package:iasd_conecta/features/perfil/data/perfil_repository.dart';
-import 'package:iasd_conecta/features/perfil/domain/church.dart';
+import 'package:iasd_conecta/features/profile/data/profile_repository.dart';
+import 'package:iasd_conecta/features/profile/domain/church.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockDistrictAdminRepository extends Mock implements DistrictAdminRepository {}

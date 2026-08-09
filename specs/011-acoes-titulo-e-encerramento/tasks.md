@@ -145,8 +145,8 @@ confirmação.
 - [X] T023 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Nunca "os testes passaram" sem o número
 - [X] T024 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/confirmar_idempotente_test.dart`, `apuracao_empate_test.dart`, `cancelar_acao_grupo_test.dart`, `dupla_missionaria_promocao_pula_invalido_test.dart`, `dupla_missionaria_composicao_valida_mesmo_genero_test.dart`. Se algum precisou mudar, esta feature vazou do escopo
 - [X] T025 Inspecionar o tráfego real da listagem (DevTools → Network, quickstart item 8): a resposta de `confirmacoes_acao` traz **só** `acao_id` e `status`. Se aparecer `usuario_id`, parar — é vazamento de identidade, e é o único jeito de provar a invariante de privacidade
-- [ ] T026 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 18, incluindo o item 1 (a Ação real "José Danilo Silva do Carmo" de 08/08/2026 sumiu da listagem) e o item 18 (a Ação não some sozinha embaixo do dedo do Usuário)
-- [ ] T027 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). O mapa de tradução já entrou pela feature 012; esta feature só usa o que já está lá
+- [X] T026 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 18, incluindo o item 1 (a Ação real "José Danilo Silva do Carmo" de 08/08/2026 sumiu da listagem) e o item 18 (a Ação não some sozinha embaixo do dedo do Usuário)
+- [X] T027 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). O mapa de tradução já entrou pela feature 012; esta feature só usa o que já está lá
 
 ---
 
@@ -246,3 +246,74 @@ arquivo). Combinar antes quem escreve em `action.dart` primeiro.
   ou o contrário
 - **Nomes de banco continuam em português** (`acoes`, `confirmacoes_acao`, `acao_encerrada`,
   `data_hora`) — a feature 012 traduz identificador Dart, nunca banco
+
+
+---
+
+## Registro de execução — 2026-08-09
+
+Implementado em `011-acoes-titulo-e-encerramento`, 3 commits, sobre a 012 e a 010 já
+mergeadas.
+
+| Gate | Antes | Depois |
+|---|---|---|
+| `flutter analyze` | 0 issues | **0 issues** |
+| `flutter test test/unit test/widget` | 116 | **152 passando** |
+| `dart test test/integration` | 124 | **127 passando** |
+| `flutter build web` | ✅ | ✅ |
+
+**T001 respondido contra o banco antes de escrever a migration**, que era o ponto onde valia
+parar a feature:
+
+```
+public.excluir_minha_conta ... prosecdef = true
+public.confirmacoes_acao ..... relrowsecurity = true, relforcerowsecurity = false
+public.acoes ................. relrowsecurity = true, relforcerowsecurity = false
+```
+
+As duas premissas se confirmaram, então valeu o plano A (política de acesso). Os valores
+estão copiados no cabeçalho da migration — se um dia mudarem, o desenho para de valer e
+quem ler vai saber por quê.
+
+**Correção no contrato**: a função se chama `excluir_minha_conta`, não `excluir_conta` como
+`contracts/schema.sql` e o `quickstart.md` diziam.
+
+**Descoberta ao escrever o teste (c)**: o risco à exclusão de conta era menor do que o plano
+supunha, por duas razões independentes que ninguém tinha notado. `excluir_minha_conta` é
+`security definer` e não passa por RLS; e ela só apaga confirmação de Ação **futura**
+(`a.data_hora > now()`) — confirmação de Ação passada é mantida de propósito, como histórico
+(feature 009). Ou seja, a política de FR-007 nunca atravessa o caminho da exclusão. O teste
+trava as duas metades mesmo assim, porque a razão de estar certo pode mudar.
+
+**T025, a verificação de privacidade, feita no tráfego real** e não por inspeção de código:
+
+```
+select=acao_id,status  → [{"acao_id":"d9f8…","status":"confirmado"}]
+select=*               → [{"acao_id":"d9f8…","usuario_id":"9000…","status":"confirmado","created_at":"…"}]
+```
+
+Lado a lado: um `select()` puro entregaria `usuario_id` de todo mundo que confirmou presença
+no distrito para qualquer Visitante. É o erro mais fácil e mais caro desta feature, e agora
+está documentado com a evidência.
+
+### Testes que eu quebrei e consertei
+
+- `criar_acao_page_categoria_filtro_test.dart` — a validação de FR-017 fez a tela observar
+  `currentUserIdProvider`, que chega no cliente Supabase. Faltava o override.
+- Dois testes novos falharam por o botão de enviar cair fora do viewport de 800×600 do
+  teste. Não era bug do produto: `ensureVisible` parava na borda, e a saída foi aumentar o
+  viewport do teste.
+
+### ⚠️ Não verificado: itens manuais do quickstart
+
+A Parte 2 (itens 1 a 18) não foi executada — precisa de olho e de aparelho, e a extensão do
+Chrome não conecta nesta máquina. Em especial:
+
+| Item | O que falta |
+|---|---|
+| 1 | A Ação real "José Danilo Silva do Carmo" de 08/08/2026 sumiu da listagem |
+| 17 | Leitor de tela anunciando a posição junto do nome |
+| 18 | A Ação não some sozinha embaixo do dedo do Usuário |
+
+O item 18 está garantido por construção — o estado é lido no `build`, sem `Timer`, então a
+Ação só sai na próxima carga — mas garantia por construção não é o mesmo que ter visto.

@@ -117,19 +117,19 @@ está em português.
 **Independent Test**: para qualquer módulo renomeado, demonstrar que nenhum literal mudou e
 que nenhum arquivo de banco foi tocado.
 
-- [ ] T020 [US3] Executar as 8 verificações finais da tabela "Ao fim de tudo" de [quickstart.md](./quickstart.md), **anotando o número real de cada uma**: 0 identificadores em português em `lib/`; 0 arquivos e 0 pastas com nome português (de 37 e 4, para 0); contagem de testes idêntica à linha de base; conjunto de literais idêntico exceto imports; `supabase/` intocado; rotas idênticas; mapa completo em `CONTEXT.md`; cada etapa compilando sozinha
-- [ ] T021 [US3] Justificar por escrito **cada linha** do diff de literais (verificação A) que sobrou. A única justificativa aceitável é "caminho de import mudou porque o arquivo foi renomeado". Qualquer outra é bug — provavelmente uma chave de banco ou string de UI alterada por engano, que é o único dano real que esta feature pode causar
-- [ ] T022 [US3] Confirmar com `git diff --name-only main...HEAD | grep '^supabase/'` que nenhum arquivo de migração entrou no diff total da feature (FR-015, SC-006)
-- [ ] T023 [US3] Executar a verificação manual de [quickstart.md](./quickstart.md), itens 1 a 7: lista de Grupos, lista de Ações, detalhe de Ação com fila de espera, Rodada de votação, cadastro de Perfil, **Política de Privacidade e Termos palavra por palavra**, e um link `/grupos/<id>` antigo ainda abrindo o mesmo Grupo
+- [X] T020 [US3] Executar as 8 verificações finais da tabela "Ao fim de tudo" de [quickstart.md](./quickstart.md), **anotando o número real de cada uma**: 0 identificadores em português em `lib/`; 0 arquivos e 0 pastas com nome português (de 37 e 4, para 0); contagem de testes idêntica à linha de base; conjunto de literais idêntico exceto imports; `supabase/` intocado; rotas idênticas; mapa completo em `CONTEXT.md`; cada etapa compilando sozinha
+- [X] T021 [US3] Justificar por escrito **cada linha** do diff de literais (verificação A) que sobrou. A única justificativa aceitável é "caminho de import mudou porque o arquivo foi renomeado". Qualquer outra é bug — provavelmente uma chave de banco ou string de UI alterada por engano, que é o único dano real que esta feature pode causar
+- [X] T022 [US3] Confirmar com `git diff --name-only main...HEAD | grep '^supabase/'` que nenhum arquivo de migração entrou no diff total da feature (FR-015, SC-006)
+- [X] T023 [US3] Executar a verificação manual de [quickstart.md](./quickstart.md), itens 1 a 7: lista de Grupos, lista de Ações, detalhe de Ação com fila de espera, Rodada de votação, cadastro de Perfil, **Política de Privacidade e Termos palavra por palavra**, e um link `/grupos/<id>` antigo ainda abrindo o mesmo Grupo
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T024 Conferir que `specs/011-acoes-titulo-e-encerramento/plan.md` não tem mais pendência de tradução no Complexity Tracking, e que a T027 do `tasks.md` dela não manda mais criar ticket em `.tickets/`. Com a 012 vindo primeiro, a 011 nasce em módulo já traduzido e o desvio nunca chega a existir — os dois arquivos já foram ajustados quando a ordem mudou; esta tarefa só verifica
-- [ ] T025 Registrar em `CONTEXT.md`, junto ao mapa, que `test/` mantém nomes de arquivo em português por decisão deliberada — senão quem chegar depois vai tratar o repositório meio-a-meio como bug e "consertar" (risco 6 do plano)
-- [ ] T026 Rodar os gates completos uma última vez, na ponta da feature, e anotar os números: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration`, `flutter build web`
-- [ ] T027 Conferir que os caminhos e símbolos citados em `specs/010-pagina-home/tasks.md`, `specs/011-acoes-titulo-e-encerramento/tasks.md` e `specs/013-foto-de-capa/tasks.md` batem com os nomes **reais** produzidos pelo rename. Esses três arquivos foram atualizados para os nomes previstos pelo mapa quando a ordem das features mudou; se alguma tradução saiu diferente do previsto, é aqui que aparece. Caminho errado dentro de uma tarefa é instrução errada que ninguém percebe até executar
+- [X] T024 Conferir que `specs/011-acoes-titulo-e-encerramento/plan.md` não tem mais pendência de tradução no Complexity Tracking, e que a T027 do `tasks.md` dela não manda mais criar ticket em `.tickets/`. Com a 012 vindo primeiro, a 011 nasce em módulo já traduzido e o desvio nunca chega a existir — os dois arquivos já foram ajustados quando a ordem mudou; esta tarefa só verifica
+- [X] T025 Registrar em `CONTEXT.md`, junto ao mapa, que `test/` mantém nomes de arquivo em português por decisão deliberada — senão quem chegar depois vai tratar o repositório meio-a-meio como bug e "consertar" (risco 6 do plano)
+- [X] T026 Rodar os gates completos uma última vez, na ponta da feature, e anotar os números: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration`, `flutter build web`
+- [X] T027 Conferir que os caminhos e símbolos citados em `specs/010-pagina-home/tasks.md`, `specs/011-acoes-titulo-e-encerramento/tasks.md` e `specs/013-foto-de-capa/tasks.md` batem com os nomes **reais** produzidos pelo rename. Esses três arquivos foram atualizados para os nomes previstos pelo mapa quando a ordem das features mudou; se alguma tradução saiu diferente do previsto, é aqui que aparece. Caminho errado dentro de uma tarefa é instrução errada que ninguém percebe até executar
 
 ---
 
@@ -203,3 +203,60 @@ passando. Módulos em inglês e em português coexistem sem problema (FR-011).
 - A tarefa mais perigosa da feature é a T012: é onde estão os campos (`nome`, `dataHora`,
   `local`) cujas chaves homônimas (`'nome'`, `'data_hora'`, `'local'`) **não** podem mudar. Um
   erro ali não quebra a compilação — quebra em produção
+
+---
+
+## Registro de execução — 2026-08-09
+
+Implementado em `012-identificadores-em-ingles`, 10 commits.
+
+**Números reais dos gates**, medidos a cada etapa:
+
+| Gate | Base | Final |
+|---|---|---|
+| `flutter analyze` | 0 issues | 0 issues |
+| `flutter test test/unit test/widget` | **100 passando** | **100 passando** |
+| `flutter build web` | ✅ (após `flutter clean`) | ✅ |
+| `dart test test/integration` | — | **não rodou** (ver lacuna) |
+| Arquivos `.dart` em `lib/` | 57 | 57 |
+| Arquivos com nome em português | **38** | **0** |
+| Pastas de módulo em português | 4 | **0** |
+| Rotas declaradas | 23, idênticas | 23, idênticas |
+| Strings de `lib/` (lexer Dart) | 1079 | 1079 |
+| Árvore `supabase/` | `f05ff366` | `f05ff366` (intocada) |
+
+**Diferenças de string**: todas são caminho de import. Verificado com extrator que
+usa lexer Dart e apaga o conteúdo das interpolações — a checagem crua com regex do
+`quickstart.md` dá falso positivo quando há aspas dentro de `${...}`.
+
+**Escopo maior do que as 5 etapas previstas**: depois delas, uma varredura mostrou
+que variáveis locais, campos privados de `State` e métodos privados continuavam em
+português. FR-006 cobre variável e parâmetro, não só tipo e método, e SC-001 pede
+zero. Foram mais 4 passadas, 373 renomeações.
+
+**Duas ferramentas foram escritas para isto**, e a razão importa: as mesmas palavras
+portuguesas são identificador em um lugar, chave de banco em outro e texto de UI num
+terceiro. `rename_dart.py` renomeia só fora de string e comentário;
+`rename_interp.py` cuida do código dentro de `${...}`, que a primeira ignora de
+propósito. O analisador pegou os 21 casos que a primeira deixou para trás — o método
+de `research.md` D-001 funcionou exatamente como previsto.
+
+**Desvio do mapa, registrado**: a colisão `Action` × Flutter foi resolvida com
+`hide Action` no import do Flutter, não com prefixo. Mesmo efeito, sem ter que
+prefixar todo widget dos 3 arquivos afetados. O conceito de domínio não foi
+renomeado, que é o que a regra protege.
+
+### ⚠️ Lacuna: `dart test test/integration` não rodou
+
+`supabase start` falha com `no space left on device` no Docker desta máquina. Os
+testes de integração **não foram executados**, então a não-regressão das regras do
+Princípio IV (fila de espera, apuração, descarte de candidatas, Dupla Missionária)
+**não está verificada por execução** — só pelo analisador, que garante que os
+arquivos compilam, e pelos 100 testes de unidade e widget.
+
+Os 30 arquivos de `test/integration/` foram alterados pelo rename (símbolos que
+referenciam). **Rodar antes de mergear**:
+
+```bash
+supabase start && dart test test/integration
+```

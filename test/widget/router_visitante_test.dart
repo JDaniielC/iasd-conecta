@@ -8,7 +8,7 @@ import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/perfil/data/auth_repository.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GrupoRepository {}
+class MockGrupoRepository extends Mock implements GroupRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -17,7 +17,7 @@ void main() {
     'Visitante (sem Perfil) cai direto na lista de Grupos, sem ser forçado ao cadastro',
     (tester) async {
       final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGrupos()).thenAnswer((_) async => <Grupo>[]);
+      when(() => grupoRepo.fetchGroups()).thenAnswer((_) async => <Group>[]);
       final authRepo = MockAuthRepository();
       when(() => authRepo.temConta).thenReturn(false);
 
@@ -25,7 +25,7 @@ void main() {
         ProviderScope(
           overrides: [
             hasPerfilProvider.overrideWith((ref) async => false),
-            grupoRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(grupoRepo),
             authRepositoryProvider.overrideWithValue(authRepo),
           ],
           child: const App(),

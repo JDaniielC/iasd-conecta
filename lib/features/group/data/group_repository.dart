@@ -10,27 +10,27 @@ import '../domain/group.dart';
 /// Participantes são sempre lidos via RPC `perfil_publico` (feature 001),
 /// nunca por `select` direto em `perfis` — mesmo invariante de privacidade
 /// (idade nunca exposta) reaplicado aqui sem reinventar nada.
-class GrupoRepository {
-  GrupoRepository(this._client);
+class GroupRepository {
+  GroupRepository(this._client);
 
   final SupabaseClient _client;
 
-  Future<List<Grupo>> fetchGrupos() async {
+  Future<List<Group>> fetchGroups() async {
     final rows = await _client.from('grupos').select().order('created_at');
-    return rows.map(Grupo.fromMap).toList();
+    return rows.map(Group.fromMap).toList();
   }
 
-  Future<Grupo> fetchGrupo(String id) async {
+  Future<Group> fetchGroup(String id) async {
     final row = await _client.from('grupos').select().eq('id', id).single();
-    return Grupo.fromMap(row);
+    return Group.fromMap(row);
   }
 
-  Future<List<CategoriaGrupo>> fetchCategorias() async {
+  Future<List<GroupCategory>> fetchCategorias() async {
     final rows = await _client.from('categorias_grupo').select().order('nome');
-    return rows.map(CategoriaGrupo.fromMap).toList();
+    return rows.map(GroupCategory.fromMap).toList();
   }
 
-  Future<void> criarGrupo(NovoGrupo grupo) async {
+  Future<void> createGroup(NewGroup grupo) async {
     final uid = _client.auth.currentUser!.id;
     final perfil = await _client
         .from('perfis')
@@ -42,7 +42,7 @@ class GrupoRepository {
         .insert(grupo.toInsertMap(donoId: uid, igrejaId: perfil['igreja_id'] as String?));
   }
 
-  Future<void> editarGrupo(
+  Future<void> updateGroup(
     String id, {
     String? nome,
     String? categoria,
@@ -78,7 +78,7 @@ class GrupoRepository {
   }
 
   /// FR-013: idempotente — participar de novo não é erro nem duplica.
-  Future<void> participar(String grupoId) async {
+  Future<void> join(String grupoId) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('participacoes_grupo').upsert(
       {'grupo_id': grupoId, 'usuario_id': uid},
@@ -89,7 +89,7 @@ class GrupoRepository {
 
   /// FR-007/FR-012: sair é auto-serviço, mas o Dono atual é bloqueado pelo
   /// trigger `participacoes_grupo_dono_nao_sai_sem_transferir` no banco.
-  Future<void> sair(String grupoId) async {
+  Future<void> leave(String grupoId) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('participacoes_grupo')
@@ -99,7 +99,7 @@ class GrupoRepository {
   }
 
   /// FR-010: só o Dono consegue (garantido pela RLS de `participacoes_grupo`).
-  Future<void> removerParticipante(String grupoId, String usuarioId) async {
+  Future<void> removeMember(String grupoId, String usuarioId) async {
     await _client
         .from('participacoes_grupo')
         .delete()
@@ -109,7 +109,7 @@ class GrupoRepository {
 
   /// FR-011: só transfere pra quem já participa (garantido pelo trigger
   /// `grupos_dono_deve_participar` no banco).
-  Future<void> transferirPosse(String grupoId, String novoDonoId) async {
+  Future<void> transferOwnership(String grupoId, String novoDonoId) async {
     await _client.from('grupos').update({'dono_id': novoDonoId}).eq('id', grupoId);
   }
 }

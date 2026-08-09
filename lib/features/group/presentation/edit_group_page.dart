@@ -9,16 +9,16 @@ import '../group_providers.dart';
 /// Administração do Grupo pelo Dono (User Story 3): editar campos, remover
 /// participante, transferir posse. RLS + triggers no banco são a garantia
 /// real (FR-009/010/011/012); esta tela é só a UI sobre isso.
-class EditarGrupoPage extends ConsumerStatefulWidget {
-  const EditarGrupoPage({super.key, required this.grupoId});
+class EditGroupPage extends ConsumerStatefulWidget {
+  const EditGroupPage({super.key, required this.grupoId});
 
   final String grupoId;
 
   @override
-  ConsumerState<EditarGrupoPage> createState() => _EditarGrupoPageState();
+  ConsumerState<EditGroupPage> createState() => _EditGroupPageState();
 }
 
-class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
+class _EditGroupPageState extends ConsumerState<EditGroupPage> {
   final _nomeController = TextEditingController();
   final _detalhesController = TextEditingController();
   bool _carregouCampos = false;
@@ -33,13 +33,13 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
 
   Future<void> _salvar() async {
     try {
-      await ref.read(grupoRepositoryProvider).editarGrupo(
+      await ref.read(groupRepositoryProvider).updateGroup(
             widget.grupoId,
             nome: _nomeController.text,
             detalhes: _detalhesController.text,
           );
-      ref.invalidate(grupoProvider(widget.grupoId));
-      ref.invalidate(gruposProvider);
+      ref.invalidate(groupProvider(widget.grupoId));
+      ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra salvar. Você ainda é o Dono deste Grupo?');
@@ -48,8 +48,8 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
 
   Future<void> _removerParticipante(String usuarioId) async {
     try {
-      await ref.read(grupoRepositoryProvider).removerParticipante(widget.grupoId, usuarioId);
-      ref.invalidate(participantesProvider(widget.grupoId));
+      await ref.read(groupRepositoryProvider).removeMember(widget.grupoId, usuarioId);
+      ref.invalidate(membersProvider(widget.grupoId));
     } catch (_) {
       setState(() => _erro = 'Não deu pra remover esse participante.');
     }
@@ -57,8 +57,8 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
 
   Future<void> _transferirPosse(String novoDonoId) async {
     try {
-      await ref.read(grupoRepositoryProvider).transferirPosse(widget.grupoId, novoDonoId);
-      ref.invalidate(grupoProvider(widget.grupoId));
+      await ref.read(groupRepositoryProvider).transferOwnership(widget.grupoId, novoDonoId);
+      ref.invalidate(groupProvider(widget.grupoId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra transferir a posse.');
@@ -67,15 +67,15 @@ class _EditarGrupoPageState extends ConsumerState<EditarGrupoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final grupoAsync = ref.watch(grupoProvider(widget.grupoId));
-    final participantesAsync = ref.watch(participantesProvider(widget.grupoId));
+    final grupoAsync = ref.watch(groupProvider(widget.grupoId));
+    final participantesAsync = ref.watch(membersProvider(widget.grupoId));
     final uid = ref.watch(currentUserIdProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Grupo')),
       body: grupoAsync.when(
         data: (grupo) {
-          if (!grupo.souDono(uid)) {
+          if (!grupo.isOwner(uid)) {
             return const Center(child: Text('Você não é o Dono deste Grupo.'));
           }
           if (!_carregouCampos) {

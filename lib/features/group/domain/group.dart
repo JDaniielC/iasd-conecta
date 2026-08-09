@@ -2,8 +2,8 @@
 ///
 /// `igrejaId` e `donoId` não fazem parte do formulário — são preenchidos
 /// pelo repositório a partir da sessão atual (FR-002, FR-003).
-class NovoGrupo {
-  const NovoGrupo({
+class NewGroup {
+  const NewGroup({
     required this.nome,
     required this.categoria,
     this.horario,
@@ -35,8 +35,8 @@ class NovoGrupo {
   }
 }
 
-class Grupo {
-  const Grupo({
+class Group {
+  const Group({
     required this.id,
     required this.nome,
     required this.categoria,
@@ -58,10 +58,10 @@ class Grupo {
   final String donoId;
   final DateTime createdAt;
 
-  bool souDono(String? usuarioAtualId) => usuarioAtualId != null && usuarioAtualId == donoId;
+  bool isOwner(String? usuarioAtualId) => usuarioAtualId != null && usuarioAtualId == donoId;
 
-  factory Grupo.fromMap(Map<String, dynamic> map) {
-    return Grupo(
+  factory Group.fromMap(Map<String, dynamic> map) {
+    return Group(
       id: map['id'] as String,
       nome: map['nome'] as String,
       categoria: map['categoria'] as String,

@@ -77,7 +77,7 @@ class _PendingCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grupoAsync = ref.watch(grupoProvider(declaration.groupId));
+    final grupoAsync = ref.watch(groupProvider(declaration.groupId));
     final declaranteAsync = ref.watch(perfilPublicoProvider(declaration.userId));
 
     return Card(

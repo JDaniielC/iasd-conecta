@@ -72,7 +72,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/home',
-        builder: (context, state) => const ListaGruposPage(),
+        builder: (context, state) => const GroupListPage(),
       ),
       GoRoute(
         path: '/upgrade-conta',
@@ -88,15 +88,15 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/grupos/novo',
-        builder: (context, state) => const CriarGrupoPage(),
+        builder: (context, state) => const CreateGroupPage(),
       ),
       GoRoute(
         path: '/grupos/:id',
-        builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/editar',
-        builder: (context, state) => EditarGrupoPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => EditGroupPage(grupoId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/acoes',

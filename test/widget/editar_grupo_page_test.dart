@@ -9,9 +9,9 @@ import 'package:iasd_conecta/features/group/presentation/edit_group_page.dart';
 import 'package:iasd_conecta/features/perfil/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GrupoRepository {}
+class MockGrupoRepository extends Mock implements GroupRepository {}
 
-final _grupo = Grupo(
+final _grupo = Group(
   id: 'g1',
   nome: 'SevenBikers',
   categoria: 'Ministério Jovem',
@@ -23,7 +23,7 @@ final _grupo = Grupo(
 
 Future<void> _pump(WidgetTester tester, {required String? uid}) async {
   final grupoRepo = MockGrupoRepository();
-  when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
+  when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
   when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
     (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
   );
@@ -32,9 +32,9 @@ Future<void> _pump(WidgetTester tester, {required String? uid}) async {
     ProviderScope(
       overrides: [
         currentUserIdProvider.overrideWithValue(uid),
-        grupoRepositoryProvider.overrideWithValue(grupoRepo),
+        groupRepositoryProvider.overrideWithValue(grupoRepo),
       ],
-      child: const MaterialApp(home: EditarGrupoPage(grupoId: 'g1')),
+      child: const MaterialApp(home: EditGroupPage(grupoId: 'g1')),
     ),
   );
   await tester.pumpAndSettle();

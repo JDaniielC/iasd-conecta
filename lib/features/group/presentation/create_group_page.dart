@@ -8,14 +8,14 @@ import '../group_providers.dart';
 
 /// Criação de Grupo (User Story 1). Quem cria vira Dono automaticamente
 /// (garantido pelo trigger `grupos_dono_vira_participante` no banco).
-class CriarGrupoPage extends ConsumerStatefulWidget {
-  const CriarGrupoPage({super.key});
+class CreateGroupPage extends ConsumerStatefulWidget {
+  const CreateGroupPage({super.key});
 
   @override
-  ConsumerState<CriarGrupoPage> createState() => _CriarGrupoPageState();
+  ConsumerState<CreateGroupPage> createState() => _CreateGroupPageState();
 }
 
-class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
+class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _categoriaController = TextEditingController();
@@ -33,8 +33,8 @@ class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
     super.dispose();
   }
 
-  NovoGrupo get _grupoAtual {
-    return NovoGrupo(
+  NewGroup get _grupoAtual {
+    return NewGroup(
       nome: _nomeController.text,
       categoria: _categoriaController.text,
       detalhes: _detalhesController.text,
@@ -52,8 +52,8 @@ class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
       _erro = null;
     });
     try {
-      await ref.read(grupoRepositoryProvider).criarGrupo(grupo);
-      ref.invalidate(gruposProvider);
+      await ref.read(groupRepositoryProvider).createGroup(grupo);
+      ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra criar o Grupo agora. Tente de novo.');
@@ -64,7 +64,7 @@ class _CriarGrupoPageState extends ConsumerState<CriarGrupoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(categoriasGrupoProvider);
+    final categoriasAsync = ref.watch(groupCategoriesProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Grupo')),

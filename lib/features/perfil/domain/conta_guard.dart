@@ -14,10 +14,10 @@ abstract final class ContaGuard {
   }
 
   /// Líder/Diretor é sempre autodeclaração (o próprio Usuário se propõe).
-  static bool podeDeclararLideranca(User? usuario) => _temConta(usuario);
+  static bool canDeclareLeadership(User? usuario) => _temConta(usuario);
 
   /// Administrador do distrito nunca é autodeclaração — só um Administrador
   /// existente promove outro Usuário com Conta (ver CONTEXT.md).
-  static bool podeSerPromovidoAdministrador(User? candidato) =>
+  static bool canBePromotedToAdmin(User? candidato) =>
       _temConta(candidato);
 }

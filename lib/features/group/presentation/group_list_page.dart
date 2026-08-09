@@ -12,7 +12,7 @@ import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
 
-enum _OrdenacaoGrupo { maisRecentes, nome, categoria }
+enum _GroupSortOrder { maisRecentes, nome, categoria }
 
 const _todasAsIgrejas = '__todas__';
 
@@ -20,23 +20,23 @@ const _todasAsIgrejas = '__todas__';
 /// (FR-005/FR-008 — sem exigir Perfil pra essa visualização). Agrupada por
 /// Igreja, com filtro de Igreja e ordenação — um distrito com várias Igrejas
 /// rapidamente vira uma lista longa e sem estrutura sem isso.
-class ListaGruposPage extends ConsumerStatefulWidget {
-  const ListaGruposPage({super.key});
+class GroupListPage extends ConsumerStatefulWidget {
+  const GroupListPage({super.key});
 
   @override
-  ConsumerState<ListaGruposPage> createState() => _ListaGruposPageState();
+  ConsumerState<GroupListPage> createState() => _GroupListPageState();
 }
 
-class _ListaGruposPageState extends ConsumerState<ListaGruposPage> {
+class _GroupListPageState extends ConsumerState<GroupListPage> {
   String _filtroIgrejaId = _todasAsIgrejas;
-  _OrdenacaoGrupo _ordenacao = _OrdenacaoGrupo.maisRecentes;
+  _GroupSortOrder _ordenacao = _GroupSortOrder.maisRecentes;
 
   @override
   Widget build(BuildContext context) {
     final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
     final temConta = hasPerfil && ref.watch(authRepositoryProvider).temConta;
     final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
-    final gruposAsync = ref.watch(gruposProvider);
+    final gruposAsync = ref.watch(groupsProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final nomePorIgrejaId = <String, String>{
       for (final c in churchesAsync.value ?? const []) c.id: c.name,
@@ -119,7 +119,7 @@ class _ListaGruposPageState extends ConsumerState<ListaGruposPage> {
                   children: [
                     for (final secao in secoes) ...[
                       _CabecalhoSecao(nome: secao.nomeIgreja),
-                      for (final grupo in secao.itens) _GrupoCard(grupo: grupo),
+                      for (final grupo in secao.itens) _GroupCard(grupo: grupo),
                     ],
                   ],
                 );
@@ -133,13 +133,13 @@ class _ListaGruposPageState extends ConsumerState<ListaGruposPage> {
     );
   }
 
-  int Function(Grupo, Grupo) _comparador(_OrdenacaoGrupo ordenacao) {
+  int Function(Group, Group) _comparador(_GroupSortOrder ordenacao) {
     switch (ordenacao) {
-      case _OrdenacaoGrupo.maisRecentes:
+      case _GroupSortOrder.maisRecentes:
         return (a, b) => b.createdAt.compareTo(a.createdAt);
-      case _OrdenacaoGrupo.nome:
+      case _GroupSortOrder.nome:
         return (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
-      case _OrdenacaoGrupo.categoria:
+      case _GroupSortOrder.categoria:
         return (a, b) => a.categoria.toLowerCase().compareTo(b.categoria.toLowerCase());
     }
   }
@@ -156,9 +156,9 @@ class _FiltrosBar extends StatelessWidget {
 
   final AsyncValue<List<Church>> churchesAsync;
   final String filtroIgrejaId;
-  final _OrdenacaoGrupo ordenacao;
+  final _GroupSortOrder ordenacao;
   final ValueChanged<String> onFiltroIgrejaChanged;
-  final ValueChanged<_OrdenacaoGrupo> onOrdenacaoChanged;
+  final ValueChanged<_GroupSortOrder> onOrdenacaoChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -181,14 +181,14 @@ class _FiltrosBar extends StatelessWidget {
           ),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: DropdownButtonFormField<_OrdenacaoGrupo>(
+            child: DropdownButtonFormField<_GroupSortOrder>(
               initialValue: ordenacao,
               isDense: true,
               decoration: const InputDecoration(labelText: 'Ordenar por'),
               items: const [
-                DropdownMenuItem(value: _OrdenacaoGrupo.maisRecentes, child: Text('Mais recentes')),
-                DropdownMenuItem(value: _OrdenacaoGrupo.nome, child: Text('Nome (A-Z)')),
-                DropdownMenuItem(value: _OrdenacaoGrupo.categoria, child: Text('Categoria')),
+                DropdownMenuItem(value: _GroupSortOrder.maisRecentes, child: Text('Mais recentes')),
+                DropdownMenuItem(value: _GroupSortOrder.nome, child: Text('Nome (A-Z)')),
+                DropdownMenuItem(value: _GroupSortOrder.categoria, child: Text('Categoria')),
               ],
               onChanged: (v) => v == null ? null : onOrdenacaoChanged(v),
             ),
@@ -225,10 +225,10 @@ class _CabecalhoSecao extends StatelessWidget {
   }
 }
 
-class _GrupoCard extends StatelessWidget {
-  const _GrupoCard({required this.grupo});
+class _GroupCard extends StatelessWidget {
+  const _GroupCard({required this.grupo});
 
-  final Grupo grupo;
+  final Group grupo;
 
   @override
   Widget build(BuildContext context) {

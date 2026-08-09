@@ -12,9 +12,9 @@ import 'package:iasd_conecta/features/leadership/leadership_providers.dart';
 import 'package:iasd_conecta/features/perfil/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GrupoRepository {}
+class MockGrupoRepository extends Mock implements GroupRepository {}
 
-final _grupo = Grupo(
+final _grupo = Group(
   id: 'g1',
   nome: 'Ministério de Louvor',
   categoria: 'Ministério',
@@ -41,7 +41,7 @@ void main() {
     'FR-006/FR-007: exibe todos os Líderes confirmados do ano corrente (codireção)',
     (tester) async {
       final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
+      when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
       when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
         (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
@@ -51,7 +51,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/grupos/:id',
-            builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+            builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
           ),
         ],
       );
@@ -61,7 +61,7 @@ void main() {
           overrides: [
             hasPerfilProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            grupoRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(grupoRepo),
             currentLeadersProvider('g1').overrideWith(
               (ref) async => [_confirmed('l1', 'lider-1'), _confirmed('l2', 'lider-2')],
             ),
@@ -87,7 +87,7 @@ void main() {
     'sem Líder confirmado, a seção não aparece',
     (tester) async {
       final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGrupo('g1')).thenAnswer((_) async => _grupo);
+      when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
       when(() => grupoRepo.fetchParticipantes('g1')).thenAnswer(
         (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
@@ -97,7 +97,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/grupos/:id',
-            builder: (context, state) => DetalheGrupoPage(grupoId: state.pathParameters['id']!),
+            builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
           ),
         ],
       );
@@ -107,7 +107,7 @@ void main() {
           overrides: [
             hasPerfilProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            grupoRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(grupoRepo),
             currentLeadersProvider('g1').overrideWith((ref) async => []),
           ],
           child: MaterialApp.router(routerConfig: router),

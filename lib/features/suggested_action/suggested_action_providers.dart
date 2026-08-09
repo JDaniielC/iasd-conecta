@@ -13,7 +13,7 @@ final suggestedActionRepositoryProvider = Provider<SuggestedActionRepository>((r
 /// Categoria do próprio Grupo — sem escolha extra de quem propõe.
 final suggestionsForGroupProvider =
     FutureProvider.autoDispose.family<List<SuggestedAction>, String>((ref, groupId) async {
-  final grupo = await ref.watch(grupoProvider(groupId).future);
+  final grupo = await ref.watch(groupProvider(groupId).future);
   return ref.watch(suggestedActionRepositoryProvider).fetchByCategoryName(grupo.categoria);
 });
 

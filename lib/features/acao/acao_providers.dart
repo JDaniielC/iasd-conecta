@@ -19,7 +19,7 @@ final acoesProvider = FutureProvider.autoDispose<List<Acao>>((ref) {
 /// (mesmo invariante de privacidade das outras leituras de perfil).
 final acoesComIgrejaProvider = FutureProvider.autoDispose<List<AcaoComIgreja>>((ref) async {
   final acoes = await ref.watch(acoesProvider.future);
-  final grupos = await ref.watch(gruposProvider.future);
+  final grupos = await ref.watch(groupsProvider.future);
   final igrejaPorGrupo = {for (final g in grupos) g.id: g.igrejaId};
 
   final perfilRepo = ref.watch(perfilRepositoryProvider);

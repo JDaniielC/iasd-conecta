@@ -4,22 +4,22 @@ import 'package:iasd_conecta/features/group/domain/group.dart';
 void main() {
   group('NovoGrupo.prontoParaEnviar', () {
     test('falso sem nome', () {
-      const grupo = NovoGrupo(nome: '  ', categoria: 'Jovem');
+      const grupo = NewGroup(nome: '  ', categoria: 'Jovem');
       expect(grupo.prontoParaEnviar, isFalse);
     });
 
     test('falso sem categoria', () {
-      const grupo = NovoGrupo(nome: 'Grupo', categoria: '');
+      const grupo = NewGroup(nome: 'Grupo', categoria: '');
       expect(grupo.prontoParaEnviar, isFalse);
     });
 
     test('verdadeiro com nome e categoria preenchidos, sem horário/local', () {
-      const grupo = NovoGrupo(nome: 'Grupo', categoria: 'Jovem');
+      const grupo = NewGroup(nome: 'Grupo', categoria: 'Jovem');
       expect(grupo.prontoParaEnviar, isTrue);
     });
 
     test('detalhes opcional não afeta prontoParaEnviar', () {
-      const grupo = NovoGrupo(
+      const grupo = NewGroup(
         nome: 'Grupo',
         categoria: 'Jovem',
         detalhes: null,
@@ -30,7 +30,7 @@ void main() {
 
   group('NovoGrupo.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui dono/igreja', () {
-      const grupo = NovoGrupo(
+      const grupo = NewGroup(
         nome: ' Grupo ',
         categoria: 'Jovem',
         detalhes: '   ',
@@ -46,7 +46,7 @@ void main() {
   });
 
   group('Grupo.souDono', () {
-    final grupo = Grupo(
+    final grupo = Group(
       id: 'g1',
       nome: 'Grupo',
       categoria: 'Jovem',
@@ -55,15 +55,15 @@ void main() {
     );
 
     test('verdadeiro quando o id bate com dono_id', () {
-      expect(grupo.souDono('dono-1'), isTrue);
+      expect(grupo.isOwner('dono-1'), isTrue);
     });
 
     test('falso pra outro usuário', () {
-      expect(grupo.souDono('outro'), isFalse);
+      expect(grupo.isOwner('outro'), isFalse);
     });
 
     test('falso quando não há usuário atual', () {
-      expect(grupo.souDono(null), isFalse);
+      expect(grupo.isOwner(null), isFalse);
     });
   });
 }

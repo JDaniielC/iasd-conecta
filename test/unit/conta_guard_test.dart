@@ -16,29 +16,29 @@ User _usuario({required bool isAnonymous}) {
 void main() {
   group('ContaGuard.podeDeclararLideranca (FR-012)', () {
     test('Perfil sem Conta não pode declarar Líder/Diretor', () {
-      expect(ContaGuard.podeDeclararLideranca(_usuario(isAnonymous: true)), isFalse);
+      expect(ContaGuard.canDeclareLeadership(_usuario(isAnonymous: true)), isFalse);
     });
 
     test('Conta pode declarar Líder/Diretor', () {
-      expect(ContaGuard.podeDeclararLideranca(_usuario(isAnonymous: false)), isTrue);
+      expect(ContaGuard.canDeclareLeadership(_usuario(isAnonymous: false)), isTrue);
     });
 
     test('sem usuário não pode', () {
-      expect(ContaGuard.podeDeclararLideranca(null), isFalse);
+      expect(ContaGuard.canDeclareLeadership(null), isFalse);
     });
   });
 
   group('ContaGuard.podeSerPromovidoAdministrador (CONTEXT.md: Administrador do distrito)', () {
     test('Perfil sem Conta não pode ser promovido a Administrador', () {
       expect(
-        ContaGuard.podeSerPromovidoAdministrador(_usuario(isAnonymous: true)),
+        ContaGuard.canBePromotedToAdmin(_usuario(isAnonymous: true)),
         isFalse,
       );
     });
 
     test('Usuário com Conta pode ser promovido a Administrador', () {
       expect(
-        ContaGuard.podeSerPromovidoAdministrador(_usuario(isAnonymous: false)),
+        ContaGuard.canBePromotedToAdmin(_usuario(isAnonymous: false)),
         isTrue,
       );
     });

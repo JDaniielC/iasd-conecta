@@ -63,7 +63,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(categoriasGrupoProvider);
+    final categoriasAsync = ref.watch(groupCategoriesProvider);
     final suggestionsAsync = ref.watch(allSuggestedActionsProvider);
 
     return Scaffold(

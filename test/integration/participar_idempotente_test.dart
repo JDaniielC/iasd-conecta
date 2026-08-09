@@ -35,7 +35,7 @@ void main() {
   });
 
   test('FR-013: participar duas vezes não duplica nem falha', () async {
-    Future<void> participar() => conn.execute(
+    Future<void> join() => conn.execute(
           Sql.named(
             'insert into public.participacoes_grupo (grupo_id, usuario_id) '
             'values (@grupo, @usuario) on conflict (grupo_id, usuario_id) do nothing',
@@ -43,8 +43,8 @@ void main() {
           parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
         );
 
-    await participar();
-    await participar();
+    await join();
+    await join();
 
     final rows = await conn.execute(
       Sql.named(

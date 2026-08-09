@@ -68,7 +68,7 @@ class DetalheAcaoPage extends ConsumerWidget {
         data: (acao) {
           final souDonoDoGrupo = acao.grupoId == null
               ? false
-              : (ref.watch(grupoProvider(acao.grupoId!)).value?.souDono(uid) ?? false);
+              : (ref.watch(groupProvider(acao.grupoId!)).value?.isOwner(uid) ?? false);
           final souAdministradorDoDistrito =
               ref.watch(isDistrictAdminProvider).value ?? false;
           final podeCancelar = acao.podeCancelar(

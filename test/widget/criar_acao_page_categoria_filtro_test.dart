@@ -23,8 +23,8 @@ void main() {
         ProviderScope(
           overrides: [
             suggestedActionRepositoryProvider.overrideWithValue(suggestedActionRepo),
-            categoriasGrupoProvider.overrideWith(
-              (ref) async => const [CategoriaGrupo(id: 'cat-1', nome: 'Ministério Jovem')],
+            groupCategoriesProvider.overrideWith(
+              (ref) async => const [GroupCategory(id: 'cat-1', nome: 'Ministério Jovem')],
             ),
           ],
           child: const MaterialApp(home: CriarAcaoPage()),

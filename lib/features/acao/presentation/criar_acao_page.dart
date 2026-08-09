@@ -92,7 +92,7 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoriasAsync = ref.watch(categoriasGrupoProvider);
+    final categoriasAsync = ref.watch(groupCategoriesProvider);
     final suggestionsAsync = _categoriaFiltroId == null
         ? null
         : ref.watch(suggestionsForCategoryProvider(_categoriaFiltroId!));

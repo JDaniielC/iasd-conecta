@@ -267,7 +267,7 @@ void main() {
   // US2 — herança de posse
   // ---------------------------------------------------------------------
 
-  Future<String> criarGrupo(String donoId, {String nome = 'Grupo de Teste'}) async {
+  Future<String> createGroup(String donoId, {String nome = 'Grupo de Teste'}) async {
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, dono_id) "
@@ -278,7 +278,7 @@ void main() {
     return rows.single.first! as String;
   }
 
-  Future<void> participar(String grupoId, String usuarioId) async {
+  Future<void> join(String grupoId, String usuarioId) async {
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) '
@@ -336,8 +336,8 @@ void main() {
       await criarPerfilDeTeste(conn, quemSai, nome: 'Dona Que Sai');
       await criarPerfilDeTeste(conn, participante, nome: 'Participante Que Fica');
 
-      grupoId = await criarGrupo(quemSai);
-      await participar(grupoId, participante);
+      grupoId = await createGroup(quemSai);
+      await join(grupoId, participante);
       rodadaAberta = await abrirRodada(grupoId, quemSai);
       rodadaFechada = await abrirRodada(grupoId, quemSai, fechada: true);
       acaoDela = await criarAcao(quemSai, futura: false);
@@ -494,8 +494,8 @@ void main() {
       await criarAdministradorDistritoDeTeste(conn, admin);
       await criarPerfilDeTeste(conn, quemSai, nome: 'Eleitora Que Sai');
 
-      final grupoId = await criarGrupo(admin, nome: 'Grupo com Votação');
-      await participar(grupoId, quemSai);
+      final grupoId = await createGroup(admin, nome: 'Grupo com Votação');
+      await join(grupoId, quemSai);
 
       rodadaAberta = await abrirRodada(grupoId, admin);
       final candidataAberta = await criarCandidata(rodadaAberta, grupoId, admin);
@@ -577,7 +577,7 @@ void main() {
     });
 
     test('cenário 12: a única Administradora é recusada, mesmo com Grupo', () async {
-      await criarGrupo(admin1, nome: 'Grupo da Única Admin');
+      await createGroup(admin1, nome: 'Grupo da Única Admin');
       await expectLater(
         excluirConta(admin1),
         throwsA(isA<ServerException>()),
@@ -609,7 +609,7 @@ void main() {
     test('cenário 11 e 14: com um segundo Administrador, a herança vai pro seguinte', () async {
       await criarPerfilDeTeste(conn, admin2, nome: 'Segunda Administradora');
       await criarAdministradorDistritoDeTeste(conn, admin2);
-      final grupoId = await criarGrupo(admin1, nome: 'Grupo da Admin Mais Antiga');
+      final grupoId = await createGroup(admin1, nome: 'Grupo da Admin Mais Antiga');
 
       await excluirConta(admin1);
 

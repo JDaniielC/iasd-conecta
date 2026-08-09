@@ -10,8 +10,8 @@ import '../group_providers.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
 /// (FR-005). Participar/sair exige Perfil (FR-006/FR-007/FR-008/FR-009).
-class DetalheGrupoPage extends ConsumerWidget {
-  const DetalheGrupoPage({super.key, required this.grupoId});
+class GroupDetailPage extends ConsumerWidget {
+  const GroupDetailPage({super.key, required this.grupoId});
 
   final String grupoId;
 
@@ -22,8 +22,8 @@ class DetalheGrupoPage extends ConsumerWidget {
   Future<void> _participar(BuildContext context, WidgetRef ref) async {
     if (!PerfilGuard.exigirPerfil(context, ref)) return;
     try {
-      await ref.read(grupoRepositoryProvider).participar(grupoId);
-      ref.invalidate(participantesProvider(grupoId));
+      await ref.read(groupRepositoryProvider).join(grupoId);
+      ref.invalidate(membersProvider(grupoId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra participar agora. Tente de novo.');
@@ -32,8 +32,8 @@ class DetalheGrupoPage extends ConsumerWidget {
 
   Future<void> _sair(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(grupoRepositoryProvider).sair(grupoId);
-      ref.invalidate(participantesProvider(grupoId));
+      await ref.read(groupRepositoryProvider).leave(grupoId);
+      ref.invalidate(membersProvider(grupoId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(
@@ -45,8 +45,8 @@ class DetalheGrupoPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grupoAsync = ref.watch(grupoProvider(grupoId));
-    final participantesAsync = ref.watch(participantesProvider(grupoId));
+    final grupoAsync = ref.watch(groupProvider(grupoId));
+    final participantesAsync = ref.watch(membersProvider(grupoId));
     final uid = ref.watch(currentUserIdProvider);
     final participa = participantesAsync.value?.any((p) => p.id == uid) ?? false;
 
@@ -54,7 +54,7 @@ class DetalheGrupoPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Grupo')),
       body: grupoAsync.when(
         data: (grupo) {
-          final souDono = grupo.souDono(uid);
+          final isOwner = grupo.isOwner(uid);
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -75,7 +75,7 @@ class DetalheGrupoPage extends ConsumerWidget {
                       tooltip: 'Líder/Diretor de Ministério',
                       onPressed: () => context.push('/grupos/$grupoId/leadership/declare'),
                     ),
-                    if (souDono)
+                    if (isOwner)
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () => context.push('/grupos/$grupoId/editar'),

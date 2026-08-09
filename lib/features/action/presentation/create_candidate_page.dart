@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../suggested_action/suggested_action_providers.dart';
 import '../domain/action.dart';
@@ -94,6 +95,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
 
   @override
   Widget build(BuildContext context) {
+    final creatorDisplayName = _watchCreatorDisplayName(ref);
     final votingRoundAsync = ref.watch(votingRoundProvider(widget.votingRoundId));
     final groupId = votingRoundAsync.value?.groupId;
     final suggestionsAsync =
@@ -125,8 +127,22 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
               ],
               TextFormField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: 'Nome da candidata'),
-                validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
+                decoration: const InputDecoration(
+                  labelText: 'Nome da candidata',
+                  helperText: 'O nome descreve a atividade, não a pessoa. '
+                      'Ex.: Visita a afastado, Ensaio, Culto Jovem',
+                  helperMaxLines: 3,
+                ),
+                validator: (v) {
+                  if (v == null || v.trim().isEmpty) return 'Informe um nome';
+                  // FR-017: recusa o nome da própria pessoa que está criando.
+                  // É igualdade, não `contains` — "Visita a José" é legítimo.
+                  if (isCreatorOwnName(v, creatorDisplayName)) {
+                    return 'O nome da Ação descreve a atividade, não a pessoa. '
+                        'Ex.: Visita a afastado';
+                  }
+                  return null;
+                },
               ),
               const SizedBox(height: AppSpacing.md),
               OutlinedButton(
@@ -194,4 +210,21 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
       ),
     );
   }
+}
+
+/// Nome de exibição de quem está criando, para a recusa de FR-017.
+///
+/// Vem da RPC `perfil_publico` (via [publicProfileProvider]), nunca de um
+/// `select` direto em `perfis` — é ela que devolve o Apelido no lugar do nome
+/// real quando o Usuário é menor de idade, e FR-017 pede que o Apelido também
+/// seja recusado.
+///
+/// Devolve `null` quando não há sessão ou a RPC ainda não respondeu: nesse
+/// caso a validação não bloqueia (research D-005).
+String? _watchCreatorDisplayName(WidgetRef ref) {
+  final uid = ref.watch(currentUserIdProvider);
+  if (uid == null) return null;
+  // `watch`, não `read`: o provider é preguiçoso, e um `read` no validador
+  // devolveria null porque ninguém o teria observado antes.
+  return ref.watch(publicProfileProvider(uid)).value?.displayName;
 }

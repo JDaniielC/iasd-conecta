@@ -6,6 +6,7 @@ import 'package:iasd_conecta/features/suggested_action/data/suggested_action_rep
 import 'package:iasd_conecta/features/suggested_action/domain/suggested_action.dart';
 import 'package:iasd_conecta/features/suggested_action/suggested_action_providers.dart';
 import 'package:iasd_conecta/features/group/domain/group_category.dart';
+import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -22,6 +23,10 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            // A feature 011 fez a tela observar o Perfil de quem cria, para a
+            // recusa de FR-017. Sem este override o teste chega no cliente
+            // Supabase, que não existe aqui.
+            currentUserIdProvider.overrideWithValue(null),
             suggestedActionRepositoryProvider.overrideWithValue(suggestedActionRepo),
             groupCategoriesProvider.overrideWith(
               (ref) async => const [GroupCategory(id: 'cat-1', name: 'Ministério Jovem')],

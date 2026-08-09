@@ -180,16 +180,35 @@ class ActionDetailPage extends ConsumerWidget {
                       final waitlist = attendees
                           .where((c) => c.status == AttendanceStatus.waitlist)
                           .toList();
+                      // FR-023: lista vazia é mensagem, não lista numerada sem
+                      // itens.
+                      if (seated.isEmpty && waitlist.isEmpty) {
+                        return const Text('Ninguém confirmou presença ainda.');
+                      }
                       return ListView(
                         children: [
-                          ...seated.map((c) => ListTile(title: Text(c.profile.displayName))),
+                          // FR-020/FR-022: numeração pelo índice renderizado,
+                          // então ela é contígua depois de qualquer
+                          // desistência — não há número guardado para ficar
+                          // com buraco.
+                          ...seated.indexed.map(
+                            (e) => _AttendeeTile(
+                              position: e.$1 + 1,
+                              name: e.$2.profile.displayName,
+                            ),
+                          ),
                           if (waitlist.isNotEmpty) ...[
                             const Divider(),
                             const Text('Fila de espera'),
-                            ...waitlist.map((c) => ListTile(
-                                  title: Text(c.profile.displayName),
-                                  dense: true,
-                                )),
+                            // FR-021: a fila tem numeração própria, recomeçando
+                            // em 1.
+                            ...waitlist.indexed.map(
+                              (e) => _AttendeeTile(
+                                position: e.$1 + 1,
+                                name: e.$2.profile.displayName,
+                                dense: true,
+                              ),
+                            ),
                           ],
                         ],
                       );
@@ -204,6 +223,39 @@ class ActionDetailPage extends ConsumerWidget {
         },
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) => const Center(child: Text('Ação não encontrada.')),
+      ),
+    );
+  }
+}
+
+/// Uma pessoa na lista de Confirmados ou na fila, com a posição à frente.
+///
+/// A posição vai num `Semantics` com o nome junto (FR-024): sem isso, o leitor
+/// de tela leria "1 ponto" e o nome como dois nós soltos, e o ponto viraria
+/// pontuação sem sentido.
+class _AttendeeTile extends StatelessWidget {
+  const _AttendeeTile({
+    required this.position,
+    required this.name,
+    this.dense = false,
+  });
+
+  final int position;
+  final String name;
+  final bool dense;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: '$positionº: $name',
+      excludeSemantics: true,
+      child: ListTile(
+        dense: dense,
+        leading: Text(
+          '$position.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+        title: Text(name),
       ),
     );
   }

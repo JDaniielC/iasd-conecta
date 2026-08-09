@@ -257,3 +257,39 @@ class AttendanceWithProfile {
   final PublicProfile profile;
   final AttendanceStatus status;
 }
+
+/// Normaliza para comparar nome de Ação com nome de pessoa: tira espaço das
+/// pontas, colapsa espaço interno, baixa a caixa e remove acentuação.
+///
+/// A remoção de acento é feita à mão porque não existe pronta na base — a
+/// `NameModeration` do módulo de Perfil só faz `toLowerCase`, e trazer
+/// dependência nova para isto seria desproporcional.
+String normalizeForNameComparison(String texto) {
+  const comAcento = 'áàâãäéèêëíìîïóòôõöúùûüçñ';
+  const semAcento = 'aaaaaeeeeiiiiooooouuuucn';
+
+  final buffer = StringBuffer();
+  for (final char in texto.toLowerCase().split('')) {
+    final i = comAcento.indexOf(char);
+    buffer.write(i == -1 ? char : semAcento[i]);
+  }
+  return buffer.toString().trim().replaceAll(RegExp(r'\s+'), ' ');
+}
+
+/// O nome digitado é o nome da própria pessoa que está criando? (FR-017)
+///
+/// É **igualdade** após normalizar, nunca `contains`: "Visita a José" é nome
+/// legítimo de atividade e não pode ser barrado (FR-019).
+///
+/// [creatorDisplayName] é o nome de **exibição** — para menor de idade, a RPC
+/// `perfil_publico` devolve o Apelido, e FR-017 pede que o Apelido também seja
+/// recusado. Quando ele é nulo ou vazio (sem rede, RPC falhando), a resposta é
+/// `false`: recusar por falta de dado transformaria um problema de conexão numa
+/// acusação ao Usuário.
+bool isCreatorOwnName(String actionName, String? creatorDisplayName) {
+  if (creatorDisplayName == null || creatorDisplayName.trim().isEmpty) {
+    return false;
+  }
+  return normalizeForNameComparison(actionName) ==
+      normalizeForNameComparison(creatorDisplayName);
+}

@@ -108,14 +108,14 @@ cadastro e verificar que o app recusa com mensagem explicativa.
 
 ### Tests for User Story 3
 
-- [ ] T016 [P] [US3] Criar `test/unit/acao_nome_criador_test.dart`: recusa quando igual após normalizar caixa, acentuação e espaços das pontas; recusa quando igual ao Apelido; **aceita** "Visita a José" (igualdade, nunca `contains` — FR-017, FR-019, SC-006)
-- [ ] T017 [US3] Criar `test/widget/criar_acao_page_nome_test.dart`: (a) nome igual ao do criador é recusado com a mensagem de FR-018, exibida junto ao campo; (b) com o nome do criador indisponível (RPC falhando), a criação **não** é bloqueada (decisão D-005 — recusar por falta de rede seria acusar o Usuário de um problema de conexão)
+- [X] T016 [P] [US3] Criar `test/unit/acao_nome_criador_test.dart`: recusa quando igual após normalizar caixa, acentuação e espaços das pontas; recusa quando igual ao Apelido; **aceita** "Visita a José" (igualdade, nunca `contains` — FR-017, FR-019, SC-006)
+- [X] T017 [US3] Criar `test/widget/criar_acao_page_nome_test.dart`: (a) nome igual ao do criador é recusado com a mensagem de FR-018, exibida junto ao campo; (b) com o nome do criador indisponível (RPC falhando), a criação **não** é bloqueada (decisão D-005 — recusar por falta de rede seria acusar o Usuário de um problema de conexão)
 
 ### Implementation for User Story 3
 
-- [ ] T018 [US3] Em `lib/features/action/domain/action.dart`, adicionar a normalização (trim, caixa baixa, colapso de espaços internos, remoção de acentuação) e o predicado de igualdade com o nome de exibição do criador. Função pura, sem dependência nova — `NameModeration` em `lib/features/profile/domain/name_moderation.dart` só faz `toLowerCase` e não serve
-- [ ] T019 [P] [US3] Em `lib/features/action/presentation/create_action_page.dart`: rótulo e `helperText` persistente no campo de nome, com exemplo concreto ("Ex.: Visita a afastado, Ensaio, Culto Jovem"), e a validação de T018 no `validator` (FR-016, FR-017, FR-018). O nome de exibição do criador vem de `publicProfileProvider` — pela RPC `perfil_publico`, nunca `select` direto em `perfis`, e é ela que devolve o Apelido para menor de idade
-- [ ] T020 [P] [US3] Em `lib/features/action/presentation/create_candidate_page.dart`, aplicar o mesmo texto de apoio e a mesma validação no campo "Nome da candidata" — FR-016 e FR-017 valem para Ação candidata também
+- [X] T018 [US3] Em `lib/features/action/domain/action.dart`, adicionar a normalização (trim, caixa baixa, colapso de espaços internos, remoção de acentuação) e o predicado de igualdade com o nome de exibição do criador. Função pura, sem dependência nova — `NameModeration` em `lib/features/profile/domain/name_moderation.dart` só faz `toLowerCase` e não serve
+- [X] T019 [P] [US3] Em `lib/features/action/presentation/create_action_page.dart`: rótulo e `helperText` persistente no campo de nome, com exemplo concreto ("Ex.: Visita a afastado, Ensaio, Culto Jovem"), e a validação de T018 no `validator` (FR-016, FR-017, FR-018). O nome de exibição do criador vem de `publicProfileProvider` — pela RPC `perfil_publico`, nunca `select` direto em `perfis`, e é ela que devolve o Apelido para menor de idade
+- [X] T020 [P] [US3] Em `lib/features/action/presentation/create_candidate_page.dart`, aplicar o mesmo texto de apoio e a mesma validação no campo "Nome da candidata" — FR-016 e FR-017 valem para Ação candidata também
 
 **Checkpoint**: US1 + US2 + US3.
 
@@ -130,11 +130,11 @@ confirmação.
 
 ### Tests for User Story 4
 
-- [ ] T021 [US4] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: confirmados numerados 1., 2., 3. na ordem de confirmação; fila numerada recomeçando em 1., separada; sem ninguém confirmado, mensagem de vazio em vez de lista numerada vazia (FR-020, FR-021, FR-023)
+- [X] T021 [US4] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: confirmados numerados 1., 2., 3. na ordem de confirmação; fila numerada recomeçando em 1., separada; sem ninguém confirmado, mensagem de vazio em vez de lista numerada vazia (FR-020, FR-021, FR-023)
 
 ### Implementation for User Story 4
 
-- [ ] T022 [US4] Em `lib/features/action/presentation/action_detail_page.dart`, numerar as duas listas pelo índice renderizado + 1, calculado separadamente para confirmados e para fila. `fetchAttendees` já devolve ordenado por `created_at`, que é a ordem de confirmação de FR-020 — a contiguidade após desistência (FR-022) sai de graça do índice. Anunciar a posição junto do nome para leitor de tela (FR-024)
+- [X] T022 [US4] Em `lib/features/action/presentation/action_detail_page.dart`, numerar as duas listas pelo índice renderizado + 1, calculado separadamente para confirmados e para fila. `fetchAttendees` já devolve ordenado por `created_at`, que é a ordem de confirmação de FR-020 — a contiguidade após desistência (FR-022) sai de graça do índice. Anunciar a posição junto do nome para leitor de tela (FR-024)
 
 **Checkpoint**: as quatro histórias funcionando.
 
@@ -142,9 +142,9 @@ confirmação.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T023 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Nunca "os testes passaram" sem o número
-- [ ] T024 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/confirmar_idempotente_test.dart`, `apuracao_empate_test.dart`, `cancelar_acao_grupo_test.dart`, `dupla_missionaria_promocao_pula_invalido_test.dart`, `dupla_missionaria_composicao_valida_mesmo_genero_test.dart`. Se algum precisou mudar, esta feature vazou do escopo
-- [ ] T025 Inspecionar o tráfego real da listagem (DevTools → Network, quickstart item 8): a resposta de `confirmacoes_acao` traz **só** `acao_id` e `status`. Se aparecer `usuario_id`, parar — é vazamento de identidade, e é o único jeito de provar a invariante de privacidade
+- [X] T023 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Nunca "os testes passaram" sem o número
+- [X] T024 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/confirmar_idempotente_test.dart`, `apuracao_empate_test.dart`, `cancelar_acao_grupo_test.dart`, `dupla_missionaria_promocao_pula_invalido_test.dart`, `dupla_missionaria_composicao_valida_mesmo_genero_test.dart`. Se algum precisou mudar, esta feature vazou do escopo
+- [X] T025 Inspecionar o tráfego real da listagem (DevTools → Network, quickstart item 8): a resposta de `confirmacoes_acao` traz **só** `acao_id` e `status`. Se aparecer `usuario_id`, parar — é vazamento de identidade, e é o único jeito de provar a invariante de privacidade
 - [ ] T026 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 18, incluindo o item 1 (a Ação real "José Danilo Silva do Carmo" de 08/08/2026 sumiu da listagem) e o item 18 (a Ação não some sozinha embaixo do dedo do Usuário)
 - [ ] T027 Confirmar que `CONTEXT.md` **não** precisou de alteração — nenhum termo novo de domínio foi introduzido (Princípio I). O mapa de tradução já entrou pela feature 012; esta feature só usa o que já está lá
 

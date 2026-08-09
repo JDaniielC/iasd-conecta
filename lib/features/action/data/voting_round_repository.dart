@@ -11,12 +11,12 @@ import 'action_repository.dart';
 /// fechamento preguiçoso por prazo vencido (FR-008), sem job agendado (ver
 /// research.md).
 class VotingRoundRepository {
-  VotingRoundRepository(this._client, this._acaoRepository);
+  VotingRoundRepository(this._client, this._actionRepository);
 
   final SupabaseClient _client;
-  final ActionRepository _acaoRepository;
+  final ActionRepository _actionRepository;
 
-  Future<List<VotingRound>> fetchRodadasDoGrupo(String groupId) async {
+  Future<List<VotingRound>> fetchGroupVotingRounds(String groupId) async {
     final rows = await _client
         .from('rodadas_votacao')
         .select()
@@ -31,11 +31,11 @@ class VotingRoundRepository {
     return VotingRound.fromMap(row);
   }
 
-  Future<void> openRound(NewVotingRound rodada, {required String groupId}) async {
+  Future<void> openRound(NewVotingRound votingRound, {required String groupId}) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('rodadas_votacao')
-        .insert(rodada.toInsertMap(groupId: groupId, openedBy: uid));
+        .insert(votingRound.toInsertMap(groupId: groupId, openedBy: uid));
   }
 
   Future<List<Action>> fetchCandidatas(String votingRoundId) async {
@@ -52,7 +52,7 @@ class VotingRoundRepository {
   /// sempre derivado da Rodada pelo trigger no banco.
   Future<void> proposeCandidate(String votingRoundId, NewAction candidate) async {
     await closeIfDue(votingRoundId);
-    await _acaoRepository.createAction(
+    await _actionRepository.createAction(
       NewAction(
         name: candidate.name,
         dateTime: candidate.dateTime,

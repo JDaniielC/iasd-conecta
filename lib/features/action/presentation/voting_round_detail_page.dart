@@ -14,11 +14,11 @@ class VotingRoundDetailPage extends ConsumerWidget {
 
   final String votingRoundId;
 
-  void _mostrarErro(BuildContext context, String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _votar(BuildContext context, WidgetRef ref, String candidateId) async {
+  Future<void> _vote(BuildContext context, WidgetRef ref, String candidateId) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidateId);
@@ -26,7 +26,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
       ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra votar agora. A Rodada ainda está aberta?');
+      _showError(context, 'Não deu pra votar agora. A Rodada ainda está aberta?');
     }
   }
 
@@ -37,7 +37,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
       ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra encerrar agora. Tente de novo.');
+      _showError(context, 'Não deu pra encerrar agora. Tente de novo.');
     }
   }
 
@@ -50,18 +50,18 @@ class VotingRoundDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Rodada de Votação')),
       body: rodadaAsync.when(
-        data: (rodada) {
+        data: (votingRound) {
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  rodada.isOpen ? 'Aberta' : 'Fechada',
+                  votingRound.isOpen ? 'Aberta' : 'Fechada',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}'),
-                if (rodada.isOpen) ...[
+                Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(votingRound.deadline)}'),
+                if (votingRound.isOpen) ...[
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
@@ -102,11 +102,11 @@ class VotingRoundDetailPage extends ConsumerWidget {
                                 '${DateFormat('dd/MM/yyyy HH:mm').format(candidate.dateTime)} · ${candidate.local}',
                               ),
                               onTap: () => context.push('/acoes/${candidate.id}'),
-                              trailing: rodada.isOpen
+                              trailing: votingRound.isOpen
                                   ? OutlinedButton(
                                       onPressed: votadaPorMim
                                           ? null
-                                          : () => _votar(context, ref, candidate.id),
+                                          : () => _vote(context, ref, candidate.id),
                                       child: Text(votadaPorMim ? 'Seu voto' : 'Votar'),
                                     )
                                   : null,

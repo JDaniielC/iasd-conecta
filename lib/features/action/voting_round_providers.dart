@@ -15,7 +15,7 @@ final votingRoundRepositoryProvider = Provider<VotingRoundRepository>((ref) {
 
 final groupVotingRoundsProvider =
     FutureProvider.autoDispose.family<List<VotingRound>, String>((ref, groupId) {
-  return ref.watch(votingRoundRepositoryProvider).fetchRodadasDoGrupo(groupId);
+  return ref.watch(votingRoundRepositoryProvider).fetchGroupVotingRounds(groupId);
 });
 
 final votingRoundProvider = FutureProvider.autoDispose.family<VotingRound, String>((ref, id) {

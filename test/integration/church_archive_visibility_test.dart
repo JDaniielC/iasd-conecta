@@ -9,13 +9,13 @@ void main() {
   late Connection conn;
   late Object churchId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
+  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
     );
     try {
-      await acao();
+      await action();
     } finally {
       // Limpa role E o GUC de jwt.claims — sem isso, um `set role anon`
       // depois ainda enxergaria o claim antigo (RESET ROLE não limpa GUC

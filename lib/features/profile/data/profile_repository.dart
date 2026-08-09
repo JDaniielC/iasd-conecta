@@ -29,9 +29,9 @@ class ProfileRepository {
     return rows.map(Church.fromMap).toList();
   }
 
-  Future<void> createProfile(Profile perfil) async {
+  Future<void> createProfile(Profile profile) async {
     final uid = _client.auth.currentUser!.id;
-    await _client.from('perfis').insert(perfil.toInsertMap(id: uid));
+    await _client.from('perfis').insert(profile.toInsertMap(id: uid));
   }
 
   /// Exclusão de conta (feature 009, LGPD art. 18 VI). Toda a regra vive na

@@ -35,13 +35,13 @@ void main() {
     await conn.close();
   });
 
-  Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
+  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
     );
     try {
-      await acao();
+      await action();
     } finally {
       await conn.execute('reset role');
     }

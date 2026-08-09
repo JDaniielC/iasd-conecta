@@ -22,63 +22,63 @@ class ProfileSignupPage extends ConsumerStatefulWidget {
 
 class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
-  final _apelidoController = TextEditingController();
-  final _telefoneController = TextEditingController();
-  final _idadeController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _nicknameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _ageController = TextEditingController();
 
   // Cache local mínima — a checagem que vale é a constraint no banco.
-  final _moderacao = const NameModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
+  final _moderation = const NameModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
 
-  Gender _genero = Gender.female;
-  String? _igrejaId;
-  bool _consentimentoLgpd = false;
-  bool _consentimentoIgreja = false;
-  bool _enviando = false;
+  Gender _gender = Gender.female;
+  String? _churchId;
+  bool _lgpdConsent = false;
+  bool _churchConsent = false;
+  bool _submitting = false;
   String? _erro;
 
   @override
   void dispose() {
-    _nomeController.dispose();
-    _apelidoController.dispose();
-    _telefoneController.dispose();
-    _idadeController.dispose();
+    _nameController.dispose();
+    _nicknameController.dispose();
+    _phoneController.dispose();
+    _ageController.dispose();
     super.dispose();
   }
 
-  Profile? get _perfilAtual {
-    final age = int.tryParse(_idadeController.text);
+  Profile? get _currentProfile {
+    final age = int.tryParse(_ageController.text);
     if (age == null) return null;
     return Profile(
-      name: _nomeController.text,
-      gender: _genero,
+      name: _nameController.text,
+      gender: _gender,
       age: age,
-      lgpdConsentAccepted: _consentimentoLgpd,
-      nickname: _apelidoController.text,
-      churchId: _igrejaId,
-      phone: _telefoneController.text,
-      churchLgpdConsentAccepted: _consentimentoIgreja,
+      lgpdConsentAccepted: _lgpdConsent,
+      nickname: _nicknameController.text,
+      churchId: _churchId,
+      phone: _phoneController.text,
+      churchLgpdConsentAccepted: _churchConsent,
     );
   }
 
   Future<void> _enviar() async {
-    final perfil = _perfilAtual;
-    if (_formKey.currentState?.validate() != true || perfil == null) return;
-    if (!_moderacao.isValid(perfil.name)) {
+    final profile = _currentProfile;
+    if (_formKey.currentState?.validate() != true || profile == null) return;
+    if (!_moderation.isValid(profile.name)) {
       setState(() => _erro = 'Esse nome não pode ser usado. Tente outro.');
       return;
     }
-    if (!perfil.readyToSubmit) {
+    if (!profile.readyToSubmit) {
       setState(() => _erro = 'Revise o formulário antes de continuar.');
       return;
     }
 
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
-      await ref.read(profileRepositoryProvider).createProfile(perfil);
+      await ref.read(profileRepositoryProvider).createProfile(profile);
       ref.invalidate(hasProfileProvider);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
@@ -89,17 +89,17 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
         // tentando de novo pra sempre.
         ref.invalidate(hasProfileProvider);
       } else {
-        setState(() => _erro = _mensagemDeErro(e));
+        setState(() => _erro = _errorMessage(e));
       }
     } catch (_) {
       setState(() => _erro =
           'Não deu pra concluir o cadastro agora. Verifique sua conexão e tente de novo.');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
-  String _mensagemDeErro(PostgrestException e) {
+  String _errorMessage(PostgrestException e) {
     if (e.message.contains('nome_valido')) {
       return 'Esse nome não pode ser usado. Tente outro.';
     }
@@ -115,7 +115,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   @override
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
-    final age = int.tryParse(_idadeController.text);
+    final age = int.tryParse(_ageController.text);
     final precisaApelido = age != null && age < 18;
 
     return Scaffold(
@@ -133,7 +133,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               ),
               const SizedBox(height: AppSpacing.lg),
               TextFormField(
-                controller: _nomeController,
+                controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome'),
                 validator: (v) =>
                     (v == null || v.trim().isEmpty) ? 'Informe seu nome' : null,
@@ -141,7 +141,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               DropdownButtonFormField<Gender>(
-                initialValue: _genero,
+                initialValue: _gender,
                 decoration: const InputDecoration(labelText: 'Gênero'),
                 items: Gender.values
                     .map((g) => DropdownMenuItem(
@@ -149,11 +149,11 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                           child: Text(g == Gender.male ? 'Masculino' : 'Feminino'),
                         ))
                     .toList(),
-                onChanged: (g) => setState(() => _genero = g ?? _genero),
+                onChanged: (g) => setState(() => _gender = g ?? _gender),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _idadeController,
+                controller: _ageController,
                 decoration: const InputDecoration(labelText: 'Idade'),
                 keyboardType: TextInputType.number,
                 validator: (v) {
@@ -166,7 +166,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               const SizedBox(height: AppSpacing.md),
               churchesAsync.when(
                 data: (churches) => DropdownButtonFormField<String>(
-                  initialValue: _igrejaId,
+                  initialValue: _churchId,
                   decoration:
                       const InputDecoration(labelText: 'Igreja de origem (opcional)'),
                   items: churches
@@ -174,16 +174,16 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                           DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
                   onChanged: (id) => setState(() {
-                    _igrejaId = id;
+                    _churchId = id;
                     // Trocar ou remover a igreja invalida o consentimento
                     // anterior — força reafirmar (LGPD art. 11 I).
-                    _consentimentoIgreja = false;
+                    _churchConsent = false;
                   }),
                 ),
                 loading: () => const LinearProgressIndicator(),
                 error: (_, _) => const Text('Não deu pra carregar as igrejas agora.'),
               ),
-              if (_igrejaId != null) ...[
+              if (_churchId != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Container(
                   decoration: BoxDecoration(
@@ -191,8 +191,8 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: CheckboxListTile(
-                    value: _consentimentoIgreja,
-                    onChanged: (v) => setState(() => _consentimentoIgreja = v ?? false),
+                    value: _churchConsent,
+                    onChanged: (v) => setState(() => _churchConsent = v ?? false),
                     title: const Text(
                       'Autorizo o uso da minha igreja de origem para destacar '
                       'Grupos e Ações dela para mim (dado sensível — LGPD art. 11, I).',
@@ -203,7 +203,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _telefoneController,
+                controller: _phoneController,
                 decoration:
                     const InputDecoration(labelText: 'Telefone (opcional)'),
                 keyboardType: TextInputType.phone,
@@ -211,7 +211,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               if (precisaApelido) ...[
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
-                  controller: _apelidoController,
+                  controller: _nicknameController,
                   decoration: const InputDecoration(
                     labelText: 'Apelido (obrigatório para menores de 18)',
                     helperText:
@@ -241,8 +241,8 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                 ),
               ),
               CheckboxListTile(
-                value: _consentimentoLgpd,
-                onChanged: (v) => setState(() => _consentimentoLgpd = v ?? false),
+                value: _lgpdConsent,
+                onChanged: (v) => setState(() => _lgpdConsent = v ?? false),
                 title: const Text(
                   'Li e aceito o uso dos meus dados descrito na Política de '
                   'Privacidade (LGPD)',
@@ -255,10 +255,10 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: (_enviando || _perfilAtual?.readyToSubmit != true)
+                onPressed: (_submitting || _currentProfile?.readyToSubmit != true)
                     ? null
                     : _enviar,
-                child: _enviando
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

@@ -18,60 +18,60 @@ class ActionDetailPage extends ConsumerWidget {
 
   final String acaoId;
 
-  void _mostrarErro(BuildContext context, String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _confirmar(BuildContext context, WidgetRef ref) async {
+  Future<void> _confirm(BuildContext context, WidgetRef ref) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(actionRepositoryProvider).confirmAttendance(acaoId);
       ref.invalidate(attendeesProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra confirmar presença. Tente de novo.');
+      _showError(context, 'Não deu pra confirmar presença. Tente de novo.');
     }
   }
 
-  Future<void> _desistir(BuildContext context, WidgetRef ref) async {
+  Future<void> _withdraw(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(actionRepositoryProvider).withdraw(acaoId);
       ref.invalidate(attendeesProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra desistir agora. Tente de novo.');
+      _showError(context, 'Não deu pra desistir agora. Tente de novo.');
     }
   }
 
-  Future<void> _cancelar(BuildContext context, WidgetRef ref) async {
+  Future<void> _cancel(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(actionRepositoryProvider).cancelAction(acaoId);
       ref.invalidate(actionProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra cancelar agora. Tente de novo.');
+      _showError(context, 'Não deu pra cancelar agora. Tente de novo.');
     }
   }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final acaoAsync = ref.watch(actionProvider(acaoId));
-    final confirmadosAsync = ref.watch(attendeesProvider(acaoId));
+    final attendeesAsync = ref.watch(attendeesProvider(acaoId));
     final uid = ref.watch(currentUserIdProvider);
-    final minhasConfirmacoes =
-        confirmadosAsync.value?.where((c) => c.perfil.id == uid) ?? const [];
-    final minhaConfirmacao = minhasConfirmacoes.isEmpty ? null : minhasConfirmacoes.first;
+    final myAttendances =
+        attendeesAsync.value?.where((c) => c.profile.id == uid) ?? const [];
+    final myAttendance = myAttendances.isEmpty ? null : myAttendances.first;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Ação')),
       body: acaoAsync.when(
-        data: (acao) {
-          final souDonoDoGrupo = acao.groupId == null
+        data: (action) {
+          final souDonoDoGrupo = action.groupId == null
               ? false
-              : (ref.watch(groupProvider(acao.groupId!)).value?.isOwner(uid) ?? false);
+              : (ref.watch(groupProvider(action.groupId!)).value?.isOwner(uid) ?? false);
           final souAdministradorDoDistrito =
               ref.watch(isDistrictAdminProvider).value ?? false;
-          final canCancel = acao.canCancel(
+          final canCancel = action.canCancel(
             uid,
             souDonoDoGrupo: souDonoDoGrupo,
             souAdministradorDoDistrito: souAdministradorDoDistrito,
@@ -85,26 +85,26 @@ class ActionDetailPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        acao.name,
+                        action.name,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
-                    if (canCancel && !acao.isCancelled && acao.isConfirmed)
+                    if (canCancel && !action.isCancelled && action.isConfirmed)
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Cancelar Ação',
-                        onPressed: () => _cancelar(context, ref),
+                        onPressed: () => _cancel(context, ref),
                       ),
                   ],
                 ),
-                if (acao.isCancelled) ...[
+                if (action.isCancelled) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Cancelada',
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ],
-                if (acao.isCandidateInVoting) ...[
+                if (action.isCandidateInVoting) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
@@ -112,38 +112,38 @@ class ActionDetailPage extends ConsumerWidget {
                         child: Text('Ação candidata — ainda em votação numa Rodada.'),
                       ),
                       TextButton(
-                        onPressed: () => context.push('/rodadas/${acao.votingRoundId}'),
+                        onPressed: () => context.push('/rodadas/${action.votingRoundId}'),
                         child: const Text('Ver Rodada'),
                       ),
                     ],
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
-                Text(DateFormat('dd/MM/yyyy HH:mm').format(acao.dateTime)),
-                Text(acao.local),
-                if (acao.isMissionaryPair) ...[
+                Text(DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)),
+                Text(action.local),
+                if (action.isMissionaryPair) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Dupla Missionária — visita a um(a) '
-                    '${acao.visitedGender == VisitedGender.male ? 'homem' : 'mulher'}',
+                    '${action.visitedGender == VisitedGender.male ? 'homem' : 'mulher'}',
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
-                if (acao.capacity != null) Text('Vagas: ${acao.capacity}'),
-                if (acao.details != null) ...[
+                if (action.capacity != null) Text('Vagas: ${action.capacity}'),
+                if (action.details != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Text(acao.details!),
+                  Text(action.details!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                if (!acao.isCancelled)
+                if (!action.isCancelled)
                   ElevatedButton(
-                    onPressed: minhaConfirmacao != null
-                        ? () => _desistir(context, ref)
-                        : () => _confirmar(context, ref),
+                    onPressed: myAttendance != null
+                        ? () => _withdraw(context, ref)
+                        : () => _confirm(context, ref),
                     child: Text(
-                      minhaConfirmacao == null
+                      myAttendance == null
                           ? 'Confirmar presença'
-                          : (minhaConfirmacao.status == AttendanceStatus.fila
+                          : (myAttendance.status == AttendanceStatus.waitlist
                               ? 'Sair da fila de espera'
                               : 'Desistir'),
                     ),
@@ -151,22 +151,22 @@ class ActionDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Confirmados', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
-                  child: confirmadosAsync.when(
-                    data: (confirmados) {
-                      final vagas = confirmados
-                          .where((c) => c.status == AttendanceStatus.confirmado)
+                  child: attendeesAsync.when(
+                    data: (attendees) {
+                      final seated = attendees
+                          .where((c) => c.status == AttendanceStatus.confirmed)
                           .toList();
-                      final fila = confirmados
-                          .where((c) => c.status == AttendanceStatus.fila)
+                      final waitlist = attendees
+                          .where((c) => c.status == AttendanceStatus.waitlist)
                           .toList();
                       return ListView(
                         children: [
-                          ...vagas.map((c) => ListTile(title: Text(c.perfil.displayName))),
-                          if (fila.isNotEmpty) ...[
+                          ...seated.map((c) => ListTile(title: Text(c.profile.displayName))),
+                          if (waitlist.isNotEmpty) ...[
                             const Divider(),
                             const Text('Fila de espera'),
-                            ...fila.map((c) => ListTile(
-                                  title: Text(c.perfil.displayName),
+                            ...waitlist.map((c) => ListTile(
+                                  title: Text(c.profile.displayName),
                                   dense: true,
                                 )),
                           ],

@@ -19,24 +19,24 @@ class EditGroupPage extends ConsumerStatefulWidget {
 }
 
 class _EditGroupPageState extends ConsumerState<EditGroupPage> {
-  final _nomeController = TextEditingController();
-  final _detalhesController = TextEditingController();
+  final _nameController = TextEditingController();
+  final _detailsController = TextEditingController();
   bool _carregouCampos = false;
   String? _erro;
 
   @override
   void dispose() {
-    _nomeController.dispose();
-    _detalhesController.dispose();
+    _nameController.dispose();
+    _detailsController.dispose();
     super.dispose();
   }
 
-  Future<void> _salvar() async {
+  Future<void> _save() async {
     try {
       await ref.read(groupRepositoryProvider).updateGroup(
             widget.groupId,
-            name: _nomeController.text,
-            details: _detalhesController.text,
+            name: _nameController.text,
+            details: _detailsController.text,
           );
       ref.invalidate(groupProvider(widget.groupId));
       ref.invalidate(groupsProvider);
@@ -74,13 +74,13 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('Editar Grupo')),
       body: grupoAsync.when(
-        data: (grupo) {
-          if (!grupo.isOwner(uid)) {
+        data: (group) {
+          if (!group.isOwner(uid)) {
             return const Center(child: Text('Você não é o Dono deste Grupo.'));
           }
           if (!_carregouCampos) {
-            _nomeController.text = grupo.name;
-            _detalhesController.text = grupo.details ?? '';
+            _nameController.text = group.name;
+            _detailsController.text = group.details ?? '';
             _carregouCampos = true;
           }
           return SingleChildScrollView(
@@ -89,12 +89,12 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 TextFormField(
-                  controller: _nomeController,
+                  controller: _nameController,
                   decoration: const InputDecoration(labelText: 'Nome'),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
-                  controller: _detalhesController,
+                  controller: _detailsController,
                   decoration: const InputDecoration(labelText: 'Detalhes'),
                   maxLines: 3,
                 ),
@@ -103,13 +103,13 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
                   Text(_erro!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                ElevatedButton(onPressed: _salvar, child: const Text('Salvar')),
+                ElevatedButton(onPressed: _save, child: const Text('Salvar')),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 participantesAsync.when(
                   data: (members) => Column(
                     children: members.map((p) {
-                      final ehODono = p.id == grupo.ownerId;
+                      final ehODono = p.id == group.ownerId;
                       return ListTile(
                         title: Text(p.displayName),
                         subtitle: ehODono ? const Text('Dono') : null,

@@ -311,7 +311,7 @@ void main() {
 
   group('cenários 5 a 11 — herança pelo Administrador mais antigo', () {
     const quemSai = '95200000-0000-0000-0000-000000000001';
-    const participante = '95200000-0000-0000-0000-000000000002';
+    const member = '95200000-0000-0000-0000-000000000002';
     const adminAntigo = '95200000-0000-0000-0000-000000000003';
     const adminNovo = '95200000-0000-0000-0000-000000000004';
     late String groupId;
@@ -334,10 +334,10 @@ void main() {
       await criarAdministradorDistritoDeTeste(conn, adminNovo);
 
       await criarPerfilDeTeste(conn, quemSai, name: 'Dona Que Sai');
-      await criarPerfilDeTeste(conn, participante, name: 'Participante Que Fica');
+      await criarPerfilDeTeste(conn, member, name: 'Participante Que Fica');
 
       groupId = await createGroup(quemSai);
-      await join(groupId, participante);
+      await join(groupId, member);
       rodadaAberta = await openRound(groupId, quemSai);
       rodadaFechada = await openRound(groupId, quemSai, fechada: true);
       acaoDela = await createAction(quemSai, futura: false);
@@ -356,7 +356,7 @@ void main() {
           'insert into public.liderancas (grupo_id, usuario_id, ano, confirmado_por, confirmado_em) '
           'values (@grupo, @outra, 2026, @dela, now())',
         ),
-        parameters: {'grupo': groupId, 'outra': participante, 'dela': quemSai},
+        parameters: {'grupo': groupId, 'outra': member, 'dela': quemSai},
       );
 
       await excluirConta(quemSai);
@@ -373,9 +373,9 @@ void main() {
       await conn.execute('delete from public.administradores_distrito');
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
-        parameters: {'ids': [quemSai, participante, adminAntigo, adminNovo]},
+        parameters: {'ids': [quemSai, member, adminAntigo, adminNovo]},
       );
-      for (final id in [participante, adminAntigo, adminNovo]) {
+      for (final id in [member, adminAntigo, adminNovo]) {
         await limparUsuarioDeTeste(conn, id);
       }
     });
@@ -392,7 +392,7 @@ void main() {
       expect(
         await contar(
           'select count(*) from public.participacoes_grupo where grupo_id = @g and usuario_id = @u',
-          {'g': groupId, 'u': participante},
+          {'g': groupId, 'u': member},
         ),
         1,
       );
@@ -421,17 +421,17 @@ void main() {
     });
 
     test('cenário 8: Rodada fechada e Ação criada não trocam de autor', () async {
-      final rodada = await conn.execute(
+      final votingRound = await conn.execute(
         Sql.named('select aberta_por from public.rodadas_votacao where id = @id'),
         parameters: {'id': rodadaFechada},
       );
-      expect(rodada.single.first, quemSai, reason: 'histórico não muda de dono');
+      expect(votingRound.single.first, quemSai, reason: 'histórico não muda de dono');
 
-      final acao = await conn.execute(
+      final action = await conn.execute(
         Sql.named('select criador_id from public.acoes where id = @id'),
         parameters: {'id': acaoDela},
       );
-      expect(acao.single.first, quemSai);
+      expect(action.single.first, quemSai);
     });
 
     test('cenário 10: a declaração dela some, a que ela confirmou fica', () async {

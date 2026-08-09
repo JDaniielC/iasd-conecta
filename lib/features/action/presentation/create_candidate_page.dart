@@ -21,56 +21,56 @@ class CreateCandidatePage extends ConsumerStatefulWidget {
 
 class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
-  final _localController = TextEditingController();
-  final _detalhesController = TextEditingController();
-  final _limiteVagasController = TextEditingController();
-  DateTime? _dataHora;
-  bool _enviando = false;
+  final _nameController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _detailsController = TextEditingController();
+  final _capacityController = TextEditingController();
+  DateTime? _dateTime;
+  bool _submitting = false;
   String? _erro;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
 
   @override
   void dispose() {
-    _nomeController.dispose();
-    _localController.dispose();
-    _detalhesController.dispose();
-    _limiteVagasController.dispose();
+    _nameController.dispose();
+    _locationController.dispose();
+    _detailsController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
-  Future<void> _escolherDataHora() async {
-    final agora = DateTime.now();
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
     final data = await showDatePicker(
       context: context,
-      initialDate: agora,
-      firstDate: agora,
-      lastDate: agora.add(const Duration(days: 365 * 2)),
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 2)),
     );
     if (data == null || !mounted) return;
     final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (hora == null) return;
     setState(() {
-      _dataHora = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _dateTime = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
     });
   }
 
-  NewAction? get _candidataAtual {
-    if (_dataHora == null) return null;
+  NewAction? get _currentCandidate {
+    if (_dateTime == null) return null;
     return NewAction(
-      name: _nomeController.text,
-      dateTime: _dataHora!,
-      local: _localController.text,
-      details: _detalhesController.text,
-      capacity: int.tryParse(_limiteVagasController.text),
+      name: _nameController.text,
+      dateTime: _dateTime!,
+      local: _locationController.text,
+      details: _detailsController.text,
+      capacity: int.tryParse(_capacityController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
     );
   }
 
   Future<void> _propor() async {
-    final candidate = _candidataAtual;
+    final candidate = _currentCandidate;
     if (_formKey.currentState?.validate() != true ||
         candidate == null ||
         !candidate.isReadyToSubmit) {
@@ -78,7 +78,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
       return;
     }
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
@@ -88,7 +88,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
     } catch (_) {
       setState(() => _erro = 'Não deu pra propor agora. A Rodada ainda está aberta?');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -116,7 +116,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
                       .map(
                         (s) => ActionChip(
                           label: Text(s.name),
-                          onPressed: () => setState(() => _nomeController.text = s.name),
+                          onPressed: () => setState(() => _nameController.text = s.name),
                         ),
                       )
                       .toList(),
@@ -124,28 +124,28 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
                 const SizedBox(height: AppSpacing.md),
               ],
               TextFormField(
-                controller: _nomeController,
+                controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome da candidata'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               OutlinedButton(
-                onPressed: _escolherDataHora,
+                onPressed: _pickDateTime,
                 child: Text(
-                  _dataHora == null
+                  _dateTime == null
                       ? 'Escolher data e hora'
-                      : DateFormat('dd/MM/yyyy HH:mm').format(_dataHora!),
+                      : DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _localController,
+                controller: _locationController,
                 decoration: const InputDecoration(labelText: 'Local'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o local' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _detalhesController,
+                controller: _detailsController,
                 decoration: const InputDecoration(labelText: 'Detalhes (opcional)'),
                 maxLines: 3,
               ),
@@ -169,7 +169,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
                 )
               else
                 TextFormField(
-                  controller: _limiteVagasController,
+                  controller: _capacityController,
                   decoration: const InputDecoration(labelText: 'Limite de vagas (opcional)'),
                   keyboardType: TextInputType.number,
                 ),
@@ -179,8 +179,8 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _enviando ? null : _propor,
-                child: _enviando
+                onPressed: _submitting ? null : _propor,
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

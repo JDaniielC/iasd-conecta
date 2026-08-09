@@ -20,82 +20,82 @@ class CreateActionPage extends ConsumerStatefulWidget {
 
 class _CreateActionPageState extends ConsumerState<CreateActionPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
-  final _localController = TextEditingController();
-  final _detalhesController = TextEditingController();
-  final _limiteVagasController = TextEditingController();
-  DateTime? _dataHora;
-  bool _enviando = false;
+  final _nameController = TextEditingController();
+  final _locationController = TextEditingController();
+  final _detailsController = TextEditingController();
+  final _capacityController = TextEditingController();
+  DateTime? _dateTime;
+  bool _submitting = false;
   String? _erro;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
-  String? _categoriaFiltroId;
+  String? _categoryFilterId;
 
   @override
   void dispose() {
-    _nomeController.dispose();
-    _localController.dispose();
-    _detalhesController.dispose();
-    _limiteVagasController.dispose();
+    _nameController.dispose();
+    _locationController.dispose();
+    _detailsController.dispose();
+    _capacityController.dispose();
     super.dispose();
   }
 
-  Future<void> _escolherDataHora() async {
-    final agora = DateTime.now();
+  Future<void> _pickDateTime() async {
+    final now = DateTime.now();
     final data = await showDatePicker(
       context: context,
-      initialDate: agora,
-      firstDate: agora,
-      lastDate: agora.add(const Duration(days: 365 * 2)),
+      initialDate: now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365 * 2)),
     );
     if (data == null || !mounted) return;
     final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (hora == null) return;
     setState(() {
-      _dataHora = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _dateTime = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
     });
   }
 
-  NewAction? get _acaoAtual {
-    if (_dataHora == null) return null;
+  NewAction? get _currentAction {
+    if (_dateTime == null) return null;
     return NewAction(
-      name: _nomeController.text,
-      dateTime: _dataHora!,
-      local: _localController.text,
-      details: _detalhesController.text,
-      capacity: int.tryParse(_limiteVagasController.text),
+      name: _nameController.text,
+      dateTime: _dateTime!,
+      local: _locationController.text,
+      details: _detailsController.text,
+      capacity: int.tryParse(_capacityController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
     );
   }
 
-  Future<void> _criar() async {
-    final acao = _acaoAtual;
-    if (_formKey.currentState?.validate() != true || acao == null || !acao.isReadyToSubmit) {
+  Future<void> _submit() async {
+    final action = _currentAction;
+    if (_formKey.currentState?.validate() != true || action == null || !action.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome, data/hora e local.');
       return;
     }
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
-      await ref.read(actionRepositoryProvider).createAction(acao);
+      await ref.read(actionRepositoryProvider).createAction(action);
       ref.invalidate(actionsProvider);
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra criar a Ação agora. Tente de novo.');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final categoriasAsync = ref.watch(groupCategoriesProvider);
-    final suggestionsAsync = _categoriaFiltroId == null
+    final suggestionsAsync = _categoryFilterId == null
         ? null
-        : ref.watch(suggestionsForCategoryProvider(_categoriaFiltroId!));
+        : ref.watch(suggestionsForCategoryProvider(_categoryFilterId!));
     final suggestions = suggestionsAsync?.value ?? const [];
 
     return Scaffold(
@@ -108,15 +108,15 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               categoriasAsync.when(
-                data: (categorias) => DropdownButtonFormField<String>(
-                  initialValue: _categoriaFiltroId,
+                data: (categories) => DropdownButtonFormField<String>(
+                  initialValue: _categoryFilterId,
                   decoration: const InputDecoration(
                     labelText: 'Categoria (só pra filtrar sugestões, opcional)',
                   ),
-                  items: categorias
+                  items: categories
                       .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
-                  onChanged: (v) => setState(() => _categoriaFiltroId = v),
+                  onChanged: (v) => setState(() => _categoryFilterId = v),
                 ),
                 loading: () => const SizedBox.shrink(),
                 error: (_, _) => const SizedBox.shrink(),
@@ -129,7 +129,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
                       .map(
                         (s) => ActionChip(
                           label: Text(s.name),
-                          onPressed: () => setState(() => _nomeController.text = s.name),
+                          onPressed: () => setState(() => _nameController.text = s.name),
                         ),
                       )
                       .toList(),
@@ -137,28 +137,28 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
               ],
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _nomeController,
+                controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome da Ação'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               OutlinedButton(
-                onPressed: _escolherDataHora,
+                onPressed: _pickDateTime,
                 child: Text(
-                  _dataHora == null
+                  _dateTime == null
                       ? 'Escolher data e hora'
-                      : DateFormat('dd/MM/yyyy HH:mm').format(_dataHora!),
+                      : DateFormat('dd/MM/yyyy HH:mm').format(_dateTime!),
                 ),
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _localController,
+                controller: _locationController,
                 decoration: const InputDecoration(labelText: 'Local'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe o local' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _detalhesController,
+                controller: _detailsController,
                 decoration: const InputDecoration(labelText: 'Detalhes (opcional)'),
                 maxLines: 3,
               ),
@@ -182,7 +182,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
                 )
               else
                 TextFormField(
-                  controller: _limiteVagasController,
+                  controller: _capacityController,
                   decoration: const InputDecoration(
                     labelText: 'Limite de vagas (opcional)',
                     helperText: 'Deixe em branco pra vagas ilimitadas',
@@ -195,8 +195,8 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _enviando ? null : _criar,
-                child: _enviando
+                onPressed: _submitting ? null : _submit,
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

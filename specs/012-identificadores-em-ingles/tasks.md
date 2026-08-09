@@ -102,9 +102,9 @@ está em português.
 
 ### Etapa 5 — `core/` (superfície ~36)
 
-- [ ] T017 [US2] `git mv lib/core/agrupar_por_igreja.dart lib/core/group_by_church.dart` e ajustar os caminhos de import. `providers.dart`, `supabase_client.dart` e `theme/app_theme.dart` mantêm o nome — já estão em inglês. Commit isolado
-- [ ] T018 [US2] Renomear em `lib/core/group_by_church.dart` e `lib/core/providers.dart`: `agruparPorIgreja`→`groupByChurch`, `SecaoPorIgreja`→`ChurchSection`, `igrejaIdDe`→`churchIdOf`, `nomePorIgrejaId`→`nameByChurchId`, `igrejaInvisivel`→`hiddenChurch`, `hasPerfilProvider`→`hasProfileProvider`, `perfilRepositoryProvider`→`profileRepositoryProvider`, `perfilPublicoProvider`→`publicProfileProvider`. Estes providers são referenciados por ~32 arquivos — o analisador aponta todos. Os 17 providers que já estão em inglês (`churchesProvider`, `currentUserIdProvider`, `isAnonymousProvider`, e os demais listados em `research.md` D-004) **não mudam**
-- [ ] T019 [US2] Rodar os gates completos, incluindo `dart test test/integration`, e as verificações negativas A/B/C
+- [X] T017 [US2] `git mv lib/core/agrupar_por_igreja.dart lib/core/group_by_church.dart` e ajustar os caminhos de import. `providers.dart`, `supabase_client.dart` e `theme/app_theme.dart` mantêm o nome — já estão em inglês. Commit isolado
+- [X] T018 [US2] Renomear em `lib/core/group_by_church.dart` e `lib/core/providers.dart`: `agruparPorIgreja`→`groupByChurch`, `SecaoPorIgreja`→`ChurchSection`, `igrejaIdDe`→`churchIdOf`, `nomePorIgrejaId`→`nameByChurchId`, `igrejaInvisivel`→`hiddenChurch`, `hasPerfilProvider`→`hasProfileProvider`, `perfilRepositoryProvider`→`profileRepositoryProvider`, `perfilPublicoProvider`→`publicProfileProvider`. Estes providers são referenciados por ~32 arquivos — o analisador aponta todos. Os 17 providers que já estão em inglês (`churchesProvider`, `currentUserIdProvider`, `isAnonymousProvider`, e os demais listados em `research.md` D-004) **não mudam**
+- [X] T019 [US2] Rodar os gates completos, incluindo `dart test test/integration`, e as verificações negativas A/B/C
 
 **Checkpoint**: `lib/` inteiro em inglês. Nada que o usuário vê mudou.
 

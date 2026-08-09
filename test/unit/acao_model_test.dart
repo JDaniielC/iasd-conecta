@@ -6,50 +6,50 @@ void main() {
 
   group('NovaAcao.prontoParaEnviar', () {
     test('falso sem nome', () {
-      final acao = NewAction(name: '  ', dateTime: dataFutura, local: 'Sede');
-      expect(acao.isReadyToSubmit, isFalse);
+      final action = NewAction(name: '  ', dateTime: dataFutura, local: 'Sede');
+      expect(action.isReadyToSubmit, isFalse);
     });
 
     test('falso sem local', () {
-      final acao = NewAction(name: 'Retiro', dateTime: dataFutura, local: '');
-      expect(acao.isReadyToSubmit, isFalse);
+      final action = NewAction(name: 'Retiro', dateTime: dataFutura, local: '');
+      expect(action.isReadyToSubmit, isFalse);
     });
 
     test('falso com limite de vagas zero', () {
-      final acao = NewAction(
+      final action = NewAction(
         name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         capacity: 0,
       );
-      expect(acao.isReadyToSubmit, isFalse);
+      expect(action.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com campos obrigatórios preenchidos, sem limite', () {
-      final acao = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede');
-      expect(acao.isReadyToSubmit, isTrue);
+      final action = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede');
+      expect(action.isReadyToSubmit, isTrue);
     });
 
     test('verdadeiro com limite de vagas positivo', () {
-      final acao = NewAction(
+      final action = NewAction(
         name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         capacity: 20,
       );
-      expect(acao.isReadyToSubmit, isTrue);
+      expect(action.isReadyToSubmit, isTrue);
     });
   });
 
   group('NovaAcao.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui criador', () {
-      final acao = NewAction(
+      final action = NewAction(
         name: ' Retiro ',
         dateTime: dataFutura,
         local: 'Sede',
         details: '   ',
       );
-      final map = acao.toInsertMap(creatorId: 'abc');
+      final map = action.toInsertMap(creatorId: 'abc');
       expect(map['nome'], 'Retiro');
       expect(map['detalhes'], isNull);
       expect(map['criador_id'], 'abc');
@@ -58,7 +58,7 @@ void main() {
   });
 
   group('Acao.souCriador', () {
-    final acao = Action(
+    final action = Action(
       id: 'a1',
       name: 'Retiro',
       dateTime: dataFutura,
@@ -68,21 +68,21 @@ void main() {
     );
 
     test('verdadeiro quando o id bate com criador_id', () {
-      expect(acao.isCreator('criador-1'), isTrue);
+      expect(action.isCreator('criador-1'), isTrue);
     });
 
     test('falso pra outro usuário', () {
-      expect(acao.isCreator('outro'), isFalse);
+      expect(action.isCreator('outro'), isFalse);
     });
 
     test('falso sem usuário atual', () {
-      expect(acao.isCreator(null), isFalse);
+      expect(action.isCreator(null), isFalse);
     });
   });
 
   group('Acao.cancelada', () {
     test('falso quando canceladaEm é nulo', () {
-      final acao = Action(
+      final action = Action(
         id: 'a1',
         name: 'Retiro',
         dateTime: dataFutura,
@@ -90,11 +90,11 @@ void main() {
         creatorId: 'c1',
         createdAt: dataFutura,
       );
-      expect(acao.isCancelled, isFalse);
+      expect(action.isCancelled, isFalse);
     });
 
     test('verdadeiro quando canceladaEm está preenchido', () {
-      final acao = Action(
+      final action = Action(
         id: 'a1',
         name: 'Retiro',
         dateTime: dataFutura,
@@ -103,7 +103,7 @@ void main() {
         createdAt: dataFutura,
         cancelledAt: DateTime.now(),
       );
-      expect(acao.isCancelled, isTrue);
+      expect(action.isCancelled, isTrue);
     });
   });
 }

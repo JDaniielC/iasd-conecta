@@ -151,13 +151,13 @@ class Action {
 /// ou `perfis.igreja_id` do criador (Ação avulsa). Usado só pra agrupar/
 /// filtrar a lista por Igreja; a Ação em si não guarda `igreja_id`.
 class ActionWithChurch {
-  const ActionWithChurch({required this.acao, this.churchId});
+  const ActionWithChurch({required this.action, this.churchId});
 
-  final Action acao;
+  final Action action;
   final String? churchId;
 }
 
-enum ActionPeriod { sabado, hoje, essaSemana, outras }
+enum ActionPeriod { sabbath, hoje, essaSemana, outras }
 
 /// Sábado adventista: sexta 17:30 até sábado 17:30 — aproximação de
 /// pôr-do-sol por horário fixo (não calcula pôr-do-sol real por data/local).
@@ -178,14 +178,14 @@ DateTime _inicioDaSemana(DateTime data) {
 /// Classifica [dataHora] em relação a [agora] pra agrupar `ListaAcoesPage`
 /// por período. Sábado tem prioridade sobre Hoje/Essa semana — é o destaque
 /// que a comunidade adventista mais procura, mesmo caindo também "hoje".
-ActionPeriod actionPeriod(DateTime dateTime, DateTime agora) {
-  if (isOnSabbath(dateTime)) return ActionPeriod.sabado;
+ActionPeriod actionPeriod(DateTime dateTime, DateTime now) {
+  if (isOnSabbath(dateTime)) return ActionPeriod.sabbath;
 
-  final hoje = DateTime(agora.year, agora.month, agora.day);
+  final hoje = DateTime(now.year, now.month, now.day);
   final dia = DateTime(dateTime.year, dateTime.month, dateTime.day);
   if (dia == hoje) return ActionPeriod.hoje;
 
-  final inicioSemana = _inicioDaSemana(agora);
+  final inicioSemana = _inicioDaSemana(now);
   final fimSemana = inicioSemana.add(const Duration(days: 7));
   if (!dateTime.isBefore(inicioSemana) && dateTime.isBefore(fimSemana)) {
     return ActionPeriod.essaSemana;
@@ -194,11 +194,11 @@ ActionPeriod actionPeriod(DateTime dateTime, DateTime agora) {
   return ActionPeriod.outras;
 }
 
-enum AttendanceStatus { confirmado, fila }
+enum AttendanceStatus { confirmed, waitlist }
 
 class AttendanceWithProfile {
-  const AttendanceWithProfile({required this.perfil, required this.status});
+  const AttendanceWithProfile({required this.profile, required this.status});
 
-  final PublicProfile perfil;
+  final PublicProfile profile;
   final AttendanceStatus status;
 }

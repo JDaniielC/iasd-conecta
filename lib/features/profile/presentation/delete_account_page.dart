@@ -19,21 +19,21 @@ class DeleteAccountPage extends ConsumerStatefulWidget {
 
 class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   bool _entendi = false;
-  bool _enviando = false;
+  bool _submitting = false;
   String? _erro;
 
-  Future<void> _excluir() async {
+  Future<void> _delete() async {
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
       await ref.read(profileRepositoryProvider).deleteMyAccount();
       ref.invalidate(hasProfileProvider);
     } catch (e) {
-      setState(() => _erro = _mensagemDeErro(e));
+      setState(() => _erro = _errorMessage(e));
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -41,12 +41,12 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
   /// chegar ao Usuário: elas dizem o que fazer antes de tentar de novo. Só o
   /// que não é recusa vira mensagem genérica — erro de banco cru não é texto
   /// de UI.
-  String _mensagemDeErro(Object erro) {
-    if (erro is PostgrestException) {
-      final mensagem = erro.message;
-      if (mensagem.contains('Dono de Grupo') ||
-          mensagem.contains('Administrador do distrito')) {
-        return mensagem;
+  String _errorMessage(Object error) {
+    if (error is PostgrestException) {
+      final message = error.message;
+      if (message.contains('Dono de Grupo') ||
+          message.contains('Administrador do distrito')) {
+        return message;
       }
     }
     return 'Não deu pra concluir a exclusão agora. Verifique sua conexão e '
@@ -94,7 +94,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             const SizedBox(height: AppSpacing.lg),
             CheckboxListTile(
               value: _entendi,
-              onChanged: _enviando
+              onChanged: _submitting
                   ? null
                   : (v) => setState(() => _entendi = v ?? false),
               controlAffinity: ListTileControlAffinity.leading,
@@ -107,9 +107,9 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
-              onPressed: (_entendi && !_enviando) ? _excluir : null,
+              onPressed: (_entendi && !_submitting) ? _delete : null,
               style: FilledButton.styleFrom(backgroundColor: Colors.red),
-              child: Text(_enviando ? 'Excluindo…' : 'Excluir minha conta'),
+              child: Text(_submitting ? 'Excluindo…' : 'Excluir minha conta'),
             ),
           ],
         ),

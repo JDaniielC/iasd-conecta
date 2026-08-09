@@ -25,9 +25,9 @@ class ActionRepository {
     return Action.fromMap(row);
   }
 
-  Future<void> createAction(NewAction acao) async {
+  Future<void> createAction(NewAction action) async {
     final uid = _client.auth.currentUser!.id;
-    await _client.from('acoes').insert(acao.toInsertMap(creatorId: uid));
+    await _client.from('acoes').insert(action.toInsertMap(creatorId: uid));
   }
 
   Future<void> cancelAction(String id) async {
@@ -64,14 +64,14 @@ class ActionRepository {
         .eq('acao_id', acaoId)
         .order('created_at');
 
-    final resultados = await Future.wait(rows.map((row) async {
-      final perfil = await _fetchPerfilPublico(row['usuario_id'] as String);
+    final results = await Future.wait(rows.map((row) async {
+      final profile = await _fetchPerfilPublico(row['usuario_id'] as String);
       final status = row['status'] == 'confirmado'
-          ? AttendanceStatus.confirmado
-          : AttendanceStatus.fila;
-      return AttendanceWithProfile(perfil: perfil, status: status);
+          ? AttendanceStatus.confirmed
+          : AttendanceStatus.waitlist;
+      return AttendanceWithProfile(profile: profile, status: status);
     }));
-    return resultados;
+    return results;
   }
 
   Future<PublicProfile> _fetchPerfilPublico(String id) async {

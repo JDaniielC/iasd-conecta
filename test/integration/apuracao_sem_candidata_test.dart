@@ -10,13 +10,13 @@ void main() {
   late Object groupId;
   late Object votingRoundId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
+  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
     );
     try {
-      await acao();
+      await action();
     } finally {
       await conn.execute('reset role');
     }
@@ -35,7 +35,7 @@ void main() {
     );
     groupId = rows.single.toColumnMap()['id']!;
 
-    late Object rodada;
+    late Object votingRound;
     await comoUsuario(_uidDono, () async {
       final rodadaRows = await conn.execute(
         Sql.named(
@@ -44,9 +44,9 @@ void main() {
         ),
         parameters: {'grupo': groupId, 'dono': _uidDono},
       );
-      rodada = rodadaRows.single.toColumnMap()['id']!;
+      votingRound = rodadaRows.single.toColumnMap()['id']!;
     });
-    votingRoundId = rodada;
+    votingRoundId = votingRound;
   });
 
   tearDownAll(() async {

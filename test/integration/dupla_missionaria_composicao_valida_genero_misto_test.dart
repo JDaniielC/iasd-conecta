@@ -6,11 +6,11 @@ import 'db_test_helper.dart';
 const _uidHomem = '60000000-0000-0000-0000-000000000040';
 const _uidMulher = '60000000-0000-0000-0000-000000000041';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() acao) async {
+Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
-    await acao();
+    await action();
   } finally {
     await conn.execute('reset role');
     await conn.execute('reset request.jwt.claims');

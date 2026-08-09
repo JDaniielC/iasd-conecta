@@ -4,38 +4,38 @@ import 'package:iasd_conecta/features/group/domain/group.dart';
 void main() {
   group('NovoGrupo.prontoParaEnviar', () {
     test('falso sem nome', () {
-      const grupo = NewGroup(name: '  ', category: 'Jovem');
-      expect(grupo.isReadyToSubmit, isFalse);
+      const group = NewGroup(name: '  ', category: 'Jovem');
+      expect(group.isReadyToSubmit, isFalse);
     });
 
     test('falso sem categoria', () {
-      const grupo = NewGroup(name: 'Grupo', category: '');
-      expect(grupo.isReadyToSubmit, isFalse);
+      const group = NewGroup(name: 'Grupo', category: '');
+      expect(group.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com nome e categoria preenchidos, sem horário/local', () {
-      const grupo = NewGroup(name: 'Grupo', category: 'Jovem');
-      expect(grupo.isReadyToSubmit, isTrue);
+      const group = NewGroup(name: 'Grupo', category: 'Jovem');
+      expect(group.isReadyToSubmit, isTrue);
     });
 
     test('detalhes opcional não afeta prontoParaEnviar', () {
-      const grupo = NewGroup(
+      const group = NewGroup(
         name: 'Grupo',
         category: 'Jovem',
         details: null,
       );
-      expect(grupo.isReadyToSubmit, isTrue);
+      expect(group.isReadyToSubmit, isTrue);
     });
   });
 
   group('NovoGrupo.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui dono/igreja', () {
-      const grupo = NewGroup(
+      const group = NewGroup(
         name: ' Grupo ',
         category: 'Jovem',
         details: '   ',
       );
-      final map = grupo.toInsertMap(ownerId: 'abc', churchId: 'igreja-1');
+      final map = group.toInsertMap(ownerId: 'abc', churchId: 'igreja-1');
       expect(map['nome'], 'Grupo');
       expect(map['horario'], isNull);
       expect(map['local'], isNull);
@@ -46,7 +46,7 @@ void main() {
   });
 
   group('Grupo.souDono', () {
-    final grupo = Group(
+    final group = Group(
       id: 'g1',
       name: 'Grupo',
       category: 'Jovem',
@@ -55,15 +55,15 @@ void main() {
     );
 
     test('verdadeiro quando o id bate com dono_id', () {
-      expect(grupo.isOwner('dono-1'), isTrue);
+      expect(group.isOwner('dono-1'), isTrue);
     });
 
     test('falso pra outro usuário', () {
-      expect(grupo.isOwner('outro'), isFalse);
+      expect(group.isOwner('outro'), isFalse);
     });
 
     test('falso quando não há usuário atual', () {
-      expect(grupo.isOwner(null), isFalse);
+      expect(group.isOwner(null), isFalse);
     });
   });
 }

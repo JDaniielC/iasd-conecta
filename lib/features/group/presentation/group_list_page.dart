@@ -14,7 +14,7 @@ import '../group_providers.dart';
 
 enum _GroupSortOrder { maisRecentes, name, category }
 
-const _todasAsIgrejas = '__todas__';
+const _allChurches = '__todas__';
 
 /// Home do app: lista de Grupos, visível a Visitante e Usuário igualmente
 /// (FR-005/FR-008 — sem exigir Perfil pra essa visualização). Agrupada por
@@ -28,8 +28,8 @@ class GroupListPage extends ConsumerStatefulWidget {
 }
 
 class _GroupListPageState extends ConsumerState<GroupListPage> {
-  String _filtroIgrejaId = _todasAsIgrejas;
-  _GroupSortOrder _ordenacao = _GroupSortOrder.maisRecentes;
+  String _filtroIgrejaId = _allChurches;
+  _GroupSortOrder _sortOrder = _GroupSortOrder.maisRecentes;
 
   @override
   Widget build(BuildContext context) {
@@ -99,27 +99,27 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
           const MissingProfileBanner(),
           _FilterBar(
             churchesAsync: churchesAsync,
-            filtroIgrejaId: _filtroIgrejaId,
-            ordenacao: _ordenacao,
+            churchFilterId: _filtroIgrejaId,
+            sortOrder: _sortOrder,
             onFiltroIgrejaChanged: (v) => setState(() => _filtroIgrejaId = v),
-            onOrdenacaoChanged: (v) => setState(() => _ordenacao = v),
+            onSortOrderChanged: (v) => setState(() => _sortOrder = v),
           ),
           Expanded(
             child: gruposAsync.when(
-              data: (grupos) {
-                final filtrados = _filtroIgrejaId == _todasAsIgrejas
-                    ? grupos
-                    : grupos.where((g) => g.churchId == _filtroIgrejaId).toList();
-                if (filtrados.isEmpty) {
+              data: (groups) {
+                final filtered = _filtroIgrejaId == _allChurches
+                    ? groups
+                    : groups.where((g) => g.churchId == _filtroIgrejaId).toList();
+                if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhum Grupo ainda.'));
                 }
-                final ordenados = [...filtrados]..sort(_comparador(_ordenacao));
-                final secoes = groupByChurch(ordenados, (g) => g.churchId, nameByChurchId);
+                final sorted = [...filtered]..sort(_comparador(_sortOrder));
+                final sections = groupByChurch(sorted, (g) => g.churchId, nameByChurchId);
                 return ListView(
                   children: [
-                    for (final secao in secoes) ...[
-                      _SectionHeader(name: secao.nomeIgreja),
-                      for (final grupo in secao.itens) _GroupCard(grupo: grupo),
+                    for (final section in sections) ...[
+                      _SectionHeader(name: section.nomeIgreja),
+                      for (final group in section.items) _GroupCard(group: group),
                     ],
                   ],
                 );
@@ -133,8 +133,8 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
     );
   }
 
-  int Function(Group, Group) _comparador(_GroupSortOrder ordenacao) {
-    switch (ordenacao) {
+  int Function(Group, Group) _comparador(_GroupSortOrder sortOrder) {
+    switch (sortOrder) {
       case _GroupSortOrder.maisRecentes:
         return (a, b) => b.createdAt.compareTo(a.createdAt);
       case _GroupSortOrder.name:
@@ -148,17 +148,17 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
 class _FilterBar extends StatelessWidget {
   const _FilterBar({
     required this.churchesAsync,
-    required this.filtroIgrejaId,
-    required this.ordenacao,
+    required this.churchFilterId,
+    required this.sortOrder,
     required this.onFiltroIgrejaChanged,
-    required this.onOrdenacaoChanged,
+    required this.onSortOrderChanged,
   });
 
   final AsyncValue<List<Church>> churchesAsync;
-  final String filtroIgrejaId;
-  final _GroupSortOrder ordenacao;
+  final String churchFilterId;
+  final _GroupSortOrder sortOrder;
   final ValueChanged<String> onFiltroIgrejaChanged;
-  final ValueChanged<_GroupSortOrder> onOrdenacaoChanged;
+  final ValueChanged<_GroupSortOrder> onSortOrderChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -169,11 +169,11 @@ class _FilterBar extends StatelessWidget {
         children: [
           Expanded(
             child: DropdownButtonFormField<String>(
-              initialValue: filtroIgrejaId,
+              initialValue: churchFilterId,
               isDense: true,
               decoration: const InputDecoration(labelText: 'Igreja'),
               items: [
-                const DropdownMenuItem(value: _todasAsIgrejas, child: Text('Todas as Igrejas')),
+                const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
                 for (final c in churches) DropdownMenuItem(value: c.id, child: Text(c.name)),
               ],
               onChanged: (v) => v == null ? null : onFiltroIgrejaChanged(v),
@@ -182,7 +182,7 @@ class _FilterBar extends StatelessWidget {
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: DropdownButtonFormField<_GroupSortOrder>(
-              initialValue: ordenacao,
+              initialValue: sortOrder,
               isDense: true,
               decoration: const InputDecoration(labelText: 'Ordenar por'),
               items: const [
@@ -190,7 +190,7 @@ class _FilterBar extends StatelessWidget {
                 DropdownMenuItem(value: _GroupSortOrder.name, child: Text('Nome (A-Z)')),
                 DropdownMenuItem(value: _GroupSortOrder.category, child: Text('Categoria')),
               ],
-              onChanged: (v) => v == null ? null : onOrdenacaoChanged(v),
+              onChanged: (v) => v == null ? null : onSortOrderChanged(v),
             ),
           ),
         ],
@@ -226,18 +226,18 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.grupo});
+  const _GroupCard({required this.group});
 
-  final Group grupo;
+  final Group group;
 
   @override
   Widget build(BuildContext context) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
       child: ListTile(
-        title: Text(grupo.name),
-        subtitle: Text(grupo.category),
-        onTap: () => context.push('/grupos/${grupo.id}'),
+        title: Text(group.name),
+        subtitle: Text(group.category),
+        onTap: () => context.push('/grupos/${group.id}'),
       ),
     );
   }

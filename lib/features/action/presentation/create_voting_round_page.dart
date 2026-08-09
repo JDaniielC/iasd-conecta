@@ -19,49 +19,49 @@ class CreateVotingRoundPage extends ConsumerStatefulWidget {
 }
 
 class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
-  DateTime? _prazo;
-  bool _enviando = false;
+  DateTime? _deadline;
+  bool _submitting = false;
   String? _erro;
 
   Future<void> _escolherPrazo() async {
-    final agora = DateTime.now();
+    final now = DateTime.now();
     final data = await showDatePicker(
       context: context,
-      initialDate: agora.add(const Duration(days: 1)),
-      firstDate: agora,
-      lastDate: agora.add(const Duration(days: 365)),
+      initialDate: now.add(const Duration(days: 1)),
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 365)),
     );
     if (data == null || !mounted) return;
     final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (hora == null) return;
     setState(() {
-      _prazo = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _deadline = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
     });
   }
 
   Future<void> _abrir() async {
-    final deadline = _prazo;
+    final deadline = _deadline;
     if (deadline == null) {
       setState(() => _erro = 'Escolha um prazo.');
       return;
     }
-    final rodada = NewVotingRound(deadline: deadline);
-    if (!rodada.isReadyToSubmit) {
+    final votingRound = NewVotingRound(deadline: deadline);
+    if (!votingRound.isReadyToSubmit) {
       setState(() => _erro = 'O prazo precisa ser no futuro.');
       return;
     }
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
-      await ref.read(votingRoundRepositoryProvider).openRound(rodada, groupId: widget.groupId);
+      await ref.read(votingRoundRepositoryProvider).openRound(votingRound, groupId: widget.groupId);
       ref.invalidate(groupVotingRoundsProvider(widget.groupId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra abrir a Rodada agora. Você participa deste Grupo?');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -79,9 +79,9 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
             OutlinedButton(
               onPressed: _escolherPrazo,
               child: Text(
-                _prazo == null
+                _deadline == null
                     ? 'Escolher prazo'
-                    : DateFormat('dd/MM/yyyy HH:mm').format(_prazo!),
+                    : DateFormat('dd/MM/yyyy HH:mm').format(_deadline!),
               ),
             ),
             if (_erro != null) ...[
@@ -90,8 +90,8 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
             ],
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
-              onPressed: _enviando ? null : _abrir,
-              child: _enviando
+              onPressed: _submitting ? null : _abrir,
+              child: _submitting
                   ? const SizedBox(
                       height: 20,
                       width: 20,

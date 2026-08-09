@@ -9,12 +9,12 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Administrador) são features futuras — isto só define a checagem que
 /// essas features vão reusar, pra o requisito já existir desde já.
 abstract final class AccountGuard {
-  static bool _temConta(User? usuario) {
-    return usuario != null && usuario.isAnonymous == false;
+  static bool _temConta(User? user) {
+    return user != null && user.isAnonymous == false;
   }
 
   /// Líder/Diretor é sempre autodeclaração (o próprio Usuário se propõe).
-  static bool canDeclareLeadership(User? usuario) => _temConta(usuario);
+  static bool canDeclareLeadership(User? user) => _temConta(user);
 
   /// Administrador do distrito nunca é autodeclaração — só um Administrador
   /// existente promove outro Usuário com Conta (ver CONTEXT.md).

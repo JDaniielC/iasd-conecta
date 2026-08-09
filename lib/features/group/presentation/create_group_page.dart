@@ -17,48 +17,48 @@ class CreateGroupPage extends ConsumerStatefulWidget {
 
 class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
   final _formKey = GlobalKey<FormState>();
-  final _nomeController = TextEditingController();
+  final _nameController = TextEditingController();
   final _categoriaController = TextEditingController();
   final _categoriaFocusNode = FocusNode();
-  final _detalhesController = TextEditingController();
-  bool _enviando = false;
+  final _detailsController = TextEditingController();
+  bool _submitting = false;
   String? _erro;
 
   @override
   void dispose() {
-    _nomeController.dispose();
+    _nameController.dispose();
     _categoriaController.dispose();
     _categoriaFocusNode.dispose();
-    _detalhesController.dispose();
+    _detailsController.dispose();
     super.dispose();
   }
 
-  NewGroup get _grupoAtual {
+  NewGroup get _currentGroup {
     return NewGroup(
-      name: _nomeController.text,
+      name: _nameController.text,
       category: _categoriaController.text,
-      details: _detalhesController.text,
+      details: _detailsController.text,
     );
   }
 
-  Future<void> _criar() async {
-    final grupo = _grupoAtual;
-    if (_formKey.currentState?.validate() != true || !grupo.isReadyToSubmit) {
+  Future<void> _submit() async {
+    final group = _currentGroup;
+    if (_formKey.currentState?.validate() != true || !group.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome e Categoria.');
       return;
     }
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
-      await ref.read(groupRepositoryProvider).createGroup(grupo);
+      await ref.read(groupRepositoryProvider).createGroup(group);
       ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra criar o Grupo agora. Tente de novo.');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -76,20 +76,20 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               TextFormField(
-                controller: _nomeController,
+                controller: _nameController,
                 decoration: const InputDecoration(labelText: 'Nome do Grupo'),
                 validator: (v) => (v == null || v.trim().isEmpty) ? 'Informe um nome' : null,
               ),
               const SizedBox(height: AppSpacing.md),
               categoriasAsync.when(
-                data: (categorias) => RawAutocomplete<String>(
+                data: (categories) => RawAutocomplete<String>(
                   textEditingController: _categoriaController,
                   focusNode: _categoriaFocusNode,
                   optionsBuilder: (value) {
                     if (value.text.trim().isEmpty) {
-                      return categorias.map((c) => c.name);
+                      return categories.map((c) => c.name);
                     }
-                    return categorias
+                    return categories
                         .map((c) => c.name)
                         .where((name) => name.toLowerCase().contains(value.text.toLowerCase()));
                   },
@@ -138,7 +138,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _detalhesController,
+                controller: _detailsController,
                 decoration: const InputDecoration(labelText: 'Detalhes (opcional)'),
                 maxLines: 3,
               ),
@@ -148,8 +148,8 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _enviando ? null : _criar,
-                child: _enviando
+                onPressed: _submitting ? null : _submit,
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

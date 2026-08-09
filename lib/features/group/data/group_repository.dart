@@ -30,16 +30,16 @@ class GroupRepository {
     return rows.map(GroupCategory.fromMap).toList();
   }
 
-  Future<void> createGroup(NewGroup grupo) async {
+  Future<void> createGroup(NewGroup group) async {
     final uid = _client.auth.currentUser!.id;
-    final perfil = await _client
+    final profile = await _client
         .from('perfis')
         .select('igreja_id')
         .eq('id', uid)
         .single();
     await _client
         .from('grupos')
-        .insert(grupo.toInsertMap(ownerId: uid, churchId: perfil['igreja_id'] as String?));
+        .insert(group.toInsertMap(ownerId: uid, churchId: profile['igreja_id'] as String?));
   }
 
   Future<void> updateGroup(
@@ -67,8 +67,8 @@ class GroupRepository {
 
   Future<List<PublicProfile>> fetchParticipantes(String groupId) async {
     final ids = await fetchParticipanteIds(groupId);
-    final perfis = await Future.wait(ids.map((id) => _fetchPerfilPublico(id)));
-    return perfis;
+    final profiles = await Future.wait(ids.map((id) => _fetchPerfilPublico(id)));
+    return profiles;
   }
 
   Future<PublicProfile> _fetchPerfilPublico(String id) async {

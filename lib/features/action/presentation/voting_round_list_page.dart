@@ -15,7 +15,7 @@ class VotingRoundListPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rodadasAsync = ref.watch(groupVotingRoundsProvider(groupId));
+    final votingRoundsAsync = ref.watch(groupVotingRoundsProvider(groupId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rodadas de Votação')),
@@ -27,22 +27,22 @@ class VotingRoundListPage extends ConsumerWidget {
         },
         child: const Icon(Icons.add),
       ),
-      body: rodadasAsync.when(
-        data: (rodadas) {
-          if (rodadas.isEmpty) {
+      body: votingRoundsAsync.when(
+        data: (votingRounds) {
+          if (votingRounds.isEmpty) {
             return const Center(child: Text('Nenhuma Rodada ainda.'));
           }
           return ListView.builder(
-            itemCount: rodadas.length,
+            itemCount: votingRounds.length,
             itemBuilder: (context, index) {
-              final rodada = rodadas[index];
+              final votingRound = votingRounds[index];
               return Card(
                 child: ListTile(
-                  title: Text(rodada.isOpen ? 'Aberta' : 'Fechada'),
+                  title: Text(votingRound.isOpen ? 'Aberta' : 'Fechada'),
                   subtitle: Text(
-                    'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}',
+                    'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(votingRound.deadline)}',
                   ),
-                  onTap: () => context.push('/rodadas/${rodada.id}'),
+                  onTap: () => context.push('/rodadas/${votingRound.id}'),
                 ),
               );
             },

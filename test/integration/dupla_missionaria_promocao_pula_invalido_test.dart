@@ -8,11 +8,11 @@ const _uidMulherB = '60000000-0000-0000-0000-000000000071';
 const _uidHomemC = '60000000-0000-0000-0000-000000000072';
 const _uidMulherD = '60000000-0000-0000-0000-000000000073';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() acao) async {
+Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
-    await acao();
+    await action();
   } finally {
     await conn.execute('reset role');
     await conn.execute('reset request.jwt.claims');

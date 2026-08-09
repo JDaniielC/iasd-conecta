@@ -14,13 +14,13 @@ void main() {
   late Object candidataLider;
   late Object candidataPerdedora;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
+  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
     );
     try {
-      await acao();
+      await action();
     } finally {
       await conn.execute('reset role');
     }
@@ -48,7 +48,7 @@ void main() {
       parameters: {'grupo': groupId, 'a': _uidVotanteA, 'b': _uidVotanteB},
     );
 
-    late Object rodada;
+    late Object votingRound;
     late Object lider;
     late Object perdedora;
     await comoUsuario(_uidDono, () async {
@@ -59,14 +59,14 @@ void main() {
         ),
         parameters: {'grupo': groupId, 'dono': _uidDono},
       );
-      rodada = rows.single.toColumnMap()['id']!;
+      votingRound = rows.single.toColumnMap()['id']!;
 
       final rowsLider = await conn.execute(
         Sql.named(
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Líder', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': rodada},
+        parameters: {'dono': _uidDono, 'rodada': votingRound},
       );
       lider = rowsLider.single.toColumnMap()['id']!;
 
@@ -75,11 +75,11 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Perdedora', now() + interval '6 days', 'Praça', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': rodada},
+        parameters: {'dono': _uidDono, 'rodada': votingRound},
       );
       perdedora = rowsPerdedora.single.toColumnMap()['id']!;
     });
-    votingRoundId = rodada;
+    votingRoundId = votingRound;
     candidataLider = lider;
     candidataPerdedora = perdedora;
 

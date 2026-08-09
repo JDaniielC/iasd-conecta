@@ -21,7 +21,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
-  bool _enviando = false;
+  bool _submitting = false;
   String? _erro;
 
   @override
@@ -31,10 +31,10 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
     super.dispose();
   }
 
-  Future<void> _confirmar() async {
+  Future<void> _confirm() async {
     if (_formKey.currentState?.validate() != true) return;
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
@@ -48,7 +48,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
       // (mesmo cuidado do login_page.dart, FR-014 da feature 001).
       setState(() => _erro = 'Não deu pra virar Conta com esses dados. Tente de novo.');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -91,8 +91,8 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _enviando ? null : _confirmar,
-                child: _enviando
+                onPressed: _submitting ? null : _confirm,
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

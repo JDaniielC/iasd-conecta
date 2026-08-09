@@ -19,7 +19,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
-  bool _enviando = false;
+  bool _submitting = false;
   String? _erro;
 
   @override
@@ -29,10 +29,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     super.dispose();
   }
 
-  Future<void> _entrar() async {
+  Future<void> _signIn() async {
     if (_formKey.currentState?.validate() != true) return;
     setState(() {
-      _enviando = true;
+      _submitting = true;
       _erro = null;
     });
     try {
@@ -45,7 +45,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
       // FR-014: mensagem genérica, nunca revela qual campo errou.
       setState(() => _erro = 'Credenciais inválidas.');
     } finally {
-      if (mounted) setState(() => _enviando = false);
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -77,8 +77,8 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _enviando ? null : _entrar,
-                child: _enviando
+                onPressed: _submitting ? null : _signIn,
+                child: _submitting
                     ? const SizedBox(
                         height: 20,
                         width: 20,

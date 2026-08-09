@@ -74,10 +74,10 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             categoriasAsync.when(
-              data: (categorias) => DropdownButtonFormField<String>(
+              data: (categories) => DropdownButtonFormField<String>(
                 initialValue: _categoriaId,
                 decoration: const InputDecoration(labelText: 'Categoria'),
-                items: categorias
+                items: categories
                     .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _categoriaId = v),
@@ -108,9 +108,9 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
             const SizedBox(height: AppSpacing.lg),
             Expanded(
               child: categoriasAsync.when(
-                data: (categorias) => suggestionsAsync.when(
+                data: (categories) => suggestionsAsync.when(
                   data: (suggestions) {
-                    final categoriaNome = {for (final c in categorias) c.id: c.name};
+                    final categoriaNome = {for (final c in categories) c.id: c.name};
                     return ListView(
                       children: suggestions
                           .map(

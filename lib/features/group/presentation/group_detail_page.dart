@@ -15,18 +15,18 @@ class GroupDetailPage extends ConsumerWidget {
 
   final String groupId;
 
-  void _mostrarErro(BuildContext context, String mensagem) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
+  void _showError(BuildContext context, String message) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _participar(BuildContext context, WidgetRef ref) async {
+  Future<void> _join(BuildContext context, WidgetRef ref) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(groupRepositoryProvider).join(groupId);
       ref.invalidate(membersProvider(groupId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(context, 'Não deu pra participar agora. Tente de novo.');
+      _showError(context, 'Não deu pra participar agora. Tente de novo.');
     }
   }
 
@@ -36,7 +36,7 @@ class GroupDetailPage extends ConsumerWidget {
       ref.invalidate(membersProvider(groupId));
     } catch (_) {
       if (!context.mounted) return;
-      _mostrarErro(
+      _showError(
         context,
         'Não deu pra sair do Grupo. Se você é o Dono, transfira a posse antes.',
       );
@@ -53,8 +53,8 @@ class GroupDetailPage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('Grupo')),
       body: grupoAsync.when(
-        data: (grupo) {
-          final isOwner = grupo.isOwner(uid);
+        data: (group) {
+          final isOwner = group.isOwner(uid);
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -63,7 +63,7 @@ class GroupDetailPage extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(grupo.name, style: Theme.of(context).textTheme.headlineMedium),
+                      child: Text(group.name, style: Theme.of(context).textTheme.headlineMedium),
                     ),
                     IconButton(
                       icon: const Icon(Icons.how_to_vote_outlined),
@@ -83,21 +83,21 @@ class GroupDetailPage extends ConsumerWidget {
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(grupo.category),
-                if (grupo.schedule != null || grupo.local != null) ...[
+                Text(group.category),
+                if (group.schedule != null || group.local != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  if (grupo.schedule != null) Text('Horário: ${grupo.schedule}'),
-                  if (grupo.local != null) Text('Local: ${grupo.local}'),
+                  if (group.schedule != null) Text('Horário: ${group.schedule}'),
+                  if (group.local != null) Text('Local: ${group.local}'),
                 ],
-                if (grupo.details != null) ...[
+                if (group.details != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Text(grupo.details!),
+                  Text(group.details!),
                 ],
                 const SizedBox(height: AppSpacing.md),
                 _LeadersSection(groupId: groupId),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: participa ? () => _sair(context, ref) : () => _participar(context, ref),
+                  onPressed: participa ? () => _sair(context, ref) : () => _join(context, ref),
                   child: Text(participa ? 'Sair do Grupo' : 'Participar'),
                 ),
                 const SizedBox(height: AppSpacing.lg),

@@ -37,27 +37,27 @@ void main() {
   });
 
   group('periodoDaAcao', () {
-    final agora = DateTime(2026, 7, 22, 10, 0); // quarta-feira
+    final now = DateTime(2026, 7, 22, 10, 0); // quarta-feira
 
     test('Sábado tem prioridade mesmo caindo dentro de "essa semana"', () {
-      final sabado = DateTime(2026, 7, 25, 10, 0);
-      expect(actionPeriod(sabado, agora), ActionPeriod.sabado);
+      final sabbath = DateTime(2026, 7, 25, 10, 0);
+      expect(actionPeriod(sabbath, now), ActionPeriod.sabbath);
     });
 
     test('mesmo dia de agora, fora da janela de Sábado, é Hoje', () {
-      expect(actionPeriod(DateTime(2026, 7, 22, 20, 0), agora), ActionPeriod.hoje);
+      expect(actionPeriod(DateTime(2026, 7, 22, 20, 0), now), ActionPeriod.hoje);
     });
 
     test('dentro da semana corrente (domingo-sábado), mas não hoje, é Essa semana', () {
-      expect(actionPeriod(DateTime(2026, 7, 23, 9, 0), agora), ActionPeriod.essaSemana);
+      expect(actionPeriod(DateTime(2026, 7, 23, 9, 0), now), ActionPeriod.essaSemana);
     });
 
     test('fora da semana corrente é Outras datas', () {
-      expect(actionPeriod(DateTime(2026, 8, 5, 9, 0), agora), ActionPeriod.outras);
+      expect(actionPeriod(DateTime(2026, 8, 5, 9, 0), now), ActionPeriod.outras);
     });
 
     test('no passado, fora da semana corrente, também é Outras datas', () {
-      expect(actionPeriod(DateTime(2026, 6, 1, 9, 0), agora), ActionPeriod.outras);
+      expect(actionPeriod(DateTime(2026, 6, 1, 9, 0), now), ActionPeriod.outras);
     });
   });
 }

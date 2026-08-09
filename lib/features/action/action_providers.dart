@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
 import '../group/group_providers.dart';
-import 'data/acao_repository.dart';
-import 'domain/acao.dart';
+import 'data/action_repository.dart';
+import 'domain/action.dart';
 
 final acaoRepositoryProvider = Provider<AcaoRepository>((ref) {
   return AcaoRepository(ref.watch(supabaseClientProvider));

@@ -8,8 +8,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../perfil/domain/church.dart';
 import '../../perfil/domain/perfil_guard.dart';
 import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
-import '../acao_providers.dart';
-import '../domain/acao.dart';
+import '../action_providers.dart';
+import '../domain/action.dart';
 
 enum _OrdenacaoAcao { data, maisRecentes, nome }
 

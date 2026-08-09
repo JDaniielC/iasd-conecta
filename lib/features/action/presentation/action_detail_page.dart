@@ -8,8 +8,8 @@ import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
 import '../../group/group_providers.dart';
 import '../../perfil/domain/perfil_guard.dart';
-import '../acao_providers.dart';
-import '../domain/acao.dart';
+import '../action_providers.dart';
+import '../domain/action.dart';
 
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
 /// (FR-010). Confirmar/desistir exige Perfil (FR-003/FR-004/FR-011).

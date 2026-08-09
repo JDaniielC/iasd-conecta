@@ -5,8 +5,8 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../suggested_action/suggested_action_providers.dart';
-import '../domain/acao.dart';
-import '../rodada_providers.dart';
+import '../domain/action.dart';
+import '../voting_round_providers.dart';
 
 /// Propor Ação candidata numa Rodada de votação (User Story 1) — mesmos
 /// campos de uma Ação avulsa; `grupo_id` é derivado da Rodada no banco.

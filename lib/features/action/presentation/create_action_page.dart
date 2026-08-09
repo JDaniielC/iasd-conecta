@@ -6,8 +6,8 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../suggested_action/suggested_action_providers.dart';
 import '../../group/group_providers.dart';
-import '../acao_providers.dart';
-import '../domain/acao.dart';
+import '../action_providers.dart';
+import '../domain/action.dart';
 
 /// Criação de Ação avulsa (User Story 1). Já nasce confirmada, sem
 /// votação; o criador vira confirmado automaticamente (trigger no banco).

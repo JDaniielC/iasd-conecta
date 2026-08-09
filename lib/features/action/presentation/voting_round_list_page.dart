@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../perfil/domain/perfil_guard.dart';
-import '../rodada_providers.dart';
+import '../voting_round_providers.dart';
 
 /// Lista de Rodadas de votação de um Grupo — visível a Visitante e Usuário
 /// igualmente (FR-017).

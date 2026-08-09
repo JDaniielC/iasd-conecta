@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:iasd_conecta/features/acao/presentation/criar_acao_page.dart';
+import 'package:iasd_conecta/features/action/presentation/create_action_page.dart';
 import 'package:iasd_conecta/features/suggested_action/data/suggested_action_repository.dart';
 import 'package:iasd_conecta/features/suggested_action/domain/suggested_action.dart';
 import 'package:iasd_conecta/features/suggested_action/suggested_action_providers.dart';

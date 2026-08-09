@@ -4,8 +4,8 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../domain/rodada.dart';
-import '../rodada_providers.dart';
+import '../domain/voting_round.dart';
+import '../voting_round_providers.dart';
 
 /// Abertura de Rodada de votação (User Story 1) — só o prazo é informado;
 /// quem participa do Grupo já é garantido pelo trigger no banco.

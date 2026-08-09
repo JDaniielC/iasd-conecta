@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/core/providers.dart';
-import 'package:iasd_conecta/features/acao/acao_providers.dart';
-import 'package:iasd_conecta/features/acao/domain/acao.dart';
-import 'package:iasd_conecta/features/acao/presentation/lista_acoes_page.dart';
+import 'package:iasd_conecta/features/action/action_providers.dart';
+import 'package:iasd_conecta/features/action/domain/action.dart';
+import 'package:iasd_conecta/features/action/presentation/action_list_page.dart';
 import 'package:iasd_conecta/features/perfil/domain/church.dart';
 
 const _churches = [Church(id: 'igreja-1', name: 'Central')];

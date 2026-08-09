@@ -1,8 +1,8 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import '../domain/acao.dart';
-import '../domain/rodada.dart';
-import 'acao_repository.dart';
+import '../domain/action.dart';
+import '../domain/voting_round.dart';
+import 'action_repository.dart';
 
 /// Único ponto de acesso a `rodadas_votacao` e `votos`.
 ///

@@ -3,10 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:iasd_conecta/core/providers.dart';
-import 'package:iasd_conecta/features/acao/acao_providers.dart';
-import 'package:iasd_conecta/features/acao/data/acao_repository.dart';
-import 'package:iasd_conecta/features/acao/domain/acao.dart';
-import 'package:iasd_conecta/features/acao/presentation/detalhe_acao_page.dart';
+import 'package:iasd_conecta/features/action/action_providers.dart';
+import 'package:iasd_conecta/features/action/data/action_repository.dart';
+import 'package:iasd_conecta/features/action/domain/action.dart';
+import 'package:iasd_conecta/features/action/presentation/action_detail_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockAcaoRepository extends Mock implements AcaoRepository {}

@@ -1,10 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/providers.dart';
-import 'acao_providers.dart';
-import 'data/rodada_repository.dart';
-import 'domain/acao.dart';
-import 'domain/rodada.dart';
+import 'action_providers.dart';
+import 'data/voting_round_repository.dart';
+import 'domain/action.dart';
+import 'domain/voting_round.dart';
 
 final rodadaRepositoryProvider = Provider<RodadaRepository>((ref) {
   return RodadaRepository(

@@ -5,7 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
 import '../../perfil/domain/perfil_guard.dart';
-import '../rodada_providers.dart';
+import '../voting_round_providers.dart';
 
 /// Detalhes de uma Rodada de votação: candidatas + votar (User Story 2) +
 /// encerrar antes do prazo, só Dono do Grupo (User Story 3).

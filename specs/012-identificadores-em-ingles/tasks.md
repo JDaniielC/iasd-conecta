@@ -217,7 +217,7 @@ Implementado em `012-identificadores-em-ingles`, 10 commits.
 | `flutter analyze` | 0 issues | 0 issues |
 | `flutter test test/unit test/widget` | **100 passando** | **100 passando** |
 | `flutter build web` | ✅ (após `flutter clean`) | ✅ |
-| `dart test test/integration` | — | **não rodou** (ver lacuna) |
+| `dart test test/integration` | — | **124 passando** (rodado depois; ver abaixo) |
 | Arquivos `.dart` em `lib/` | 57 | 57 |
 | Arquivos com nome em português | **38** | **0** |
 | Pastas de módulo em português | 4 | **0** |
@@ -246,7 +246,7 @@ de `research.md` D-001 funcionou exatamente como previsto.
 prefixar todo widget dos 3 arquivos afetados. O conceito de domínio não foi
 renomeado, que é o que a regra protege.
 
-### ⚠️ Lacuna: `dart test test/integration` não rodou
+### ~~Lacuna~~ FECHADA: `dart test test/integration`
 
 `supabase start` falha com `no space left on device` no Docker desta máquina. Os
 testes de integração **não foram executados**, então a não-regressão das regras do
@@ -280,3 +280,15 @@ e `_periodOrder` (casa com "periodo" por acidente de caixa).
 **Lição registrada porque vai acontecer de novo**: a verificação de uma refatoração
 vale o que vale a busca que a sustenta. Um regex frouxo produz um "0" que parece
 prova e não é.
+
+
+### Lacuna fechada — 2026-08-09
+
+`supabase start` voltou a subir depois que o espaço do Docker foi liberado, e
+`dart test test/integration` rodou: **124 testes, todos passando**.
+
+A não-regressão das regras do Princípio IV está verificada por execução, não só
+pelo analisador: fila de espera, apuração, desempate, descarte de candidatas,
+revogação de voto, composição de Dupla Missionária e exclusão de conta. Nenhum
+teste precisou de edição de asserção — só dos símbolos renomeados, que é a
+definição de refatoração.

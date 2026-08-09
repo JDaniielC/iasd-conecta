@@ -7,7 +7,7 @@ import 'package:iasd_conecta/features/profile/presentation/delete_account_page.d
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockPerfilRepository extends Mock implements PerfilRepository {}
+class MockPerfilRepository extends Mock implements ProfileRepository {}
 
 void main() {
   late MockPerfilRepository repo;
@@ -17,7 +17,7 @@ void main() {
   Future<void> abrir(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: [perfilRepositoryProvider.overrideWithValue(repo)],
+        overrides: [profileRepositoryProvider.overrideWithValue(repo)],
         child: const MaterialApp(home: DeleteAccountPage()),
       ),
     );

@@ -11,7 +11,7 @@ import 'package:mocktail/mocktail.dart';
 
 class MockDistrictAdminRepository extends Mock implements DistrictAdminRepository {}
 
-class MockPerfilRepository extends Mock implements PerfilRepository {}
+class MockPerfilRepository extends Mock implements ProfileRepository {}
 
 final _churches = [
   const Church(id: 'c1', name: 'Igreja Ativa'),
@@ -28,7 +28,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            perfilRepositoryProvider.overrideWithValue(perfilRepo),
+            profileRepositoryProvider.overrideWithValue(perfilRepo),
             districtAdminRepositoryProvider.overrideWithValue(MockDistrictAdminRepository()),
           ],
           child: const MaterialApp(home: ManageChurchesPage()),

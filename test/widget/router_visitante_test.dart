@@ -19,12 +19,12 @@ void main() {
       final grupoRepo = MockGrupoRepository();
       when(() => grupoRepo.fetchGroups()).thenAnswer((_) async => <Group>[]);
       final authRepo = MockAuthRepository();
-      when(() => authRepo.temConta).thenReturn(false);
+      when(() => authRepo.hasAccount).thenReturn(false);
 
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            hasPerfilProvider.overrideWith((ref) async => false),
+            hasProfileProvider.overrideWith((ref) async => false),
             groupRepositoryProvider.overrideWithValue(grupoRepo),
             authRepositoryProvider.overrideWithValue(authRepo),
           ],

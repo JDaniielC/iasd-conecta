@@ -8,7 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// Os fluxos em si (autodeclaração de Líder/Diretor, promoção a
 /// Administrador) são features futuras — isto só define a checagem que
 /// essas features vão reusar, pra o requisito já existir desde já.
-abstract final class ContaGuard {
+abstract final class AccountGuard {
   static bool _temConta(User? usuario) {
     return usuario != null && usuario.isAnonymous == false;
   }

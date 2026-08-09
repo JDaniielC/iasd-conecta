@@ -32,7 +32,7 @@ import 'features/profile/presentation/upgrade_account_page.dart';
 /// muda (ex.: cadastro concluído, upgrade pra Conta).
 class _RouterRefresh extends ChangeNotifier {
   _RouterRefresh(Ref ref) {
-    ref.listen(hasPerfilProvider, (_, _) => notifyListeners());
+    ref.listen(hasProfileProvider, (_, _) => notifyListeners());
   }
 }
 
@@ -44,8 +44,8 @@ final goRouterProvider = Provider<GoRouter>((ref) {
     initialLocation: '/',
     refreshListenable: refresh,
     redirect: (context, state) {
-      final hasPerfil = ref.read(hasPerfilProvider).value;
-      if (hasPerfil == null) return null; // ainda carregando, fica onde está
+      final hasProfile = ref.read(hasProfileProvider).value;
+      if (hasProfile == null) return null; // ainda carregando, fica onde está
       // Visitante (sem Perfil) navega livremente por qualquer rota pública
       // (Home, lista/detalhe de Grupo — FR-008 da 001, FR-005 da 002).
       // Só ações concretas (Participar, Criar Grupo...) checam Perfil, via
@@ -54,7 +54,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // objetivo da tela estar cumprido, pra não deixar a pessoa "presa" nela
       // — nenhuma das duas navega sozinha, ambas só invalidam
       // `hasPerfilProvider` e esperam este redirect.
-      if (hasPerfil && state.matchedLocation == '/cadastro') return '/home';
+      if (hasProfile && state.matchedLocation == '/cadastro') return '/home';
       // /login sai por sessão deixar de ser anônima, não por ter Perfil:
       // quem entra numa Conta sem Perfil vira Visitante em /home (rota
       // pública), em vez de ficar preso na tela de entrar.
@@ -68,7 +68,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', redirect: (_, _) => '/home'),
       GoRoute(
         path: '/cadastro',
-        builder: (context, state) => const CadastroPerfilPage(),
+        builder: (context, state) => const ProfileSignupPage(),
       ),
       GoRoute(
         path: '/home',
@@ -76,7 +76,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/upgrade-conta',
-        builder: (context, state) => const UpgradeContaPage(),
+        builder: (context, state) => const UpgradeAccountPage(),
       ),
       GoRoute(
         path: '/delete-account',

@@ -22,10 +22,10 @@ final actionsWithChurchProvider = FutureProvider.autoDispose<List<ActionWithChur
   final grupos = await ref.watch(groupsProvider.future);
   final igrejaPorGrupo = {for (final g in grupos) g.id: g.igrejaId};
 
-  final perfilRepo = ref.watch(perfilRepositoryProvider);
+  final perfilRepo = ref.watch(profileRepositoryProvider);
   final criadoresSemGrupo =
       acoes.where((a) => a.grupoId == null).map((a) => a.creatorId).toSet();
-  final perfis = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPerfilPublico));
+  final perfis = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPublicProfile));
   final igrejaPorCriador = {for (final p in perfis) p.id: p.churchId};
 
   return acoes.map((acao) {

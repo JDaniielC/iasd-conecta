@@ -43,11 +43,11 @@ final _acoesComIgreja = [
   ),
 ];
 
-Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
+Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        hasPerfilProvider.overrideWith((ref) async => hasPerfil),
+        hasProfileProvider.overrideWith((ref) async => hasProfile),
         actionsWithChurchProvider.overrideWith((ref) async => _acoesComIgreja),
         churchesProvider.overrideWith((ref) async => _churches),
       ],
@@ -59,28 +59,28 @@ Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
 
 void main() {
   testWidgets('FR-010: lista de Ações aparece sem exigir Perfil', (tester) async {
-    await _pump(tester, hasPerfil: false);
+    await _pump(tester, hasProfile: false);
 
     expect(find.text('Acampamento'), findsOneWidget);
     expect(find.text('Criar Perfil'), findsOneWidget);
   });
 
   testWidgets('sem o banner de CTA quando já tem Perfil', (tester) async {
-    await _pump(tester, hasPerfil: true);
+    await _pump(tester, hasProfile: true);
 
     expect(find.text('Acampamento'), findsOneWidget);
     expect(find.text('Criar Perfil'), findsNothing);
   });
 
   testWidgets('agrupa as Ações por período, com Sábado em destaque', (tester) async {
-    await _pump(tester, hasPerfil: false);
+    await _pump(tester, hasProfile: false);
 
     expect(find.text('Sábado'), findsOneWidget);
     expect(find.text('Culto de Adoração'), findsOneWidget);
   });
 
   testWidgets('filtro "Só Sábado" esconde as demais Ações', (tester) async {
-    await _pump(tester, hasPerfil: false);
+    await _pump(tester, hasProfile: false);
 
     await tester.tap(find.widgetWithText(FilterChip, 'Só Sábado'));
     await tester.pumpAndSettle();

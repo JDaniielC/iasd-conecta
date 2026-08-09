@@ -28,8 +28,8 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
       _erro = null;
     });
     try {
-      await ref.read(perfilRepositoryProvider).deleteMyAccount();
-      ref.invalidate(hasPerfilProvider);
+      await ref.read(profileRepositoryProvider).deleteMyAccount();
+      ref.invalidate(hasProfileProvider);
     } catch (e) {
       setState(() => _erro = _mensagemDeErro(e));
     } finally {

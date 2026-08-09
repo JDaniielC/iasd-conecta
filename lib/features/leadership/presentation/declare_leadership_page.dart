@@ -25,7 +25,7 @@ class _DeclareLeadershipPageState extends ConsumerState<DeclareLeadershipPage> {
   String? _error;
 
   Future<void> _declare() async {
-    if (!ref.read(authRepositoryProvider).temConta) {
+    if (!ref.read(authRepositoryProvider).hasAccount) {
       context.push('/upgrade-conta');
       return;
     }

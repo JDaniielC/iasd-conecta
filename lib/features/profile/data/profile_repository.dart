@@ -9,12 +9,12 @@ import '../domain/profile.dart';
 /// (nunca `select` direto na tabela) — é a tabela base que tem RLS
 /// restringindo linhas ao dono, então um `select` direto de outro id sempre
 /// devolve vazio, por design (idade nunca exposta, ver FR-004).
-class PerfilRepository {
-  PerfilRepository(this._client);
+class ProfileRepository {
+  ProfileRepository(this._client);
 
   final SupabaseClient _client;
 
-  Future<bool> hasPerfil() async {
+  Future<bool> hasProfile() async {
     final uid = _client.auth.currentUser!.id;
     final row = await _client
         .from('perfis')
@@ -29,7 +29,7 @@ class PerfilRepository {
     return rows.map(Church.fromMap).toList();
   }
 
-  Future<void> criarPerfil(Profile perfil) async {
+  Future<void> createProfile(Profile perfil) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('perfis').insert(perfil.toInsertMap(id: uid));
   }
@@ -47,7 +47,7 @@ class PerfilRepository {
     await _client.auth.signOut();
   }
 
-  Future<PublicProfile> fetchPerfilPublico(String id) async {
+  Future<PublicProfile> fetchPublicProfile(String id) async {
     final rows = await _client.rpc('perfil_publico', params: {'p_id': id});
     final row = (rows as List).single as Map<String, dynamic>;
     return PublicProfile.fromMap(row);

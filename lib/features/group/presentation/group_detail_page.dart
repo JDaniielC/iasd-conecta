@@ -20,7 +20,7 @@ class GroupDetailPage extends ConsumerWidget {
   }
 
   Future<void> _participar(BuildContext context, WidgetRef ref) async {
-    if (!PerfilGuard.exigirPerfil(context, ref)) return;
+    if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(groupRepositoryProvider).join(grupoId);
       ref.invalidate(membersProvider(grupoId));
@@ -156,7 +156,7 @@ class _LeaderName extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final perfilAsync = ref.watch(perfilPublicoProvider(userId));
+    final perfilAsync = ref.watch(publicProfileProvider(userId));
     return Text(perfilAsync.value?.displayName ?? '...');
   }
 }

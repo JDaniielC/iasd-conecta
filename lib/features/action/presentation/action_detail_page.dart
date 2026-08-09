@@ -23,7 +23,7 @@ class ActionDetailPage extends ConsumerWidget {
   }
 
   Future<void> _confirmar(BuildContext context, WidgetRef ref) async {
-    if (!PerfilGuard.exigirPerfil(context, ref)) return;
+    if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(actionRepositoryProvider).confirmAttendance(acaoId);
       ref.invalidate(attendeesProvider(acaoId));

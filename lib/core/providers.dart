@@ -32,25 +32,25 @@ final isAnonymousProvider = Provider<bool?>((ref) {
   return ref.watch(supabaseClientProvider).auth.currentUser?.isAnonymous;
 });
 
-final perfilRepositoryProvider = Provider<PerfilRepository>((ref) {
-  return PerfilRepository(ref.watch(supabaseClientProvider));
+final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
+  return ProfileRepository(ref.watch(supabaseClientProvider));
 });
 
 /// Re-executa sempre que o estado de auth muda (ex.: upgrade pra Conta),
 /// pra manter o roteamento (T008) consistente com a sessão atual.
-final hasPerfilProvider = FutureProvider<bool>((ref) async {
+final hasProfileProvider = FutureProvider<bool>((ref) async {
   ref.watch(authStateChangesProvider);
-  return ref.watch(perfilRepositoryProvider).hasPerfil();
+  return ref.watch(profileRepositoryProvider).hasProfile();
 });
 
 final churchesProvider = FutureProvider<List<Church>>((ref) async {
-  return ref.watch(perfilRepositoryProvider).fetchChurches();
+  return ref.watch(profileRepositoryProvider).fetchChurches();
 });
 
 final authRepositoryProvider = Provider<AuthRepository>((ref) {
   return AuthRepository(ref.watch(supabaseClientProvider));
 });
 
-final perfilPublicoProvider = FutureProvider.autoDispose.family<PublicProfile, String>((ref, id) {
-  return ref.watch(perfilRepositoryProvider).fetchPerfilPublico(id);
+final publicProfileProvider = FutureProvider.autoDispose.family<PublicProfile, String>((ref, id) {
+  return ref.watch(profileRepositoryProvider).fetchPublicProfile(id);
 });

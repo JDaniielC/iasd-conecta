@@ -21,7 +21,7 @@ class VotingRoundListPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Rodadas de Votação')),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (PerfilGuard.exigirPerfil(context, ref)) {
+          if (ProfileGuard.requireProfile(context, ref)) {
             context.push('/grupos/$grupoId/rodadas/novo');
           }
         },

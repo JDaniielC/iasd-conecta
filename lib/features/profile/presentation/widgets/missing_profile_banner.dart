@@ -8,13 +8,13 @@ import '../../../../core/theme/app_theme.dart';
 /// CTA reusado em listas públicas (Grupos, Ações) pra quem ainda não tem
 /// Perfil — navegação é sempre livre (FR-005/FR-008/FR-010), isto é só o
 /// ponto de entrada manual pro cadastro.
-class PerfilAusenteBanner extends ConsumerWidget {
-  const PerfilAusenteBanner({super.key});
+class MissingProfileBanner extends ConsumerWidget {
+  const MissingProfileBanner({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
-    if (hasPerfil) return const SizedBox.shrink();
+    final hasProfile = ref.watch(hasProfileProvider).value ?? false;
+    if (hasProfile) return const SizedBox.shrink();
 
     return Container(
       width: double.infinity,

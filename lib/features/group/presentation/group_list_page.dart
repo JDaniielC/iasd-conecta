@@ -33,8 +33,8 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
 
   @override
   Widget build(BuildContext context) {
-    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
-    final temConta = hasPerfil && ref.watch(authRepositoryProvider).temConta;
+    final hasProfile = ref.watch(hasProfileProvider).value ?? false;
+    final hasAccount = hasProfile && ref.watch(authRepositoryProvider).hasAccount;
     final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
     final gruposAsync = ref.watch(groupsProvider);
     final churchesAsync = ref.watch(churchesProvider);
@@ -73,7 +73,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
               onPressed: () => context.push('/district-admin/suggested-actions'),
             ),
           ],
-          if (hasPerfil && !temConta)
+          if (hasProfile && !hasAccount)
             IconButton(
               tooltip: 'Virar Conta',
               icon: const Icon(Icons.cloud_upload_outlined),
@@ -88,7 +88,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (PerfilGuard.exigirPerfil(context, ref)) {
+          if (ProfileGuard.requireProfile(context, ref)) {
             context.push('/grupos/novo');
           }
         },
@@ -96,7 +96,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
       ),
       body: Column(
         children: [
-          const PerfilAusenteBanner(),
+          const MissingProfileBanner(),
           _FilterBar(
             churchesAsync: churchesAsync,
             filtroIgrejaId: _filtroIgrejaId,

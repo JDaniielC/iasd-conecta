@@ -38,16 +38,16 @@ final _grupos = [
   ),
 ];
 
-Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
+Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
   final grupoRepo = MockGrupoRepository();
   when(() => grupoRepo.fetchGroups()).thenAnswer((_) async => _grupos);
   final authRepo = MockAuthRepository();
-  when(() => authRepo.temConta).thenReturn(false);
+  when(() => authRepo.hasAccount).thenReturn(false);
 
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        hasPerfilProvider.overrideWith((ref) async => hasPerfil),
+        hasProfileProvider.overrideWith((ref) async => hasProfile),
         groupRepositoryProvider.overrideWithValue(grupoRepo),
         authRepositoryProvider.overrideWithValue(authRepo),
         churchesProvider.overrideWith((ref) async => _churches),
@@ -60,7 +60,7 @@ Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
 
 void main() {
   testWidgets('FR-005: lista de Grupos aparece sem exigir Perfil', (tester) async {
-    await _pump(tester, hasPerfil: false);
+    await _pump(tester, hasProfile: false);
 
     expect(find.text('SevenBikers'), findsOneWidget);
     expect(find.text('Coral'), findsOneWidget);
@@ -68,14 +68,14 @@ void main() {
   });
 
   testWidgets('sem o banner de CTA quando já tem Perfil', (tester) async {
-    await _pump(tester, hasPerfil: true);
+    await _pump(tester, hasProfile: true);
 
     expect(find.text('SevenBikers'), findsOneWidget);
     expect(find.text('Criar Perfil'), findsNothing);
   });
 
   testWidgets('agrupa os Grupos por Igreja com cabeçalho de seção', (tester) async {
-    await _pump(tester, hasPerfil: false);
+    await _pump(tester, hasProfile: false);
 
     expect(find.text('Central'), findsOneWidget);
     expect(find.text('Pombos'), findsOneWidget);

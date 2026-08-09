@@ -66,7 +66,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          if (PerfilGuard.exigirPerfil(context, ref)) {
+          if (ProfileGuard.requireProfile(context, ref)) {
             context.push('/acoes/novo');
           }
         },
@@ -74,7 +74,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
       ),
       body: Column(
         children: [
-          const PerfilAusenteBanner(),
+          const MissingProfileBanner(),
           _FilterBar(
             churchesAsync: churchesAsync,
             filtroIgrejaId: _filtroIgrejaId,

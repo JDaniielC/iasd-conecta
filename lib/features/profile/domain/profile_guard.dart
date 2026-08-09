@@ -10,13 +10,13 @@ import '../../../core/providers.dart';
 /// Diferente do redirect global do router: aqui a pessoa PODE navegar
 /// livremente como Visitante (`lib/app.dart` não força `/cadastro`); só ao
 /// tentar uma ação concreta ela é direcionada ao cadastro.
-abstract final class PerfilGuard {
+abstract final class ProfileGuard {
   /// Retorna `true` se a ação pode prosseguir (já tem Perfil). Se não tiver,
   /// navega pra `/cadastro` e retorna `false` — quem chama deve checar o
   /// retorno antes de continuar a ação.
-  static bool exigirPerfil(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.read(hasPerfilProvider).value ?? false;
-    if (hasPerfil) return true;
+  static bool requireProfile(BuildContext context, WidgetRef ref) {
+    final hasProfile = ref.read(hasProfileProvider).value ?? false;
+    if (hasProfile) return true;
     context.push('/cadastro');
     return false;
   }

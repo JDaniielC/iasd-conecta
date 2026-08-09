@@ -40,7 +40,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             email: _emailController.text.trim(),
             senha: _senhaController.text,
           );
-      ref.invalidate(hasPerfilProvider);
+      ref.invalidate(hasProfileProvider);
     } on AuthException {
       // FR-014: mensagem genérica, nunca revela qual campo errou.
       setState(() => _erro = 'Credenciais inválidas.');

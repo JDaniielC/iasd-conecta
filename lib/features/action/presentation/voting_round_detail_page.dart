@@ -19,7 +19,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
   }
 
   Future<void> _votar(BuildContext context, WidgetRef ref, String candidataId) async {
-    if (!PerfilGuard.exigirPerfil(context, ref)) return;
+    if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidataId);
       ref.invalidate(myVoteProvider(votingRoundId));
@@ -67,7 +67,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
                     children: [
                       ElevatedButton(
                         onPressed: () {
-                          if (PerfilGuard.exigirPerfil(context, ref)) {
+                          if (ProfileGuard.requireProfile(context, ref)) {
                             context.push('/rodadas/$votingRoundId/candidatas/novo');
                           }
                         },

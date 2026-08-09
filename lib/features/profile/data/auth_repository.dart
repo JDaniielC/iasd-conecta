@@ -10,9 +10,9 @@ class AuthRepository {
 
   final SupabaseClient _client;
 
-  bool get temConta => _client.auth.currentUser?.isAnonymous == false;
+  bool get hasAccount => _client.auth.currentUser?.isAnonymous == false;
 
-  Future<void> upgradeParaConta({
+  Future<void> upgradeToAccount({
     required String email,
     required String senha,
   }) {

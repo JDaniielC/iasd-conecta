@@ -20,7 +20,7 @@ class PrivacyPolicyPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final hasPerfil = ref.watch(hasPerfilProvider).value ?? false;
+    final hasProfile = ref.watch(hasProfileProvider).value ?? false;
     return Scaffold(
       appBar: AppBar(title: const Text('Política de Privacidade')),
       body: SingleChildScrollView(
@@ -257,7 +257,7 @@ class PrivacyPolicyPage extends ConsumerWidget {
             // perfil", este é o lugar coerente: fica ao lado do texto que
             // descreve o direito, e longe de um toque acidental na barra
             // principal.
-            if (hasPerfil) ...[
+            if (hasProfile) ...[
               const SizedBox(height: AppSpacing.lg),
               OutlinedButton(
                 onPressed: () => context.push('/delete-account'),

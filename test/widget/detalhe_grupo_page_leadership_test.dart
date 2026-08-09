@@ -59,16 +59,16 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            hasPerfilProvider.overrideWith((ref) async => false),
+            hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
             groupRepositoryProvider.overrideWithValue(grupoRepo),
             currentLeadersProvider('g1').overrideWith(
               (ref) async => [_confirmed('l1', 'lider-1'), _confirmed('l2', 'lider-2')],
             ),
-            perfilPublicoProvider('lider-1').overrideWith(
+            publicProfileProvider('lider-1').overrideWith(
               (ref) async => const PublicProfile(id: 'lider-1', displayName: 'Ana Líder'),
             ),
-            perfilPublicoProvider('lider-2').overrideWith(
+            publicProfileProvider('lider-2').overrideWith(
               (ref) async => const PublicProfile(id: 'lider-2', displayName: 'Beto Diretor'),
             ),
           ],
@@ -105,7 +105,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            hasPerfilProvider.overrideWith((ref) async => false),
+            hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
             groupRepositoryProvider.overrideWithValue(grupoRepo),
             currentLeadersProvider('g1').overrideWith((ref) async => []),

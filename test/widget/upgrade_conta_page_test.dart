@@ -17,7 +17,7 @@ void main() {
                 body: ElevatedButton(
                   onPressed: () async {
                     final resultado = await Navigator.of(context).push<bool>(
-                      MaterialPageRoute(builder: (_) => const UpgradeContaPage()),
+                      MaterialPageRoute(builder: (_) => const UpgradeAccountPage()),
                     );
                     voltouCom = 'voltou:$resultado';
                   },

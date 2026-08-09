@@ -42,7 +42,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
-            hasPerfilProvider.overrideWith((ref) async => false),
+            hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
             actionRepositoryProvider.overrideWithValue(acaoRepo),
           ],

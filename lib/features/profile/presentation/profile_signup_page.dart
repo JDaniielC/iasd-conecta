@@ -12,15 +12,15 @@ import '../domain/profile.dart';
 /// Apelido para menores de idade (User Story 2, FR-005).
 ///
 /// Sem campo de e-mail/senha — Perfil não exige credencial (FR-001).
-class CadastroPerfilPage extends ConsumerStatefulWidget {
-  const CadastroPerfilPage({super.key});
+class ProfileSignupPage extends ConsumerStatefulWidget {
+  const ProfileSignupPage({super.key});
 
   @override
-  ConsumerState<CadastroPerfilPage> createState() =>
-      _CadastroPerfilPageState();
+  ConsumerState<ProfileSignupPage> createState() =>
+      _ProfileSignupPageState();
 }
 
-class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
+class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _apelidoController = TextEditingController();
@@ -28,7 +28,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
   final _idadeController = TextEditingController();
 
   // Cache local mínima — a checagem que vale é a constraint no banco.
-  final _moderacao = const NomeModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
+  final _moderacao = const NameModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
 
   Gender _genero = Gender.female;
   String? _igrejaId;
@@ -64,7 +64,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
   Future<void> _enviar() async {
     final perfil = _perfilAtual;
     if (_formKey.currentState?.validate() != true || perfil == null) return;
-    if (!_moderacao.valido(perfil.name)) {
+    if (!_moderacao.isValid(perfil.name)) {
       setState(() => _erro = 'Esse nome não pode ser usado. Tente outro.');
       return;
     }
@@ -78,8 +78,8 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
       _erro = null;
     });
     try {
-      await ref.read(perfilRepositoryProvider).criarPerfil(perfil);
-      ref.invalidate(hasPerfilProvider);
+      await ref.read(profileRepositoryProvider).createProfile(perfil);
+      ref.invalidate(hasProfileProvider);
     } on PostgrestException catch (e) {
       if (e.code == '23505') {
         // Chave primária de perfis é o uid — duplicidade só pode significar
@@ -87,7 +87,7 @@ class _CadastroPerfilPageState extends ConsumerState<CadastroPerfilPage> {
         // perdeu por timeout de rede, mas o insert chegou no banco). Não é
         // erro do usuário: só seguir em frente, senão ele fica preso
         // tentando de novo pra sempre.
-        ref.invalidate(hasPerfilProvider);
+        ref.invalidate(hasProfileProvider);
       } else {
         setState(() => _erro = _mensagemDeErro(e));
       }

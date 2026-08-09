@@ -10,14 +10,14 @@ import '../../../core/theme/app_theme.dart';
 /// Sempre cancelável — nunca é pré-requisito pra nada coberto por esta
 /// feature, só pra persistir entre aparelhos e pra declarar Líder/Diretor
 /// no futuro (FR-012).
-class UpgradeContaPage extends ConsumerStatefulWidget {
-  const UpgradeContaPage({super.key});
+class UpgradeAccountPage extends ConsumerStatefulWidget {
+  const UpgradeAccountPage({super.key});
 
   @override
-  ConsumerState<UpgradeContaPage> createState() => _UpgradeContaPageState();
+  ConsumerState<UpgradeAccountPage> createState() => _UpgradeAccountPageState();
 }
 
-class _UpgradeContaPageState extends ConsumerState<UpgradeContaPage> {
+class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _senhaController = TextEditingController();
@@ -38,7 +38,7 @@ class _UpgradeContaPageState extends ConsumerState<UpgradeContaPage> {
       _erro = null;
     });
     try {
-      await ref.read(authRepositoryProvider).upgradeParaConta(
+      await ref.read(authRepositoryProvider).upgradeToAccount(
             email: _emailController.text.trim(),
             senha: _senhaController.text,
           );

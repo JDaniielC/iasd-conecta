@@ -11,22 +11,22 @@ import 'package:iasd_conecta/features/profile/presentation/profile_signup_page.d
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockPerfilRepository extends Mock implements PerfilRepository {}
+class MockPerfilRepository extends Mock implements ProfileRepository {}
 
 const _igrejaTeste = Church(id: 'igreja-1', name: 'Igreja Teste');
 
 Future<void> _pumpPage(
   WidgetTester tester,
-  PerfilRepository repo, {
+  ProfileRepository repo, {
   List<Church> churches = const <Church>[],
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        perfilRepositoryProvider.overrideWithValue(repo),
+        profileRepositoryProvider.overrideWithValue(repo),
         churchesProvider.overrideWith((ref) async => churches),
       ],
-      child: const MaterialApp(home: CadastroPerfilPage()),
+      child: const MaterialApp(home: ProfileSignupPage()),
     ),
   );
   await tester.pumpAndSettle();
@@ -153,7 +153,7 @@ void main() {
   testWidgets(
     'falha de rede na 1a tentativa mostra feedback (não fica muda)',
     (tester) async {
-      when(() => repo.criarPerfil(any()))
+      when(() => repo.createProfile(any()))
           .thenThrow(const SocketException('Operation not permitted'));
 
       await preencherEEnviar(tester);
@@ -171,7 +171,7 @@ void main() {
   testWidgets(
     'retentativa após duplicidade de chave (uid) segue em frente em vez de travar o usuário',
     (tester) async {
-      when(() => repo.criarPerfil(any())).thenThrow(
+      when(() => repo.createProfile(any())).thenThrow(
         const PostgrestException(
           message: 'duplicate key value violates unique constraint "perfis_pkey"',
           code: '23505',

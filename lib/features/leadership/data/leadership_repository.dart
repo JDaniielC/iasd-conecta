@@ -24,6 +24,13 @@ class LeadershipRepository {
     });
   }
 
+  /// Predicado gêmeo do da policy `liderancas_select_confirmada_propria_ou_admin`
+  /// (feature 018). Os dois mudam juntos.
+  ///
+  /// A duplicação é declarada de propósito: se divergirem, o sintoma é
+  /// silencioso, porque a RLS remove a linha antes de o Dart ver — ela some da
+  /// tela sem erro nenhum. Filtrar só aqui é o que já existia e é literalmente
+  /// o que falhou; quem protege é a policy.
   Future<List<LeadershipDeclaration>> fetchCurrentLeaders({
     required String groupId,
     required int year,
@@ -33,7 +40,8 @@ class LeadershipRepository {
         .select()
         .eq('grupo_id', groupId)
         .eq('ano', year)
-        .not('confirmado_em', 'is', null);
+        .not('confirmado_em', 'is', null)
+        .filter('rejeitado_em', 'is', null);
     return rows.map(LeadershipDeclaration.fromMap).toList();
   }
 

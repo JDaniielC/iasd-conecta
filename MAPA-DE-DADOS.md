@@ -52,11 +52,11 @@ Auth — e-mail e hash de senha ficam no schema `auth`, fora de `public.perfis`.
 
 ## Quem vê o quê (RLS = a fonte de verdade, não a UI)
 
-As policies abaixo concedem `select` a `anon, authenticated` com
-`using (true)` — ou seja, **visível até para quem nunca fez cadastro**,
-via API direta, independente do que a tela de fato renderiza. A exceção é
-`votos`, fechada pela feature 021 e mantida na tabela justamente para
-registrar que ela já esteve aberta:
+As policies abaixo concedem `select` a `anon, authenticated` — ou seja,
+**visível até para quem nunca fez cadastro**, via API direta, independente do
+que a tela de fato renderiza. A maioria ainda é `using (true)`, sem filtro
+nenhum. Duas já não são, e ficam na tabela justamente para registrar que já
+foram: `votos` (feature 021) e `liderancas` (feature 018):
 
 | Tabela | Policy | Arquivo:linha |
 |---|---|---|
@@ -67,12 +67,16 @@ registrar que ela já esteve aberta:
 | `rodadas_votacao` | `rodadas_votacao_select_public` | `20260724084300_rodada_votacao.sql:197-200` |
 | `votos` | **não é público desde a feature 021** — `votos_select_own` devolve só a linha da própria pessoa (`auth.uid() = usuario_id`), e `anon` fica sem policy de `select`, portanto recebe lista vazia. A apuração conta todos os votos por fora da RLS, em `fechar_rodada_se_devido` (`security definer`) | `20260809200000_votos_visibilidade.sql:41-44` |
 | `administradores_distrito` | `administradores_distrito_select_public` | `20260724092132_district_admin.sql:52-55` |
-| `liderancas` | `liderancas_select_public` — **sem filtro por `confirmado_em`**: declaração pendente/rejeitada também é publicamente selecionável, não só a confirmada | `20260724100000_leadership.sql:73-76` |
+| `liderancas` | **não é irrestrita desde a feature 018** — `liderancas_select_confirmada_propria_ou_admin`, com três disjuntos: a declaração **confirmada** (e não rejeitada) é pública, que é a "identificação do Líder" que o glossário promete; a **própria pessoa** vê a sua em qualquer estado, porque precisa saber se foi confirmada, rejeitada ou se ainda espera; e o **Administrador do distrito** vê todas, porque é ele quem decide. Pendente e rejeitada de terceiro: negadas por default | `20260809210000_liderancas_visibilidade.sql:100-110` |
 
-A UI de `detalhe_grupo_page.dart:118-119` só *renderiza* Líder/Diretor
-confirmado (via `currentLeadersProvider`), mas a RLS acima permite ler a
-tabela inteira — a política de privacidade descreve o nível de acesso real
-(RLS), não só o que a tela de hoje mostra.
+Até a feature 018, a UI de `detalhe_grupo_page.dart:118-119` só *renderiza*
+Líder/Diretor confirmado (via `currentLeadersProvider`), mas a RLS permitia ler
+a tabela inteira: quem se declarou e foi **rejeitado** era legível por qualquer
+Visitante. Esconder na tela não é proteger, e este era o exemplo — a política de
+privacidade descreve o nível de acesso real (RLS), não o que a tela mostra.
+Agora as duas coisas dizem o mesmo, e `fetchCurrentLeaders`
+(`leadership_repository.dart`) carrega o predicado gêmeo do da policy, com o
+aviso de que os dois mudam juntos.
 
 ## Terceiros
 

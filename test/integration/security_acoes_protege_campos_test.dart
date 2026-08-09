@@ -18,13 +18,13 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 void main() {
   late Connection conn;
-  late String grupoId;
+  late String groupId;
   late String votingRoundId;
-  late String candidataId;
+  late String candidateId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono ProtegeCampos');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ProtegeCampos');
 
     final grupoRows = await conn.execute(
       Sql.named(
@@ -33,7 +33,7 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = grupoRows.single.toColumnMap()['id']! as String;
 
     await _comoUsuario(conn, _uidDono, () async {
       final rodadaRows = await conn.execute(
@@ -41,7 +41,7 @@ void main() {
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '7 days') returning id",
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       );
       votingRoundId = rodadaRows.single.toColumnMap()['id']! as String;
 
@@ -53,7 +53,7 @@ void main() {
         ),
         parameters: {'dono': _uidDono, 'rodada': votingRoundId},
       );
-      candidataId = candidataRows.single.toColumnMap()['id']! as String;
+      candidateId = candidataRows.single.toColumnMap()['id']! as String;
     });
   });
 
@@ -68,7 +68,7 @@ void main() {
     );
     await conn.execute(
       Sql.named('delete from public.acoes where grupo_id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where id = @id'),
@@ -76,7 +76,7 @@ void main() {
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await conn.close();
@@ -90,7 +90,7 @@ void main() {
         _comoUsuario(conn, _uidDono, () async {
           await conn.execute(
             Sql.named('update public.acoes set confirmada = true where id = @id'),
-            parameters: {'id': candidataId},
+            parameters: {'id': candidateId},
           );
         }),
         throwsA(isA<ServerException>()),
@@ -107,7 +107,7 @@ void main() {
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@rodada, @dono, @candidata)',
           ),
-          parameters: {'rodada': votingRoundId, 'dono': _uidDono, 'candidata': candidataId},
+          parameters: {'rodada': votingRoundId, 'dono': _uidDono, 'candidata': candidateId},
         );
         await conn.execute(
           Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
@@ -117,7 +117,7 @@ void main() {
 
       final rows = await conn.execute(
         Sql.named('select confirmada from public.acoes where id = @id'),
-        parameters: {'id': candidataId},
+        parameters: {'id': candidateId},
       );
       expect(rows.single.toColumnMap()['confirmada'], isTrue);
     },

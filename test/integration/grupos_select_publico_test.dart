@@ -7,11 +7,11 @@ const _uidDono = '40000000-0000-0000-0000-000000000003';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono Publico');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono Publico');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -20,7 +20,7 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']!;
+    groupId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
@@ -37,7 +37,7 @@ void main() {
     try {
       final rows = await conn.execute(
         Sql.named('select nome from public.grupos where id = @id'),
-        parameters: {'id': grupoId},
+        parameters: {'id': groupId},
       );
       expect(rows.single.toColumnMap()['nome'], 'Grupo Público');
     } finally {
@@ -50,7 +50,7 @@ void main() {
     try {
       final rows = await conn.execute(
         Sql.named('select usuario_id from public.participacoes_grupo where grupo_id = @id'),
-        parameters: {'id': grupoId},
+        parameters: {'id': groupId},
       );
       expect(rows, isNotEmpty);
     } finally {

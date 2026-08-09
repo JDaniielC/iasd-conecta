@@ -8,12 +8,12 @@ const _uidOutro = '40000000-0000-0000-0000-000000000012';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono RLS');
-    await criarPerfilDeTeste(conn, _uidOutro, nome: 'Outro RLS');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono RLS');
+    await criarPerfilDeTeste(conn, _uidOutro, name: 'Outro RLS');
 
     final rows = await conn.execute(
       Sql.named(
@@ -22,13 +22,13 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']!;
+    groupId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await limparUsuarioDeTeste(conn, _uidOutro);
@@ -51,13 +51,13 @@ void main() {
     await comoUsuario(_uidOutro, () async {
       await conn.execute(
         Sql.named("update public.grupos set nome = 'Hackeado' where id = @grupo"),
-        parameters: {'grupo': grupoId},
+        parameters: {'grupo': groupId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select nome from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     expect(rows.single.toColumnMap()['nome'], 'Grupo RLS');
   });
@@ -68,7 +68,7 @@ void main() {
         Sql.named(
           'delete from public.participacoes_grupo where grupo_id = @grupo and usuario_id = @dono',
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       );
     });
 
@@ -77,7 +77,7 @@ void main() {
         'select count(*) as total from public.participacoes_grupo '
         'where grupo_id = @grupo and usuario_id = @dono',
       ),
-      parameters: {'grupo': grupoId, 'dono': _uidDono},
+      parameters: {'grupo': groupId, 'dono': _uidDono},
     );
     expect(rows.single.toColumnMap()['total'], 1);
   });
@@ -86,13 +86,13 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named("update public.grupos set nome = 'Editado pelo Dono' where id = @grupo"),
-        parameters: {'grupo': grupoId},
+        parameters: {'grupo': groupId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select nome from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     expect(rows.single.toColumnMap()['nome'], 'Editado pelo Dono');
   });

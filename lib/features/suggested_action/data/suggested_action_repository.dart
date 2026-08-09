@@ -15,13 +15,13 @@ class SuggestedActionRepository {
   /// Categoria por nome, depois busca as sugestões por esse id. Sem
   /// Categoria com esse nome cadastrada, retorna lista vazia (FR-008).
   Future<List<SuggestedAction>> fetchByCategoryName(String categoryName) async {
-    final categoria = await _client
+    final category = await _client
         .from('categorias_grupo')
         .select('id')
         .eq('nome', categoryName)
         .maybeSingle();
-    if (categoria == null) return [];
-    return fetchByCategoryId(categoria['id'] as String);
+    if (category == null) return [];
+    return fetchByCategoryId(category['id'] as String);
   }
 
   /// FR-005: sugestões filtradas pela Categoria escolhida na tela de Ação

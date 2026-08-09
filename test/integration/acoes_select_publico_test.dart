@@ -11,7 +11,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador Publico');
+    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Publico');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.acoes (nome, data_hora, local, criador_id) "

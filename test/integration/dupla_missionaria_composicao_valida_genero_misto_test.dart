@@ -39,8 +39,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomem, nome: 'Homem GeneroMisto', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulher, nome: 'Mulher GeneroMisto', genero: 'feminino');
+    await criarPerfilDeTeste(conn, _uidHomem, name: 'Homem GeneroMisto', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidMulher, name: 'Mulher GeneroMisto', gender: 'feminino');
   });
 
   tearDownAll(() async {

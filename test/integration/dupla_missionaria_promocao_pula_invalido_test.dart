@@ -25,10 +25,10 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomemA, nome: 'HomemA PromocaoPulaInvalido', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulherB, nome: 'MulherB PromocaoPulaInvalido', genero: 'feminino');
-    await criarPerfilDeTeste(conn, _uidHomemC, nome: 'HomemC PromocaoPulaInvalido', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulherD, nome: 'MulherD PromocaoPulaInvalido', genero: 'feminino');
+    await criarPerfilDeTeste(conn, _uidHomemA, name: 'HomemA PromocaoPulaInvalido', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidMulherB, name: 'MulherB PromocaoPulaInvalido', gender: 'feminino');
+    await criarPerfilDeTeste(conn, _uidHomemC, name: 'HomemC PromocaoPulaInvalido', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidMulherD, name: 'MulherD PromocaoPulaInvalido', gender: 'feminino');
 
     // Dupla visitando mulher: A (homem, criador) + B (mulher) = 1H+1M válido.
     final rows = await conn.execute(

@@ -18,10 +18,10 @@ class VotingRoundDetailPage extends ConsumerWidget {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
   }
 
-  Future<void> _votar(BuildContext context, WidgetRef ref, String candidataId) async {
+  Future<void> _votar(BuildContext context, WidgetRef ref, String candidateId) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
-      await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidataId);
+      await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidateId);
       ref.invalidate(myVoteProvider(votingRoundId));
       ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
@@ -57,11 +57,11 @@ class VotingRoundDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  rodada.aberta ? 'Aberta' : 'Fechada',
+                  rodada.isOpen ? 'Aberta' : 'Fechada',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
                 Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}'),
-                if (rodada.aberta) ...[
+                if (rodada.isOpen) ...[
                   const SizedBox(height: AppSpacing.md),
                   Row(
                     children: [
@@ -85,28 +85,28 @@ class VotingRoundDetailPage extends ConsumerWidget {
                 Text('Candidatas', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
                   child: candidatasAsync.when(
-                    data: (candidatas) {
+                    data: (candidates) {
                       final myVote = meuVotoAsync.value;
-                      if (candidatas.isEmpty) {
+                      if (candidates.isEmpty) {
                         return const Center(child: Text('Nenhuma candidata ainda.'));
                       }
                       return ListView.builder(
-                        itemCount: candidatas.length,
+                        itemCount: candidates.length,
                         itemBuilder: (context, index) {
-                          final candidata = candidatas[index];
-                          final votadaPorMim = myVote?.candidataId == candidata.id;
+                          final candidate = candidates[index];
+                          final votadaPorMim = myVote?.candidateId == candidate.id;
                           return Card(
                             child: ListTile(
-                              title: Text(candidata.nome),
+                              title: Text(candidate.name),
                               subtitle: Text(
-                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidata.dateTime)} · ${candidata.local}',
+                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidate.dateTime)} · ${candidate.local}',
                               ),
-                              onTap: () => context.push('/acoes/${candidata.id}'),
-                              trailing: rodada.aberta
+                              onTap: () => context.push('/acoes/${candidate.id}'),
+                              trailing: rodada.isOpen
                                   ? OutlinedButton(
                                       onPressed: votadaPorMim
                                           ? null
-                                          : () => _votar(context, ref, candidata.id),
+                                          : () => _votar(context, ref, candidate.id),
                                       child: Text(votadaPorMim ? 'Seu voto' : 'Votar'),
                                     )
                                   : null,

@@ -7,7 +7,7 @@ const _uidLider = '90000000-0000-0000-0000-000000000021';
 
 void main() {
   late Connection conn;
-  late String grupoId;
+  late String groupId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
     await conn.execute('set role authenticated');
@@ -24,7 +24,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidLider, nome: 'Lider DeclareIdempotent');
+    await criarPerfilDeTeste(conn, _uidLider, name: 'Lider DeclareIdempotent');
     final grupoRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -32,17 +32,17 @@ void main() {
       ),
       parameters: {'dono': _uidLider},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = grupoRows.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.liderancas where grupo_id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidLider);
     await conn.close();
@@ -52,11 +52,11 @@ void main() {
     await comoUsuario(_uidLider, () async {
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
-        parameters: {'grupo': grupoId},
+        parameters: {'grupo': groupId},
       );
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
-        parameters: {'grupo': grupoId},
+        parameters: {'grupo': groupId},
       );
     });
 
@@ -65,7 +65,7 @@ void main() {
         'select count(*) as total from public.liderancas '
         'where grupo_id = @grupo and usuario_id = @uid and ano = 2026',
       ),
-      parameters: {'grupo': grupoId, 'uid': _uidLider},
+      parameters: {'grupo': groupId, 'uid': _uidLider},
     );
     expect(rows.single.toColumnMap()['total'], 1);
   });

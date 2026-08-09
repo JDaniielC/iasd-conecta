@@ -8,12 +8,12 @@ const _uidDono = '95000000-0000-0000-0000-000000000011';
 
 void main() {
   late Connection conn;
-  late String grupoId;
+  late String groupId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAtacante, nome: 'Atacante SemRodada');
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono SemRodada');
+    await criarPerfilDeTeste(conn, _uidAtacante, name: 'Atacante SemRodada');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono SemRodada');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -21,17 +21,17 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']! as String;
+    groupId = rows.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where grupo_id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidAtacante);
     await limparUsuarioDeTeste(conn, _uidDono);
@@ -53,7 +53,7 @@ void main() {
               "insert into public.acoes (nome, data_hora, local, criador_id, grupo_id) "
               "values ('Forjada', now() + interval '1 day', 'X', @uid, @grupo)",
             ),
-            parameters: {'uid': _uidAtacante, 'grupo': grupoId},
+            parameters: {'uid': _uidAtacante, 'grupo': groupId},
           ),
           throwsA(isA<ServerException>()),
         );

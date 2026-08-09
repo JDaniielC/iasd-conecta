@@ -7,7 +7,7 @@ void main() {
   group('NovaAcao.prontoParaEnviar (Dupla Missionária)', () {
     test('falso quando isMissionaryPair mas sem visitedGender', () {
       final acao = NewAction(
-        nome: 'Visita',
+        name: 'Visita',
         dateTime: dataFutura,
         local: 'Casa',
         isMissionaryPair: true,
@@ -17,7 +17,7 @@ void main() {
 
     test('verdadeiro quando isMissionaryPair com visitedGender preenchido', () {
       final acao = NewAction(
-        nome: 'Visita',
+        name: 'Visita',
         dateTime: dataFutura,
         local: 'Casa',
         isMissionaryPair: true,
@@ -30,7 +30,7 @@ void main() {
   group('NovaAcao.toInsertMap (Dupla Missionária)', () {
     test('FR-003: força limite_vagas=2 quando isMissionaryPair, ignorando limiteVagas informado', () {
       final acao = NewAction(
-        nome: 'Visita',
+        name: 'Visita',
         dateTime: dataFutura,
         local: 'Casa',
         capacity: 50,
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('não marca eh_dupla_missionaria quando isMissionaryPair é falso (default)', () {
-      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: 'Sede', capacity: 10);
+      final acao = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede', capacity: 10);
       final map = acao.toInsertMap(creatorId: 'c1');
       expect(map['limite_vagas'], 10);
       expect(map['eh_dupla_missionaria'], isFalse);

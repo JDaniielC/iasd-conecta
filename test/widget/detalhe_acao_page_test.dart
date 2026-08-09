@@ -13,7 +13,7 @@ class MockAcaoRepository extends Mock implements ActionRepository {}
 
 final _acao = Action(
   id: 'a1',
-  nome: 'Acampamento',
+  name: 'Acampamento',
   dateTime: DateTime(2027, 3, 10, 8, 0),
   local: 'Sítio',
   creatorId: 'dono-1',

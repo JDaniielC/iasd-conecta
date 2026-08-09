@@ -8,12 +8,12 @@ const _uidParticipante = '40000000-0000-0000-0000-000000000010';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono Sai');
-    await criarPerfilDeTeste(conn, _uidParticipante, nome: 'Participante Sai');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono Sai');
+    await criarPerfilDeTeste(conn, _uidParticipante, name: 'Participante Sai');
 
     final rows = await conn.execute(
       Sql.named(
@@ -22,20 +22,20 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']!;
+    groupId = rows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @usuario)',
       ),
-      parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
     );
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await limparUsuarioDeTeste(conn, _uidParticipante);
@@ -48,7 +48,7 @@ void main() {
         Sql.named(
           'delete from public.participacoes_grupo where grupo_id = @grupo and usuario_id = @dono',
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       ),
       throwsA(isA<ServerException>()),
     );
@@ -59,14 +59,14 @@ void main() {
       Sql.named(
         'delete from public.participacoes_grupo where grupo_id = @grupo and usuario_id = @usuario',
       ),
-      parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
     );
     final rows = await conn.execute(
       Sql.named(
         'select count(*) as total from public.participacoes_grupo '
         'where grupo_id = @grupo and usuario_id = @usuario',
       ),
-      parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
     );
     expect(rows.single.toColumnMap()['total'], 0);
   });
@@ -78,18 +78,18 @@ void main() {
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @usuario) '
         'on conflict (grupo_id, usuario_id) do nothing',
       ),
-      parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
     );
     await conn.execute(
       Sql.named('update public.grupos set dono_id = @novo where id = @grupo'),
-      parameters: {'novo': _uidParticipante, 'grupo': grupoId},
+      parameters: {'novo': _uidParticipante, 'grupo': groupId},
     );
 
     await conn.execute(
       Sql.named(
         'delete from public.participacoes_grupo where grupo_id = @grupo and usuario_id = @antigo',
       ),
-      parameters: {'grupo': grupoId, 'antigo': _uidDono},
+      parameters: {'grupo': groupId, 'antigo': _uidDono},
     );
 
     final rows = await conn.execute(
@@ -97,7 +97,7 @@ void main() {
         'select count(*) as total from public.participacoes_grupo '
         'where grupo_id = @grupo and usuario_id = @antigo',
       ),
-      parameters: {'grupo': grupoId, 'antigo': _uidDono},
+      parameters: {'grupo': groupId, 'antigo': _uidDono},
     );
     expect(rows.single.toColumnMap()['total'], 0);
   });

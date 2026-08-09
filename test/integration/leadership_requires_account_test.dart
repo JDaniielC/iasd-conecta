@@ -7,7 +7,7 @@ const _uidSemConta = '90000000-0000-0000-0000-000000000020';
 
 void main() {
   late Connection conn;
-  late String grupoId;
+  late String groupId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
     await conn.execute('set role authenticated');
@@ -24,7 +24,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilSemContaDeTeste(conn, _uidSemConta, nome: 'SemConta LeadershipReq');
+    await criarPerfilSemContaDeTeste(conn, _uidSemConta, name: 'SemConta LeadershipReq');
     final grupoRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -32,17 +32,17 @@ void main() {
       ),
       parameters: {'dono': _uidSemConta},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = grupoRows.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.liderancas where grupo_id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidSemConta);
     await conn.close();
@@ -53,7 +53,7 @@ void main() {
       comoUsuario(_uidSemConta, () async {
         await conn.execute(
           Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
-          parameters: {'grupo': grupoId},
+          parameters: {'grupo': groupId},
         );
       }),
       throwsA(isA<ServerException>()),

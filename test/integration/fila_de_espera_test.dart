@@ -12,8 +12,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador Fila');
-    await criarPerfilDeTeste(conn, _uidSegundo, nome: 'Segundo Fila');
+    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Fila');
+    await criarPerfilDeTeste(conn, _uidSegundo, name: 'Segundo Fila');
 
     // limite 1 vaga: criador já ocupa a única vaga (FR-013)
     final rows = await conn.execute(

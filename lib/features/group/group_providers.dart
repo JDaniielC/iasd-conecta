@@ -23,6 +23,6 @@ final groupProvider = FutureProvider.autoDispose.family<Group, String>((ref, id)
 });
 
 final membersProvider =
-    FutureProvider.autoDispose.family<List<PublicProfile>, String>((ref, grupoId) {
-  return ref.watch(groupRepositoryProvider).fetchParticipantes(grupoId);
+    FutureProvider.autoDispose.family<List<PublicProfile>, String>((ref, groupId) {
+  return ref.watch(groupRepositoryProvider).fetchParticipantes(groupId);
 });

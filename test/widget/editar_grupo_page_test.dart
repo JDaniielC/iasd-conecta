@@ -13,11 +13,11 @@ class MockGrupoRepository extends Mock implements GroupRepository {}
 
 final _grupo = Group(
   id: 'g1',
-  nome: 'SevenBikers',
-  categoria: 'Ministério Jovem',
-  horario: 'sábados 6h',
+  name: 'SevenBikers',
+  category: 'Ministério Jovem',
+  schedule: 'sábados 6h',
   local: 'Praça Central',
-  donoId: 'dono-1',
+  ownerId: 'dono-1',
   createdAt: DateTime(2026, 1, 1),
 );
 
@@ -34,7 +34,7 @@ Future<void> _pump(WidgetTester tester, {required String? uid}) async {
         currentUserIdProvider.overrideWithValue(uid),
         groupRepositoryProvider.overrideWithValue(grupoRepo),
       ],
-      child: const MaterialApp(home: EditGroupPage(grupoId: 'g1')),
+      child: const MaterialApp(home: EditGroupPage(groupId: 'g1')),
     ),
   );
   await tester.pumpAndSettle();

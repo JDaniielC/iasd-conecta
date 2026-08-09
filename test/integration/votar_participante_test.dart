@@ -8,9 +8,9 @@ const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000023';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
   late Object votingRoundId;
-  late Object candidataId;
+  late Object candidateId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
     await conn.execute('set role authenticated');
@@ -26,8 +26,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono VotarParticipante');
-    await criarPerfilDeTeste(conn, _uidForaDoGrupo, nome: 'ForaDoGrupo VotarParticipante');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono VotarParticipante');
+    await criarPerfilDeTeste(conn, _uidForaDoGrupo, name: 'ForaDoGrupo VotarParticipante');
 
     final grupoRows = await conn.execute(
       Sql.named(
@@ -36,17 +36,17 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']!;
+    groupId = grupoRows.single.toColumnMap()['id']!;
 
     late Object rodada;
-    late Object candidata;
+    late Object candidate;
     await comoUsuario(_uidDono, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       );
       rodada = rows.single.toColumnMap()['id']!;
 
@@ -57,24 +57,24 @@ void main() {
         ),
         parameters: {'dono': _uidDono, 'rodada': rodada},
       );
-      candidata = candRows.single.toColumnMap()['id']!;
+      candidate = candRows.single.toColumnMap()['id']!;
     });
     votingRoundId = rodada;
-    candidataId = candidata;
+    candidateId = candidate;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await limparUsuarioDeTeste(conn, _uidForaDoGrupo);
@@ -89,7 +89,7 @@ void main() {
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@rodada, @usuario, @candidata)',
           ),
-          parameters: {'rodada': votingRoundId, 'usuario': _uidForaDoGrupo, 'candidata': candidataId},
+          parameters: {'rodada': votingRoundId, 'usuario': _uidForaDoGrupo, 'candidata': candidateId},
         );
       }),
       throwsA(isA<ServerException>()),

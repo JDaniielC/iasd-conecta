@@ -56,8 +56,8 @@ Future<void> limparUsuarioDeTeste(Connection conn, String id) async {
 Future<void> criarPerfilDeTeste(
   Connection conn,
   String id, {
-  String nome = 'Usuário de Teste',
-  String genero = 'feminino',
+  String name = 'Usuário de Teste',
+  String gender = 'feminino',
 }) async {
   await criarUsuarioDeTeste(conn, id);
   await conn.execute(
@@ -65,7 +65,7 @@ Future<void> criarPerfilDeTeste(
       "insert into public.perfis (id, nome, genero, idade, consentimento_lgpd_aceito_em) "
       "values (@id, @nome, @genero, 30, now()) on conflict (id) do nothing",
     ),
-    parameters: {'id': id, 'nome': nome, 'genero': genero},
+    parameters: {'id': id, 'nome': name, 'genero': gender},
   );
 }
 
@@ -97,7 +97,7 @@ Future<void> criarAdministradorDistritoDeTeste(Connection conn, String userId) a
 Future<void> criarPerfilSemContaDeTeste(
   Connection conn,
   String id, {
-  String nome = 'Usuário sem Conta de Teste',
+  String name = 'Usuário sem Conta de Teste',
 }) async {
   await conn.execute(
     Sql.named(
@@ -113,6 +113,6 @@ Future<void> criarPerfilSemContaDeTeste(
       "insert into public.perfis (id, nome, genero, idade, consentimento_lgpd_aceito_em) "
       "values (@id, @nome, 'feminino', 25, now()) on conflict (id) do nothing",
     ),
-    parameters: {'id': id, 'nome': nome},
+    parameters: {'id': id, 'nome': name},
   );
 }

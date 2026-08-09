@@ -27,7 +27,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, nome: 'Admin ArchiveVisibility');
+    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin ArchiveVisibility');
     await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
 
     final rows = await conn.execute(

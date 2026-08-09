@@ -9,7 +9,7 @@ const _uidOutroParticipante = '70000000-0000-0000-0000-000000000040';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
   late Object acaoConfirmadaId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
@@ -26,9 +26,9 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono CancelarAcaoGrupo');
-    await criarPerfilDeTeste(conn, _uidProponente, nome: 'Proponente CancelarAcaoGrupo');
-    await criarPerfilDeTeste(conn, _uidOutroParticipante, nome: 'Outro CancelarAcaoGrupo');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono CancelarAcaoGrupo');
+    await criarPerfilDeTeste(conn, _uidProponente, name: 'Proponente CancelarAcaoGrupo');
+    await criarPerfilDeTeste(conn, _uidOutroParticipante, name: 'Outro CancelarAcaoGrupo');
 
     final grupoRows = await conn.execute(
       Sql.named(
@@ -37,13 +37,13 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']!;
+    groupId = grupoRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @a), (@grupo, @b)',
       ),
-      parameters: {'grupo': grupoId, 'a': _uidProponente, 'b': _uidOutroParticipante},
+      parameters: {'grupo': groupId, 'a': _uidProponente, 'b': _uidOutroParticipante},
     );
 
     late Object acaoId;
@@ -54,7 +54,7 @@ void main() {
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @proponente, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': grupoId, 'proponente': _uidProponente},
+        parameters: {'grupo': groupId, 'proponente': _uidProponente},
       );
       votingRoundId = rodadaRows.single.toColumnMap()['id']!;
 
@@ -83,19 +83,19 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named('update public.rodadas_votacao set vencedora_id = null where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.acoes where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await limparUsuarioDeTeste(conn, _uidProponente);

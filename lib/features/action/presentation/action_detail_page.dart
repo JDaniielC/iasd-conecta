@@ -66,9 +66,9 @@ class ActionDetailPage extends ConsumerWidget {
       appBar: AppBar(title: const Text('Ação')),
       body: acaoAsync.when(
         data: (acao) {
-          final souDonoDoGrupo = acao.grupoId == null
+          final souDonoDoGrupo = acao.groupId == null
               ? false
-              : (ref.watch(groupProvider(acao.grupoId!)).value?.isOwner(uid) ?? false);
+              : (ref.watch(groupProvider(acao.groupId!)).value?.isOwner(uid) ?? false);
           final souAdministradorDoDistrito =
               ref.watch(isDistrictAdminProvider).value ?? false;
           final canCancel = acao.canCancel(
@@ -85,7 +85,7 @@ class ActionDetailPage extends ConsumerWidget {
                   children: [
                     Expanded(
                       child: Text(
-                        acao.nome,
+                        acao.name,
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
@@ -130,9 +130,9 @@ class ActionDetailPage extends ConsumerWidget {
                   ),
                 ],
                 if (acao.capacity != null) Text('Vagas: ${acao.capacity}'),
-                if (acao.detalhes != null) ...[
+                if (acao.details != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Text(acao.detalhes!),
+                  Text(acao.details!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
                 if (!acao.isCancelled)

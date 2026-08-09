@@ -8,10 +8,10 @@ class NewVotingRound {
 
   bool get isReadyToSubmit => deadline.isAfter(DateTime.now());
 
-  Map<String, dynamic> toInsertMap({required String grupoId, required String abertaPor}) {
+  Map<String, dynamic> toInsertMap({required String groupId, required String openedBy}) {
     return {
-      'grupo_id': grupoId,
-      'aberta_por': abertaPor,
+      'grupo_id': groupId,
+      'aberta_por': openedBy,
       'prazo': deadline.toUtc().toIso8601String(),
     };
   }
@@ -20,44 +20,44 @@ class NewVotingRound {
 class VotingRound {
   const VotingRound({
     required this.id,
-    required this.grupoId,
-    required this.abertaPor,
+    required this.groupId,
+    required this.openedBy,
     required this.deadline,
-    this.fechadaEm,
-    this.vencedoraId,
+    this.closedAt,
+    this.winnerId,
   });
 
   final String id;
-  final String grupoId;
-  final String abertaPor;
+  final String groupId;
+  final String openedBy;
   final DateTime deadline;
-  final DateTime? fechadaEm;
-  final String? vencedoraId;
+  final DateTime? closedAt;
+  final String? winnerId;
 
-  bool get aberta => fechadaEm == null;
+  bool get isOpen => closedAt == null;
 
   factory VotingRound.fromMap(Map<String, dynamic> map) {
     return VotingRound(
       id: map['id'] as String,
-      grupoId: map['grupo_id'] as String,
-      abertaPor: map['aberta_por'] as String,
+      groupId: map['grupo_id'] as String,
+      openedBy: map['aberta_por'] as String,
       deadline: DateTime.parse(map['prazo'] as String),
-      fechadaEm: map['fechada_em'] == null ? null : DateTime.parse(map['fechada_em'] as String),
-      vencedoraId: map['vencedora_id'] as String?,
+      closedAt: map['fechada_em'] == null ? null : DateTime.parse(map['fechada_em'] as String),
+      winnerId: map['vencedora_id'] as String?,
     );
   }
 }
 
 class Vote {
-  const Vote({required this.usuarioId, required this.candidataId});
+  const Vote({required this.userId, required this.candidateId});
 
-  final String usuarioId;
-  final String candidataId;
+  final String userId;
+  final String candidateId;
 
   factory Vote.fromMap(Map<String, dynamic> map) {
     return Vote(
-      usuarioId: map['usuario_id'] as String,
-      candidataId: map['candidata_id'] as String,
+      userId: map['usuario_id'] as String,
+      candidateId: map['candidata_id'] as String,
     );
   }
 }

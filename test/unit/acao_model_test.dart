@@ -6,18 +6,18 @@ void main() {
 
   group('NovaAcao.prontoParaEnviar', () {
     test('falso sem nome', () {
-      final acao = NewAction(nome: '  ', dateTime: dataFutura, local: 'Sede');
+      final acao = NewAction(name: '  ', dateTime: dataFutura, local: 'Sede');
       expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('falso sem local', () {
-      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: '');
+      final acao = NewAction(name: 'Retiro', dateTime: dataFutura, local: '');
       expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('falso com limite de vagas zero', () {
       final acao = NewAction(
-        nome: 'Retiro',
+        name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         capacity: 0,
@@ -26,13 +26,13 @@ void main() {
     });
 
     test('verdadeiro com campos obrigatórios preenchidos, sem limite', () {
-      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: 'Sede');
+      final acao = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede');
       expect(acao.isReadyToSubmit, isTrue);
     });
 
     test('verdadeiro com limite de vagas positivo', () {
       final acao = NewAction(
-        nome: 'Retiro',
+        name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         capacity: 20,
@@ -44,10 +44,10 @@ void main() {
   group('NovaAcao.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui criador', () {
       final acao = NewAction(
-        nome: ' Retiro ',
+        name: ' Retiro ',
         dateTime: dataFutura,
         local: 'Sede',
-        detalhes: '   ',
+        details: '   ',
       );
       final map = acao.toInsertMap(creatorId: 'abc');
       expect(map['nome'], 'Retiro');
@@ -60,7 +60,7 @@ void main() {
   group('Acao.souCriador', () {
     final acao = Action(
       id: 'a1',
-      nome: 'Retiro',
+      name: 'Retiro',
       dateTime: dataFutura,
       local: 'Sede',
       creatorId: 'criador-1',
@@ -84,7 +84,7 @@ void main() {
     test('falso quando canceladaEm é nulo', () {
       final acao = Action(
         id: 'a1',
-        nome: 'Retiro',
+        name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         creatorId: 'c1',
@@ -96,7 +96,7 @@ void main() {
     test('verdadeiro quando canceladaEm está preenchido', () {
       final acao = Action(
         id: 'a1',
-        nome: 'Retiro',
+        name: 'Retiro',
         dateTime: dataFutura,
         local: 'Sede',
         creatorId: 'c1',

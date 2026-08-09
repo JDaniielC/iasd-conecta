@@ -22,7 +22,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, nome: 'Admin CrudTest');
+    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin CrudTest');
     await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
     final cat = await conn.execute(
       Sql.named("insert into public.categorias_grupo (nome) values ('Categoria CrudTest') returning id"),

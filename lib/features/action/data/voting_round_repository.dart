@@ -16,11 +16,11 @@ class VotingRoundRepository {
   final SupabaseClient _client;
   final ActionRepository _acaoRepository;
 
-  Future<List<VotingRound>> fetchRodadasDoGrupo(String grupoId) async {
+  Future<List<VotingRound>> fetchRodadasDoGrupo(String groupId) async {
     final rows = await _client
         .from('rodadas_votacao')
         .select()
-        .eq('grupo_id', grupoId)
+        .eq('grupo_id', groupId)
         .order('created_at');
     return rows.map(VotingRound.fromMap).toList();
   }
@@ -31,11 +31,11 @@ class VotingRoundRepository {
     return VotingRound.fromMap(row);
   }
 
-  Future<void> openRound(NewVotingRound rodada, {required String grupoId}) async {
+  Future<void> openRound(NewVotingRound rodada, {required String groupId}) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('rodadas_votacao')
-        .insert(rodada.toInsertMap(grupoId: grupoId, abertaPor: uid));
+        .insert(rodada.toInsertMap(groupId: groupId, openedBy: uid));
   }
 
   Future<List<Action>> fetchCandidatas(String votingRoundId) async {
@@ -50,15 +50,15 @@ class VotingRoundRepository {
 
   /// FR-003: propõe uma Ação candidata — `grupo_id` nunca é enviado, é
   /// sempre derivado da Rodada pelo trigger no banco.
-  Future<void> proposeCandidate(String votingRoundId, NewAction candidata) async {
+  Future<void> proposeCandidate(String votingRoundId, NewAction candidate) async {
     await closeIfDue(votingRoundId);
     await _acaoRepository.createAction(
       NewAction(
-        nome: candidata.nome,
-        dateTime: candidata.dateTime,
-        local: candidata.local,
-        detalhes: candidata.detalhes,
-        capacity: candidata.capacity,
+        name: candidate.name,
+        dateTime: candidate.dateTime,
+        local: candidate.local,
+        details: candidate.details,
+        capacity: candidate.capacity,
         votingRoundId: votingRoundId,
       ),
     );
@@ -66,11 +66,11 @@ class VotingRoundRepository {
 
   /// FR-006: upsert — trocar de candidata atualiza a mesma linha, só a
   /// última escolha conta.
-  Future<void> vote(String votingRoundId, String candidataId) async {
+  Future<void> vote(String votingRoundId, String candidateId) async {
     await closeIfDue(votingRoundId);
     final uid = _client.auth.currentUser!.id;
     await _client.from('votos').upsert(
-      {'rodada_id': votingRoundId, 'usuario_id': uid, 'candidata_id': candidataId},
+      {'rodada_id': votingRoundId, 'usuario_id': uid, 'candidata_id': candidateId},
       onConflict: 'rodada_id,usuario_id',
     );
   }

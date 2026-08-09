@@ -24,7 +24,7 @@ void main() {
           overrides: [
             suggestedActionRepositoryProvider.overrideWithValue(suggestedActionRepo),
             groupCategoriesProvider.overrideWith(
-              (ref) async => const [GroupCategory(id: 'cat-1', nome: 'Ministério Jovem')],
+              (ref) async => const [GroupCategory(id: 'cat-1', name: 'Ministério Jovem')],
             ),
           ],
           child: const MaterialApp(home: CreateActionPage()),

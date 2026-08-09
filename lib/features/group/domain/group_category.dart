@@ -1,10 +1,10 @@
 class GroupCategory {
-  const GroupCategory({required this.id, required this.nome});
+  const GroupCategory({required this.id, required this.name});
 
   final String id;
-  final String nome;
+  final String name;
 
   factory GroupCategory.fromMap(Map<String, dynamic> map) {
-    return GroupCategory(id: map['id'] as String, nome: map['nome'] as String);
+    return GroupCategory(id: map['id'] as String, name: map['nome'] as String);
   }
 }

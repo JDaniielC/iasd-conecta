@@ -12,8 +12,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador Bloqueia');
-    await criarPerfilDeTeste(conn, _uidOutro, nome: 'Outro Bloqueia');
+    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Bloqueia');
+    await criarPerfilDeTeste(conn, _uidOutro, name: 'Outro Bloqueia');
 
     final rows = await conn.execute(
       Sql.named(

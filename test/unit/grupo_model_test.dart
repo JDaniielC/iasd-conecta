@@ -4,25 +4,25 @@ import 'package:iasd_conecta/features/group/domain/group.dart';
 void main() {
   group('NovoGrupo.prontoParaEnviar', () {
     test('falso sem nome', () {
-      const grupo = NewGroup(nome: '  ', categoria: 'Jovem');
+      const grupo = NewGroup(name: '  ', category: 'Jovem');
       expect(grupo.isReadyToSubmit, isFalse);
     });
 
     test('falso sem categoria', () {
-      const grupo = NewGroup(nome: 'Grupo', categoria: '');
+      const grupo = NewGroup(name: 'Grupo', category: '');
       expect(grupo.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com nome e categoria preenchidos, sem horário/local', () {
-      const grupo = NewGroup(nome: 'Grupo', categoria: 'Jovem');
+      const grupo = NewGroup(name: 'Grupo', category: 'Jovem');
       expect(grupo.isReadyToSubmit, isTrue);
     });
 
     test('detalhes opcional não afeta prontoParaEnviar', () {
       const grupo = NewGroup(
-        nome: 'Grupo',
-        categoria: 'Jovem',
-        detalhes: null,
+        name: 'Grupo',
+        category: 'Jovem',
+        details: null,
       );
       expect(grupo.isReadyToSubmit, isTrue);
     });
@@ -31,11 +31,11 @@ void main() {
   group('NovoGrupo.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui dono/igreja', () {
       const grupo = NewGroup(
-        nome: ' Grupo ',
-        categoria: 'Jovem',
-        detalhes: '   ',
+        name: ' Grupo ',
+        category: 'Jovem',
+        details: '   ',
       );
-      final map = grupo.toInsertMap(donoId: 'abc', igrejaId: 'igreja-1');
+      final map = grupo.toInsertMap(ownerId: 'abc', churchId: 'igreja-1');
       expect(map['nome'], 'Grupo');
       expect(map['horario'], isNull);
       expect(map['local'], isNull);
@@ -48,9 +48,9 @@ void main() {
   group('Grupo.souDono', () {
     final grupo = Group(
       id: 'g1',
-      nome: 'Grupo',
-      categoria: 'Jovem',
-      donoId: 'dono-1',
+      name: 'Grupo',
+      category: 'Jovem',
+      ownerId: 'dono-1',
       createdAt: DateTime(2026, 1, 1),
     );
 

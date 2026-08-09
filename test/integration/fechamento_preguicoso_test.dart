@@ -7,7 +7,7 @@ const _uidDono = '70000000-0000-0000-0000-000000000024';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
     await conn.execute('set role authenticated');
@@ -23,7 +23,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono FechamentoPreguicoso');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono FechamentoPreguicoso');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -31,17 +31,17 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']!;
+    groupId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where grupo_id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @grupo'),
-      parameters: {'grupo': grupoId},
+      parameters: {'grupo': groupId},
     );
     await limparUsuarioDeTeste(conn, _uidDono);
     await conn.close();
@@ -55,7 +55,7 @@ void main() {
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       );
       votingRoundId = rows.single.toColumnMap()['id']!;
     });
@@ -80,7 +80,7 @@ void main() {
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() - interval '1 hour') returning id",
         ),
-        parameters: {'grupo': grupoId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidDono},
       );
       votingRoundId = rows.single.toColumnMap()['id']!;
     });

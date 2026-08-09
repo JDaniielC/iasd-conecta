@@ -23,7 +23,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidNaoAdmin, nome: 'NaoAdmin ChurchAuth');
+    await criarPerfilDeTeste(conn, _uidNaoAdmin, name: 'NaoAdmin ChurchAuth');
   });
 
   tearDownAll(() async {
@@ -49,18 +49,18 @@ void main() {
 
   test('FR-006: quem não é Administrador não consegue arquivar Igreja', () async {
     final existente = await conn.execute('select id from public.igrejas limit 1');
-    final igrejaId = existente.single.toColumnMap()['id'];
+    final churchId = existente.single.toColumnMap()['id'];
 
     await comoUsuario(_uidNaoAdmin, () async {
       await conn.execute(
         Sql.named('update public.igrejas set arquivada_em = now() where id = @id'),
-        parameters: {'id': igrejaId},
+        parameters: {'id': churchId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select arquivada_em from public.igrejas where id = @id'),
-      parameters: {'id': igrejaId},
+      parameters: {'id': churchId},
     );
     expect(rows.single.toColumnMap()['arquivada_em'], isNull);
   });

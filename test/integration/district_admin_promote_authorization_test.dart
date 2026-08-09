@@ -24,8 +24,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidNaoAdmin, nome: 'NaoAdmin PromoteAuth');
-    await criarPerfilDeTeste(conn, _uidAlvo, nome: 'Alvo PromoteAuth');
+    await criarPerfilDeTeste(conn, _uidNaoAdmin, name: 'NaoAdmin PromoteAuth');
+    await criarPerfilDeTeste(conn, _uidAlvo, name: 'Alvo PromoteAuth');
   });
 
   tearDownAll(() async {

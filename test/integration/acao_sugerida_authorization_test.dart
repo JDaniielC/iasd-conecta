@@ -23,7 +23,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidComum, nome: 'Comum Authorization');
+    await criarPerfilDeTeste(conn, _uidComum, name: 'Comum Authorization');
     final cat = await conn.execute(
       Sql.named("insert into public.categorias_grupo (nome) values ('Categoria Authorization') returning id"),
     );

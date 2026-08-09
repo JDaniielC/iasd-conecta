@@ -39,34 +39,34 @@ class GroupRepository {
         .single();
     await _client
         .from('grupos')
-        .insert(grupo.toInsertMap(donoId: uid, igrejaId: perfil['igreja_id'] as String?));
+        .insert(grupo.toInsertMap(ownerId: uid, churchId: perfil['igreja_id'] as String?));
   }
 
   Future<void> updateGroup(
     String id, {
-    String? nome,
-    String? categoria,
-    String? detalhes,
+    String? name,
+    String? category,
+    String? details,
   }) async {
     final valores = <String, dynamic>{
-      if (nome != null) 'nome': nome.trim(),
-      if (categoria != null) 'categoria': categoria.trim(),
-      if (detalhes != null) 'detalhes': detalhes.trim().isEmpty ? null : detalhes.trim(),
+      if (name != null) 'nome': name.trim(),
+      if (category != null) 'categoria': category.trim(),
+      if (details != null) 'detalhes': details.trim().isEmpty ? null : details.trim(),
     };
     if (valores.isEmpty) return;
     await _client.from('grupos').update(valores).eq('id', id);
   }
 
-  Future<List<String>> fetchParticipanteIds(String grupoId) async {
+  Future<List<String>> fetchParticipanteIds(String groupId) async {
     final rows = await _client
         .from('participacoes_grupo')
         .select('usuario_id')
-        .eq('grupo_id', grupoId);
+        .eq('grupo_id', groupId);
     return rows.map((r) => r['usuario_id'] as String).toList();
   }
 
-  Future<List<PublicProfile>> fetchParticipantes(String grupoId) async {
-    final ids = await fetchParticipanteIds(grupoId);
+  Future<List<PublicProfile>> fetchParticipantes(String groupId) async {
+    final ids = await fetchParticipanteIds(groupId);
     final perfis = await Future.wait(ids.map((id) => _fetchPerfilPublico(id)));
     return perfis;
   }
@@ -78,10 +78,10 @@ class GroupRepository {
   }
 
   /// FR-013: idempotente — participar de novo não é erro nem duplica.
-  Future<void> join(String grupoId) async {
+  Future<void> join(String groupId) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('participacoes_grupo').upsert(
-      {'grupo_id': grupoId, 'usuario_id': uid},
+      {'grupo_id': groupId, 'usuario_id': uid},
       onConflict: 'grupo_id,usuario_id',
       ignoreDuplicates: true,
     );
@@ -89,27 +89,27 @@ class GroupRepository {
 
   /// FR-007/FR-012: sair é auto-serviço, mas o Dono atual é bloqueado pelo
   /// trigger `participacoes_grupo_dono_nao_sai_sem_transferir` no banco.
-  Future<void> leave(String grupoId) async {
+  Future<void> leave(String groupId) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('participacoes_grupo')
         .delete()
-        .eq('grupo_id', grupoId)
+        .eq('grupo_id', groupId)
         .eq('usuario_id', uid);
   }
 
   /// FR-010: só o Dono consegue (garantido pela RLS de `participacoes_grupo`).
-  Future<void> removeMember(String grupoId, String usuarioId) async {
+  Future<void> removeMember(String groupId, String userId) async {
     await _client
         .from('participacoes_grupo')
         .delete()
-        .eq('grupo_id', grupoId)
-        .eq('usuario_id', usuarioId);
+        .eq('grupo_id', groupId)
+        .eq('usuario_id', userId);
   }
 
   /// FR-011: só transfere pra quem já participa (garantido pelo trigger
   /// `grupos_dono_deve_participar` no banco).
-  Future<void> transferOwnership(String grupoId, String novoDonoId) async {
-    await _client.from('grupos').update({'dono_id': novoDonoId}).eq('id', grupoId);
+  Future<void> transferOwnership(String groupId, String novoDonoId) async {
+    await _client.from('grupos').update({'dono_id': novoDonoId}).eq('id', groupId);
   }
 }

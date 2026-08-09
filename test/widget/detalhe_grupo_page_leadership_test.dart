@@ -16,11 +16,11 @@ class MockGrupoRepository extends Mock implements GroupRepository {}
 
 final _grupo = Group(
   id: 'g1',
-  nome: 'Ministério de Louvor',
-  categoria: 'Ministério',
-  horario: 'sábados 9h',
+  name: 'Ministério de Louvor',
+  category: 'Ministério',
+  schedule: 'sábados 9h',
   local: 'Templo',
-  donoId: 'dono-1',
+  ownerId: 'dono-1',
   createdAt: DateTime(2026, 1, 1),
 );
 
@@ -51,7 +51,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/grupos/:id',
-            builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
+            builder: (context, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
           ),
         ],
       );
@@ -97,7 +97,7 @@ void main() {
         routes: [
           GoRoute(
             path: '/grupos/:id',
-            builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
+            builder: (context, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
           ),
         ],
       );

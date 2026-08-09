@@ -59,10 +59,10 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   NewAction? get _candidataAtual {
     if (_dataHora == null) return null;
     return NewAction(
-      nome: _nomeController.text,
+      name: _nomeController.text,
       dateTime: _dataHora!,
       local: _localController.text,
-      detalhes: _detalhesController.text,
+      details: _detalhesController.text,
       capacity: int.tryParse(_limiteVagasController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
@@ -70,10 +70,10 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   }
 
   Future<void> _propor() async {
-    final candidata = _candidataAtual;
+    final candidate = _candidataAtual;
     if (_formKey.currentState?.validate() != true ||
-        candidata == null ||
-        !candidata.isReadyToSubmit) {
+        candidate == null ||
+        !candidate.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome, data/hora e local.');
       return;
     }
@@ -82,7 +82,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
       _erro = null;
     });
     try {
-      await ref.read(votingRoundRepositoryProvider).proposeCandidate(widget.votingRoundId, candidata);
+      await ref.read(votingRoundRepositoryProvider).proposeCandidate(widget.votingRoundId, candidate);
       ref.invalidate(candidatesProvider(widget.votingRoundId));
       if (mounted) context.pop();
     } catch (_) {
@@ -95,7 +95,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   @override
   Widget build(BuildContext context) {
     final rodadaAsync = ref.watch(votingRoundProvider(widget.votingRoundId));
-    final groupId = rodadaAsync.value?.grupoId;
+    final groupId = rodadaAsync.value?.groupId;
     final suggestionsAsync =
         groupId == null ? null : ref.watch(suggestionsForGroupProvider(groupId));
     final suggestions = suggestionsAsync?.value ?? const [];

@@ -22,18 +22,18 @@ const _churches = [
 final _grupos = [
   Group(
     id: 'g1',
-    nome: 'SevenBikers',
-    categoria: 'Ministério Jovem',
-    igrejaId: 'igreja-1',
-    donoId: 'dono-1',
+    name: 'SevenBikers',
+    category: 'Ministério Jovem',
+    churchId: 'igreja-1',
+    ownerId: 'dono-1',
     createdAt: DateTime(2026, 1, 1),
   ),
   Group(
     id: 'g2',
-    nome: 'Coral',
-    categoria: 'Ministério da Música',
-    igrejaId: 'igreja-2',
-    donoId: 'dono-2',
+    name: 'Coral',
+    category: 'Ministério da Música',
+    churchId: 'igreja-2',
+    ownerId: 'dono-2',
     createdAt: DateTime(2026, 1, 2),
   ),
 ];

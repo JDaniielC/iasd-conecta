@@ -7,8 +7,8 @@ class NameModeration {
 
   final List<String> _blockedWords;
 
-  bool isValid(String nome) {
-    final normalizado = _normalize(nome);
+  bool isValid(String name) {
+    final normalizado = _normalize(name);
     return !_blockedWords
         .map(_normalize)
         .any(normalizado.contains);

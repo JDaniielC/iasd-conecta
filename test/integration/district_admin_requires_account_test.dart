@@ -25,9 +25,9 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, nome: 'Admin RequiresAccount');
-    await criarPerfilSemContaDeTeste(conn, _uidSoPerfil, nome: 'SoPerfil RequiresAccount');
-    await criarPerfilDeTeste(conn, _uidComConta, nome: 'ComConta RequiresAccount');
+    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin RequiresAccount');
+    await criarPerfilSemContaDeTeste(conn, _uidSoPerfil, name: 'SoPerfil RequiresAccount');
+    await criarPerfilDeTeste(conn, _uidComConta, name: 'ComConta RequiresAccount');
     await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
   });
 

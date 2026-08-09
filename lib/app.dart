@@ -92,11 +92,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/grupos/:id',
-        builder: (context, state) => GroupDetailPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/editar',
-        builder: (context, state) => EditGroupPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => EditGroupPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/acoes',
@@ -112,11 +112,11 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/grupos/:id/rodadas',
-        builder: (context, state) => VotingRoundListPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => VotingRoundListPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas/novo',
-        builder: (context, state) => CreateVotingRoundPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => CreateVotingRoundPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/rodadas/:id/candidatas/novo',

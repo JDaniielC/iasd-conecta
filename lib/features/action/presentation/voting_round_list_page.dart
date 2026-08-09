@@ -9,20 +9,20 @@ import '../voting_round_providers.dart';
 /// Lista de Rodadas de votação de um Grupo — visível a Visitante e Usuário
 /// igualmente (FR-017).
 class VotingRoundListPage extends ConsumerWidget {
-  const VotingRoundListPage({super.key, required this.grupoId});
+  const VotingRoundListPage({super.key, required this.groupId});
 
-  final String grupoId;
+  final String groupId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rodadasAsync = ref.watch(groupVotingRoundsProvider(grupoId));
+    final rodadasAsync = ref.watch(groupVotingRoundsProvider(groupId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rodadas de Votação')),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (ProfileGuard.requireProfile(context, ref)) {
-            context.push('/grupos/$grupoId/rodadas/novo');
+            context.push('/grupos/$groupId/rodadas/novo');
           }
         },
         child: const Icon(Icons.add),
@@ -38,7 +38,7 @@ class VotingRoundListPage extends ConsumerWidget {
               final rodada = rodadas[index];
               return Card(
                 child: ListTile(
-                  title: Text(rodada.aberta ? 'Aberta' : 'Fechada'),
+                  title: Text(rodada.isOpen ? 'Aberta' : 'Fechada'),
                   subtitle: Text(
                     'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}',
                   ),

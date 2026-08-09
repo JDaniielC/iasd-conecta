@@ -17,7 +17,7 @@ void main() {
   group('NovaRodada.toInsertMap', () {
     test('inclui grupo_id e aberta_por', () {
       final rodada = NewVotingRound(deadline: DateTime.now().add(const Duration(days: 1)));
-      final map = rodada.toInsertMap(grupoId: 'g1', abertaPor: 'u1');
+      final map = rodada.toInsertMap(groupId: 'g1', openedBy: 'u1');
       expect(map['grupo_id'], 'g1');
       expect(map['aberta_por'], 'u1');
       expect(map['prazo'], isNotNull);
@@ -28,22 +28,22 @@ void main() {
     test('verdadeiro quando fechadaEm é nulo', () {
       final rodada = VotingRound(
         id: 'r1',
-        grupoId: 'g1',
-        abertaPor: 'u1',
+        groupId: 'g1',
+        openedBy: 'u1',
         deadline: DateTime.now().add(const Duration(days: 1)),
       );
-      expect(rodada.aberta, isTrue);
+      expect(rodada.isOpen, isTrue);
     });
 
     test('falso quando fechadaEm está preenchido', () {
       final rodada = VotingRound(
         id: 'r1',
-        grupoId: 'g1',
-        abertaPor: 'u1',
+        groupId: 'g1',
+        openedBy: 'u1',
         deadline: DateTime.now(),
-        fechadaEm: DateTime.now(),
+        closedAt: DateTime.now(),
       );
-      expect(rodada.aberta, isFalse);
+      expect(rodada.isOpen, isFalse);
     });
   });
 }

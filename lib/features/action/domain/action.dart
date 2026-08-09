@@ -7,20 +7,20 @@ enum VisitedGender { male, female }
 
 class NewAction {
   const NewAction({
-    required this.nome,
+    required this.name,
     required this.dateTime,
     required this.local,
-    this.detalhes,
+    this.details,
     this.capacity,
     this.votingRoundId,
     this.isMissionaryPair = false,
     this.visitedGender,
   });
 
-  final String nome;
+  final String name;
   final DateTime dateTime;
   final String local;
-  final String? detalhes;
+  final String? details;
   final int? capacity;
 
   /// Preenchido só quando esta Ação é uma candidata proposta numa Rodada de
@@ -34,17 +34,17 @@ class NewAction {
   final VisitedGender? visitedGender;
 
   bool get isReadyToSubmit =>
-      nome.trim().isNotEmpty &&
+      name.trim().isNotEmpty &&
       local.trim().isNotEmpty &&
       (capacity == null || capacity! > 0) &&
       (!isMissionaryPair || visitedGender != null);
 
   Map<String, dynamic> toInsertMap({required String creatorId}) {
     return {
-      'nome': nome.trim(),
+      'nome': name.trim(),
       'data_hora': dateTime.toUtc().toIso8601String(),
       'local': local.trim(),
-      'detalhes': (detalhes?.trim().isEmpty ?? true) ? null : detalhes!.trim(),
+      'detalhes': (details?.trim().isEmpty ?? true) ? null : details!.trim(),
       'limite_vagas': isMissionaryPair ? 2 : capacity,
       'criador_id': creatorId,
       if (votingRoundId != null) 'rodada_id': votingRoundId,
@@ -61,15 +61,15 @@ class NewAction {
 class Action {
   const Action({
     required this.id,
-    required this.nome,
+    required this.name,
     required this.dateTime,
     required this.local,
     required this.creatorId,
     required this.createdAt,
-    this.detalhes,
+    this.details,
     this.capacity,
     this.cancelledAt,
-    this.grupoId,
+    this.groupId,
     this.votingRoundId,
     this.isConfirmed = true,
     this.isMissionaryPair = false,
@@ -77,17 +77,17 @@ class Action {
   });
 
   final String id;
-  final String nome;
+  final String name;
   final DateTime dateTime;
   final String local;
-  final String? detalhes;
+  final String? details;
   final int? capacity;
   final String creatorId;
   final DateTime createdAt;
   final DateTime? cancelledAt;
 
   /// Não-nulo quando é uma Ação de Grupo (candidata ou já confirmada).
-  final String? grupoId;
+  final String? groupId;
 
   /// Não-nulo enquanto esta Ação é uma candidata numa Rodada de votação.
   final String? votingRoundId;
@@ -120,21 +120,21 @@ class Action {
   }) =>
       souAdministradorDoDistrito ||
       isCreator(usuarioAtualId) ||
-      (grupoId != null && souDonoDoGrupo);
+      (groupId != null && souDonoDoGrupo);
 
   factory Action.fromMap(Map<String, dynamic> map) {
     return Action(
       id: map['id'] as String,
-      nome: map['nome'] as String,
+      name: map['nome'] as String,
       dateTime: DateTime.parse(map['data_hora'] as String),
       local: map['local'] as String,
-      detalhes: map['detalhes'] as String?,
+      details: map['detalhes'] as String?,
       capacity: map['limite_vagas'] as int?,
       creatorId: map['criador_id'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
       cancelledAt:
           map['cancelada_em'] == null ? null : DateTime.parse(map['cancelada_em'] as String),
-      grupoId: map['grupo_id'] as String?,
+      groupId: map['grupo_id'] as String?,
       votingRoundId: map['rodada_id'] as String?,
       isConfirmed: map['confirmada'] as bool? ?? true,
       isMissionaryPair: map['eh_dupla_missionaria'] as bool? ?? false,
@@ -151,10 +151,10 @@ class Action {
 /// ou `perfis.igreja_id` do criador (Ação avulsa). Usado só pra agrupar/
 /// filtrar a lista por Igreja; a Ação em si não guarda `igreja_id`.
 class ActionWithChurch {
-  const ActionWithChurch({required this.acao, this.igrejaId});
+  const ActionWithChurch({required this.acao, this.churchId});
 
   final Action acao;
-  final String? igrejaId;
+  final String? churchId;
 }
 
 enum ActionPeriod { sabado, hoje, essaSemana, outras }

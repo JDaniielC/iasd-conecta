@@ -23,7 +23,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, nome: 'Admin JoinCategoria');
+    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin JoinCategoria');
     await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
 
     final catA = await conn.execute(

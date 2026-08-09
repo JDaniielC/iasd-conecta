@@ -14,7 +14,7 @@ final suggestedActionRepositoryProvider = Provider<SuggestedActionRepository>((r
 final suggestionsForGroupProvider =
     FutureProvider.autoDispose.family<List<SuggestedAction>, String>((ref, groupId) async {
   final grupo = await ref.watch(groupProvider(groupId).future);
-  return ref.watch(suggestedActionRepositoryProvider).fetchByCategoryName(grupo.categoria);
+  return ref.watch(suggestedActionRepositoryProvider).fetchByCategoryName(grupo.category);
 });
 
 /// FR-005: sugestões filtradas pela Categoria escolhida na tela de Ação

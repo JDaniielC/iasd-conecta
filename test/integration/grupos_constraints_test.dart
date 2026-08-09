@@ -16,7 +16,7 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidDono, nome: 'Dono de Teste'));
+  setUp(() => criarPerfilDeTeste(conn, _uidDono, name: 'Dono de Teste'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where dono_id = @dono'),

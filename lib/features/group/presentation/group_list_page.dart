@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../core/agrupar_por_igreja.dart';
+import '../../../core/group_by_church.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
@@ -12,7 +12,7 @@ import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
 
-enum _GroupSortOrder { maisRecentes, nome, categoria }
+enum _GroupSortOrder { maisRecentes, name, category }
 
 const _todasAsIgrejas = '__todas__';
 
@@ -38,7 +38,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
     final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
     final gruposAsync = ref.watch(groupsProvider);
     final churchesAsync = ref.watch(churchesProvider);
-    final nomePorIgrejaId = <String, String>{
+    final nameByChurchId = <String, String>{
       for (final c in churchesAsync.value ?? const []) c.id: c.name,
     };
 
@@ -109,16 +109,16 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
               data: (grupos) {
                 final filtrados = _filtroIgrejaId == _todasAsIgrejas
                     ? grupos
-                    : grupos.where((g) => g.igrejaId == _filtroIgrejaId).toList();
+                    : grupos.where((g) => g.churchId == _filtroIgrejaId).toList();
                 if (filtrados.isEmpty) {
                   return const Center(child: Text('Nenhum Grupo ainda.'));
                 }
                 final ordenados = [...filtrados]..sort(_comparador(_ordenacao));
-                final secoes = agruparPorIgreja(ordenados, (g) => g.igrejaId, nomePorIgrejaId);
+                final secoes = groupByChurch(ordenados, (g) => g.churchId, nameByChurchId);
                 return ListView(
                   children: [
                     for (final secao in secoes) ...[
-                      _SectionHeader(nome: secao.nomeIgreja),
+                      _SectionHeader(name: secao.nomeIgreja),
                       for (final grupo in secao.itens) _GroupCard(grupo: grupo),
                     ],
                   ],
@@ -137,10 +137,10 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
     switch (ordenacao) {
       case _GroupSortOrder.maisRecentes:
         return (a, b) => b.createdAt.compareTo(a.createdAt);
-      case _GroupSortOrder.nome:
-        return (a, b) => a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
-      case _GroupSortOrder.categoria:
-        return (a, b) => a.categoria.toLowerCase().compareTo(b.categoria.toLowerCase());
+      case _GroupSortOrder.name:
+        return (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase());
+      case _GroupSortOrder.category:
+        return (a, b) => a.category.toLowerCase().compareTo(b.category.toLowerCase());
     }
   }
 }
@@ -187,8 +187,8 @@ class _FilterBar extends StatelessWidget {
               decoration: const InputDecoration(labelText: 'Ordenar por'),
               items: const [
                 DropdownMenuItem(value: _GroupSortOrder.maisRecentes, child: Text('Mais recentes')),
-                DropdownMenuItem(value: _GroupSortOrder.nome, child: Text('Nome (A-Z)')),
-                DropdownMenuItem(value: _GroupSortOrder.categoria, child: Text('Categoria')),
+                DropdownMenuItem(value: _GroupSortOrder.name, child: Text('Nome (A-Z)')),
+                DropdownMenuItem(value: _GroupSortOrder.category, child: Text('Categoria')),
               ],
               onChanged: (v) => v == null ? null : onOrdenacaoChanged(v),
             ),
@@ -200,9 +200,9 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.nome});
+  const _SectionHeader({required this.name});
 
-  final String nome;
+  final String name;
 
   @override
   Widget build(BuildContext context) {
@@ -212,7 +212,7 @@ class _SectionHeader extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            nome,
+            name,
             style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                   fontWeight: FontWeight.bold,
@@ -235,8 +235,8 @@ class _GroupCard extends StatelessWidget {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
       child: ListTile(
-        title: Text(grupo.nome),
-        subtitle: Text(grupo.categoria),
+        title: Text(grupo.name),
+        subtitle: Text(grupo.category),
         onTap: () => context.push('/grupos/${grupo.id}'),
       ),
     );

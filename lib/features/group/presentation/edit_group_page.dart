@@ -10,9 +10,9 @@ import '../group_providers.dart';
 /// participante, transferir posse. RLS + triggers no banco são a garantia
 /// real (FR-009/010/011/012); esta tela é só a UI sobre isso.
 class EditGroupPage extends ConsumerStatefulWidget {
-  const EditGroupPage({super.key, required this.grupoId});
+  const EditGroupPage({super.key, required this.groupId});
 
-  final String grupoId;
+  final String groupId;
 
   @override
   ConsumerState<EditGroupPage> createState() => _EditGroupPageState();
@@ -34,11 +34,11 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
   Future<void> _salvar() async {
     try {
       await ref.read(groupRepositoryProvider).updateGroup(
-            widget.grupoId,
-            nome: _nomeController.text,
-            detalhes: _detalhesController.text,
+            widget.groupId,
+            name: _nomeController.text,
+            details: _detalhesController.text,
           );
-      ref.invalidate(groupProvider(widget.grupoId));
+      ref.invalidate(groupProvider(widget.groupId));
       ref.invalidate(groupsProvider);
       if (mounted) context.pop();
     } catch (_) {
@@ -46,10 +46,10 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
     }
   }
 
-  Future<void> _removerParticipante(String usuarioId) async {
+  Future<void> _removerParticipante(String userId) async {
     try {
-      await ref.read(groupRepositoryProvider).removeMember(widget.grupoId, usuarioId);
-      ref.invalidate(membersProvider(widget.grupoId));
+      await ref.read(groupRepositoryProvider).removeMember(widget.groupId, userId);
+      ref.invalidate(membersProvider(widget.groupId));
     } catch (_) {
       setState(() => _erro = 'Não deu pra remover esse participante.');
     }
@@ -57,8 +57,8 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
 
   Future<void> _transferirPosse(String novoDonoId) async {
     try {
-      await ref.read(groupRepositoryProvider).transferOwnership(widget.grupoId, novoDonoId);
-      ref.invalidate(groupProvider(widget.grupoId));
+      await ref.read(groupRepositoryProvider).transferOwnership(widget.groupId, novoDonoId);
+      ref.invalidate(groupProvider(widget.groupId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra transferir a posse.');
@@ -67,8 +67,8 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
 
   @override
   Widget build(BuildContext context) {
-    final grupoAsync = ref.watch(groupProvider(widget.grupoId));
-    final participantesAsync = ref.watch(membersProvider(widget.grupoId));
+    final grupoAsync = ref.watch(groupProvider(widget.groupId));
+    final participantesAsync = ref.watch(membersProvider(widget.groupId));
     final uid = ref.watch(currentUserIdProvider);
 
     return Scaffold(
@@ -79,8 +79,8 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
             return const Center(child: Text('Você não é o Dono deste Grupo.'));
           }
           if (!_carregouCampos) {
-            _nomeController.text = grupo.nome;
-            _detalhesController.text = grupo.detalhes ?? '';
+            _nomeController.text = grupo.name;
+            _detalhesController.text = grupo.details ?? '';
             _carregouCampos = true;
           }
           return SingleChildScrollView(
@@ -107,9 +107,9 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 participantesAsync.when(
-                  data: (participantes) => Column(
-                    children: participantes.map((p) {
-                      final ehODono = p.id == grupo.donoId;
+                  data: (members) => Column(
+                    children: members.map((p) {
+                      final ehODono = p.id == grupo.ownerId;
                       return ListTile(
                         title: Text(p.displayName),
                         subtitle: ehODono ? const Text('Dono') : null,

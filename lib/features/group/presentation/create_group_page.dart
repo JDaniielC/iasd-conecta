@@ -35,9 +35,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
   NewGroup get _grupoAtual {
     return NewGroup(
-      nome: _nomeController.text,
-      categoria: _categoriaController.text,
-      detalhes: _detalhesController.text,
+      name: _nomeController.text,
+      category: _categoriaController.text,
+      details: _detalhesController.text,
     );
   }
 
@@ -87,11 +87,11 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                   focusNode: _categoriaFocusNode,
                   optionsBuilder: (value) {
                     if (value.text.trim().isEmpty) {
-                      return categorias.map((c) => c.nome);
+                      return categorias.map((c) => c.name);
                     }
                     return categorias
-                        .map((c) => c.nome)
-                        .where((nome) => nome.toLowerCase().contains(value.text.toLowerCase()));
+                        .map((c) => c.name)
+                        .where((name) => name.toLowerCase().contains(value.text.toLowerCase()));
                   },
                   fieldViewBuilder: (context, controller, focusNode, onSubmitted) {
                     return TextFormField(
@@ -116,9 +116,9 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
                             shrinkWrap: true,
                             children: options
                                 .map(
-                                  (nome) => ListTile(
-                                    title: Text(nome),
-                                    onTap: () => onSelected(nome),
+                                  (name) => ListTile(
+                                    title: Text(name),
+                                    onTap: () => onSelected(name),
                                   ),
                                 )
                                 .toList(),

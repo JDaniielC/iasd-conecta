@@ -11,9 +11,9 @@ import '../group_providers.dart';
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
 /// (FR-005). Participar/sair exige Perfil (FR-006/FR-007/FR-008/FR-009).
 class GroupDetailPage extends ConsumerWidget {
-  const GroupDetailPage({super.key, required this.grupoId});
+  const GroupDetailPage({super.key, required this.groupId});
 
-  final String grupoId;
+  final String groupId;
 
   void _mostrarErro(BuildContext context, String mensagem) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
@@ -22,8 +22,8 @@ class GroupDetailPage extends ConsumerWidget {
   Future<void> _participar(BuildContext context, WidgetRef ref) async {
     if (!ProfileGuard.requireProfile(context, ref)) return;
     try {
-      await ref.read(groupRepositoryProvider).join(grupoId);
-      ref.invalidate(membersProvider(grupoId));
+      await ref.read(groupRepositoryProvider).join(groupId);
+      ref.invalidate(membersProvider(groupId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra participar agora. Tente de novo.');
@@ -32,8 +32,8 @@ class GroupDetailPage extends ConsumerWidget {
 
   Future<void> _sair(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(groupRepositoryProvider).leave(grupoId);
-      ref.invalidate(membersProvider(grupoId));
+      await ref.read(groupRepositoryProvider).leave(groupId);
+      ref.invalidate(membersProvider(groupId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(
@@ -45,8 +45,8 @@ class GroupDetailPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final grupoAsync = ref.watch(groupProvider(grupoId));
-    final participantesAsync = ref.watch(membersProvider(grupoId));
+    final grupoAsync = ref.watch(groupProvider(groupId));
+    final participantesAsync = ref.watch(membersProvider(groupId));
     final uid = ref.watch(currentUserIdProvider);
     final participa = participantesAsync.value?.any((p) => p.id == uid) ?? false;
 
@@ -63,38 +63,38 @@ class GroupDetailPage extends ConsumerWidget {
                 Row(
                   children: [
                     Expanded(
-                      child: Text(grupo.nome, style: Theme.of(context).textTheme.headlineMedium),
+                      child: Text(grupo.name, style: Theme.of(context).textTheme.headlineMedium),
                     ),
                     IconButton(
                       icon: const Icon(Icons.how_to_vote_outlined),
                       tooltip: 'Rodadas de Votação',
-                      onPressed: () => context.push('/grupos/$grupoId/rodadas'),
+                      onPressed: () => context.push('/grupos/$groupId/rodadas'),
                     ),
                     IconButton(
                       icon: const Icon(Icons.badge_outlined),
                       tooltip: 'Líder/Diretor de Ministério',
-                      onPressed: () => context.push('/grupos/$grupoId/leadership/declare'),
+                      onPressed: () => context.push('/grupos/$groupId/leadership/declare'),
                     ),
                     if (isOwner)
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => context.push('/grupos/$grupoId/editar'),
+                        onPressed: () => context.push('/grupos/$groupId/editar'),
                       ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
-                Text(grupo.categoria),
-                if (grupo.horario != null || grupo.local != null) ...[
+                Text(grupo.category),
+                if (grupo.schedule != null || grupo.local != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  if (grupo.horario != null) Text('Horário: ${grupo.horario}'),
+                  if (grupo.schedule != null) Text('Horário: ${grupo.schedule}'),
                   if (grupo.local != null) Text('Local: ${grupo.local}'),
                 ],
-                if (grupo.detalhes != null) ...[
+                if (grupo.details != null) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Text(grupo.detalhes!),
+                  Text(grupo.details!),
                 ],
                 const SizedBox(height: AppSpacing.md),
-                _LeadersSection(grupoId: grupoId),
+                _LeadersSection(groupId: groupId),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
                   onPressed: participa ? () => _sair(context, ref) : () => _participar(context, ref),
@@ -104,8 +104,8 @@ class GroupDetailPage extends ConsumerWidget {
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
                   child: participantesAsync.when(
-                    data: (participantes) => ListView(
-                      children: participantes
+                    data: (members) => ListView(
+                      children: members
                           .map((p) => ListTile(title: Text(p.displayName)))
                           .toList(),
                     ),
@@ -128,13 +128,13 @@ class GroupDetailPage extends ConsumerWidget {
 /// confirmado(s) do ano corrente — visível até pra Visitante sem cadastro.
 /// Sem confirmado nenhum, a seção não aparece (Grupo comum, não Ministério).
 class _LeadersSection extends ConsumerWidget {
-  const _LeadersSection({required this.grupoId});
+  const _LeadersSection({required this.groupId});
 
-  final String grupoId;
+  final String groupId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final leadersAsync = ref.watch(currentLeadersProvider(grupoId));
+    final leadersAsync = ref.watch(currentLeadersProvider(groupId));
     final leaders = leadersAsync.value ?? const [];
     if (leaders.isEmpty) return const SizedBox.shrink();
 

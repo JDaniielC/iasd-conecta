@@ -11,7 +11,7 @@ import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
 
-enum _ActionSortOrder { data, maisRecentes, nome }
+enum _ActionSortOrder { data, maisRecentes, name }
 
 const _todasAsIgrejas = '__todas__';
 
@@ -89,7 +89,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
               data: (itens) {
                 var filtrados = _filtroIgrejaId == _todasAsIgrejas
                     ? itens
-                    : itens.where((i) => i.igrejaId == _filtroIgrejaId).toList();
+                    : itens.where((i) => i.churchId == _filtroIgrejaId).toList();
                 if (_soSabado) {
                   filtrados = filtrados
                       .where((i) => isOnSabbath(i.acao.dateTime))
@@ -108,7 +108,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                   children: [
                     for (final periodo in _ordemPeriodos)
                       if (porPeriodo[periodo]?.isNotEmpty ?? false) ...[
-                        _SectionHeader(nome: _rotuloPeriodo[periodo]!, destaque: periodo == ActionPeriod.sabado),
+                        _SectionHeader(name: _rotuloPeriodo[periodo]!, destaque: periodo == ActionPeriod.sabado),
                         for (final item in porPeriodo[periodo]!)
                           _ActionCard(
                             acao: item.acao,
@@ -133,8 +133,8 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
         return (a, b) => a.acao.dateTime.compareTo(b.acao.dateTime);
       case _ActionSortOrder.maisRecentes:
         return (a, b) => b.acao.createdAt.compareTo(a.acao.createdAt);
-      case _ActionSortOrder.nome:
-        return (a, b) => a.acao.nome.toLowerCase().compareTo(b.acao.nome.toLowerCase());
+      case _ActionSortOrder.name:
+        return (a, b) => a.acao.name.toLowerCase().compareTo(b.acao.name.toLowerCase());
     }
   }
 }
@@ -189,7 +189,7 @@ class _FilterBar extends StatelessWidget {
                   items: const [
                     DropdownMenuItem(value: _ActionSortOrder.data, child: Text('Data')),
                     DropdownMenuItem(value: _ActionSortOrder.maisRecentes, child: Text('Mais recentes')),
-                    DropdownMenuItem(value: _ActionSortOrder.nome, child: Text('Nome (A-Z)')),
+                    DropdownMenuItem(value: _ActionSortOrder.name, child: Text('Nome (A-Z)')),
                   ],
                   onChanged: (v) => v == null ? null : onOrdenacaoChanged(v),
                 ),
@@ -210,9 +210,9 @@ class _FilterBar extends StatelessWidget {
 }
 
 class _SectionHeader extends StatelessWidget {
-  const _SectionHeader({required this.nome, this.destaque = false});
+  const _SectionHeader({required this.name, this.destaque = false});
 
-  final String nome;
+  final String name;
   final bool destaque;
 
   @override
@@ -230,7 +230,7 @@ class _SectionHeader extends StatelessWidget {
                 const SizedBox(width: AppSpacing.xs),
               ],
               Text(
-                nome,
+                name,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: cor,
                       fontWeight: FontWeight.bold,
@@ -265,7 +265,7 @@ class _ActionCard extends StatelessWidget {
       color: destaqueSabado ? tertiary.withValues(alpha: 0.08) : null,
       child: ListTile(
         leading: destaqueSabado ? Icon(Icons.nights_stay, color: tertiary) : null,
-        title: Text(acao.nome),
+        title: Text(acao.name),
         subtitle: Text(
           '${DateFormat('dd/MM/yyyy HH:mm').format(acao.dateTime)} · ${acao.local}'
           '${acao.isCancelled ? ' · Cancelada' : ''}',

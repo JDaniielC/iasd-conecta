@@ -78,7 +78,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
                 initialValue: _categoriaId,
                 decoration: const InputDecoration(labelText: 'Categoria'),
                 items: categorias
-                    .map((c) => DropdownMenuItem(value: c.id, child: Text(c.nome)))
+                    .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                     .toList(),
                 onChanged: (v) => setState(() => _categoriaId = v),
               ),
@@ -110,7 +110,7 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
               child: categoriasAsync.when(
                 data: (categorias) => suggestionsAsync.when(
                   data: (suggestions) {
-                    final categoriaNome = {for (final c in categorias) c.id: c.nome};
+                    final categoriaNome = {for (final c in categorias) c.id: c.name};
                     return ListView(
                       children: suggestions
                           .map(

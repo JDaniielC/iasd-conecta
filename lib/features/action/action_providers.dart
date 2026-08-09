@@ -20,18 +20,18 @@ final actionsProvider = FutureProvider.autoDispose<List<Action>>((ref) {
 final actionsWithChurchProvider = FutureProvider.autoDispose<List<ActionWithChurch>>((ref) async {
   final acoes = await ref.watch(actionsProvider.future);
   final grupos = await ref.watch(groupsProvider.future);
-  final igrejaPorGrupo = {for (final g in grupos) g.id: g.igrejaId};
+  final igrejaPorGrupo = {for (final g in grupos) g.id: g.churchId};
 
   final perfilRepo = ref.watch(profileRepositoryProvider);
   final criadoresSemGrupo =
-      acoes.where((a) => a.grupoId == null).map((a) => a.creatorId).toSet();
+      acoes.where((a) => a.groupId == null).map((a) => a.creatorId).toSet();
   final perfis = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPublicProfile));
   final igrejaPorCriador = {for (final p in perfis) p.id: p.churchId};
 
   return acoes.map((acao) {
-    final igrejaId =
-        acao.grupoId != null ? igrejaPorGrupo[acao.grupoId] : igrejaPorCriador[acao.creatorId];
-    return ActionWithChurch(acao: acao, igrejaId: igrejaId);
+    final churchId =
+        acao.groupId != null ? igrejaPorGrupo[acao.groupId] : igrejaPorCriador[acao.creatorId];
+    return ActionWithChurch(acao: acao, churchId: churchId);
   }).toList();
 });
 

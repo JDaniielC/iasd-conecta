@@ -41,10 +41,10 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomem1, nome: 'Homem1 MesmoGenero', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidHomem2, nome: 'Homem2 MesmoGenero', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulher1, nome: 'Mulher1 MesmoGenero', genero: 'feminino');
-    await criarPerfilDeTeste(conn, _uidMulher2, nome: 'Mulher2 MesmoGenero', genero: 'feminino');
+    await criarPerfilDeTeste(conn, _uidHomem1, name: 'Homem1 MesmoGenero', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidHomem2, name: 'Homem2 MesmoGenero', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidMulher1, name: 'Mulher1 MesmoGenero', gender: 'feminino');
+    await criarPerfilDeTeste(conn, _uidMulher2, name: 'Mulher2 MesmoGenero', gender: 'feminino');
   });
 
   tearDownAll(() async {

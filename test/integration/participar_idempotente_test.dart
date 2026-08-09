@@ -8,12 +8,12 @@ const _uidParticipante = '40000000-0000-0000-0000-000000000005';
 
 void main() {
   late Connection conn;
-  late Object grupoId;
+  late Object groupId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, nome: 'Dono Idem');
-    await criarPerfilDeTeste(conn, _uidParticipante, nome: 'Participante Idem');
+    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono Idem');
+    await criarPerfilDeTeste(conn, _uidParticipante, name: 'Participante Idem');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -21,7 +21,7 @@ void main() {
       ),
       parameters: {'dono': _uidDono},
     );
-    grupoId = rows.single.toColumnMap()['id']!;
+    groupId = rows.single.toColumnMap()['id']!;
   });
 
   tearDownAll(() async {
@@ -40,7 +40,7 @@ void main() {
             'insert into public.participacoes_grupo (grupo_id, usuario_id) '
             'values (@grupo, @usuario) on conflict (grupo_id, usuario_id) do nothing',
           ),
-          parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+          parameters: {'grupo': groupId, 'usuario': _uidParticipante},
         );
 
     await join();
@@ -51,7 +51,7 @@ void main() {
         'select count(*) as total from public.participacoes_grupo '
         'where grupo_id = @grupo and usuario_id = @usuario',
       ),
-      parameters: {'grupo': grupoId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
     );
     expect(rows.single.toColumnMap()['total'], 1);
   });

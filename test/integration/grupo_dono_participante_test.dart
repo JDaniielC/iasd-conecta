@@ -16,7 +16,7 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidDono, nome: 'Dono Auto'));
+  setUp(() => criarPerfilDeTeste(conn, _uidDono, name: 'Dono Auto'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where dono_id = @dono'),
@@ -36,13 +36,13 @@ void main() {
         ),
         parameters: {'dono': _uidDono},
       );
-      final grupoId = rows.single.toColumnMap()['id'];
+      final groupId = rows.single.toColumnMap()['id'];
 
       final participacoes = await conn.execute(
         Sql.named(
           'select usuario_id from public.participacoes_grupo where grupo_id = @grupo',
         ),
-        parameters: {'grupo': grupoId},
+        parameters: {'grupo': groupId},
       );
 
       expect(participacoes, hasLength(1));

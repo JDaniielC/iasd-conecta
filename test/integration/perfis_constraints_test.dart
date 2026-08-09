@@ -50,13 +50,13 @@ void main() {
   });
 
   group('consentimento_igreja_destacado (LGPD art. 11 I)', () {
-    late String igrejaId;
+    late String churchId;
 
     setUp(() async {
       final rows = await conn.execute(
         Sql.named("insert into public.igrejas (nome) values ('Igreja ConsentimentoTeste') returning id"),
       );
-      igrejaId = rows.single.toColumnMap()['id']! as String;
+      churchId = rows.single.toColumnMap()['id']! as String;
     });
 
     tearDown(() async {
@@ -68,7 +68,7 @@ void main() {
       );
       await conn.execute(
         Sql.named('delete from public.igrejas where id = @id'),
-        parameters: {'id': igrejaId},
+        parameters: {'id': churchId},
       );
     });
 
@@ -80,7 +80,7 @@ void main() {
             "(id, nome, genero, idade, consentimento_lgpd_aceito_em, igreja_id) "
             "values (@id, 'Ana Souza', 'feminino', 30, now(), @igreja)",
           ),
-          parameters: {'id': _uid, 'igreja': igrejaId},
+          parameters: {'id': _uid, 'igreja': churchId},
         ),
         throwsA(isA<ServerException>()),
       );
@@ -94,14 +94,14 @@ void main() {
           "consentimento_lgpd_igreja_aceito_em) "
           "values (@id, 'Ana Souza', 'feminino', 30, now(), @igreja, now())",
         ),
-        parameters: {'id': _uid, 'igreja': igrejaId},
+        parameters: {'id': _uid, 'igreja': churchId},
       );
 
       final rows = await conn.execute(
         Sql.named('select igreja_id from public.perfis where id = @id'),
         parameters: {'id': _uid},
       );
-      expect(rows.single.toColumnMap()['igreja_id'], igrejaId);
+      expect(rows.single.toColumnMap()['igreja_id'], churchId);
     });
   });
 }

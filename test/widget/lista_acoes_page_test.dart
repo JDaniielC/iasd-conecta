@@ -20,10 +20,10 @@ DateTime _proximaSextaAs18h() {
 
 final _acoesComIgreja = [
   ActionWithChurch(
-    igrejaId: 'igreja-1',
+    churchId: 'igreja-1',
     acao: Action(
       id: 'a1',
-      nome: 'Acampamento',
+      name: 'Acampamento',
       dateTime: DateTime(2027, 3, 10, 8, 0),
       local: 'Sítio',
       creatorId: 'dono-1',
@@ -31,10 +31,10 @@ final _acoesComIgreja = [
     ),
   ),
   ActionWithChurch(
-    igrejaId: 'igreja-1',
+    churchId: 'igreja-1',
     acao: Action(
       id: 'a2',
-      nome: 'Culto de Adoração',
+      name: 'Culto de Adoração',
       dateTime: _proximaSextaAs18h(),
       local: 'Templo',
       creatorId: 'dono-1',

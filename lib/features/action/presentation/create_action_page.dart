@@ -59,10 +59,10 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
   NewAction? get _acaoAtual {
     if (_dataHora == null) return null;
     return NewAction(
-      nome: _nomeController.text,
+      name: _nomeController.text,
       dateTime: _dataHora!,
       local: _localController.text,
-      detalhes: _detalhesController.text,
+      details: _detalhesController.text,
       capacity: int.tryParse(_limiteVagasController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
@@ -114,7 +114,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
                     labelText: 'Categoria (só pra filtrar sugestões, opcional)',
                   ),
                   items: categorias
-                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.nome)))
+                      .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))
                       .toList(),
                   onChanged: (v) => setState(() => _categoriaFiltroId = v),
                 ),

@@ -10,9 +10,9 @@ import '../voting_round_providers.dart';
 /// Abertura de Rodada de votação (User Story 1) — só o prazo é informado;
 /// quem participa do Grupo já é garantido pelo trigger no banco.
 class CreateVotingRoundPage extends ConsumerStatefulWidget {
-  const CreateVotingRoundPage({super.key, required this.grupoId});
+  const CreateVotingRoundPage({super.key, required this.groupId});
 
-  final String grupoId;
+  final String groupId;
 
   @override
   ConsumerState<CreateVotingRoundPage> createState() => _CreateVotingRoundPageState();
@@ -55,8 +55,8 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
       _erro = null;
     });
     try {
-      await ref.read(votingRoundRepositoryProvider).openRound(rodada, grupoId: widget.grupoId);
-      ref.invalidate(groupVotingRoundsProvider(widget.grupoId));
+      await ref.read(votingRoundRepositoryProvider).openRound(rodada, groupId: widget.groupId);
+      ref.invalidate(groupVotingRoundsProvider(widget.groupId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra abrir a Rodada agora. Você participa deste Grupo?');

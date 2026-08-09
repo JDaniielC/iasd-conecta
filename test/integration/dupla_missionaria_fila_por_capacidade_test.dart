@@ -24,9 +24,9 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomem1, nome: 'Homem1 FilaCapacidade', genero: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulher1, nome: 'Mulher1 FilaCapacidade', genero: 'feminino');
-    await criarPerfilDeTeste(conn, _uidTerceiro, nome: 'Terceiro FilaCapacidade', genero: 'masculino');
+    await criarPerfilDeTeste(conn, _uidHomem1, name: 'Homem1 FilaCapacidade', gender: 'masculino');
+    await criarPerfilDeTeste(conn, _uidMulher1, name: 'Mulher1 FilaCapacidade', gender: 'feminino');
+    await criarPerfilDeTeste(conn, _uidTerceiro, name: 'Terceiro FilaCapacidade', gender: 'masculino');
 
     final rows = await conn.execute(
       Sql.named(

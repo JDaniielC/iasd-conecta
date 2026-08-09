@@ -14,10 +14,10 @@ void main() {
     await conn.close();
   });
 
-  Future<bool> nomeValido(String nome) async {
+  Future<bool> nomeValido(String name) async {
     final rows = await conn.execute(
       Sql.named('select public.nome_valido(@nome) as valido'),
-      parameters: {'nome': nome},
+      parameters: {'nome': name},
     );
     return rows.single.toColumnMap()['valido'] as bool;
   }

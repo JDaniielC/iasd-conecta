@@ -47,12 +47,12 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   }
 
   Profile? get _perfilAtual {
-    final idade = int.tryParse(_idadeController.text);
-    if (idade == null) return null;
+    final age = int.tryParse(_idadeController.text);
+    if (age == null) return null;
     return Profile(
       name: _nomeController.text,
       gender: _genero,
-      age: idade,
+      age: age,
       lgpdConsentAccepted: _consentimentoLgpd,
       nickname: _apelidoController.text,
       churchId: _igrejaId,
@@ -115,8 +115,8 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   @override
   Widget build(BuildContext context) {
     final churchesAsync = ref.watch(churchesProvider);
-    final idade = int.tryParse(_idadeController.text);
-    final precisaApelido = idade != null && idade < 18;
+    final age = int.tryParse(_idadeController.text);
+    final precisaApelido = age != null && age < 18;
 
     return Scaffold(
       appBar: AppBar(title: const Text('Criar Perfil')),

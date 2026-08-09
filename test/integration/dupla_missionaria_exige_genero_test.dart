@@ -16,7 +16,7 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador ExigeGenero'));
+  setUp(() => criarPerfilDeTeste(conn, _uidCriador, name: 'Criador ExigeGenero'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where criador_id = @criador'),

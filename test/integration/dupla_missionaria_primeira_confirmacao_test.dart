@@ -43,7 +43,7 @@ void main() {
 
   test('FR-007: primeira confirmação (o próprio criador) é sempre aceita, qualquer gênero',
       () async {
-    await criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador PrimeiraConfirmacao', genero: 'masculino');
+    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador PrimeiraConfirmacao', gender: 'masculino');
     final acaoId = await _criarDuplaMissionaria(
       conn,
       creatorId: _uidCriador,

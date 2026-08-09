@@ -8,7 +8,7 @@ const _uidLider = '90000000-0000-0000-0000-000000000041';
 
 void main() {
   late Connection conn;
-  late String grupoId;
+  late String groupId;
   late String liderancaId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
@@ -26,8 +26,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, nome: 'Admin Decide');
-    await criarPerfilDeTeste(conn, _uidLider, nome: 'Lider Decide');
+    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin Decide');
+    await criarPerfilDeTeste(conn, _uidLider, name: 'Lider Decide');
     await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
     final grupoRows = await conn.execute(
       Sql.named(
@@ -36,13 +36,13 @@ void main() {
       ),
       parameters: {'dono': _uidAdmin},
     );
-    grupoId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = grupoRows.single.toColumnMap()['id']! as String;
     final liderancaRows = await conn.execute(
       Sql.named(
         'insert into public.liderancas (grupo_id, usuario_id, ano) '
         'values (@grupo, @uid, 2026) returning id',
       ),
-      parameters: {'grupo': grupoId, 'uid': _uidLider},
+      parameters: {'grupo': groupId, 'uid': _uidLider},
     );
     liderancaId = liderancaRows.single.toColumnMap()['id']! as String;
   });
@@ -50,11 +50,11 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.liderancas where grupo_id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
-      parameters: {'id': grupoId},
+      parameters: {'id': groupId},
     );
     await conn.execute(
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),

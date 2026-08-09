@@ -34,7 +34,7 @@ terceiro, e nenhuma ferramenta textual distingue os três. Só o analisador dist
 
 **Purpose**: capturar a régua. Sem ela, nenhuma verificação posterior significa nada.
 
-- [ ] T001 Capturar a linha de base conforme a seção "Linha de base" de [quickstart.md](./quickstart.md), gravando em `/tmp/012-baseline/`: (a) contagem de testes que passam em `flutter test test/unit test/widget`; (b) conjunto ordenado dos literais de string de `lib/`; (c) rotas declaradas em `lib/app.dart`; (d) hash da árvore `supabase/`. **Anotar os quatro valores** — são a régua de todas as etapas
+- [X] T001 Capturar a linha de base conforme a seção "Linha de base" de [quickstart.md](./quickstart.md), gravando em `/tmp/012-baseline/`: (a) contagem de testes que passam em `flutter test test/unit test/widget`; (b) conjunto ordenado dos literais de string de `lib/`; (c) rotas declaradas em `lib/app.dart`; (d) hash da árvore `supabase/`. **Anotar os quatro valores** — são a régua de todas as etapas
 
 ---
 
@@ -54,9 +54,9 @@ termo, sem adivinhar.
 **Independent Test**: abrir `CONTEXT.md` e verificar que cada termo do glossário tem uma e
 apenas uma tradução declarada, e que nenhuma tradução serve a dois termos.
 
-- [ ] T002 [US1] Em `CONTEXT.md`, adicionar a tradução em inglês de cada termo do glossário, usando a tabela "Termos do glossário" de [research.md](./research.md) D-002. Registrar as traduções **já em uso no código** como estão (Perfil→`Profile`, Conta→`Account`, Apelido→`Nickname`, Igreja→`Church`, Ação sugerida→`SuggestedAction`, Dupla Missionária→`MissionaryPair`, Administrador do distrito→`DistrictAdmin`, Líder/Diretor→`Leader`) em vez de propor alternativas (FR-001, FR-003)
-- [ ] T003 [US1] Em `CONTEXT.md`, adicionar também os conceitos operacionais recorrentes da segunda tabela de `research.md` D-002 (confirmar presença→`confirmAttendance`, desistir→`withdraw`, fila de espera→`waitlist`, data e hora→`dateTime`, limite de vagas→`capacity`, e os demais), e registrar as duas colisões conhecidas com decisão já tomada: `Action` colide com `Action` do Flutter (resolver por prefixo de import, nunca renomeando o conceito de domínio) e `User` colide com o `User` do Supabase (prefixar `AppUser` se a ambiguidade aparecer de fato) — FR-002, FR-004
-- [ ] T004 [US1] Verificar o mapa: cada termo do glossário tem tradução, nenhuma tradução aparece para dois termos, e nenhum termo tem duas traduções. **Commitar antes de qualquer rename** — FR-005 exige que o mapa exista primeiro
+- [X] T002 [US1] Em `CONTEXT.md`, adicionar a tradução em inglês de cada termo do glossário, usando a tabela "Termos do glossário" de [research.md](./research.md) D-002. Registrar as traduções **já em uso no código** como estão (Perfil→`Profile`, Conta→`Account`, Apelido→`Nickname`, Igreja→`Church`, Ação sugerida→`SuggestedAction`, Dupla Missionária→`MissionaryPair`, Administrador do distrito→`DistrictAdmin`, Líder/Diretor→`Leader`) em vez de propor alternativas (FR-001, FR-003)
+- [X] T003 [US1] Em `CONTEXT.md`, adicionar também os conceitos operacionais recorrentes da segunda tabela de `research.md` D-002 (confirmar presença→`confirmAttendance`, desistir→`withdraw`, fila de espera→`waitlist`, data e hora→`dateTime`, limite de vagas→`capacity`, e os demais), e registrar as duas colisões conhecidas com decisão já tomada: `Action` colide com `Action` do Flutter (resolver por prefixo de import, nunca renomeando o conceito de domínio) e `User` colide com o `User` do Supabase (prefixar `AppUser` se a ambiguidade aparecer de fato) — FR-002, FR-004
+- [X] T004 [US1] Verificar o mapa: cada termo do glossário tem tradução, nenhuma tradução aparece para dois termos, e nenhum termo tem duas traduções. **Commitar antes de qualquer rename** — FR-005 exige que o mapa exista primeiro
 
 **Checkpoint**: US1 pronta e entregável sozinha. Mesmo sem uma linha renomeada, o mapa já impede que features futuras criem traduções divergentes.
 

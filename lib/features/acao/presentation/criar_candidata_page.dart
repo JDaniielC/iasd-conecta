@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
-import '../../acao_sugerida/suggested_action_providers.dart';
+import '../../suggested_action/suggested_action_providers.dart';
 import '../domain/acao.dart';
 import '../rodada_providers.dart';
 

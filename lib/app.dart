@@ -12,7 +12,7 @@ import 'features/acao/presentation/detalhe_acao_page.dart';
 import 'features/acao/presentation/detalhe_rodada_page.dart';
 import 'features/acao/presentation/lista_acoes_page.dart';
 import 'features/acao/presentation/lista_rodadas_page.dart';
-import 'features/acao_sugerida/presentation/manage_suggested_actions_page.dart';
+import 'features/suggested_action/presentation/manage_suggested_actions_page.dart';
 import 'features/district_admin/presentation/manage_churches_page.dart';
 import 'features/district_admin/presentation/promote_admin_page.dart';
 import 'features/grupo/presentation/criar_grupo_page.dart';

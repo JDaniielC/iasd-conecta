@@ -90,4 +90,37 @@ void main() {
       expect(find.text('A Deus seja a glória'), findsNothing);
     },
   );
+
+  testWidgets(
+    'com o backend fora do ar, o app abre na Home em vez de tela de erro (SC-005)',
+    (tester) async {
+      // Regressão de um erro real: com o Postgres local fora, o
+      // signInAnonymously de AppSupabase.bootstrap() estourava, runApp nunca
+      // rodava, e a pessoa via um DartError cru. A Home é estática de
+      // propósito — ela não depende de rede para nada, e precisa aparecer
+      // mesmo quando não há sessão nem backend.
+      final groupRepo = MockGroupRepository();
+      when(() => groupRepo.fetchGroups()).thenThrow(Exception('backend fora'));
+      final authRepo = MockAuthRepository();
+      when(() => authRepo.hasAccount).thenReturn(false);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasProfileProvider.overrideWith((ref) async {
+              throw Exception('backend fora');
+            }),
+            isAnonymousProvider.overrideWithValue(null),
+            groupRepositoryProvider.overrideWithValue(groupRepo),
+            authRepositoryProvider.overrideWithValue(authRepo),
+          ],
+          child: const App(),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('A Deus seja a glória'), findsOneWidget);
+      expect(find.textContaining('Vitória de Santo Antão'), findsWidgets);
+    },
+  );
 }

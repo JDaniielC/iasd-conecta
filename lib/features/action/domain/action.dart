@@ -157,6 +157,47 @@ class ActionWithChurch {
   final String? churchId;
 }
 
+/// Quanto tempo uma Ação fica "acontecendo agora" depois da hora marcada.
+///
+/// A Ação não guarda hora de término — este é o padrão para todas (FR-001).
+/// **Tem gêmea em SQL**: `interval '4 hours'` dentro de `public.acao_encerrada`
+/// (migration `_acao_encerrada_bloqueia_presenca.sql`). Mudar uma sem a outra dá
+/// o sintoma cruel: o botão some na tela mas o banco ainda aceita, ou o
+/// contrário. Ao mexer aqui, mexer lá e rodar os dois testes de fronteira.
+const defaultActionDuration = Duration(hours: 4);
+
+/// Estado de uma Ação no tempo — derivado, nunca gravado.
+enum ActionTimeStatus {
+  /// Ainda vai acontecer.
+  upcoming,
+
+  /// Entre a hora marcada e [defaultActionDuration] depois dela. Continua na
+  /// listagem e ainda aceita confirmar e desistir (FR-002) — quem está a
+  /// caminho precisa achá-la.
+  happeningNow,
+
+  /// Passou de `dateTime + defaultActionDuration`. Some da listagem (FR-003),
+  /// continua acessível por link (FR-004), e não aceita mais confirmar nem
+  /// desistir (FR-005).
+  ended,
+}
+
+/// Classifica a Ação no tempo. Função pura: não grava nada, não agenda nada.
+///
+/// Gravar um estado que só depende do relógio criaria a obrigação de mantê-lo
+/// atualizado — job, cron ou trigger — e a garantia de que um dia ficaria
+/// defasado. A informação já está em `dateTime`.
+///
+/// Fronteira: em `dateTime + defaultActionDuration` cravado ainda é
+/// [ActionTimeStatus.happeningNow]; encerra no primeiro instante depois.
+ActionTimeStatus actionTimeStatus(DateTime dateTime, DateTime now) {
+  if (now.isBefore(dateTime)) return ActionTimeStatus.upcoming;
+  if (now.isAfter(dateTime.add(defaultActionDuration))) {
+    return ActionTimeStatus.ended;
+  }
+  return ActionTimeStatus.happeningNow;
+}
+
 enum ActionPeriod { sabbath, hoje, essaSemana, outras }
 
 /// Sábado adventista: sexta 17:30 até sábado 17:30 — aproximação de

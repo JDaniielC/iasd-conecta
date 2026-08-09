@@ -71,6 +71,14 @@ class ActionDetailPage extends ConsumerWidget {
               : (ref.watch(groupProvider(action.groupId!)).value?.isOwner(uid) ?? false);
           final isDistrictAdmin =
               ref.watch(isDistrictAdminProvider).value ?? false;
+          // FR-004/FR-005: Ação encerrada abre por link, mas não oferece mais
+          // nenhum controle. FR-008: cancelada tem precedência no rótulo — é a
+          // informação que explica por que ninguém foi.
+          final isEnded = actionTimeStatus(
+                action.dateTime,
+                ref.watch(clockProvider)(),
+              ) ==
+              ActionTimeStatus.ended;
           final canCancel = action.canCancel(
             uid,
             isGroupOwner: isGroupOwner,
@@ -89,7 +97,7 @@ class ActionDetailPage extends ConsumerWidget {
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
-                    if (canCancel && !action.isCancelled && action.isConfirmed)
+                    if (canCancel && !action.isCancelled && action.isConfirmed && !isEnded)
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Cancelar Ação',
@@ -97,6 +105,13 @@ class ActionDetailPage extends ConsumerWidget {
                       ),
                   ],
                 ),
+                if (!action.isCancelled && isEnded) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Text(
+                    'Encerrada',
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
                 if (action.isCancelled) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
@@ -135,7 +150,7 @@ class ActionDetailPage extends ConsumerWidget {
                   Text(action.details!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                if (!action.isCancelled)
+                if (!action.isCancelled && !isEnded)
                   ElevatedButton(
                     onPressed: myAttendance != null
                         ? () => _withdraw(context, ref)

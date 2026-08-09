@@ -51,7 +51,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   Widget build(BuildContext context) {
     final actionsAsync = ref.watch(actionsWithChurchProvider);
     final churchesAsync = ref.watch(churchesProvider);
-    final now = DateTime.now();
+    final now = ref.watch(clockProvider)();
 
     return Scaffold(
       appBar: AppBar(
@@ -95,6 +95,14 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                       .where((i) => isOnSabbath(i.action.dateTime))
                       .toList();
                 }
+                // FR-003: Ação encerrada some da listagem. Depois dos demais
+                // filtros de propósito — assim nenhuma combinação de filtro de
+                // Igreja ou "Só Sábado" deixa uma encerrada escapar.
+                filtered = filtered
+                    .where((i) =>
+                        actionTimeStatus(i.action.dateTime, now) !=
+                        ActionTimeStatus.ended)
+                    .toList();
                 if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhuma Ação ainda.'));
                 }
@@ -113,6 +121,11 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                           _ActionCard(
                             action: item.action,
                             sabbathHighlight: period == ActionPeriod.sabbath,
+                            happeningNow: actionTimeStatus(
+                                  item.action.dateTime,
+                                  now,
+                                ) ==
+                                ActionTimeStatus.happeningNow,
                           ),
                       ],
                   ],
@@ -246,10 +259,18 @@ class _SectionHeader extends StatelessWidget {
 }
 
 class _ActionCard extends StatelessWidget {
-  const _ActionCard({required this.action, this.sabbathHighlight = false});
+  const _ActionCard({
+    required this.action,
+    this.sabbathHighlight = false,
+    this.happeningNow = false,
+  });
 
   final Action action;
   final bool sabbathHighlight;
+
+  /// FR-002: entre a hora marcada e 4h depois, a Ação continua na lista e
+  /// ganha sinalização — quem está a caminho precisa achá-la.
+  final bool happeningNow;
 
   @override
   Widget build(BuildContext context) {
@@ -268,7 +289,8 @@ class _ActionCard extends StatelessWidget {
         title: Text(action.name),
         subtitle: Text(
           '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.local}'
-          '${action.isCancelled ? ' · Cancelada' : ''}',
+          '${action.isCancelled ? ' · Cancelada' : ''}'
+          '${!action.isCancelled && happeningNow ? ' · Acontecendo agora' : ''}',
         ),
         onTap: () => context.push('/acoes/${action.id}'),
       ),

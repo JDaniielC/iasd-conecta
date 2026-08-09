@@ -54,3 +54,14 @@ final authRepositoryProvider = Provider<AuthRepository>((ref) {
 final publicProfileProvider = FutureProvider.autoDispose.family<PublicProfile, String>((ref, id) {
   return ref.watch(profileRepositoryProvider).fetchPublicProfile(id);
 });
+
+/// Relógio do app, injetável.
+///
+/// Existe para o encerramento de Ação (feature 011) ser testável: sem isto,
+/// "Ação de 4h01 atrás não aparece na lista" viraria um teste que depende do
+/// relógio real da máquina, montando dados relativos a `DateTime.now()` e
+/// falhando conforme a hora em que roda.
+///
+/// Regra de uso: quem **decide** olhando o relógio lê daqui; quem **carimba**
+/// um instante para gravar (ex.: `cancelledAt`) usa `DateTime.now()` direto.
+final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);

@@ -35,7 +35,7 @@ português por decisão registrada na feature 012.
 
 **Purpose**: derrubar a premissa da migration **antes** de escrever código em cima dela.
 
-- [ ] T001 Verificar as duas premissas de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql` contra o banco local (`supabase start` primeiro), com as consultas da Parte 0 de [quickstart.md](./quickstart.md): (a) `public.excluir_conta` tem `prosecdef = t`; (b) `public.confirmacoes_acao` tem `relforcerowsecurity = f`. **Anotar a saída real das duas consultas.** Se `relforcerowsecurity = t`, PARAR e trocar para o plano B de `research.md` D-003 — seguir mesmo assim cria um bug de exclusão de conta (LGPD), não um bug de UX
+- [X] T001 Verificar as duas premissas de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql` contra o banco local (`supabase start` primeiro), com as consultas da Parte 0 de [quickstart.md](./quickstart.md): (a) `public.excluir_conta` tem `prosecdef = t`; (b) `public.confirmacoes_acao` tem `relforcerowsecurity = f`. **Anotar a saída real das duas consultas.** Se `relforcerowsecurity = t`, PARAR e trocar para o plano B de `research.md` D-003 — seguir mesmo assim cria um bug de exclusão de conta (LGPD), não um bug de UX
 
 ---
 
@@ -44,7 +44,7 @@ português por decisão registrada na feature 012.
 **Purpose**: relógio injetável. É fino de propósito — esta feature são quatro fatias
 independentes, não um alicerce compartilhado.
 
-- [ ] T002 Em `lib/core/providers.dart`, adicionar `final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);`, com comentário explicando que existe para tornar o encerramento testável (decisão D-006). Fica em `core/` porque tempo não é assunto do módulo de Ação
+- [X] T002 Em `lib/core/providers.dart`, adicionar `final clockProvider = Provider<DateTime Function()>((ref) => DateTime.now);`, com comentário explicando que existe para tornar o encerramento testável (decisão D-006). Fica em `core/` porque tempo não é assunto do módulo de Ação
 
 **Checkpoint**: `flutter analyze` limpo. Nenhum comportamento mudou ainda.
 
@@ -61,17 +61,17 @@ confirmar presença.
 
 ### Tests for User Story 1
 
-- [ ] T003 [P] [US1] Criar `test/unit/acao_encerramento_test.dart` cobrindo as quatro fronteiras de `actionTimeStatus`: `dateTime - 1s` → `upcoming`; `dateTime + 0s` → `happeningNow`; `dateTime + 4h` cravado → `happeningNow`; `dateTime + 4h + 1s` → `ended` (FR-001, FR-002, decisão D-001)
-- [ ] T004 [US1] Em `test/widget/lista_acoes_page_test.dart`, adicionar os casos que devem falhar agora, sobrescrevendo `clockProvider` com instante fixo: (a) Ação de 4h01 atrás não aparece em nenhuma seção de período; (b) a mesma Ação não aparece com o filtro "Só Sábado" ligado; (c) Ação de 1h atrás aparece, sinalizada como acontecendo agora (FR-002, FR-003, SC-001)
-- [ ] T005 [US1] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: (a) Ação encerrada abre e mostra o rótulo de encerrada; (b) não existe botão de confirmar, desistir, sair da fila nem cancelar; (c) Ação cancelada **e** encerrada mostra "Cancelada" (FR-004, FR-005, FR-008, SC-004)
+- [X] T003 [P] [US1] Criar `test/unit/acao_encerramento_test.dart` cobrindo as quatro fronteiras de `actionTimeStatus`: `dateTime - 1s` → `upcoming`; `dateTime + 0s` → `happeningNow`; `dateTime + 4h` cravado → `happeningNow`; `dateTime + 4h + 1s` → `ended` (FR-001, FR-002, decisão D-001)
+- [X] T004 [US1] Em `test/widget/lista_acoes_page_test.dart`, adicionar os casos que devem falhar agora, sobrescrevendo `clockProvider` com instante fixo: (a) Ação de 4h01 atrás não aparece em nenhuma seção de período; (b) a mesma Ação não aparece com o filtro "Só Sábado" ligado; (c) Ação de 1h atrás aparece, sinalizada como acontecendo agora (FR-002, FR-003, SC-001)
+- [X] T005 [US1] Em `test/widget/detalhe_acao_page_test.dart`, adicionar: (a) Ação encerrada abre e mostra o rótulo de encerrada; (b) não existe botão de confirmar, desistir, sair da fila nem cancelar; (c) Ação cancelada **e** encerrada mostra "Cancelada" (FR-004, FR-005, FR-008, SC-004)
 
 ### Implementation for User Story 1
 
-- [ ] T006 [US1] Em `lib/features/action/domain/action.dart`, adicionar `const defaultActionDuration = Duration(hours: 4)` (com comentário apontando para a gêmea `interval '4 hours'` em SQL), o enum `ActionTimeStatus { upcoming, happeningNow, ended }` e a função pura `ActionTimeStatus actionTimeStatus(DateTime dateTime, DateTime now)`
-- [ ] T007 [US1] Em `lib/features/action/presentation/action_list_page.dart`, trocar `DateTime.now()` por `ref.watch(clockProvider)()` e filtrar as Ações com `ActionTimeStatus.ended` antes do agrupamento por período — depois do filtro de Igreja e de "Só Sábado", para que nenhuma combinação de filtro deixe uma encerrada passar (FR-003). Sinalizar visualmente as `happeningNow` (FR-002)
-- [ ] T008 [US1] Em `lib/features/action/presentation/action_detail_page.dart`, ler o instante de `clockProvider`, exibir o rótulo de encerrada e esconder os controles de confirmar/desistir/sair da fila/cancelar quando `ended` (FR-004, FR-005). Precedência: se estiver cancelada **e** encerrada, o rótulo é "Cancelada" (FR-008). **Não** filtrar a Ação encerrada aqui — o detalhe tem de abrir (decisão D-002)
-- [ ] T009 [US1] Criar `supabase/migrations/<timestamp>_acao_encerrada_bloqueia_presenca.sql` com o conteúdo de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql`: função `public.acao_encerrada(uuid)` e as políticas `confirmacoes_acao_insert_self` e `confirmacoes_acao_delete_self` recriadas com a condição de tempo. **Não** tocar `confirmacoes_acao_select_public` — é ela que deixa a contagem ser pública (FR-014). **Nomes de banco continuam em português** — a feature 012 não traduz banco
-- [ ] T010 [US1] Criar `test/integration/acao_encerrada_nao_promove_fila_test.dart` com três casos: (a) em Ação encerrada, o `delete` em `confirmacoes_acao` é recusado e ninguém sobe da fila (**FR-007, Princípio IV**); (b) em Ação **não** encerrada, desistir ainda promove o próximo da fila — não-regressão de `confirmacoes_acao_promover_fila`; (c) `excluir_conta` continua apagando `confirmacoes_acao` de quem tem confirmação em Ação encerrada (risco 1 do plano — é este caso que impede o bloqueio de virar bug de LGPD)
+- [X] T006 [US1] Em `lib/features/action/domain/action.dart`, adicionar `const defaultActionDuration = Duration(hours: 4)` (com comentário apontando para a gêmea `interval '4 hours'` em SQL), o enum `ActionTimeStatus { upcoming, happeningNow, ended }` e a função pura `ActionTimeStatus actionTimeStatus(DateTime dateTime, DateTime now)`
+- [X] T007 [US1] Em `lib/features/action/presentation/action_list_page.dart`, trocar `DateTime.now()` por `ref.watch(clockProvider)()` e filtrar as Ações com `ActionTimeStatus.ended` antes do agrupamento por período — depois do filtro de Igreja e de "Só Sábado", para que nenhuma combinação de filtro deixe uma encerrada passar (FR-003). Sinalizar visualmente as `happeningNow` (FR-002)
+- [X] T008 [US1] Em `lib/features/action/presentation/action_detail_page.dart`, ler o instante de `clockProvider`, exibir o rótulo de encerrada e esconder os controles de confirmar/desistir/sair da fila/cancelar quando `ended` (FR-004, FR-005). Precedência: se estiver cancelada **e** encerrada, o rótulo é "Cancelada" (FR-008). **Não** filtrar a Ação encerrada aqui — o detalhe tem de abrir (decisão D-002)
+- [X] T009 [US1] Criar `supabase/migrations/<timestamp>_acao_encerrada_bloqueia_presenca.sql` com o conteúdo de `specs/011-acoes-titulo-e-encerramento/contracts/schema.sql`: função `public.acao_encerrada(uuid)` e as políticas `confirmacoes_acao_insert_self` e `confirmacoes_acao_delete_self` recriadas com a condição de tempo. **Não** tocar `confirmacoes_acao_select_public` — é ela que deixa a contagem ser pública (FR-014). **Nomes de banco continuam em português** — a feature 012 não traduz banco
+- [X] T010 [US1] Criar `test/integration/acao_encerrada_nao_promove_fila_test.dart` com três casos: (a) em Ação encerrada, o `delete` em `confirmacoes_acao` é recusado e ninguém sobe da fila (**FR-007, Princípio IV**); (b) em Ação **não** encerrada, desistir ainda promove o próximo da fila — não-regressão de `confirmacoes_acao_promover_fila`; (c) `excluir_conta` continua apagando `confirmacoes_acao` de quem tem confirmação em Ação encerrada (risco 1 do plano — é este caso que impede o bloqueio de virar bug de LGPD)
 
 **Checkpoint**: US1 pronta. A informação errada da listagem sumiu, e FR-007 é execução, não promessa.
 

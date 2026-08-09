@@ -45,7 +45,8 @@ Ele precisa cobrir, no mínimo, estes seis casos. Os cinco primeiros são a feat
 | 2 | Usuário cadastrado, fora do Grupo, consulta | 0 linhas | FR-002 |
 | 3 | Participante do Grupo consulta os votos alheios | 0 linhas | FR-004 |
 | 4 | A pessoa consulta o próprio voto | 1 linha, a candidata certa | FR-003 |
-| 5 | A pessoa **troca de voto** com a política nova aplicada | a linha vira a segunda candidata; só a última conta | FR-008 |
+| 5a | A pessoa **vota pela primeira vez** com a política nova aplicada | a linha é criada | FR-007 |
+| 5b | A pessoa **troca de voto** logo em seguida | a linha vira a segunda candidata; só a última conta | FR-008 |
 | 6 | Rodada com maioria numa candidata fecha | a **majoritária** vence, mesmo quem fechou tendo votado noutra | FR-009 |
 
 O caso 6 é o que impede o desastre silencioso. Ele precisa ser montado assim: **quem chama

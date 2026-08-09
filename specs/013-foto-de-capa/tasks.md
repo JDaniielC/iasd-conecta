@@ -12,6 +12,17 @@ sintoma — não aparece em tela, não quebra nada, e é dado pessoal retido sem
 legais — publicar upload com `MAPA-DE-DADOS.md` jurando que o app não coleta imagem é
 violação de constituição, não dívida.
 
+> **Padrão de idioma (Princípio I, e vale para código de teste também).** Todo identificador
+> Dart criado nesta feature — classe, enum e seus valores, método, função, variável local,
+> parâmetro, campo, provider e nome de arquivo — é escrito **em inglês**, seguindo o mapa de
+> `CONTEXT.md`. Isso inclui os arquivos de teste: só o **nome do arquivo** de teste continua
+> em português. Banco de dados, chaves de leitura/gravação (`map['nome']`, `'data_hora'`) e
+> strings visíveis ao usuário continuam em português, sem exceção.
+>
+> Aprendido na 011, onde helpers de teste e variáveis locais nasceram em português
+> (`_comoUsuario`, `acaoId`, `pumpDetalhe`, `comAcento`) e precisaram de um passe de
+> correção depois.
+
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: pode rodar em paralelo (arquivo diferente, sem dependência pendente)

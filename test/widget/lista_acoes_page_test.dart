@@ -18,7 +18,7 @@ DateTime _proximaSextaAs18h() {
   return DateTime(sexta.year, sexta.month, sexta.day, 18, 0);
 }
 
-final _acoesComIgreja = [
+final _actionsWithChurch = [
   ActionWithChurch(
     churchId: 'igreja-1',
     action: Action(
@@ -48,7 +48,7 @@ Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
     ProviderScope(
       overrides: [
         hasProfileProvider.overrideWith((ref) async => hasProfile),
-        actionsWithChurchProvider.overrideWith((ref) async => _acoesComIgreja),
+        actionsWithChurchProvider.overrideWith((ref) async => _actionsWithChurch),
         churchesProvider.overrideWith((ref) async => _churches),
       ],
       child: const MaterialApp(home: ActionListPage()),
@@ -60,9 +60,9 @@ Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
 /// Instante fixo para os casos de encerramento. Sem relógio fixo, "Ação de
 /// 4h01 atrás" seria um teste que muda de resultado conforme a hora em que
 /// roda.
-final _agora = DateTime(2026, 8, 9, 12, 0);
+final _now = DateTime(2026, 8, 9, 12, 0);
 
-ActionWithChurch _acaoEm(DateTime quando, {required String id, required String name}) {
+ActionWithChurch _actionAt(DateTime quando, {required String id, required String name}) {
   return ActionWithChurch(
     churchId: 'igreja-1',
     action: Action(
@@ -76,17 +76,17 @@ ActionWithChurch _acaoEm(DateTime quando, {required String id, required String n
   );
 }
 
-Future<void> _pumpEm(
+Future<void> _pumpAt(
   WidgetTester tester, {
-  required List<ActionWithChurch> acoes,
+  required List<ActionWithChurch> actions,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         hasProfileProvider.overrideWith((ref) async => true),
-        actionsWithChurchProvider.overrideWith((ref) async => acoes),
+        actionsWithChurchProvider.overrideWith((ref) async => actions),
         churchesProvider.overrideWith((ref) async => _churches),
-        clockProvider.overrideWithValue(() => _agora),
+        clockProvider.overrideWithValue(() => _now),
       ],
       child: const MaterialApp(home: ActionListPage()),
     ),
@@ -129,9 +129,9 @@ void main() {
   group('encerramento por tempo (US1)', () {
     testWidgets('Ação de 4h01 atrás não aparece em nenhuma seção (FR-003)',
         (tester) async {
-      await _pumpEm(tester, acoes: [
-        _acaoEm(
-          _agora.subtract(const Duration(hours: 4, minutes: 1)),
+      await _pumpAt(tester, actions: [
+        _actionAt(
+          _now.subtract(const Duration(hours: 4, minutes: 1)),
           id: 'passada',
           name: 'Visita de ontem',
         ),
@@ -146,8 +146,8 @@ void main() {
       // O sábado adventista vai de sexta 17:30 a sábado 17:30. 08/08/2026 é
       // sábado; 12:00 cai dentro da janela — a Ação seria "de sábado" se o
       // encerramento não a tirasse antes.
-      await _pumpEm(tester, acoes: [
-        _acaoEm(
+      await _pumpAt(tester, actions: [
+        _actionAt(
           DateTime(2026, 8, 8, 12, 0),
           id: 'sabado-passado',
           name: 'Culto de sábado passado',
@@ -164,9 +164,9 @@ void main() {
 
     testWidgets('Ação de 1h atrás aparece, sinalizada como acontecendo agora (FR-002)',
         (tester) async {
-      await _pumpEm(tester, acoes: [
-        _acaoEm(
-          _agora.subtract(const Duration(hours: 1)),
+      await _pumpAt(tester, actions: [
+        _actionAt(
+          _now.subtract(const Duration(hours: 1)),
           id: 'agora',
           name: 'Ensaio em andamento',
         ),
@@ -178,9 +178,9 @@ void main() {
 
     testWidgets('Ação futura aparece sem a sinalização de acontecendo agora',
         (tester) async {
-      await _pumpEm(tester, acoes: [
-        _acaoEm(
-          _agora.add(const Duration(days: 2)),
+      await _pumpAt(tester, actions: [
+        _actionAt(
+          _now.add(const Duration(days: 2)),
           id: 'futura',
           name: 'Culto Jovem',
         ),
@@ -192,7 +192,7 @@ void main() {
   });
 
   group('contagem de confirmados (US2)', () {
-    Future<void> pumpComContagem(
+    Future<void> pumpWithCounts(
       WidgetTester tester, {
       required Action action,
       required ConfirmationCounts counts,
@@ -205,7 +205,7 @@ void main() {
               (ref) async => [ActionWithChurch(churchId: 'igreja-1', action: action)],
             ),
             churchesProvider.overrideWith((ref) async => _churches),
-            clockProvider.overrideWithValue(() => _agora),
+            clockProvider.overrideWithValue(() => _now),
             confirmationCountsProvider.overrideWith((ref) async => {action.id: counts}),
           ],
           child: const MaterialApp(home: ActionListPage()),
@@ -214,10 +214,10 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    Action acaoFutura({int? capacity}) => Action(
+    Action upcomingAction({int? capacity}) => Action(
           id: 'a1',
           name: 'Culto Jovem',
-          dateTime: _agora.add(const Duration(days: 2)),
+          dateTime: _now.add(const Duration(days: 2)),
           local: 'Templo',
           creatorId: 'dono-1',
           createdAt: DateTime(2026, 1, 1),
@@ -226,18 +226,18 @@ void main() {
 
     testWidgets('3 confirmados aparecem como "3 confirmados" (FR-009)',
         (tester) async {
-      await pumpComContagem(
+      await pumpWithCounts(
         tester,
-        action: acaoFutura(),
+        action: upcomingAction(),
         counts: const ConfirmationCounts(confirmed: 3),
       );
       expect(find.textContaining('3 confirmados'), findsOneWidget);
     });
 
     testWidgets('1 confirmado usa o singular (FR-010)', (tester) async {
-      await pumpComContagem(
+      await pumpWithCounts(
         tester,
-        action: acaoFutura(),
+        action: upcomingAction(),
         counts: const ConfirmationCounts(confirmed: 1),
       );
       expect(find.textContaining('1 confirmado'), findsOneWidget);
@@ -245,9 +245,9 @@ void main() {
     });
 
     testWidgets('zero vira frase, nunca o número solto (FR-011)', (tester) async {
-      await pumpComContagem(
+      await pumpWithCounts(
         tester,
-        action: acaoFutura(),
+        action: upcomingAction(),
         counts: const ConfirmationCounts(),
       );
       expect(find.textContaining('Ninguém confirmou ainda'), findsOneWidget);
@@ -255,9 +255,9 @@ void main() {
     });
 
     testWidgets('com limite, mostra confirmados e vagas (FR-012)', (tester) async {
-      await pumpComContagem(
+      await pumpWithCounts(
         tester,
-        action: acaoFutura(capacity: 10),
+        action: upcomingAction(capacity: 10),
         counts: const ConfirmationCounts(confirmed: 4),
       );
       expect(find.textContaining('4 de 10 vagas'), findsOneWidget);
@@ -265,23 +265,23 @@ void main() {
 
     testWidgets('lotada com fila mostra a fila separada da contagem (FR-013)',
         (tester) async {
-      await pumpComContagem(
+      await pumpWithCounts(
         tester,
-        action: acaoFutura(capacity: 2),
+        action: upcomingAction(capacity: 2),
         counts: const ConfirmationCounts(confirmed: 2, waiting: 2),
       );
 
-      final texto = tester
+      final text = tester
           .widgetList<Text>(find.byType(Text))
           .map((w) => w.data)
           .whereType<String>()
           .firstWhere((d) => d.contains('vagas'));
 
-      expect(texto, contains('2 de 2 vagas'));
-      expect(texto, contains('Lotada'));
-      expect(texto, contains('2 na fila de espera'));
+      expect(text, contains('2 de 2 vagas'));
+      expect(text, contains('Lotada'));
+      expect(text, contains('2 na fila de espera'));
       // A fila NUNCA é somada aos confirmados (FR-013).
-      expect(texto, isNot(contains('4 de 2')));
+      expect(text, isNot(contains('4 de 2')));
     });
   });
 }

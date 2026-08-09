@@ -12,7 +12,7 @@ import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
 
-enum _GroupSortOrder { maisRecentes, name, category }
+enum _GroupSortOrder { mostRecent, name, category }
 
 const _allChurches = '__todas__';
 
@@ -32,7 +32,7 @@ class GroupListPage extends ConsumerStatefulWidget {
 
 class _GroupListPageState extends ConsumerState<GroupListPage> {
   String _churchFilterId = _allChurches;
-  _GroupSortOrder _sortOrder = _GroupSortOrder.maisRecentes;
+  _GroupSortOrder _sortOrder = _GroupSortOrder.mostRecent;
 
   @override
   Widget build(BuildContext context) {
@@ -138,7 +138,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
 
   int Function(Group, Group) _comparador(_GroupSortOrder sortOrder) {
     switch (sortOrder) {
-      case _GroupSortOrder.maisRecentes:
+      case _GroupSortOrder.mostRecent:
         return (a, b) => b.createdAt.compareTo(a.createdAt);
       case _GroupSortOrder.name:
         return (a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase());
@@ -189,7 +189,7 @@ class _FilterBar extends StatelessWidget {
               isDense: true,
               decoration: const InputDecoration(labelText: 'Ordenar por'),
               items: const [
-                DropdownMenuItem(value: _GroupSortOrder.maisRecentes, child: Text('Mais recentes')),
+                DropdownMenuItem(value: _GroupSortOrder.mostRecent, child: Text('Mais recentes')),
                 DropdownMenuItem(value: _GroupSortOrder.name, child: Text('Nome (A-Z)')),
                 DropdownMenuItem(value: _GroupSortOrder.category, child: Text('Categoria')),
               ],

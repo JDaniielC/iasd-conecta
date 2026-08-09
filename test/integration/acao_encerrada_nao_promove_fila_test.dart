@@ -15,11 +15,11 @@ import 'db_test_helper.dart';
 /// faz, e a pessoa ficaria sem conseguir apagar a conta. Bug de LGPD criado
 /// por uma feature de UX.
 
-const _uidDono = '70000000-0000-0000-0000-000000000080';
-const _uidPrimeiro = '70000000-0000-0000-0000-000000000081';
-const _uidSegundo = '70000000-0000-0000-0000-000000000082';
+const _uidOwner = '70000000-0000-0000-0000-000000000080';
+const _uidFirst = '70000000-0000-0000-0000-000000000081';
+const _uidSecond = '70000000-0000-0000-0000-000000000082';
 
-Future<void> _comoUsuario(
+Future<void> _asUser(
   Connection conn,
   String uid,
   Future<void> Function() action,
@@ -41,10 +41,10 @@ Future<void> _comoUsuario(
 /// criador na criação — ele ocupa a primeira vaga. Com 2, o criador e o
 /// primeiro convidado ficam confirmados, e o segundo cai na fila, que é o
 /// estado que este arquivo precisa.
-Future<String> _criarAcaoComUmaVaga(
+Future<String> _createActionWithTwoSeats(
   Connection conn, {
-  required String criadorId,
-  required DateTime dataHora,
+  required String creatorId,
+  required DateTime dateTime,
 }) async {
   final r = await conn.execute(
     Sql.named(
@@ -52,18 +52,18 @@ Future<String> _criarAcaoComUmaVaga(
       "values ('Visita a afastado', @dh, 'alto jose leal', 2, @criador) "
       'returning id',
     ),
-    parameters: {'dh': dataHora.toUtc(), 'criador': criadorId},
+    parameters: {'dh': dateTime.toUtc(), 'criador': creatorId},
   );
   return r.first[0] as String;
 }
 
-Future<String?> _statusDe(Connection conn, String acaoId, String uid) async {
+Future<String?> _statusOf(Connection conn, String actionId, String uid) async {
   final r = await conn.execute(
     Sql.named(
       'select status from public.confirmacoes_acao '
       'where acao_id = @a and usuario_id = @u',
     ),
-    parameters: {'a': acaoId, 'u': uid},
+    parameters: {'a': actionId, 'u': uid},
   );
   return r.isEmpty ? null : r.first[0] as String;
 }
@@ -73,7 +73,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    for (final uid in [_uidDono, _uidPrimeiro, _uidSegundo]) {
+    for (final uid in [_uidOwner, _uidFirst, _uidSecond]) {
       await criarUsuarioDeTeste(conn, uid);
       await criarPerfilDeTeste(conn, uid, name: 'Pessoa ${uid.substring(31)}');
     }
@@ -82,7 +82,7 @@ void main() {
   tearDownAll(() async {
     await conn.execute('delete from public.confirmacoes_acao');
     await conn.execute('delete from public.acoes');
-    for (final uid in [_uidDono, _uidPrimeiro, _uidSegundo]) {
+    for (final uid in [_uidOwner, _uidFirst, _uidSecond]) {
       await limparUsuarioDeTeste(conn, uid);
     }
     await conn.close();
@@ -92,10 +92,10 @@ void main() {
     '(a) em Ação encerrada, desistir é recusado e ninguém sobe da fila (FR-007)',
     () async {
       // Ação de 5h atrás: passou de data_hora + 4h, logo está encerrada.
-      final acaoId = await _criarAcaoComUmaVaga(
+      final actionId = await _createActionWithTwoSeats(
         conn,
-        criadorId: _uidDono,
-        dataHora: DateTime.now().subtract(const Duration(hours: 5)),
+        creatorId: _uidOwner,
+        dateTime: DateTime.now().subtract(const Duration(hours: 5)),
       );
 
       // Monta o estado ANTES de encerrar não é possível pelo relógio, então as
@@ -105,26 +105,26 @@ void main() {
           'insert into public.confirmacoes_acao (acao_id, usuario_id) '
           'values (@a, @u1), (@a, @u2)',
         ),
-        parameters: {'a': acaoId, 'u1': _uidPrimeiro, 'u2': _uidSegundo},
+        parameters: {'a': actionId, 'u1': _uidFirst, 'u2': _uidSecond},
       );
-      expect(await _statusDe(conn, acaoId, _uidPrimeiro), 'confirmado');
-      expect(await _statusDe(conn, acaoId, _uidSegundo), 'fila');
+      expect(await _statusOf(conn, actionId, _uidFirst), 'confirmado');
+      expect(await _statusOf(conn, actionId, _uidSecond), 'fila');
 
       // Quem tem a vaga tenta desistir, já encerrada.
-      await _comoUsuario(conn, _uidPrimeiro, () async {
+      await _asUser(conn, _uidFirst, () async {
         await conn.execute(
           Sql.named(
             'delete from public.confirmacoes_acao '
             'where acao_id = @a and usuario_id = @u',
           ),
-          parameters: {'a': acaoId, 'u': _uidPrimeiro},
+          parameters: {'a': actionId, 'u': _uidFirst},
         );
       });
 
       // A política recusa em silêncio: 0 linhas afetadas, nada muda.
-      expect(await _statusDe(conn, acaoId, _uidPrimeiro), 'confirmado',
+      expect(await _statusOf(conn, actionId, _uidFirst), 'confirmado',
           reason: 'a confirmação não podia ter sido apagada');
-      expect(await _statusDe(conn, acaoId, _uidSegundo), 'fila',
+      expect(await _statusOf(conn, actionId, _uidSecond), 'fila',
           reason: 'ninguém pode ser promovido depois do encerramento');
     },
   );
@@ -132,10 +132,10 @@ void main() {
   test(
     '(b) em Ação NÃO encerrada, desistir ainda promove o próximo da fila',
     () async {
-      final acaoId = await _criarAcaoComUmaVaga(
+      final actionId = await _createActionWithTwoSeats(
         conn,
-        criadorId: _uidDono,
-        dataHora: DateTime.now().add(const Duration(days: 2)),
+        creatorId: _uidOwner,
+        dateTime: DateTime.now().add(const Duration(days: 2)),
       );
 
       await conn.execute(
@@ -143,22 +143,22 @@ void main() {
           'insert into public.confirmacoes_acao (acao_id, usuario_id) '
           'values (@a, @u1), (@a, @u2)',
         ),
-        parameters: {'a': acaoId, 'u1': _uidPrimeiro, 'u2': _uidSegundo},
+        parameters: {'a': actionId, 'u1': _uidFirst, 'u2': _uidSecond},
       );
-      expect(await _statusDe(conn, acaoId, _uidSegundo), 'fila');
+      expect(await _statusOf(conn, actionId, _uidSecond), 'fila');
 
-      await _comoUsuario(conn, _uidPrimeiro, () async {
+      await _asUser(conn, _uidFirst, () async {
         await conn.execute(
           Sql.named(
             'delete from public.confirmacoes_acao '
             'where acao_id = @a and usuario_id = @u',
           ),
-          parameters: {'a': acaoId, 'u': _uidPrimeiro},
+          parameters: {'a': actionId, 'u': _uidFirst},
         );
       });
 
-      expect(await _statusDe(conn, acaoId, _uidPrimeiro), isNull);
-      expect(await _statusDe(conn, acaoId, _uidSegundo), 'confirmado',
+      expect(await _statusOf(conn, actionId, _uidFirst), isNull);
+      expect(await _statusOf(conn, actionId, _uidSecond), 'confirmado',
           reason: 'a promoção automática da fila não pode ter regredido');
     },
   );
@@ -177,45 +177,45 @@ void main() {
       // Ou seja, a política de FR-007 nunca chega a atravessar o caminho da
       // exclusão: Ação futura não está encerrada, e Ação encerrada não é
       // tocada. O teste trava as duas metades.
-      const uidQueSai = '70000000-0000-0000-0000-000000000083';
-      await criarUsuarioDeTeste(conn, uidQueSai);
-      await criarPerfilDeTeste(conn, uidQueSai, name: 'Pessoa que sai');
+      const uidLeaving = '70000000-0000-0000-0000-000000000083';
+      await criarUsuarioDeTeste(conn, uidLeaving);
+      await criarPerfilDeTeste(conn, uidLeaving, name: 'Pessoa que sai');
 
-      final encerrada = await _criarAcaoComUmaVaga(
+      final ended = await _createActionWithTwoSeats(
         conn,
-        criadorId: _uidDono,
-        dataHora: DateTime.now().subtract(const Duration(hours: 5)),
+        creatorId: _uidOwner,
+        dateTime: DateTime.now().subtract(const Duration(hours: 5)),
       );
-      final futura = await _criarAcaoComUmaVaga(
+      final upcoming = await _createActionWithTwoSeats(
         conn,
-        criadorId: _uidDono,
-        dataHora: DateTime.now().add(const Duration(days: 2)),
+        creatorId: _uidOwner,
+        dateTime: DateTime.now().add(const Duration(days: 2)),
       );
       await conn.execute(
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) '
           'values (@enc, @u), (@fut, @u)',
         ),
-        parameters: {'enc': encerrada, 'fut': futura, 'u': uidQueSai},
+        parameters: {'enc': ended, 'fut': upcoming, 'u': uidLeaving},
       );
 
       // A exclusão precisa concluir sem erro — é o que o bloqueio poderia ter
       // quebrado.
-      await _comoUsuario(conn, uidQueSai, () async {
+      await _asUser(conn, uidLeaving, () async {
         await conn.execute('select public.excluir_minha_conta()');
       });
 
-      final perfil = await conn.execute(
+      final profile = await conn.execute(
         Sql.named('select nome, anonimizado_em from public.perfis where id = @u'),
-        parameters: {'u': uidQueSai},
+        parameters: {'u': uidLeaving},
       );
-      expect(perfil.first[0], 'Membro removido',
+      expect(profile.first[0], 'Membro removido',
           reason: 'a anonimização da feature 009 tem de ter acontecido');
-      expect(perfil.first[1], isNotNull);
+      expect(profile.first[1], isNotNull);
 
-      expect(await _statusDe(conn, futura, uidQueSai), isNull,
+      expect(await _statusOf(conn, upcoming, uidLeaving), isNull,
           reason: 'vínculo vivo (Ação futura) sai junto com a conta');
-      expect(await _statusDe(conn, encerrada, uidQueSai), isNotNull,
+      expect(await _statusOf(conn, ended, uidLeaving), isNotNull,
           reason: 'vínculo histórico (Ação encerrada) fica, por decisão da 009');
     },
   );

@@ -11,22 +11,22 @@ import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
 
-enum _ActionSortOrder { data, maisRecentes, name }
+enum _ActionSortOrder { byDate, mostRecent, name }
 
 const _allChurches = '__todas__';
 
 const _periodOrder = [
   ActionPeriod.sabbath,
-  ActionPeriod.hoje,
-  ActionPeriod.essaSemana,
-  ActionPeriod.outras,
+  ActionPeriod.today,
+  ActionPeriod.thisWeek,
+  ActionPeriod.other,
 ];
 
 const _periodLabel = {
   ActionPeriod.sabbath: 'Sábado',
-  ActionPeriod.hoje: 'Hoje',
-  ActionPeriod.essaSemana: 'Essa semana',
-  ActionPeriod.outras: 'Outras datas',
+  ActionPeriod.today: 'Hoje',
+  ActionPeriod.thisWeek: 'Essa semana',
+  ActionPeriod.other: 'Outras datas',
 };
 
 /// Lista de Ações avulsas: visível a Visitante e Usuário igualmente
@@ -44,7 +44,7 @@ class ActionListPage extends ConsumerStatefulWidget {
 
 class _ActionListPageState extends ConsumerState<ActionListPage> {
   String _churchFilterId = _allChurches;
-  _ActionSortOrder _sortOrder = _ActionSortOrder.data;
+  _ActionSortOrder _sortOrder = _ActionSortOrder.byDate;
   bool _sabbathOnly = false;
 
   @override
@@ -107,7 +107,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                 if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhuma Ação ainda.'));
                 }
-                final sorted = [...filtered]..sort(_comparador(_sortOrder));
+                final sorted = [...filtered]..sort(_comparator(_sortOrder));
                 final byPeriod = <ActionPeriod, List<ActionWithChurch>>{};
                 for (final item in sorted) {
                   final period = actionPeriod(item.action.dateTime, now);
@@ -143,11 +143,11 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
     );
   }
 
-  int Function(ActionWithChurch, ActionWithChurch) _comparador(_ActionSortOrder sortOrder) {
+  int Function(ActionWithChurch, ActionWithChurch) _comparator(_ActionSortOrder sortOrder) {
     switch (sortOrder) {
-      case _ActionSortOrder.data:
+      case _ActionSortOrder.byDate:
         return (a, b) => a.action.dateTime.compareTo(b.action.dateTime);
-      case _ActionSortOrder.maisRecentes:
+      case _ActionSortOrder.mostRecent:
         return (a, b) => b.action.createdAt.compareTo(a.action.createdAt);
       case _ActionSortOrder.name:
         return (a, b) => a.action.name.toLowerCase().compareTo(b.action.name.toLowerCase());
@@ -203,8 +203,8 @@ class _FilterBar extends StatelessWidget {
                   isDense: true,
                   decoration: const InputDecoration(labelText: 'Ordenar por'),
                   items: const [
-                    DropdownMenuItem(value: _ActionSortOrder.data, child: Text('Data')),
-                    DropdownMenuItem(value: _ActionSortOrder.maisRecentes, child: Text('Mais recentes')),
+                    DropdownMenuItem(value: _ActionSortOrder.byDate, child: Text('Data')),
+                    DropdownMenuItem(value: _ActionSortOrder.mostRecent, child: Text('Mais recentes')),
                     DropdownMenuItem(value: _ActionSortOrder.name, child: Text('Nome (A-Z)')),
                   ],
                   onChanged: (v) => v == null ? null : onSortOrderChanged(v),
@@ -285,24 +285,24 @@ class _ActionCard extends StatelessWidget {
   /// informa nada a quem está decidindo de qual Ação participar (FR-011).
   String get _attendanceLabel {
     final n = counts.confirmed;
-    final limite = action.capacity;
+    final capacity = action.capacity;
 
-    final base = switch ((n, limite)) {
+    final label = switch ((n, capacity)) {
       (0, _) => 'Ninguém confirmou ainda',
       (1, null) => '1 confirmado',
       (_, null) => '$n confirmados',
-      _ => '$n de $limite vagas',
+      _ => '$n de $capacity vagas',
     };
 
     // Lotada com fila: a fila aparece separada da contagem, nunca somada
     // (FR-013) — somar faria uma Ação de 10 vagas parecer ter 15 pessoas.
     if (counts.waiting > 0) {
-      final fila = counts.waiting == 1
+      final waitingLabel = counts.waiting == 1
           ? '1 na fila de espera'
           : '${counts.waiting} na fila de espera';
-      return '$base · Lotada · $fila';
+      return '$label · Lotada · $waitingLabel';
     }
-    return base;
+    return label;
   }
 
   @override

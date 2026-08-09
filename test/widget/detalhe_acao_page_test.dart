@@ -11,9 +11,9 @@ import 'package:iasd_conecta/features/action/domain/action.dart';
 import 'package:iasd_conecta/features/action/presentation/action_detail_page.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockAcaoRepository extends Mock implements ActionRepository {}
+class MockActionRepository extends Mock implements ActionRepository {}
 
-final _acao = Action(
+final _action = Action(
   id: 'a1',
   name: 'Acampamento',
   dateTime: DateTime(2027, 3, 10, 8, 0),
@@ -26,9 +26,9 @@ void main() {
   testWidgets(
     'FR-011: confirmar presença sem Perfil direciona pro cadastro',
     (tester) async {
-      final acaoRepo = MockAcaoRepository();
-      when(() => acaoRepo.fetchAction('a1')).thenAnswer((_) async => _acao);
-      when(() => acaoRepo.fetchAttendees('a1')).thenAnswer((_) async => const []);
+      final actionRepo = MockActionRepository();
+      when(() => actionRepo.fetchAction('a1')).thenAnswer((_) async => _action);
+      when(() => actionRepo.fetchAttendees('a1')).thenAnswer((_) async => const []);
 
       final router = GoRouter(
         initialLocation: '/acoes/a1',
@@ -46,7 +46,7 @@ void main() {
           overrides: [
             hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            actionRepositoryProvider.overrideWithValue(acaoRepo),
+            actionRepositoryProvider.overrideWithValue(actionRepo),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -59,15 +59,15 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('TELA_CADASTRO'), findsOneWidget);
-      verifyNever(() => acaoRepo.confirmAttendance(any()));
+      verifyNever(() => actionRepo.confirmAttendance(any()));
     },
   );
 
   group('Ação encerrada (US1)', () {
-    final agora = DateTime(2026, 8, 9, 12, 0);
+    final now = DateTime(2026, 8, 9, 12, 0);
 
-    Future<void> pumpDetalhe(WidgetTester tester, Action action) async {
-      final repo = MockAcaoRepository();
+    Future<void> pumpDetail(WidgetTester tester, Action action) async {
+      final repo = MockActionRepository();
       when(() => repo.fetchAction('a1')).thenAnswer((_) async => action);
       when(() => repo.fetchAttendees('a1')).thenAnswer((_) async => const []);
 
@@ -78,7 +78,7 @@ void main() {
             currentUserIdProvider.overrideWithValue(null),
             isDistrictAdminProvider.overrideWith((ref) async => false),
             actionRepositoryProvider.overrideWithValue(repo),
-            clockProvider.overrideWithValue(() => agora),
+            clockProvider.overrideWithValue(() => now),
           ],
           child: MaterialApp(
             home: const ActionDetailPage(actionId: 'a1'),
@@ -88,7 +88,7 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    Action acaoEm(DateTime quando, {DateTime? cancelledAt}) => Action(
+    Action actionAt(DateTime quando, {DateTime? cancelledAt}) => Action(
           id: 'a1',
           name: 'Visita a afastado',
           dateTime: quando,
@@ -100,9 +100,9 @@ void main() {
 
     testWidgets('abre por link direto e mostra o rótulo de encerrada (FR-004)',
         (tester) async {
-      await pumpDetalhe(
+      await pumpDetail(
         tester,
-        acaoEm(agora.subtract(const Duration(hours: 5))),
+        actionAt(now.subtract(const Duration(hours: 5))),
       );
 
       expect(find.text('Visita a afastado'), findsOneWidget);
@@ -111,9 +111,9 @@ void main() {
 
     testWidgets('não oferece confirmar, desistir nem cancelar (FR-005)',
         (tester) async {
-      await pumpDetalhe(
+      await pumpDetail(
         tester,
-        acaoEm(agora.subtract(const Duration(hours: 5))),
+        actionAt(now.subtract(const Duration(hours: 5))),
       );
 
       expect(find.text('Confirmar presença'), findsNothing);
@@ -124,9 +124,9 @@ void main() {
 
     testWidgets('Ação ainda acontecendo continua aceitando confirmar (FR-002)',
         (tester) async {
-      await pumpDetalhe(
+      await pumpDetail(
         tester,
-        acaoEm(agora.subtract(const Duration(hours: 1))),
+        actionAt(now.subtract(const Duration(hours: 1))),
       );
 
       expect(find.text('Encerrada'), findsNothing);
@@ -135,11 +135,11 @@ void main() {
 
     testWidgets('cancelada e encerrada: o rótulo é "Cancelada" (FR-008)',
         (tester) async {
-      await pumpDetalhe(
+      await pumpDetail(
         tester,
-        acaoEm(
-          agora.subtract(const Duration(hours: 5)),
-          cancelledAt: agora.subtract(const Duration(days: 1)),
+        actionAt(
+          now.subtract(const Duration(hours: 5)),
+          cancelledAt: now.subtract(const Duration(days: 1)),
         ),
       );
 
@@ -149,18 +149,18 @@ void main() {
   });
 
   group('numeração dos confirmados (US4)', () {
-    final agora = DateTime(2026, 8, 9, 12, 0);
+    final now = DateTime(2026, 8, 9, 12, 0);
 
-    Future<void> pumpCom(
+    Future<void> pumpWith(
       WidgetTester tester,
       List<AttendanceWithProfile> attendees,
     ) async {
-      final repo = MockAcaoRepository();
+      final repo = MockActionRepository();
       when(() => repo.fetchAction('a1')).thenAnswer(
         (_) async => Action(
           id: 'a1',
           name: 'Culto Jovem',
-          dateTime: agora.add(const Duration(days: 1)),
+          dateTime: now.add(const Duration(days: 1)),
           local: 'Templo',
           creatorId: 'dono-1',
           createdAt: DateTime(2026, 1, 1),
@@ -176,7 +176,7 @@ void main() {
             currentUserIdProvider.overrideWithValue(null),
             isDistrictAdminProvider.overrideWith((ref) async => false),
             actionRepositoryProvider.overrideWithValue(repo),
-            clockProvider.overrideWithValue(() => agora),
+            clockProvider.overrideWithValue(() => now),
           ],
           child: const MaterialApp(home: ActionDetailPage(actionId: 'a1')),
         ),
@@ -184,18 +184,18 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    AttendanceWithProfile pessoa(String nome, AttendanceStatus status) =>
+    AttendanceWithProfile person(String name, AttendanceStatus status) =>
         AttendanceWithProfile(
-          profile: PublicProfile(id: nome, displayName: nome),
+          profile: PublicProfile(id: name, displayName: name),
           status: status,
         );
 
     testWidgets('confirmados aparecem numerados 1., 2., 3. (FR-020)',
         (tester) async {
-      await pumpCom(tester, [
-        pessoa('Ana', AttendanceStatus.confirmed),
-        pessoa('Bruno', AttendanceStatus.confirmed),
-        pessoa('Kesia', AttendanceStatus.confirmed),
+      await pumpWith(tester, [
+        person('Ana', AttendanceStatus.confirmed),
+        person('Bruno', AttendanceStatus.confirmed),
+        person('Kesia', AttendanceStatus.confirmed),
       ]);
 
       expect(find.text('1.'), findsOneWidget);
@@ -207,10 +207,10 @@ void main() {
 
     testWidgets('a fila tem numeração própria, recomeçando em 1. (FR-021)',
         (tester) async {
-      await pumpCom(tester, [
-        pessoa('Ana', AttendanceStatus.confirmed),
-        pessoa('Bruno', AttendanceStatus.waitlist),
-        pessoa('Kesia', AttendanceStatus.waitlist),
+      await pumpWith(tester, [
+        person('Ana', AttendanceStatus.confirmed),
+        person('Bruno', AttendanceStatus.waitlist),
+        person('Kesia', AttendanceStatus.waitlist),
       ]);
 
       // 1. aparece duas vezes: uma nos confirmados, outra na fila.
@@ -223,9 +223,9 @@ void main() {
         (tester) async {
       // Estado depois de a segunda pessoa desistir: quem sobra é renumerado
       // pelo índice, então não há buraco.
-      await pumpCom(tester, [
-        pessoa('Ana', AttendanceStatus.confirmed),
-        pessoa('Kesia', AttendanceStatus.confirmed),
+      await pumpWith(tester, [
+        person('Ana', AttendanceStatus.confirmed),
+        person('Kesia', AttendanceStatus.confirmed),
       ]);
 
       expect(find.text('1.'), findsOneWidget);
@@ -235,7 +235,7 @@ void main() {
 
     testWidgets('sem ninguém confirmado, mostra mensagem de vazio (FR-023)',
         (tester) async {
-      await pumpCom(tester, const []);
+      await pumpWith(tester, const []);
 
       expect(find.text('Ninguém confirmou presença ainda.'), findsOneWidget);
       expect(find.text('1.'), findsNothing);

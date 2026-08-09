@@ -18,9 +18,11 @@ para o mesmo conceito.
   banco — mudá-las quebra o app em produção sem erro de compilação.
 - Toda string visível ao Usuário.
 - Comentários e documentação.
-- Nomes de arquivo de teste (`apuracao_empate_test.dart`, `votar_participante_test.dart`…):
-  descrevem cenário de domínio e se leem como spec. Decisão deliberada, registrada na
-  feature 012.
+- **Apenas o nome do arquivo** de teste (`apuracao_empate_test.dart`,
+  `votar_participante_test.dart`…): descreve cenário de domínio e se lê como spec. Decisão
+  deliberada, registrada na feature 012. **O conteúdo do teste não é exceção** — helper,
+  variável local, parâmetro e mock criados em teste novo são escritos em inglês, como
+  qualquer outro identificador Dart.
 
 A tradução de cada termo está na entrada correspondente do glossário abaixo, na linha `_EN_`.
 

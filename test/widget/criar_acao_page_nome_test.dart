@@ -9,14 +9,14 @@ import 'package:iasd_conecta/features/profile/domain/profile.dart';
 
 const _uid = 'criador-1';
 
-final _perfilDoCriador = PublicProfile(
+final _creatorProfile = PublicProfile(
   id: _uid,
   displayName: 'José Danilo Silva do Carmo',
 );
 
 Future<void> _pump(
   WidgetTester tester, {
-  required AsyncValue<PublicProfile> perfil,
+  required AsyncValue<PublicProfile> profile,
 }) async {
   // O formulário é mais alto que os 600px do viewport padrão do teste, e o
   // botão de enviar fica fora da área clicável mesmo depois de `ensureVisible`.
@@ -29,7 +29,7 @@ Future<void> _pump(
       overrides: [
         currentUserIdProvider.overrideWithValue(_uid),
         publicProfileProvider(_uid).overrideWith((ref) async {
-          return perfil.when(
+          return profile.when(
             data: (p) => p,
             loading: () => throw UnimplementedError(),
             error: (e, _) => throw e,
@@ -43,19 +43,19 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-Future<void> _digitarNomeEEnviar(WidgetTester tester, String nome) async {
-  await tester.enterText(find.byType(TextFormField).first, nome);
-  final botao = find.widgetWithText(ElevatedButton, 'Criar Ação');
-  await tester.ensureVisible(botao);
+Future<void> _typeNameAndSubmit(WidgetTester tester, String name) async {
+  await tester.enterText(find.byType(TextFormField).first, name);
+  final button = find.widgetWithText(ElevatedButton, 'Criar Ação');
+  await tester.ensureVisible(button);
   await tester.pumpAndSettle();
-  await tester.tap(botao);
+  await tester.tap(button);
   await tester.pumpAndSettle();
 }
 
 void main() {
   testWidgets('o campo de nome traz o texto de apoio com exemplo (FR-016)',
       (tester) async {
-    await _pump(tester, perfil: AsyncValue.data(_perfilDoCriador));
+    await _pump(tester, profile: AsyncValue.data(_creatorProfile));
 
     expect(
       find.textContaining('descreve a atividade, não a pessoa'),
@@ -66,9 +66,9 @@ void main() {
 
   testWidgets('recusa o nome do próprio criador, com o motivo (FR-017, FR-018)',
       (tester) async {
-    await _pump(tester, perfil: AsyncValue.data(_perfilDoCriador));
+    await _pump(tester, profile: AsyncValue.data(_creatorProfile));
 
-    await _digitarNomeEEnviar(tester, 'José Danilo Silva do Carmo');
+    await _typeNameAndSubmit(tester, 'José Danilo Silva do Carmo');
 
     expect(
       find.textContaining('O nome da Ação descreve a atividade, não a pessoa'),
@@ -78,9 +78,9 @@ void main() {
 
   testWidgets('recusa também sem acento e com caixa trocada (SC-006)',
       (tester) async {
-    await _pump(tester, perfil: AsyncValue.data(_perfilDoCriador));
+    await _pump(tester, profile: AsyncValue.data(_creatorProfile));
 
-    await _digitarNomeEEnviar(tester, '  jose danilo silva do carmo ');
+    await _typeNameAndSubmit(tester, '  jose danilo silva do carmo ');
 
     expect(
       find.textContaining('O nome da Ação descreve a atividade, não a pessoa'),
@@ -90,9 +90,9 @@ void main() {
 
   testWidgets('aceita "Visita a José" — é igualdade, não contains (FR-019)',
       (tester) async {
-    await _pump(tester, perfil: AsyncValue.data(_perfilDoCriador));
+    await _pump(tester, profile: AsyncValue.data(_creatorProfile));
 
-    await _digitarNomeEEnviar(tester, 'Visita a José');
+    await _typeNameAndSubmit(tester, 'Visita a José');
 
     expect(
       find.textContaining('O nome da Ação descreve a atividade, não a pessoa'),
@@ -107,10 +107,10 @@ void main() {
       // acusação ao Usuário.
       await _pump(
         tester,
-        perfil: AsyncValue.error(Exception('sem rede'), StackTrace.empty),
+        profile: AsyncValue.error(Exception('sem rede'), StackTrace.empty),
       );
 
-      await _digitarNomeEEnviar(tester, 'José Danilo Silva do Carmo');
+      await _typeNameAndSubmit(tester, 'José Danilo Silva do Carmo');
 
       expect(
         find.textContaining('O nome da Ação descreve a atividade, não a pessoa'),

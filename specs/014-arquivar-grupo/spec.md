@@ -32,6 +32,17 @@ protegendo o que outras pessoas construíram.
 feature 009, que resolveu "excluir conta" com anonimização em vez de apagar: o que uma pessoa
 sozinha não pode destruir é o que outras pessoas fizeram.
 
+> **Padrão de idioma (Princípio I, e vale para código de teste também).** Todo identificador
+> Dart criado nesta feature — classe, enum e seus valores, método, função, variável local,
+> parâmetro, campo, provider e nome de arquivo — é escrito **em inglês**, seguindo o mapa de
+> `CONTEXT.md`. Isso inclui os arquivos de teste: só o **nome do arquivo** de teste continua
+> em português. Banco de dados, chaves de leitura/gravação (`map['nome']`, `'data_hora'`) e
+> strings visíveis ao usuário continuam em português, sem exceção.
+>
+> Aprendido na 011, onde helpers de teste e variáveis locais nasceram em português
+> (`_comoUsuario`, `acaoId`, `pumpDetalhe`, `comAcento`) e precisaram de um passe de
+> correção depois.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Arquivar o próprio Grupo, sabendo o estrago (Priority: P1)

@@ -198,19 +198,19 @@ ActionTimeStatus actionTimeStatus(DateTime dateTime, DateTime now) {
   return ActionTimeStatus.happeningNow;
 }
 
-enum ActionPeriod { sabbath, hoje, essaSemana, outras }
+enum ActionPeriod { sabbath, today, thisWeek, other }
 
 /// Sábado adventista: sexta 17:30 até sábado 17:30 — aproximação de
 /// pôr-do-sol por horário fixo (não calcula pôr-do-sol real por data/local).
 bool isOnSabbath(DateTime dateTime) {
-  final minutosDoDia = dateTime.hour * 60 + dateTime.minute;
+  final minutesOfDay = dateTime.hour * 60 + dateTime.minute;
   const sabbathStart = 17 * 60 + 30;
-  if (dateTime.weekday == DateTime.friday) return minutosDoDia >= sabbathStart;
-  if (dateTime.weekday == DateTime.saturday) return minutosDoDia < sabbathStart;
+  if (dateTime.weekday == DateTime.friday) return minutesOfDay >= sabbathStart;
+  if (dateTime.weekday == DateTime.saturday) return minutesOfDay < sabbathStart;
   return false;
 }
 
-DateTime _inicioDaSemana(DateTime data) {
+DateTime _startOfWeek(DateTime data) {
   final dia = DateTime(data.year, data.month, data.day);
   // Semana começa domingo (weekday: seg=1 ... dom=7 -> dom vira 0).
   return dia.subtract(Duration(days: dia.weekday % 7));
@@ -222,17 +222,17 @@ DateTime _inicioDaSemana(DateTime data) {
 ActionPeriod actionPeriod(DateTime dateTime, DateTime now) {
   if (isOnSabbath(dateTime)) return ActionPeriod.sabbath;
 
-  final hoje = DateTime(now.year, now.month, now.day);
+  final today = DateTime(now.year, now.month, now.day);
   final dia = DateTime(dateTime.year, dateTime.month, dateTime.day);
-  if (dia == hoje) return ActionPeriod.hoje;
+  if (dia == today) return ActionPeriod.today;
 
-  final inicioSemana = _inicioDaSemana(now);
-  final fimSemana = inicioSemana.add(const Duration(days: 7));
-  if (!dateTime.isBefore(inicioSemana) && dateTime.isBefore(fimSemana)) {
-    return ActionPeriod.essaSemana;
+  final weekStart = _startOfWeek(now);
+  final weekEnd = weekStart.add(const Duration(days: 7));
+  if (!dateTime.isBefore(weekStart) && dateTime.isBefore(weekEnd)) {
+    return ActionPeriod.thisWeek;
   }
 
-  return ActionPeriod.outras;
+  return ActionPeriod.other;
 }
 
 enum AttendanceStatus { confirmed, waitlist }
@@ -264,14 +264,14 @@ class AttendanceWithProfile {
 /// A remoção de acento é feita à mão porque não existe pronta na base — a
 /// `NameModeration` do módulo de Perfil só faz `toLowerCase`, e trazer
 /// dependência nova para isto seria desproporcional.
-String normalizeForNameComparison(String texto) {
-  const comAcento = 'áàâãäéèêëíìîïóòôõöúùûüçñ';
-  const semAcento = 'aaaaaeeeeiiiiooooouuuucn';
+String normalizeForNameComparison(String text) {
+  const accented = 'áàâãäéèêëíìîïóòôõöúùûüçñ';
+  const unaccented = 'aaaaaeeeeiiiiooooouuuucn';
 
   final buffer = StringBuffer();
-  for (final char in texto.toLowerCase().split('')) {
-    final i = comAcento.indexOf(char);
-    buffer.write(i == -1 ? char : semAcento[i]);
+  for (final char in text.toLowerCase().split('')) {
+    final i = accented.indexOf(char);
+    buffer.write(i == -1 ? char : unaccented[i]);
   }
   return buffer.toString().trim().replaceAll(RegExp(r'\s+'), ' ');
 }

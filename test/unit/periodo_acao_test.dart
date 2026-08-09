@@ -45,19 +45,19 @@ void main() {
     });
 
     test('mesmo dia de agora, fora da janela de Sábado, é Hoje', () {
-      expect(actionPeriod(DateTime(2026, 7, 22, 20, 0), now), ActionPeriod.hoje);
+      expect(actionPeriod(DateTime(2026, 7, 22, 20, 0), now), ActionPeriod.today);
     });
 
     test('dentro da semana corrente (domingo-sábado), mas não hoje, é Essa semana', () {
-      expect(actionPeriod(DateTime(2026, 7, 23, 9, 0), now), ActionPeriod.essaSemana);
+      expect(actionPeriod(DateTime(2026, 7, 23, 9, 0), now), ActionPeriod.thisWeek);
     });
 
     test('fora da semana corrente é Outras datas', () {
-      expect(actionPeriod(DateTime(2026, 8, 5, 9, 0), now), ActionPeriod.outras);
+      expect(actionPeriod(DateTime(2026, 8, 5, 9, 0), now), ActionPeriod.other);
     });
 
     test('no passado, fora da semana corrente, também é Outras datas', () {
-      expect(actionPeriod(DateTime(2026, 6, 1, 9, 0), now), ActionPeriod.outras);
+      expect(actionPeriod(DateTime(2026, 6, 1, 9, 0), now), ActionPeriod.other);
     });
   });
 }

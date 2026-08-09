@@ -6,27 +6,27 @@ import 'data/voting_round_repository.dart';
 import 'domain/action.dart';
 import 'domain/voting_round.dart';
 
-final rodadaRepositoryProvider = Provider<RodadaRepository>((ref) {
-  return RodadaRepository(
+final votingRoundRepositoryProvider = Provider<VotingRoundRepository>((ref) {
+  return VotingRoundRepository(
     ref.watch(supabaseClientProvider),
-    ref.watch(acaoRepositoryProvider),
+    ref.watch(actionRepositoryProvider),
   );
 });
 
-final rodadasDoGrupoProvider =
-    FutureProvider.autoDispose.family<List<Rodada>, String>((ref, grupoId) {
-  return ref.watch(rodadaRepositoryProvider).fetchRodadasDoGrupo(grupoId);
+final groupVotingRoundsProvider =
+    FutureProvider.autoDispose.family<List<VotingRound>, String>((ref, grupoId) {
+  return ref.watch(votingRoundRepositoryProvider).fetchRodadasDoGrupo(grupoId);
 });
 
-final rodadaProvider = FutureProvider.autoDispose.family<Rodada, String>((ref, id) {
-  return ref.watch(rodadaRepositoryProvider).fetchRodada(id);
+final votingRoundProvider = FutureProvider.autoDispose.family<VotingRound, String>((ref, id) {
+  return ref.watch(votingRoundRepositoryProvider).fetchVotingRound(id);
 });
 
-final candidatasProvider =
-    FutureProvider.autoDispose.family<List<Acao>, String>((ref, rodadaId) {
-  return ref.watch(rodadaRepositoryProvider).fetchCandidatas(rodadaId);
+final candidatesProvider =
+    FutureProvider.autoDispose.family<List<Action>, String>((ref, votingRoundId) {
+  return ref.watch(votingRoundRepositoryProvider).fetchCandidatas(votingRoundId);
 });
 
-final meuVotoProvider = FutureProvider.autoDispose.family<Voto?, String>((ref, rodadaId) {
-  return ref.watch(rodadaRepositoryProvider).meuVoto(rodadaId);
+final myVoteProvider = FutureProvider.autoDispose.family<Vote?, String>((ref, votingRoundId) {
+  return ref.watch(votingRoundRepositoryProvider).myVote(votingRoundId);
 });

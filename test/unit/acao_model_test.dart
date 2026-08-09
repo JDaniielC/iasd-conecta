@@ -6,50 +6,50 @@ void main() {
 
   group('NovaAcao.prontoParaEnviar', () {
     test('falso sem nome', () {
-      final acao = NovaAcao(nome: '  ', dataHora: dataFutura, local: 'Sede');
-      expect(acao.prontoParaEnviar, isFalse);
+      final acao = NewAction(nome: '  ', dateTime: dataFutura, local: 'Sede');
+      expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('falso sem local', () {
-      final acao = NovaAcao(nome: 'Retiro', dataHora: dataFutura, local: '');
-      expect(acao.prontoParaEnviar, isFalse);
+      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: '');
+      expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('falso com limite de vagas zero', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: 'Retiro',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Sede',
-        limiteVagas: 0,
+        capacity: 0,
       );
-      expect(acao.prontoParaEnviar, isFalse);
+      expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com campos obrigatórios preenchidos, sem limite', () {
-      final acao = NovaAcao(nome: 'Retiro', dataHora: dataFutura, local: 'Sede');
-      expect(acao.prontoParaEnviar, isTrue);
+      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: 'Sede');
+      expect(acao.isReadyToSubmit, isTrue);
     });
 
     test('verdadeiro com limite de vagas positivo', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: 'Retiro',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Sede',
-        limiteVagas: 20,
+        capacity: 20,
       );
-      expect(acao.prontoParaEnviar, isTrue);
+      expect(acao.isReadyToSubmit, isTrue);
     });
   });
 
   group('NovaAcao.toInsertMap', () {
     test('normaliza detalhes em branco pra null e inclui criador', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: ' Retiro ',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Sede',
         detalhes: '   ',
       );
-      final map = acao.toInsertMap(criadorId: 'abc');
+      final map = acao.toInsertMap(creatorId: 'abc');
       expect(map['nome'], 'Retiro');
       expect(map['detalhes'], isNull);
       expect(map['criador_id'], 'abc');
@@ -58,52 +58,52 @@ void main() {
   });
 
   group('Acao.souCriador', () {
-    final acao = Acao(
+    final acao = Action(
       id: 'a1',
       nome: 'Retiro',
-      dataHora: dataFutura,
+      dateTime: dataFutura,
       local: 'Sede',
-      criadorId: 'criador-1',
+      creatorId: 'criador-1',
       createdAt: dataFutura,
     );
 
     test('verdadeiro quando o id bate com criador_id', () {
-      expect(acao.souCriador('criador-1'), isTrue);
+      expect(acao.isCreator('criador-1'), isTrue);
     });
 
     test('falso pra outro usuário', () {
-      expect(acao.souCriador('outro'), isFalse);
+      expect(acao.isCreator('outro'), isFalse);
     });
 
     test('falso sem usuário atual', () {
-      expect(acao.souCriador(null), isFalse);
+      expect(acao.isCreator(null), isFalse);
     });
   });
 
   group('Acao.cancelada', () {
     test('falso quando canceladaEm é nulo', () {
-      final acao = Acao(
+      final acao = Action(
         id: 'a1',
         nome: 'Retiro',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Sede',
-        criadorId: 'c1',
+        creatorId: 'c1',
         createdAt: dataFutura,
       );
-      expect(acao.cancelada, isFalse);
+      expect(acao.isCancelled, isFalse);
     });
 
     test('verdadeiro quando canceladaEm está preenchido', () {
-      final acao = Acao(
+      final acao = Action(
         id: 'a1',
         nome: 'Retiro',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Sede',
-        criadorId: 'c1',
+        creatorId: 'c1',
         createdAt: dataFutura,
-        canceladaEm: DateTime.now(),
+        cancelledAt: DateTime.now(),
       );
-      expect(acao.cancelada, isTrue);
+      expect(acao.isCancelled, isTrue);
     });
   });
 }

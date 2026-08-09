@@ -100,31 +100,31 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/acoes',
-        builder: (context, state) => const ListaAcoesPage(),
+        builder: (context, state) => const ActionListPage(),
       ),
       GoRoute(
         path: '/acoes/novo',
-        builder: (context, state) => const CriarAcaoPage(),
+        builder: (context, state) => const CreateActionPage(),
       ),
       GoRoute(
         path: '/acoes/:id',
-        builder: (context, state) => DetalheAcaoPage(acaoId: state.pathParameters['id']!),
+        builder: (context, state) => ActionDetailPage(acaoId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas',
-        builder: (context, state) => ListaRodadasPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => VotingRoundListPage(grupoId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas/novo',
-        builder: (context, state) => CriarRodadaPage(grupoId: state.pathParameters['id']!),
+        builder: (context, state) => CreateVotingRoundPage(grupoId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/rodadas/:id/candidatas/novo',
-        builder: (context, state) => CriarCandidataPage(rodadaId: state.pathParameters['id']!),
+        builder: (context, state) => CreateCandidatePage(votingRoundId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/rodadas/:id',
-        builder: (context, state) => DetalheRodadaPage(rodadaId: state.pathParameters['id']!),
+        builder: (context, state) => VotingRoundDetailPage(votingRoundId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/district-admin/promote',

@@ -5,17 +5,17 @@ void main() {
   group('NovoGrupo.prontoParaEnviar', () {
     test('falso sem nome', () {
       const grupo = NewGroup(nome: '  ', categoria: 'Jovem');
-      expect(grupo.prontoParaEnviar, isFalse);
+      expect(grupo.isReadyToSubmit, isFalse);
     });
 
     test('falso sem categoria', () {
       const grupo = NewGroup(nome: 'Grupo', categoria: '');
-      expect(grupo.prontoParaEnviar, isFalse);
+      expect(grupo.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com nome e categoria preenchidos, sem horário/local', () {
       const grupo = NewGroup(nome: 'Grupo', categoria: 'Jovem');
-      expect(grupo.prontoParaEnviar, isTrue);
+      expect(grupo.isReadyToSubmit, isTrue);
     });
 
     test('detalhes opcional não afeta prontoParaEnviar', () {
@@ -24,7 +24,7 @@ void main() {
         categoria: 'Jovem',
         detalhes: null,
       );
-      expect(grupo.prontoParaEnviar, isTrue);
+      expect(grupo.isReadyToSubmit, isTrue);
     });
   });
 

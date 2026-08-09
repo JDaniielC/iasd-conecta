@@ -40,10 +40,10 @@ void main() {
   }
 
   /// Cria uma Ação avulsa, com data no passado ou no futuro.
-  Future<String> criarAcao(
-    String criadorId, {
+  Future<String> createAction(
+    String creatorId, {
     required bool futura,
-    int? limiteVagas,
+    int? capacity,
     bool duplaMissionaria = false,
     String? generoVisitado,
   }) async {
@@ -57,8 +57,8 @@ void main() {
       parameters: {
         'nome': futura ? 'Ação futura' : 'Ação passada',
         'deslocamento': futura ? '30 days' : '-30 days',
-        'criador': criadorId,
-        'limite': limiteVagas,
+        'criador': creatorId,
+        'limite': capacity,
         'dupla': duplaMissionaria,
         'genero': generoVisitado,
       },
@@ -66,7 +66,7 @@ void main() {
     return rows.single.first! as String;
   }
 
-  Future<void> confirmarPresenca(String acaoId, String usuarioId) async {
+  Future<void> confirmAttendance(String acaoId, String usuarioId) async {
     await conn.execute(
       Sql.named(
         'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
@@ -127,30 +127,30 @@ void main() {
 
   group('cenário 3 — presença em Ação passada fica, em Ação futura some', () {
     const uid = '95100000-0000-0000-0000-000000000002';
-    const criadorId = '95100000-0000-0000-0000-000000000003';
+    const creatorId = '95100000-0000-0000-0000-000000000003';
     late String acaoPassada;
     late String acaoFutura;
 
     setUpAll(() async {
-      await criarPerfilDeTeste(conn, criadorId, nome: 'Criadora das Ações');
+      await criarPerfilDeTeste(conn, creatorId, nome: 'Criadora das Ações');
       await criarPerfilDeTeste(conn, uid, nome: 'Quem Vai Sair');
-      acaoPassada = await criarAcao(criadorId, futura: false);
-      acaoFutura = await criarAcao(criadorId, futura: true);
-      await confirmarPresenca(acaoPassada, uid);
-      await confirmarPresenca(acaoFutura, uid);
+      acaoPassada = await createAction(creatorId, futura: false);
+      acaoFutura = await createAction(creatorId, futura: true);
+      await confirmAttendance(acaoPassada, uid);
+      await confirmAttendance(acaoFutura, uid);
       await excluirConta(uid);
     });
 
     tearDownAll(() async {
       await conn.execute(
         Sql.named('delete from public.acoes where criador_id = @id'),
-        parameters: {'id': criadorId},
+        parameters: {'id': creatorId},
       );
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
-        parameters: {'ids': [uid, criadorId]},
+        parameters: {'ids': [uid, creatorId]},
       );
-      await limparUsuarioDeTeste(conn, criadorId);
+      await limparUsuarioDeTeste(conn, creatorId);
     });
 
     test('a presença na Ação que já aconteceu permanece', () async {
@@ -177,32 +177,32 @@ void main() {
   group('cenário 4 — fila de espera anda sozinha (Princípio IV)', () {
     const donoVaga = '95100000-0000-0000-0000-000000000004';
     const naFila = '95100000-0000-0000-0000-000000000005';
-    const criadorId = '95100000-0000-0000-0000-000000000006';
+    const creatorId = '95100000-0000-0000-0000-000000000006';
     late String acaoId;
 
     setUpAll(() async {
-      await criarPerfilDeTeste(conn, criadorId, nome: 'Criadora da Lotada');
+      await criarPerfilDeTeste(conn, creatorId, nome: 'Criadora da Lotada');
       await criarPerfilDeTeste(conn, donoVaga, nome: 'Quem Ocupa a Vaga');
       await criarPerfilDeTeste(conn, naFila, nome: 'Quem Espera');
       // limite 2 porque o criador da Ação já nasce confirmado por trigger:
       // com 1 vaga, ela seria dele e ninguém mais ficaria confirmado.
-      acaoId = await criarAcao(criadorId, futura: true, limiteVagas: 2);
-      await confirmarPresenca(acaoId, donoVaga);
-      await confirmarPresenca(acaoId, naFila);
+      acaoId = await createAction(creatorId, futura: true, capacity: 2);
+      await confirmAttendance(acaoId, donoVaga);
+      await confirmAttendance(acaoId, naFila);
       await excluirConta(donoVaga);
     });
 
     tearDownAll(() async {
       await conn.execute(
         Sql.named('delete from public.acoes where criador_id = @id'),
-        parameters: {'id': criadorId},
+        parameters: {'id': creatorId},
       );
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
-        parameters: {'ids': [donoVaga, naFila, criadorId]},
+        parameters: {'ids': [donoVaga, naFila, creatorId]},
       );
       await limparUsuarioDeTeste(conn, naFila);
-      await limparUsuarioDeTeste(conn, criadorId);
+      await limparUsuarioDeTeste(conn, creatorId);
     });
 
     test('quem estava na fila foi promovido a confirmado', () async {
@@ -220,33 +220,33 @@ void main() {
 
   group('Dupla Missionária não fica com vaga de quem saiu (Princípio IV)', () {
     const quemSai = '95100000-0000-0000-0000-000000000007';
-    const criadorId = '95100000-0000-0000-0000-000000000008';
+    const creatorId = '95100000-0000-0000-0000-000000000008';
     late String acaoId;
 
     setUpAll(() async {
-      await criarPerfilDeTeste(conn, criadorId, nome: 'Criadora da Dupla');
+      await criarPerfilDeTeste(conn, creatorId, nome: 'Criadora da Dupla');
       await criarPerfilDeTeste(conn, quemSai, nome: 'Missionária Que Sai');
-      acaoId = await criarAcao(
-        criadorId,
+      acaoId = await createAction(
+        creatorId,
         futura: true,
-        limiteVagas: 2, // a constraint da Dupla exige exatamente 2
+        capacity: 2, // a constraint da Dupla exige exatamente 2
         duplaMissionaria: true,
         generoVisitado: 'feminino',
       );
-      await confirmarPresenca(acaoId, quemSai);
+      await confirmAttendance(acaoId, quemSai);
       await excluirConta(quemSai);
     });
 
     tearDownAll(() async {
       await conn.execute(
         Sql.named('delete from public.acoes where criador_id = @id'),
-        parameters: {'id': criadorId},
+        parameters: {'id': creatorId},
       );
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
-        parameters: {'ids': [quemSai, criadorId]},
+        parameters: {'ids': [quemSai, creatorId]},
       );
-      await limparUsuarioDeTeste(conn, criadorId);
+      await limparUsuarioDeTeste(conn, creatorId);
     });
 
     test('o Perfil anonimizado não ocupa mais vaga na Dupla', () async {
@@ -288,7 +288,7 @@ void main() {
     );
   }
 
-  Future<String> abrirRodada(String grupoId, String abertaPor, {bool fechada = false}) async {
+  Future<String> openRound(String grupoId, String abertaPor, {bool fechada = false}) async {
     // rodadas_votacao_checar_participante lê auth.uid(), não `aberta_por` —
     // sem o claim o fixture roda como postgres e o trigger recusa.
     await conn.execute(
@@ -338,9 +338,9 @@ void main() {
 
       grupoId = await createGroup(quemSai);
       await join(grupoId, participante);
-      rodadaAberta = await abrirRodada(grupoId, quemSai);
-      rodadaFechada = await abrirRodada(grupoId, quemSai, fechada: true);
-      acaoDela = await criarAcao(quemSai, futura: false);
+      rodadaAberta = await openRound(grupoId, quemSai);
+      rodadaFechada = await openRound(grupoId, quemSai, fechada: true);
+      acaoDela = await createAction(quemSai, futura: false);
 
       // Declaração de Líder dela, confirmada pelo admin; e uma declaração de
       // outra pessoa que ela confirmou.
@@ -459,7 +459,7 @@ void main() {
     late String rodadaAberta;
     late String rodadaFechada;
 
-    Future<String> criarCandidata(String rodadaId, String grupoId, String autorId) async {
+    Future<String> criarCandidata(String votingRoundId, String grupoId, String autorId) async {
       await conn.execute(
         "set request.jwt.claims to '{\"sub\":\"$autorId\",\"role\":\"authenticated\"}'",
       );
@@ -469,13 +469,13 @@ void main() {
           "values ('Candidata', now() + interval '10 days', 'Praça', @autor, @grupo, @rodada) "
           'returning id',
         ),
-        parameters: {'autor': autorId, 'grupo': grupoId, 'rodada': rodadaId},
+        parameters: {'autor': autorId, 'grupo': grupoId, 'rodada': votingRoundId},
       );
       await conn.execute('reset request.jwt.claims');
       return rows.single.first! as String;
     }
 
-    Future<void> votar(String rodadaId, String usuarioId, String candidataId) async {
+    Future<void> vote(String votingRoundId, String usuarioId, String candidataId) async {
       await conn.execute(
         "set request.jwt.claims to '{\"sub\":\"$usuarioId\",\"role\":\"authenticated\"}'",
       );
@@ -484,7 +484,7 @@ void main() {
           'insert into public.votos (rodada_id, usuario_id, candidata_id) '
           'values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': usuarioId, 'candidata': candidataId},
+        parameters: {'rodada': votingRoundId, 'usuario': usuarioId, 'candidata': candidataId},
       );
       await conn.execute('reset request.jwt.claims');
     }
@@ -497,13 +497,13 @@ void main() {
       final grupoId = await createGroup(admin, nome: 'Grupo com Votação');
       await join(grupoId, quemSai);
 
-      rodadaAberta = await abrirRodada(grupoId, admin);
+      rodadaAberta = await openRound(grupoId, admin);
       final candidataAberta = await criarCandidata(rodadaAberta, grupoId, admin);
-      await votar(rodadaAberta, quemSai, candidataAberta);
+      await vote(rodadaAberta, quemSai, candidataAberta);
 
-      rodadaFechada = await abrirRodada(grupoId, admin);
+      rodadaFechada = await openRound(grupoId, admin);
       final candidataFechada = await criarCandidata(rodadaFechada, grupoId, admin);
-      await votar(rodadaFechada, quemSai, candidataFechada);
+      await vote(rodadaFechada, quemSai, candidataFechada);
       await conn.execute(
         Sql.named('update public.rodadas_votacao set fechada_em = now() where id = @id'),
         parameters: {'id': rodadaFechada},

@@ -9,7 +9,7 @@ const _uidConfirmado = '70000000-0000-0000-0000-000000000037';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
   late Object candidataVencedora;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
@@ -66,7 +66,7 @@ void main() {
       );
       vencedora = candRows.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
     candidataVencedora = vencedora;
 
     // confirma presença ANTES de fechar
@@ -106,13 +106,13 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
 
     final rodadaRows = await conn.execute(
       Sql.named('select vencedora_id from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rodadaRows.single.toColumnMap()['vencedora_id'], candidataVencedora);
 

@@ -48,7 +48,7 @@ void main() {
   });
 
   test('FR-008: não fecha antes do prazo mesmo sem forçar', () async {
-    late Object rodadaId;
+    late Object votingRoundId;
     await comoUsuario(_uidDono, () async {
       final rows = await conn.execute(
         Sql.named(
@@ -57,23 +57,23 @@ void main() {
         ),
         parameters: {'grupo': grupoId, 'dono': _uidDono},
       );
-      rodadaId = rows.single.toColumnMap()['id']!;
+      votingRoundId = rows.single.toColumnMap()['id']!;
     });
 
     await conn.execute(
       Sql.named('select public.fechar_rodada_se_devido(@rodada)'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
 
     final rows = await conn.execute(
       Sql.named('select fechada_em from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rows.single.toColumnMap()['fechada_em'], isNull);
   });
 
   test('FR-008: fecha (e apura sem candidata) quando o prazo já passou', () async {
-    late Object rodadaId;
+    late Object votingRoundId;
     await comoUsuario(_uidDono, () async {
       final rows = await conn.execute(
         Sql.named(
@@ -82,17 +82,17 @@ void main() {
         ),
         parameters: {'grupo': grupoId, 'dono': _uidDono},
       );
-      rodadaId = rows.single.toColumnMap()['id']!;
+      votingRoundId = rows.single.toColumnMap()['id']!;
     });
 
     await conn.execute(
       Sql.named('select public.fechar_rodada_se_devido(@rodada)'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
 
     final rows = await conn.execute(
       Sql.named('select fechada_em from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rows.single.toColumnMap()['fechada_em'], isNotNull);
   });

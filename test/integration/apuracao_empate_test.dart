@@ -10,7 +10,7 @@ const _uidVotanteB = '70000000-0000-0000-0000-000000000029';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
   late Object candidataA;
   late Object candidataB;
 
@@ -79,7 +79,7 @@ void main() {
       );
       candB = rowsB.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
     candidataA = candA;
     candidataB = candB;
 
@@ -89,7 +89,7 @@ void main() {
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotanteA, 'candidata': candidataA},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteA, 'candidata': candidataA},
       );
     });
     await comoUsuario(_uidVotanteB, () async {
@@ -97,7 +97,7 @@ void main() {
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotanteB, 'candidata': candidataB},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteB, 'candidata': candidataB},
       );
     });
   });
@@ -129,13 +129,13 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
 
     final rodadaRows = await conn.execute(
       Sql.named('select vencedora_id from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     final vencedora = rodadaRows.single.toColumnMap()['vencedora_id'];
 
@@ -143,7 +143,7 @@ void main() {
 
     final restantes = await conn.execute(
       Sql.named('select id from public.acoes where rodada_id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(restantes, hasLength(1));
     expect(restantes.single.toColumnMap()['id'], vencedora);

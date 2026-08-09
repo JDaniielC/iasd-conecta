@@ -17,7 +17,7 @@ class NewGroup {
   final String? local;
   final String? detalhes;
 
-  bool get prontoParaEnviar => nome.trim().isNotEmpty && categoria.trim().isNotEmpty;
+  bool get isReadyToSubmit => nome.trim().isNotEmpty && categoria.trim().isNotEmpty;
 
   Map<String, dynamic> toInsertMap({
     required String donoId,

@@ -9,7 +9,7 @@ const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000023';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
   late Object candidataId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
@@ -59,7 +59,7 @@ void main() {
       );
       candidata = candRows.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
     candidataId = candidata;
   });
 
@@ -89,7 +89,7 @@ void main() {
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@rodada, @usuario, @candidata)',
           ),
-          parameters: {'rodada': rodadaId, 'usuario': _uidForaDoGrupo, 'candidata': candidataId},
+          parameters: {'rodada': votingRoundId, 'usuario': _uidForaDoGrupo, 'candidata': candidataId},
         );
       }),
       throwsA(isA<ServerException>()),

@@ -10,7 +10,7 @@ const _uidVotanteB = '70000000-0000-0000-0000-000000000032';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
   late Object candidataLider;
   late Object candidataPerdedora;
 
@@ -79,7 +79,7 @@ void main() {
       );
       perdedora = rowsPerdedora.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
     candidataLider = lider;
     candidataPerdedora = perdedora;
 
@@ -99,7 +99,7 @@ void main() {
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotanteA, 'candidata': candidataLider},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteA, 'candidata': candidataLider},
       );
     });
     await comoUsuario(_uidVotanteB, () async {
@@ -107,7 +107,7 @@ void main() {
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotanteB, 'candidata': candidataLider},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteB, 'candidata': candidataLider},
       );
     });
   });
@@ -139,13 +139,13 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
 
     final rodadaRows = await conn.execute(
       Sql.named('select vencedora_id from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rodadaRows.single.toColumnMap()['vencedora_id'], candidataLider);
 

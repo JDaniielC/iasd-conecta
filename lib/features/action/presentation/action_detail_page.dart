@@ -13,8 +13,8 @@ import '../domain/action.dart';
 
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
 /// (FR-010). Confirmar/desistir exige Perfil (FR-003/FR-004/FR-011).
-class DetalheAcaoPage extends ConsumerWidget {
-  const DetalheAcaoPage({super.key, required this.acaoId});
+class ActionDetailPage extends ConsumerWidget {
+  const ActionDetailPage({super.key, required this.acaoId});
 
   final String acaoId;
 
@@ -25,8 +25,8 @@ class DetalheAcaoPage extends ConsumerWidget {
   Future<void> _confirmar(BuildContext context, WidgetRef ref) async {
     if (!PerfilGuard.exigirPerfil(context, ref)) return;
     try {
-      await ref.read(acaoRepositoryProvider).confirmarPresenca(acaoId);
-      ref.invalidate(confirmadosProvider(acaoId));
+      await ref.read(actionRepositoryProvider).confirmAttendance(acaoId);
+      ref.invalidate(attendeesProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra confirmar presença. Tente de novo.');
@@ -35,8 +35,8 @@ class DetalheAcaoPage extends ConsumerWidget {
 
   Future<void> _desistir(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(acaoRepositoryProvider).desistir(acaoId);
-      ref.invalidate(confirmadosProvider(acaoId));
+      await ref.read(actionRepositoryProvider).withdraw(acaoId);
+      ref.invalidate(attendeesProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra desistir agora. Tente de novo.');
@@ -45,8 +45,8 @@ class DetalheAcaoPage extends ConsumerWidget {
 
   Future<void> _cancelar(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(acaoRepositoryProvider).cancelarAcao(acaoId);
-      ref.invalidate(acaoProvider(acaoId));
+      await ref.read(actionRepositoryProvider).cancelAction(acaoId);
+      ref.invalidate(actionProvider(acaoId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra cancelar agora. Tente de novo.');
@@ -55,8 +55,8 @@ class DetalheAcaoPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final acaoAsync = ref.watch(acaoProvider(acaoId));
-    final confirmadosAsync = ref.watch(confirmadosProvider(acaoId));
+    final acaoAsync = ref.watch(actionProvider(acaoId));
+    final confirmadosAsync = ref.watch(attendeesProvider(acaoId));
     final uid = ref.watch(currentUserIdProvider);
     final minhasConfirmacoes =
         confirmadosAsync.value?.where((c) => c.perfil.id == uid) ?? const [];
@@ -71,7 +71,7 @@ class DetalheAcaoPage extends ConsumerWidget {
               : (ref.watch(groupProvider(acao.grupoId!)).value?.isOwner(uid) ?? false);
           final souAdministradorDoDistrito =
               ref.watch(isDistrictAdminProvider).value ?? false;
-          final podeCancelar = acao.podeCancelar(
+          final canCancel = acao.canCancel(
             uid,
             souDonoDoGrupo: souDonoDoGrupo,
             souAdministradorDoDistrito: souAdministradorDoDistrito,
@@ -89,7 +89,7 @@ class DetalheAcaoPage extends ConsumerWidget {
                         style: Theme.of(context).textTheme.headlineMedium,
                       ),
                     ),
-                    if (podeCancelar && !acao.cancelada && acao.confirmada)
+                    if (canCancel && !acao.isCancelled && acao.isConfirmed)
                       IconButton(
                         icon: const Icon(Icons.cancel_outlined),
                         tooltip: 'Cancelar Ação',
@@ -97,14 +97,14 @@ class DetalheAcaoPage extends ConsumerWidget {
                       ),
                   ],
                 ),
-                if (acao.cancelada) ...[
+                if (acao.isCancelled) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     'Cancelada',
                     style: TextStyle(color: Theme.of(context).colorScheme.error),
                   ),
                 ],
-                if (acao.ehCandidataEmVotacao) ...[
+                if (acao.isCandidateInVoting) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Row(
                     children: [
@@ -112,14 +112,14 @@ class DetalheAcaoPage extends ConsumerWidget {
                         child: Text('Ação candidata — ainda em votação numa Rodada.'),
                       ),
                       TextButton(
-                        onPressed: () => context.push('/rodadas/${acao.rodadaId}'),
+                        onPressed: () => context.push('/rodadas/${acao.votingRoundId}'),
                         child: const Text('Ver Rodada'),
                       ),
                     ],
                   ),
                 ],
                 const SizedBox(height: AppSpacing.md),
-                Text(DateFormat('dd/MM/yyyy HH:mm').format(acao.dataHora)),
+                Text(DateFormat('dd/MM/yyyy HH:mm').format(acao.dateTime)),
                 Text(acao.local),
                 if (acao.isMissionaryPair) ...[
                   const SizedBox(height: AppSpacing.sm),
@@ -129,13 +129,13 @@ class DetalheAcaoPage extends ConsumerWidget {
                     style: Theme.of(context).textTheme.bodyMedium,
                   ),
                 ],
-                if (acao.limiteVagas != null) Text('Vagas: ${acao.limiteVagas}'),
+                if (acao.capacity != null) Text('Vagas: ${acao.capacity}'),
                 if (acao.detalhes != null) ...[
                   const SizedBox(height: AppSpacing.md),
                   Text(acao.detalhes!),
                 ],
                 const SizedBox(height: AppSpacing.lg),
-                if (!acao.cancelada)
+                if (!acao.isCancelled)
                   ElevatedButton(
                     onPressed: minhaConfirmacao != null
                         ? () => _desistir(context, ref)
@@ -143,7 +143,7 @@ class DetalheAcaoPage extends ConsumerWidget {
                     child: Text(
                       minhaConfirmacao == null
                           ? 'Confirmar presença'
-                          : (minhaConfirmacao.status == StatusConfirmacao.fila
+                          : (minhaConfirmacao.status == AttendanceStatus.fila
                               ? 'Sair da fila de espera'
                               : 'Desistir'),
                     ),
@@ -154,10 +154,10 @@ class DetalheAcaoPage extends ConsumerWidget {
                   child: confirmadosAsync.when(
                     data: (confirmados) {
                       final vagas = confirmados
-                          .where((c) => c.status == StatusConfirmacao.confirmado)
+                          .where((c) => c.status == AttendanceStatus.confirmado)
                           .toList();
                       final fila = confirmados
-                          .where((c) => c.status == StatusConfirmacao.fila)
+                          .where((c) => c.status == AttendanceStatus.fila)
                           .toList();
                       return ListView(
                         children: [

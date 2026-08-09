@@ -9,7 +9,7 @@ const _uidParticipante = '70000000-0000-0000-0000-000000000026';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
 
   Future<void> comoUsuario(String uid, Future<void> Function() acao) async {
     await conn.execute('set role authenticated');
@@ -55,7 +55,7 @@ void main() {
       );
       rodada = rows.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
   });
 
   tearDownAll(() async {
@@ -77,7 +77,7 @@ void main() {
       await expectLater(
         conn.execute(
           Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-          parameters: {'rodada': rodadaId},
+          parameters: {'rodada': votingRoundId},
         ),
         throwsA(isA<ServerException>()),
       );
@@ -85,7 +85,7 @@ void main() {
 
     final rows = await conn.execute(
       Sql.named('select fechada_em from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rows.single.toColumnMap()['fechada_em'], isNull);
   });
@@ -94,13 +94,13 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select fechada_em from public.rodadas_votacao where id = @rodada'),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     expect(rows.single.toColumnMap()['fechada_em'], isNotNull);
   });

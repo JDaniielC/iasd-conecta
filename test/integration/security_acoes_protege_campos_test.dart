@@ -19,7 +19,7 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 void main() {
   late Connection conn;
   late String grupoId;
-  late String rodadaId;
+  late String votingRoundId;
   late String candidataId;
 
   setUpAll(() async {
@@ -43,7 +43,7 @@ void main() {
         ),
         parameters: {'grupo': grupoId, 'dono': _uidDono},
       );
-      rodadaId = rodadaRows.single.toColumnMap()['id']! as String;
+      votingRoundId = rodadaRows.single.toColumnMap()['id']! as String;
 
       final candidataRows = await conn.execute(
         Sql.named(
@@ -51,7 +51,7 @@ void main() {
           "values ('Candidata ProtegeCampos', now() + interval '5 days', 'Sede', @dono, @rodada) "
           "returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': rodadaId},
+        parameters: {'dono': _uidDono, 'rodada': votingRoundId},
       );
       candidataId = candidataRows.single.toColumnMap()['id']! as String;
     });
@@ -60,11 +60,11 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.votos where rodada_id = @id'),
-      parameters: {'id': rodadaId},
+      parameters: {'id': votingRoundId},
     );
     await conn.execute(
       Sql.named('update public.rodadas_votacao set vencedora_id = null where id = @id'),
-      parameters: {'id': rodadaId},
+      parameters: {'id': votingRoundId},
     );
     await conn.execute(
       Sql.named('delete from public.acoes where grupo_id = @id'),
@@ -72,7 +72,7 @@ void main() {
     );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where id = @id'),
-      parameters: {'id': rodadaId},
+      parameters: {'id': votingRoundId},
     );
     await conn.execute(
       Sql.named('delete from public.grupos where id = @id'),
@@ -107,11 +107,11 @@ void main() {
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@rodada, @dono, @candidata)',
           ),
-          parameters: {'rodada': rodadaId, 'dono': _uidDono, 'candidata': candidataId},
+          parameters: {'rodada': votingRoundId, 'dono': _uidDono, 'candidata': candidataId},
         );
         await conn.execute(
           Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-          parameters: {'rodada': rodadaId},
+          parameters: {'rodada': votingRoundId},
         );
       });
 

@@ -5,49 +5,49 @@ import '../../perfil/domain/profile.dart';
 /// atual (FR-001/FR-013).
 enum VisitedGender { male, female }
 
-class NovaAcao {
-  const NovaAcao({
+class NewAction {
+  const NewAction({
     required this.nome,
-    required this.dataHora,
+    required this.dateTime,
     required this.local,
     this.detalhes,
-    this.limiteVagas,
-    this.rodadaId,
+    this.capacity,
+    this.votingRoundId,
     this.isMissionaryPair = false,
     this.visitedGender,
   });
 
   final String nome;
-  final DateTime dataHora;
+  final DateTime dateTime;
   final String local;
   final String? detalhes;
-  final int? limiteVagas;
+  final int? capacity;
 
   /// Preenchido só quando esta Ação é uma candidata proposta numa Rodada de
   /// votação (feature 004) — `grupo_id` nunca é enviado pelo client, é
   /// sempre derivado da Rodada pelo trigger `acoes_candidata_checar_regras`.
-  final String? rodadaId;
+  final String? votingRoundId;
 
   /// Dupla Missionária (feature 007): quando `true`, exige [visitedGender]
   /// e o limite de vagas é sempre 2, ignorando [limiteVagas] informado.
   final bool isMissionaryPair;
   final VisitedGender? visitedGender;
 
-  bool get prontoParaEnviar =>
+  bool get isReadyToSubmit =>
       nome.trim().isNotEmpty &&
       local.trim().isNotEmpty &&
-      (limiteVagas == null || limiteVagas! > 0) &&
+      (capacity == null || capacity! > 0) &&
       (!isMissionaryPair || visitedGender != null);
 
-  Map<String, dynamic> toInsertMap({required String criadorId}) {
+  Map<String, dynamic> toInsertMap({required String creatorId}) {
     return {
       'nome': nome.trim(),
-      'data_hora': dataHora.toUtc().toIso8601String(),
+      'data_hora': dateTime.toUtc().toIso8601String(),
       'local': local.trim(),
       'detalhes': (detalhes?.trim().isEmpty ?? true) ? null : detalhes!.trim(),
-      'limite_vagas': isMissionaryPair ? 2 : limiteVagas,
-      'criador_id': criadorId,
-      if (rodadaId != null) 'rodada_id': rodadaId,
+      'limite_vagas': isMissionaryPair ? 2 : capacity,
+      'criador_id': creatorId,
+      if (votingRoundId != null) 'rodada_id': votingRoundId,
       'eh_dupla_missionaria': isMissionaryPair,
       'genero_visitado': switch (visitedGender) {
         VisitedGender.male => 'masculino',
@@ -58,85 +58,85 @@ class NovaAcao {
   }
 }
 
-class Acao {
-  const Acao({
+class Action {
+  const Action({
     required this.id,
     required this.nome,
-    required this.dataHora,
+    required this.dateTime,
     required this.local,
-    required this.criadorId,
+    required this.creatorId,
     required this.createdAt,
     this.detalhes,
-    this.limiteVagas,
-    this.canceladaEm,
+    this.capacity,
+    this.cancelledAt,
     this.grupoId,
-    this.rodadaId,
-    this.confirmada = true,
+    this.votingRoundId,
+    this.isConfirmed = true,
     this.isMissionaryPair = false,
     this.visitedGender,
   });
 
   final String id;
   final String nome;
-  final DateTime dataHora;
+  final DateTime dateTime;
   final String local;
   final String? detalhes;
-  final int? limiteVagas;
-  final String criadorId;
+  final int? capacity;
+  final String creatorId;
   final DateTime createdAt;
-  final DateTime? canceladaEm;
+  final DateTime? cancelledAt;
 
   /// Não-nulo quando é uma Ação de Grupo (candidata ou já confirmada).
   final String? grupoId;
 
   /// Não-nulo enquanto esta Ação é uma candidata numa Rodada de votação.
-  final String? rodadaId;
+  final String? votingRoundId;
 
   /// `false` só enquanto é candidata em votação; sempre `true` pra Ação
   /// avulsa e pra Ação de Grupo já vencedora (feature 004).
-  final bool confirmada;
+  final bool isConfirmed;
 
   /// Dupla Missionária (feature 007): composição de gênero validada no
   /// banco a cada confirmação de presença (ver migration).
   final bool isMissionaryPair;
   final VisitedGender? visitedGender;
 
-  bool get cancelada => canceladaEm != null;
+  bool get isCancelled => cancelledAt != null;
 
-  bool get ehCandidataEmVotacao => !confirmada;
+  bool get isCandidateInVoting => !isConfirmed;
 
-  bool souCriador(String? usuarioAtualId) =>
-      usuarioAtualId != null && usuarioAtualId == criadorId;
+  bool isCreator(String? usuarioAtualId) =>
+      usuarioAtualId != null && usuarioAtualId == creatorId;
 
   /// FR-016 (004): quem propôs (criador) OU o Dono do Grupo cancela uma
   /// Ação de Grupo. FR-009 (005): Administrador do distrito cancela
   /// qualquer Ação. Ambos os booleanos são resolvidos por quem chama (o
   /// repositório/provider sabe quem é o Dono do `grupoId` e quem é
   /// Administrador), não pelo modelo em si.
-  bool podeCancelar(
+  bool canCancel(
     String? usuarioAtualId, {
     required bool souDonoDoGrupo,
     bool souAdministradorDoDistrito = false,
   }) =>
       souAdministradorDoDistrito ||
-      souCriador(usuarioAtualId) ||
+      isCreator(usuarioAtualId) ||
       (grupoId != null && souDonoDoGrupo);
 
-  factory Acao.fromMap(Map<String, dynamic> map) {
-    return Acao(
+  factory Action.fromMap(Map<String, dynamic> map) {
+    return Action(
       id: map['id'] as String,
       nome: map['nome'] as String,
-      dataHora: DateTime.parse(map['data_hora'] as String),
+      dateTime: DateTime.parse(map['data_hora'] as String),
       local: map['local'] as String,
       detalhes: map['detalhes'] as String?,
-      limiteVagas: map['limite_vagas'] as int?,
-      criadorId: map['criador_id'] as String,
+      capacity: map['limite_vagas'] as int?,
+      creatorId: map['criador_id'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
-      canceladaEm:
+      cancelledAt:
           map['cancelada_em'] == null ? null : DateTime.parse(map['cancelada_em'] as String),
       grupoId: map['grupo_id'] as String?,
-      rodadaId: map['rodada_id'] as String?,
-      confirmada: map['confirmada'] as bool? ?? true,
+      votingRoundId: map['rodada_id'] as String?,
+      isConfirmed: map['confirmada'] as bool? ?? true,
       isMissionaryPair: map['eh_dupla_missionaria'] as bool? ?? false,
       visitedGender: switch (map['genero_visitado'] as String?) {
         'masculino' => VisitedGender.male,
@@ -150,22 +150,22 @@ class Acao {
 /// Ação com a Igreja já resolvida — via `grupos.igreja_id` (Ação de Grupo)
 /// ou `perfis.igreja_id` do criador (Ação avulsa). Usado só pra agrupar/
 /// filtrar a lista por Igreja; a Ação em si não guarda `igreja_id`.
-class AcaoComIgreja {
-  const AcaoComIgreja({required this.acao, this.igrejaId});
+class ActionWithChurch {
+  const ActionWithChurch({required this.acao, this.igrejaId});
 
-  final Acao acao;
+  final Action acao;
   final String? igrejaId;
 }
 
-enum PeriodoAcao { sabado, hoje, essaSemana, outras }
+enum ActionPeriod { sabado, hoje, essaSemana, outras }
 
 /// Sábado adventista: sexta 17:30 até sábado 17:30 — aproximação de
 /// pôr-do-sol por horário fixo (não calcula pôr-do-sol real por data/local).
-bool acaoNoSabado(DateTime dataHora) {
-  final minutosDoDia = dataHora.hour * 60 + dataHora.minute;
+bool isOnSabbath(DateTime dateTime) {
+  final minutosDoDia = dateTime.hour * 60 + dateTime.minute;
   const inicioSabado = 17 * 60 + 30;
-  if (dataHora.weekday == DateTime.friday) return minutosDoDia >= inicioSabado;
-  if (dataHora.weekday == DateTime.saturday) return minutosDoDia < inicioSabado;
+  if (dateTime.weekday == DateTime.friday) return minutosDoDia >= inicioSabado;
+  if (dateTime.weekday == DateTime.saturday) return minutosDoDia < inicioSabado;
   return false;
 }
 
@@ -178,27 +178,27 @@ DateTime _inicioDaSemana(DateTime data) {
 /// Classifica [dataHora] em relação a [agora] pra agrupar `ListaAcoesPage`
 /// por período. Sábado tem prioridade sobre Hoje/Essa semana — é o destaque
 /// que a comunidade adventista mais procura, mesmo caindo também "hoje".
-PeriodoAcao periodoDaAcao(DateTime dataHora, DateTime agora) {
-  if (acaoNoSabado(dataHora)) return PeriodoAcao.sabado;
+ActionPeriod actionPeriod(DateTime dateTime, DateTime agora) {
+  if (isOnSabbath(dateTime)) return ActionPeriod.sabado;
 
   final hoje = DateTime(agora.year, agora.month, agora.day);
-  final dia = DateTime(dataHora.year, dataHora.month, dataHora.day);
-  if (dia == hoje) return PeriodoAcao.hoje;
+  final dia = DateTime(dateTime.year, dateTime.month, dateTime.day);
+  if (dia == hoje) return ActionPeriod.hoje;
 
   final inicioSemana = _inicioDaSemana(agora);
   final fimSemana = inicioSemana.add(const Duration(days: 7));
-  if (!dataHora.isBefore(inicioSemana) && dataHora.isBefore(fimSemana)) {
-    return PeriodoAcao.essaSemana;
+  if (!dateTime.isBefore(inicioSemana) && dateTime.isBefore(fimSemana)) {
+    return ActionPeriod.essaSemana;
   }
 
-  return PeriodoAcao.outras;
+  return ActionPeriod.outras;
 }
 
-enum StatusConfirmacao { confirmado, fila }
+enum AttendanceStatus { confirmado, fila }
 
-class ConfirmacaoComPerfil {
-  const ConfirmacaoComPerfil({required this.perfil, required this.status});
+class AttendanceWithProfile {
+  const AttendanceWithProfile({required this.perfil, required this.status});
 
   final PublicProfile perfil;
-  final StatusConfirmacao status;
+  final AttendanceStatus status;
 }

@@ -10,16 +10,16 @@ import '../voting_round_providers.dart';
 
 /// Propor Ação candidata numa Rodada de votação (User Story 1) — mesmos
 /// campos de uma Ação avulsa; `grupo_id` é derivado da Rodada no banco.
-class CriarCandidataPage extends ConsumerStatefulWidget {
-  const CriarCandidataPage({super.key, required this.rodadaId});
+class CreateCandidatePage extends ConsumerStatefulWidget {
+  const CreateCandidatePage({super.key, required this.votingRoundId});
 
-  final String rodadaId;
+  final String votingRoundId;
 
   @override
-  ConsumerState<CriarCandidataPage> createState() => _CriarCandidataPageState();
+  ConsumerState<CreateCandidatePage> createState() => _CreateCandidatePageState();
 }
 
-class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
+class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _localController = TextEditingController();
@@ -56,14 +56,14 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
     });
   }
 
-  NovaAcao? get _candidataAtual {
+  NewAction? get _candidataAtual {
     if (_dataHora == null) return null;
-    return NovaAcao(
+    return NewAction(
       nome: _nomeController.text,
-      dataHora: _dataHora!,
+      dateTime: _dataHora!,
       local: _localController.text,
       detalhes: _detalhesController.text,
-      limiteVagas: int.tryParse(_limiteVagasController.text),
+      capacity: int.tryParse(_limiteVagasController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
     );
@@ -73,7 +73,7 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
     final candidata = _candidataAtual;
     if (_formKey.currentState?.validate() != true ||
         candidata == null ||
-        !candidata.prontoParaEnviar) {
+        !candidata.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome, data/hora e local.');
       return;
     }
@@ -82,8 +82,8 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
       _erro = null;
     });
     try {
-      await ref.read(rodadaRepositoryProvider).proporCandidata(widget.rodadaId, candidata);
-      ref.invalidate(candidatasProvider(widget.rodadaId));
+      await ref.read(votingRoundRepositoryProvider).proposeCandidate(widget.votingRoundId, candidata);
+      ref.invalidate(candidatesProvider(widget.votingRoundId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra propor agora. A Rodada ainda está aberta?');
@@ -94,7 +94,7 @@ class _CriarCandidataPageState extends ConsumerState<CriarCandidataPage> {
 
   @override
   Widget build(BuildContext context) {
-    final rodadaAsync = ref.watch(rodadaProvider(widget.rodadaId));
+    final rodadaAsync = ref.watch(votingRoundProvider(widget.votingRoundId));
     final groupId = rodadaAsync.value?.grupoId;
     final suggestionsAsync =
         groupId == null ? null : ref.watch(suggestionsForGroupProvider(groupId));

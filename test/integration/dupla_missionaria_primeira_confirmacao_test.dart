@@ -7,7 +7,7 @@ const _uidCriador = '60000000-0000-0000-0000-000000000020';
 
 Future<String> _criarDuplaMissionaria(
   Connection conn, {
-  required String criadorId,
+  required String creatorId,
   required String generoVisitado,
 }) async {
   final rows = await conn.execute(
@@ -17,7 +17,7 @@ Future<String> _criarDuplaMissionaria(
       "values ('Visita PrimeiraConfirmacao', now() + interval '1 day', 'Casa', @criador, 2, "
       "true, @genero) returning id",
     ),
-    parameters: {'criador': criadorId, 'genero': generoVisitado},
+    parameters: {'criador': creatorId, 'genero': generoVisitado},
   );
   return rows.single.toColumnMap()['id']! as String;
 }
@@ -46,7 +46,7 @@ void main() {
     await criarPerfilDeTeste(conn, _uidCriador, nome: 'Criador PrimeiraConfirmacao', genero: 'masculino');
     final acaoId = await _criarDuplaMissionaria(
       conn,
-      criadorId: _uidCriador,
+      creatorId: _uidCriador,
       generoVisitado: 'feminino',
     );
 

@@ -19,7 +19,7 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 Future<String> _criarDuplaMissionaria(
   Connection conn, {
-  required String criadorId,
+  required String creatorId,
   required String generoVisitado,
 }) async {
   final rows = await conn.execute(
@@ -29,7 +29,7 @@ Future<String> _criarDuplaMissionaria(
       "values ('Visita GeneroMisto', now() + interval '1 day', 'Casa', @criador, 2, "
       "true, @genero) returning id",
     ),
-    parameters: {'criador': criadorId, 'genero': generoVisitado},
+    parameters: {'criador': creatorId, 'genero': generoVisitado},
   );
   return rows.single.toColumnMap()['id']! as String;
 }
@@ -54,7 +54,7 @@ void main() {
   });
 
   test('FR-004: 1 homem + 1 mulher é válida visitando homem', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, criadorId: _uidHomem, generoVisitado: 'masculino');
+    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidHomem, generoVisitado: 'masculino');
     await _comoUsuario(conn, _uidMulher, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
@@ -69,7 +69,7 @@ void main() {
   });
 
   test('FR-004: 1 homem + 1 mulher é válida visitando mulher', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, criadorId: _uidMulher, generoVisitado: 'feminino');
+    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidMulher, generoVisitado: 'feminino');
     await _comoUsuario(conn, _uidHomem, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),

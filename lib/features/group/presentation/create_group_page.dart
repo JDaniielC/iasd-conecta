@@ -43,7 +43,7 @@ class _CreateGroupPageState extends ConsumerState<CreateGroupPage> {
 
   Future<void> _criar() async {
     final grupo = _grupoAtual;
-    if (_formKey.currentState?.validate() != true || !grupo.prontoParaEnviar) {
+    if (_formKey.currentState?.validate() != true || !grupo.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome e Categoria.');
       return;
     }

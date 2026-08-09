@@ -6,46 +6,46 @@ void main() {
 
   group('NovaAcao.prontoParaEnviar (Dupla Missionária)', () {
     test('falso quando isMissionaryPair mas sem visitedGender', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: 'Visita',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Casa',
         isMissionaryPair: true,
       );
-      expect(acao.prontoParaEnviar, isFalse);
+      expect(acao.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro quando isMissionaryPair com visitedGender preenchido', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: 'Visita',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Casa',
         isMissionaryPair: true,
         visitedGender: VisitedGender.male,
       );
-      expect(acao.prontoParaEnviar, isTrue);
+      expect(acao.isReadyToSubmit, isTrue);
     });
   });
 
   group('NovaAcao.toInsertMap (Dupla Missionária)', () {
     test('FR-003: força limite_vagas=2 quando isMissionaryPair, ignorando limiteVagas informado', () {
-      final acao = NovaAcao(
+      final acao = NewAction(
         nome: 'Visita',
-        dataHora: dataFutura,
+        dateTime: dataFutura,
         local: 'Casa',
-        limiteVagas: 50,
+        capacity: 50,
         isMissionaryPair: true,
         visitedGender: VisitedGender.female,
       );
-      final map = acao.toInsertMap(criadorId: 'c1');
+      final map = acao.toInsertMap(creatorId: 'c1');
       expect(map['limite_vagas'], 2);
       expect(map['eh_dupla_missionaria'], isTrue);
       expect(map['genero_visitado'], 'feminino');
     });
 
     test('não marca eh_dupla_missionaria quando isMissionaryPair é falso (default)', () {
-      final acao = NovaAcao(nome: 'Retiro', dataHora: dataFutura, local: 'Sede', limiteVagas: 10);
-      final map = acao.toInsertMap(criadorId: 'c1');
+      final acao = NewAction(nome: 'Retiro', dateTime: dataFutura, local: 'Sede', capacity: 10);
+      final map = acao.toInsertMap(creatorId: 'c1');
       expect(map['limite_vagas'], 10);
       expect(map['eh_dupla_missionaria'], isFalse);
       expect(map['genero_visitado'], isNull);
@@ -54,7 +54,7 @@ void main() {
 
   group('Acao.fromMap (Dupla Missionária)', () {
     test('lê isMissionaryPair e visitedGender do map', () {
-      final acao = Acao.fromMap({
+      final acao = Action.fromMap({
         'id': 'a1',
         'nome': 'Visita',
         'data_hora': dataFutura.toIso8601String(),
@@ -70,7 +70,7 @@ void main() {
     });
 
     test('visitedGender nulo quando genero_visitado é nulo', () {
-      final acao = Acao.fromMap({
+      final acao = Action.fromMap({
         'id': 'a1',
         'nome': 'Retiro',
         'data_hora': dataFutura.toIso8601String(),

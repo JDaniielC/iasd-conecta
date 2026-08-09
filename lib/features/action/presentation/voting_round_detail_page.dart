@@ -9,10 +9,10 @@ import '../voting_round_providers.dart';
 
 /// Detalhes de uma Rodada de votação: candidatas + votar (User Story 2) +
 /// encerrar antes do prazo, só Dono do Grupo (User Story 3).
-class DetalheRodadaPage extends ConsumerWidget {
-  const DetalheRodadaPage({super.key, required this.rodadaId});
+class VotingRoundDetailPage extends ConsumerWidget {
+  const VotingRoundDetailPage({super.key, required this.votingRoundId});
 
-  final String rodadaId;
+  final String votingRoundId;
 
   void _mostrarErro(BuildContext context, String mensagem) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensagem)));
@@ -21,9 +21,9 @@ class DetalheRodadaPage extends ConsumerWidget {
   Future<void> _votar(BuildContext context, WidgetRef ref, String candidataId) async {
     if (!PerfilGuard.exigirPerfil(context, ref)) return;
     try {
-      await ref.read(rodadaRepositoryProvider).votar(rodadaId, candidataId);
-      ref.invalidate(meuVotoProvider(rodadaId));
-      ref.invalidate(candidatasProvider(rodadaId));
+      await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidataId);
+      ref.invalidate(myVoteProvider(votingRoundId));
+      ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra votar agora. A Rodada ainda está aberta?');
@@ -32,9 +32,9 @@ class DetalheRodadaPage extends ConsumerWidget {
 
   Future<void> _encerrar(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(rodadaRepositoryProvider).fecharSeDevido(rodadaId, forcar: true);
-      ref.invalidate(rodadaProvider(rodadaId));
-      ref.invalidate(candidatasProvider(rodadaId));
+      await ref.read(votingRoundRepositoryProvider).closeIfDue(votingRoundId, forcar: true);
+      ref.invalidate(votingRoundProvider(votingRoundId));
+      ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
       if (!context.mounted) return;
       _mostrarErro(context, 'Não deu pra encerrar agora. Tente de novo.');
@@ -43,9 +43,9 @@ class DetalheRodadaPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rodadaAsync = ref.watch(rodadaProvider(rodadaId));
-    final candidatasAsync = ref.watch(candidatasProvider(rodadaId));
-    final meuVotoAsync = ref.watch(meuVotoProvider(rodadaId));
+    final rodadaAsync = ref.watch(votingRoundProvider(votingRoundId));
+    final candidatasAsync = ref.watch(candidatesProvider(votingRoundId));
+    final meuVotoAsync = ref.watch(myVoteProvider(votingRoundId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rodada de Votação')),
@@ -60,7 +60,7 @@ class DetalheRodadaPage extends ConsumerWidget {
                   rodada.aberta ? 'Aberta' : 'Fechada',
                   style: Theme.of(context).textTheme.headlineMedium,
                 ),
-                Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.prazo)}'),
+                Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}'),
                 if (rodada.aberta) ...[
                   const SizedBox(height: AppSpacing.md),
                   Row(
@@ -68,7 +68,7 @@ class DetalheRodadaPage extends ConsumerWidget {
                       ElevatedButton(
                         onPressed: () {
                           if (PerfilGuard.exigirPerfil(context, ref)) {
-                            context.push('/rodadas/$rodadaId/candidatas/novo');
+                            context.push('/rodadas/$votingRoundId/candidatas/novo');
                           }
                         },
                         child: const Text('Propor Candidata'),
@@ -86,7 +86,7 @@ class DetalheRodadaPage extends ConsumerWidget {
                 Expanded(
                   child: candidatasAsync.when(
                     data: (candidatas) {
-                      final meuVoto = meuVotoAsync.value;
+                      final myVote = meuVotoAsync.value;
                       if (candidatas.isEmpty) {
                         return const Center(child: Text('Nenhuma candidata ainda.'));
                       }
@@ -94,12 +94,12 @@ class DetalheRodadaPage extends ConsumerWidget {
                         itemCount: candidatas.length,
                         itemBuilder: (context, index) {
                           final candidata = candidatas[index];
-                          final votadaPorMim = meuVoto?.candidataId == candidata.id;
+                          final votadaPorMim = myVote?.candidataId == candidata.id;
                           return Card(
                             child: ListTile(
                               title: Text(candidata.nome),
                               subtitle: Text(
-                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidata.dataHora)} · ${candidata.local}',
+                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidata.dateTime)} · ${candidata.local}',
                               ),
                               onTap: () => context.push('/acoes/${candidata.id}'),
                               trailing: rodada.aberta

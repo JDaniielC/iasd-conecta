@@ -47,7 +47,7 @@ void main() {
     );
 
     late Object acaoId;
-    late Object rodadaId;
+    late Object votingRoundId;
     await comoUsuario(_uidProponente, () async {
       final rodadaRows = await conn.execute(
         Sql.named(
@@ -56,7 +56,7 @@ void main() {
         ),
         parameters: {'grupo': grupoId, 'proponente': _uidProponente},
       );
-      rodadaId = rodadaRows.single.toColumnMap()['id']!;
+      votingRoundId = rodadaRows.single.toColumnMap()['id']!;
 
       final candRows = await conn.execute(
         Sql.named(
@@ -64,7 +64,7 @@ void main() {
           "values ('Única Candidata Cancelar', now() + interval '5 days', 'Sede', @proponente, @rodada) "
           "returning id",
         ),
-        parameters: {'proponente': _uidProponente, 'rodada': rodadaId},
+        parameters: {'proponente': _uidProponente, 'rodada': votingRoundId},
       );
       acaoId = candRows.single.toColumnMap()['id']!;
     });
@@ -73,7 +73,7 @@ void main() {
     await comoUsuario(_uidDono, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
 

@@ -5,41 +5,41 @@ import '../group/group_providers.dart';
 import 'data/action_repository.dart';
 import 'domain/action.dart';
 
-final acaoRepositoryProvider = Provider<AcaoRepository>((ref) {
-  return AcaoRepository(ref.watch(supabaseClientProvider));
+final actionRepositoryProvider = Provider<ActionRepository>((ref) {
+  return ActionRepository(ref.watch(supabaseClientProvider));
 });
 
-final acoesProvider = FutureProvider.autoDispose<List<Acao>>((ref) {
-  return ref.watch(acaoRepositoryProvider).fetchAcoes();
+final actionsProvider = FutureProvider.autoDispose<List<Action>>((ref) {
+  return ref.watch(actionRepositoryProvider).fetchActions();
 });
 
 /// Resolve a Igreja de cada Ação pra permitir agrupar/filtrar a lista por
 /// Igreja (`ListaAcoesPage`): Ação de Grupo herda `grupos.igreja_id`; Ação
 /// avulsa usa `perfis.igreja_id` do criador, lido via RPC `perfil_publico`
 /// (mesmo invariante de privacidade das outras leituras de perfil).
-final acoesComIgrejaProvider = FutureProvider.autoDispose<List<AcaoComIgreja>>((ref) async {
-  final acoes = await ref.watch(acoesProvider.future);
+final actionsWithChurchProvider = FutureProvider.autoDispose<List<ActionWithChurch>>((ref) async {
+  final acoes = await ref.watch(actionsProvider.future);
   final grupos = await ref.watch(groupsProvider.future);
   final igrejaPorGrupo = {for (final g in grupos) g.id: g.igrejaId};
 
   final perfilRepo = ref.watch(perfilRepositoryProvider);
   final criadoresSemGrupo =
-      acoes.where((a) => a.grupoId == null).map((a) => a.criadorId).toSet();
+      acoes.where((a) => a.grupoId == null).map((a) => a.creatorId).toSet();
   final perfis = await Future.wait(criadoresSemGrupo.map(perfilRepo.fetchPerfilPublico));
   final igrejaPorCriador = {for (final p in perfis) p.id: p.churchId};
 
   return acoes.map((acao) {
     final igrejaId =
-        acao.grupoId != null ? igrejaPorGrupo[acao.grupoId] : igrejaPorCriador[acao.criadorId];
-    return AcaoComIgreja(acao: acao, igrejaId: igrejaId);
+        acao.grupoId != null ? igrejaPorGrupo[acao.grupoId] : igrejaPorCriador[acao.creatorId];
+    return ActionWithChurch(acao: acao, igrejaId: igrejaId);
   }).toList();
 });
 
-final acaoProvider = FutureProvider.autoDispose.family<Acao, String>((ref, id) {
-  return ref.watch(acaoRepositoryProvider).fetchAcao(id);
+final actionProvider = FutureProvider.autoDispose.family<Action, String>((ref, id) {
+  return ref.watch(actionRepositoryProvider).fetchAction(id);
 });
 
-final confirmadosProvider =
-    FutureProvider.autoDispose.family<List<ConfirmacaoComPerfil>, String>((ref, acaoId) {
-  return ref.watch(acaoRepositoryProvider).fetchConfirmados(acaoId);
+final attendeesProvider =
+    FutureProvider.autoDispose.family<List<AttendanceWithProfile>, String>((ref, acaoId) {
+  return ref.watch(actionRepositoryProvider).fetchAttendees(acaoId);
 });

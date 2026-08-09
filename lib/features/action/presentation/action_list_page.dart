@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Action;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -11,22 +11,22 @@ import '../../perfil/presentation/widgets/perfil_ausente_banner.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
 
-enum _OrdenacaoAcao { data, maisRecentes, nome }
+enum _ActionSortOrder { data, maisRecentes, nome }
 
 const _todasAsIgrejas = '__todas__';
 
 const _ordemPeriodos = [
-  PeriodoAcao.sabado,
-  PeriodoAcao.hoje,
-  PeriodoAcao.essaSemana,
-  PeriodoAcao.outras,
+  ActionPeriod.sabado,
+  ActionPeriod.hoje,
+  ActionPeriod.essaSemana,
+  ActionPeriod.outras,
 ];
 
 const _rotuloPeriodo = {
-  PeriodoAcao.sabado: 'Sábado',
-  PeriodoAcao.hoje: 'Hoje',
-  PeriodoAcao.essaSemana: 'Essa semana',
-  PeriodoAcao.outras: 'Outras datas',
+  ActionPeriod.sabado: 'Sábado',
+  ActionPeriod.hoje: 'Hoje',
+  ActionPeriod.essaSemana: 'Essa semana',
+  ActionPeriod.outras: 'Outras datas',
 };
 
 /// Lista de Ações avulsas: visível a Visitante e Usuário igualmente
@@ -35,21 +35,21 @@ const _rotuloPeriodo = {
 /// lista é "o que tem pra quando", não a estrutura administrativa por
 /// Igreja. Sábado adventista (sexta 17:30 - sábado 17:30, `acaoNoSabado`)
 /// ganha destaque visual e sempre vem primeiro.
-class ListaAcoesPage extends ConsumerStatefulWidget {
-  const ListaAcoesPage({super.key});
+class ActionListPage extends ConsumerStatefulWidget {
+  const ActionListPage({super.key});
 
   @override
-  ConsumerState<ListaAcoesPage> createState() => _ListaAcoesPageState();
+  ConsumerState<ActionListPage> createState() => _ActionListPageState();
 }
 
-class _ListaAcoesPageState extends ConsumerState<ListaAcoesPage> {
+class _ActionListPageState extends ConsumerState<ActionListPage> {
   String _filtroIgrejaId = _todasAsIgrejas;
-  _OrdenacaoAcao _ordenacao = _OrdenacaoAcao.data;
+  _ActionSortOrder _ordenacao = _ActionSortOrder.data;
   bool _soSabado = false;
 
   @override
   Widget build(BuildContext context) {
-    final acoesAsync = ref.watch(acoesComIgrejaProvider);
+    final acoesAsync = ref.watch(actionsWithChurchProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final agora = DateTime.now();
 
@@ -75,7 +75,7 @@ class _ListaAcoesPageState extends ConsumerState<ListaAcoesPage> {
       body: Column(
         children: [
           const PerfilAusenteBanner(),
-          _FiltrosBar(
+          _FilterBar(
             churchesAsync: churchesAsync,
             filtroIgrejaId: _filtroIgrejaId,
             ordenacao: _ordenacao,
@@ -92,27 +92,27 @@ class _ListaAcoesPageState extends ConsumerState<ListaAcoesPage> {
                     : itens.where((i) => i.igrejaId == _filtroIgrejaId).toList();
                 if (_soSabado) {
                   filtrados = filtrados
-                      .where((i) => acaoNoSabado(i.acao.dataHora))
+                      .where((i) => isOnSabbath(i.acao.dateTime))
                       .toList();
                 }
                 if (filtrados.isEmpty) {
                   return const Center(child: Text('Nenhuma Ação ainda.'));
                 }
                 final ordenados = [...filtrados]..sort(_comparador(_ordenacao));
-                final porPeriodo = <PeriodoAcao, List<AcaoComIgreja>>{};
+                final porPeriodo = <ActionPeriod, List<ActionWithChurch>>{};
                 for (final item in ordenados) {
-                  final periodo = periodoDaAcao(item.acao.dataHora, agora);
+                  final periodo = actionPeriod(item.acao.dateTime, agora);
                   porPeriodo.putIfAbsent(periodo, () => []).add(item);
                 }
                 return ListView(
                   children: [
                     for (final periodo in _ordemPeriodos)
                       if (porPeriodo[periodo]?.isNotEmpty ?? false) ...[
-                        _CabecalhoSecao(nome: _rotuloPeriodo[periodo]!, destaque: periodo == PeriodoAcao.sabado),
+                        _SectionHeader(nome: _rotuloPeriodo[periodo]!, destaque: periodo == ActionPeriod.sabado),
                         for (final item in porPeriodo[periodo]!)
-                          _AcaoCard(
+                          _ActionCard(
                             acao: item.acao,
-                            destaqueSabado: periodo == PeriodoAcao.sabado,
+                            destaqueSabado: periodo == ActionPeriod.sabado,
                           ),
                       ],
                   ],
@@ -127,20 +127,20 @@ class _ListaAcoesPageState extends ConsumerState<ListaAcoesPage> {
     );
   }
 
-  int Function(AcaoComIgreja, AcaoComIgreja) _comparador(_OrdenacaoAcao ordenacao) {
+  int Function(ActionWithChurch, ActionWithChurch) _comparador(_ActionSortOrder ordenacao) {
     switch (ordenacao) {
-      case _OrdenacaoAcao.data:
-        return (a, b) => a.acao.dataHora.compareTo(b.acao.dataHora);
-      case _OrdenacaoAcao.maisRecentes:
+      case _ActionSortOrder.data:
+        return (a, b) => a.acao.dateTime.compareTo(b.acao.dateTime);
+      case _ActionSortOrder.maisRecentes:
         return (a, b) => b.acao.createdAt.compareTo(a.acao.createdAt);
-      case _OrdenacaoAcao.nome:
+      case _ActionSortOrder.nome:
         return (a, b) => a.acao.nome.toLowerCase().compareTo(b.acao.nome.toLowerCase());
     }
   }
 }
 
-class _FiltrosBar extends StatelessWidget {
-  const _FiltrosBar({
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
     required this.churchesAsync,
     required this.filtroIgrejaId,
     required this.ordenacao,
@@ -152,10 +152,10 @@ class _FiltrosBar extends StatelessWidget {
 
   final AsyncValue<List<Church>> churchesAsync;
   final String filtroIgrejaId;
-  final _OrdenacaoAcao ordenacao;
+  final _ActionSortOrder ordenacao;
   final bool soSabado;
   final ValueChanged<String> onFiltroIgrejaChanged;
-  final ValueChanged<_OrdenacaoAcao> onOrdenacaoChanged;
+  final ValueChanged<_ActionSortOrder> onOrdenacaoChanged;
   final ValueChanged<bool> onSoSabadoChanged;
 
   @override
@@ -182,14 +182,14 @@ class _FiltrosBar extends StatelessWidget {
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
-                child: DropdownButtonFormField<_OrdenacaoAcao>(
+                child: DropdownButtonFormField<_ActionSortOrder>(
                   initialValue: ordenacao,
                   isDense: true,
                   decoration: const InputDecoration(labelText: 'Ordenar por'),
                   items: const [
-                    DropdownMenuItem(value: _OrdenacaoAcao.data, child: Text('Data')),
-                    DropdownMenuItem(value: _OrdenacaoAcao.maisRecentes, child: Text('Mais recentes')),
-                    DropdownMenuItem(value: _OrdenacaoAcao.nome, child: Text('Nome (A-Z)')),
+                    DropdownMenuItem(value: _ActionSortOrder.data, child: Text('Data')),
+                    DropdownMenuItem(value: _ActionSortOrder.maisRecentes, child: Text('Mais recentes')),
+                    DropdownMenuItem(value: _ActionSortOrder.nome, child: Text('Nome (A-Z)')),
                   ],
                   onChanged: (v) => v == null ? null : onOrdenacaoChanged(v),
                 ),
@@ -209,8 +209,8 @@ class _FiltrosBar extends StatelessWidget {
   }
 }
 
-class _CabecalhoSecao extends StatelessWidget {
-  const _CabecalhoSecao({required this.nome, this.destaque = false});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.nome, this.destaque = false});
 
   final String nome;
   final bool destaque;
@@ -245,10 +245,10 @@ class _CabecalhoSecao extends StatelessWidget {
   }
 }
 
-class _AcaoCard extends StatelessWidget {
-  const _AcaoCard({required this.acao, this.destaqueSabado = false});
+class _ActionCard extends StatelessWidget {
+  const _ActionCard({required this.acao, this.destaqueSabado = false});
 
-  final Acao acao;
+  final Action acao;
   final bool destaqueSabado;
 
   @override
@@ -267,8 +267,8 @@ class _AcaoCard extends StatelessWidget {
         leading: destaqueSabado ? Icon(Icons.nights_stay, color: tertiary) : null,
         title: Text(acao.nome),
         subtitle: Text(
-          '${DateFormat('dd/MM/yyyy HH:mm').format(acao.dataHora)} · ${acao.local}'
-          '${acao.cancelada ? ' · Cancelada' : ''}',
+          '${DateFormat('dd/MM/yyyy HH:mm').format(acao.dateTime)} · ${acao.local}'
+          '${acao.isCancelled ? ' · Cancelada' : ''}',
         ),
         onTap: () => context.push('/acoes/${acao.id}'),
       ),

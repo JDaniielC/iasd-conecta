@@ -65,7 +65,7 @@ void main() {
         ),
         parameters: {'grupo': grupoId, 'dono': _uidDonoGrupo},
       );
-      final rodadaId = rows.single.toColumnMap()['id'];
+      final votingRoundId = rows.single.toColumnMap()['id'];
 
       final candRows = await conn.execute(
         Sql.named(
@@ -73,13 +73,13 @@ void main() {
           "values ('Única Candidata CancelAny', now() + interval '5 days', 'Sede', @dono, @rodada) "
           "returning id",
         ),
-        parameters: {'dono': _uidDonoGrupo, 'rodada': rodadaId},
+        parameters: {'dono': _uidDonoGrupo, 'rodada': votingRoundId},
       );
       acaoDeGrupo = candRows.single.toColumnMap()['id']!;
 
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
-        parameters: {'rodada': rodadaId},
+        parameters: {'rodada': votingRoundId},
       );
     });
     acaoDeGrupoId = acaoDeGrupo;

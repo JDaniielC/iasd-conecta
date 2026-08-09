@@ -9,16 +9,16 @@ import '../voting_round_providers.dart';
 
 /// Abertura de Rodada de votação (User Story 1) — só o prazo é informado;
 /// quem participa do Grupo já é garantido pelo trigger no banco.
-class CriarRodadaPage extends ConsumerStatefulWidget {
-  const CriarRodadaPage({super.key, required this.grupoId});
+class CreateVotingRoundPage extends ConsumerStatefulWidget {
+  const CreateVotingRoundPage({super.key, required this.grupoId});
 
   final String grupoId;
 
   @override
-  ConsumerState<CriarRodadaPage> createState() => _CriarRodadaPageState();
+  ConsumerState<CreateVotingRoundPage> createState() => _CreateVotingRoundPageState();
 }
 
-class _CriarRodadaPageState extends ConsumerState<CriarRodadaPage> {
+class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
   DateTime? _prazo;
   bool _enviando = false;
   String? _erro;
@@ -40,13 +40,13 @@ class _CriarRodadaPageState extends ConsumerState<CriarRodadaPage> {
   }
 
   Future<void> _abrir() async {
-    final prazo = _prazo;
-    if (prazo == null) {
+    final deadline = _prazo;
+    if (deadline == null) {
       setState(() => _erro = 'Escolha um prazo.');
       return;
     }
-    final rodada = NovaRodada(prazo: prazo);
-    if (!rodada.prontoParaEnviar) {
+    final rodada = NewVotingRound(deadline: deadline);
+    if (!rodada.isReadyToSubmit) {
       setState(() => _erro = 'O prazo precisa ser no futuro.');
       return;
     }
@@ -55,8 +55,8 @@ class _CriarRodadaPageState extends ConsumerState<CriarRodadaPage> {
       _erro = null;
     });
     try {
-      await ref.read(rodadaRepositoryProvider).abrirRodada(rodada, grupoId: widget.grupoId);
-      ref.invalidate(rodadasDoGrupoProvider(widget.grupoId));
+      await ref.read(votingRoundRepositoryProvider).openRound(rodada, grupoId: widget.grupoId);
+      ref.invalidate(groupVotingRoundsProvider(widget.grupoId));
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra abrir a Rodada agora. Você participa deste Grupo?');

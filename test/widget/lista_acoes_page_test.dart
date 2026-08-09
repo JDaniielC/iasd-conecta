@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' hide Action;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/core/providers.dart';
@@ -19,25 +19,25 @@ DateTime _proximaSextaAs18h() {
 }
 
 final _acoesComIgreja = [
-  AcaoComIgreja(
+  ActionWithChurch(
     igrejaId: 'igreja-1',
-    acao: Acao(
+    acao: Action(
       id: 'a1',
       nome: 'Acampamento',
-      dataHora: DateTime(2027, 3, 10, 8, 0),
+      dateTime: DateTime(2027, 3, 10, 8, 0),
       local: 'Sítio',
-      criadorId: 'dono-1',
+      creatorId: 'dono-1',
       createdAt: DateTime(2026, 1, 1),
     ),
   ),
-  AcaoComIgreja(
+  ActionWithChurch(
     igrejaId: 'igreja-1',
-    acao: Acao(
+    acao: Action(
       id: 'a2',
       nome: 'Culto de Adoração',
-      dataHora: _proximaSextaAs18h(),
+      dateTime: _proximaSextaAs18h(),
       local: 'Templo',
-      criadorId: 'dono-1',
+      creatorId: 'dono-1',
       createdAt: DateTime(2026, 1, 1),
     ),
   ),
@@ -48,10 +48,10 @@ Future<void> _pump(WidgetTester tester, {required bool hasPerfil}) async {
     ProviderScope(
       overrides: [
         hasPerfilProvider.overrideWith((ref) async => hasPerfil),
-        acoesComIgrejaProvider.overrideWith((ref) async => _acoesComIgreja),
+        actionsWithChurchProvider.overrideWith((ref) async => _acoesComIgreja),
         churchesProvider.overrideWith((ref) async => _churches),
       ],
-      child: const MaterialApp(home: ListaAcoesPage()),
+      child: const MaterialApp(home: ActionListPage()),
     ),
   );
   await tester.pumpAndSettle();

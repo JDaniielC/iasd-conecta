@@ -11,14 +11,14 @@ import '../domain/action.dart';
 
 /// Criação de Ação avulsa (User Story 1). Já nasce confirmada, sem
 /// votação; o criador vira confirmado automaticamente (trigger no banco).
-class CriarAcaoPage extends ConsumerStatefulWidget {
-  const CriarAcaoPage({super.key});
+class CreateActionPage extends ConsumerStatefulWidget {
+  const CreateActionPage({super.key});
 
   @override
-  ConsumerState<CriarAcaoPage> createState() => _CriarAcaoPageState();
+  ConsumerState<CreateActionPage> createState() => _CreateActionPageState();
 }
 
-class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
+class _CreateActionPageState extends ConsumerState<CreateActionPage> {
   final _formKey = GlobalKey<FormState>();
   final _nomeController = TextEditingController();
   final _localController = TextEditingController();
@@ -56,14 +56,14 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
     });
   }
 
-  NovaAcao? get _acaoAtual {
+  NewAction? get _acaoAtual {
     if (_dataHora == null) return null;
-    return NovaAcao(
+    return NewAction(
       nome: _nomeController.text,
-      dataHora: _dataHora!,
+      dateTime: _dataHora!,
       local: _localController.text,
       detalhes: _detalhesController.text,
-      limiteVagas: int.tryParse(_limiteVagasController.text),
+      capacity: int.tryParse(_limiteVagasController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
     );
@@ -71,7 +71,7 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
 
   Future<void> _criar() async {
     final acao = _acaoAtual;
-    if (_formKey.currentState?.validate() != true || acao == null || !acao.prontoParaEnviar) {
+    if (_formKey.currentState?.validate() != true || acao == null || !acao.isReadyToSubmit) {
       setState(() => _erro = 'Preencha nome, data/hora e local.');
       return;
     }
@@ -80,8 +80,8 @@ class _CriarAcaoPageState extends ConsumerState<CriarAcaoPage> {
       _erro = null;
     });
     try {
-      await ref.read(acaoRepositoryProvider).criarAcao(acao);
-      ref.invalidate(acoesProvider);
+      await ref.read(actionRepositoryProvider).createAction(acao);
+      ref.invalidate(actionsProvider);
       if (mounted) context.pop();
     } catch (_) {
       setState(() => _erro = 'Não deu pra criar a Ação agora. Tente de novo.');

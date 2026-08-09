@@ -10,27 +10,27 @@ import '../domain/action.dart';
 /// `usuario_id`. Confirmados são sempre lidos via RPC `perfil_publico`,
 /// nunca `select` direto em `perfis` (mesmo invariante de privacidade das
 /// features anteriores).
-class AcaoRepository {
-  AcaoRepository(this._client);
+class ActionRepository {
+  ActionRepository(this._client);
 
   final SupabaseClient _client;
 
-  Future<List<Acao>> fetchAcoes() async {
+  Future<List<Action>> fetchActions() async {
     final rows = await _client.from('acoes').select().order('data_hora');
-    return rows.map(Acao.fromMap).toList();
+    return rows.map(Action.fromMap).toList();
   }
 
-  Future<Acao> fetchAcao(String id) async {
+  Future<Action> fetchAction(String id) async {
     final row = await _client.from('acoes').select().eq('id', id).single();
-    return Acao.fromMap(row);
+    return Action.fromMap(row);
   }
 
-  Future<void> criarAcao(NovaAcao acao) async {
+  Future<void> createAction(NewAction acao) async {
     final uid = _client.auth.currentUser!.id;
-    await _client.from('acoes').insert(acao.toInsertMap(criadorId: uid));
+    await _client.from('acoes').insert(acao.toInsertMap(creatorId: uid));
   }
 
-  Future<void> cancelarAcao(String id) async {
+  Future<void> cancelAction(String id) async {
     await _client.from('acoes').update({'cancelada_em': DateTime.now().toUtc().toIso8601String()}).eq(
       'id',
       id,
@@ -38,7 +38,7 @@ class AcaoRepository {
   }
 
   /// FR-012: idempotente — confirmar de novo não é erro nem duplica.
-  Future<void> confirmarPresenca(String acaoId) async {
+  Future<void> confirmAttendance(String acaoId) async {
     final uid = _client.auth.currentUser!.id;
     await _client.from('confirmacoes_acao').upsert(
       {'acao_id': acaoId, 'usuario_id': uid},
@@ -48,7 +48,7 @@ class AcaoRepository {
   }
 
   /// FR-004: sempre auto-serviço; a promoção da fila é automática no banco.
-  Future<void> desistir(String acaoId) async {
+  Future<void> withdraw(String acaoId) async {
     final uid = _client.auth.currentUser!.id;
     await _client
         .from('confirmacoes_acao')
@@ -57,7 +57,7 @@ class AcaoRepository {
         .eq('usuario_id', uid);
   }
 
-  Future<List<ConfirmacaoComPerfil>> fetchConfirmados(String acaoId) async {
+  Future<List<AttendanceWithProfile>> fetchAttendees(String acaoId) async {
     final rows = await _client
         .from('confirmacoes_acao')
         .select('usuario_id, status')
@@ -67,9 +67,9 @@ class AcaoRepository {
     final resultados = await Future.wait(rows.map((row) async {
       final perfil = await _fetchPerfilPublico(row['usuario_id'] as String);
       final status = row['status'] == 'confirmado'
-          ? StatusConfirmacao.confirmado
-          : StatusConfirmacao.fila;
-      return ConfirmacaoComPerfil(perfil: perfil, status: status);
+          ? AttendanceStatus.confirmado
+          : AttendanceStatus.fila;
+      return AttendanceWithProfile(perfil: perfil, status: status);
     }));
     return resultados;
   }

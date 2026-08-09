@@ -97,7 +97,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
       body: Column(
         children: [
           const PerfilAusenteBanner(),
-          _FiltrosBar(
+          _FilterBar(
             churchesAsync: churchesAsync,
             filtroIgrejaId: _filtroIgrejaId,
             ordenacao: _ordenacao,
@@ -118,7 +118,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                 return ListView(
                   children: [
                     for (final secao in secoes) ...[
-                      _CabecalhoSecao(nome: secao.nomeIgreja),
+                      _SectionHeader(nome: secao.nomeIgreja),
                       for (final grupo in secao.itens) _GroupCard(grupo: grupo),
                     ],
                   ],
@@ -145,8 +145,8 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
   }
 }
 
-class _FiltrosBar extends StatelessWidget {
-  const _FiltrosBar({
+class _FilterBar extends StatelessWidget {
+  const _FilterBar({
     required this.churchesAsync,
     required this.filtroIgrejaId,
     required this.ordenacao,
@@ -199,8 +199,8 @@ class _FiltrosBar extends StatelessWidget {
   }
 }
 
-class _CabecalhoSecao extends StatelessWidget {
-  const _CabecalhoSecao({required this.nome});
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader({required this.nome});
 
   final String nome;
 

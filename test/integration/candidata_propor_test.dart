@@ -10,7 +10,7 @@ const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000015';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -45,7 +45,7 @@ void main() {
       ),
       parameters: {'grupo': grupoId, 'dono': _uidDono},
     );
-    rodadaId = rodadaRows.single.toColumnMap()['id']!;
+    votingRoundId = rodadaRows.single.toColumnMap()['id']!;
     await conn.execute('reset role');
   });
 
@@ -88,7 +88,7 @@ void main() {
             "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
             "values ('Candidata Intrusa', now() + interval '5 days', 'Sede', @usuario, @rodada)",
           ),
-          parameters: {'usuario': _uidForaDoGrupo, 'rodada': rodadaId},
+          parameters: {'usuario': _uidForaDoGrupo, 'rodada': votingRoundId},
         );
       }),
       throwsA(isA<ServerException>()),
@@ -102,7 +102,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Válida', now() + interval '5 days', 'Sede', @usuario, @rodada)",
         ),
-        parameters: {'usuario': _uidParticipante, 'rodada': rodadaId},
+        parameters: {'usuario': _uidParticipante, 'rodada': votingRoundId},
       );
     });
 
@@ -111,7 +111,7 @@ void main() {
         "select grupo_id, confirmada from public.acoes "
         "where rodada_id = @rodada and nome = 'Candidata Válida'",
       ),
-      parameters: {'rodada': rodadaId},
+      parameters: {'rodada': votingRoundId},
     );
     final row = rows.single.toColumnMap();
     expect(row['grupo_id'], grupoId);

@@ -27,7 +27,7 @@ void main() {
               (ref) async => const [GroupCategory(id: 'cat-1', nome: 'Ministério Jovem')],
             ),
           ],
-          child: const MaterialApp(home: CriarAcaoPage()),
+          child: const MaterialApp(home: CreateActionPage()),
         ),
       );
       await tester.pumpAndSettle();

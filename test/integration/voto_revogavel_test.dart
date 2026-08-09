@@ -9,7 +9,7 @@ const _uidVotante = '70000000-0000-0000-0000-000000000021';
 void main() {
   late Connection conn;
   late Object grupoId;
-  late Object rodadaId;
+  late Object votingRoundId;
   late Object candidataA;
   late Object candidataB;
 
@@ -57,7 +57,7 @@ void main() {
       );
       rodada = rows.single.toColumnMap()['id']!;
     });
-    rodadaId = rodada;
+    votingRoundId = rodada;
 
     await comoUsuario(_uidDono, () async {
       final rowsA = await conn.execute(
@@ -65,7 +65,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata A', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': rodadaId},
+        parameters: {'dono': _uidDono, 'rodada': votingRoundId},
       );
       candidataA = rowsA.single.toColumnMap()['id']!;
 
@@ -74,7 +74,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata B', now() + interval '6 days', 'Praca', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': rodadaId},
+        parameters: {'dono': _uidDono, 'rodada': votingRoundId},
       );
       candidataB = rowsB.single.toColumnMap()['id']!;
     });
@@ -106,7 +106,7 @@ void main() {
           'values (@rodada, @usuario, @candidata) '
           'on conflict (rodada_id, usuario_id) do update set candidata_id = excluded.candidata_id',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotante, 'candidata': candidataA},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotante, 'candidata': candidataA},
       );
     });
 
@@ -117,7 +117,7 @@ void main() {
           'values (@rodada, @usuario, @candidata) '
           'on conflict (rodada_id, usuario_id) do update set candidata_id = excluded.candidata_id',
         ),
-        parameters: {'rodada': rodadaId, 'usuario': _uidVotante, 'candidata': candidataB},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotante, 'candidata': candidataB},
       );
     });
 
@@ -125,7 +125,7 @@ void main() {
       Sql.named(
         'select candidata_id from public.votos where rodada_id = @rodada and usuario_id = @usuario',
       ),
-      parameters: {'rodada': rodadaId, 'usuario': _uidVotante},
+      parameters: {'rodada': votingRoundId, 'usuario': _uidVotante},
     );
     expect(rows, hasLength(1));
     expect(rows.single.toColumnMap()['candidata_id'], candidataB);

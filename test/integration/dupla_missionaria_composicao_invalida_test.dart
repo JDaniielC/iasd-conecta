@@ -21,7 +21,7 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 Future<String> _criarDuplaMissionaria(
   Connection conn, {
-  required String criadorId,
+  required String creatorId,
   required String generoVisitado,
 }) async {
   final rows = await conn.execute(
@@ -31,7 +31,7 @@ Future<String> _criarDuplaMissionaria(
       "values ('Visita ComposicaoInvalida', now() + interval '1 day', 'Casa', @criador, 2, "
       "true, @genero) returning id",
     ),
-    parameters: {'criador': criadorId, 'genero': generoVisitado},
+    parameters: {'criador': creatorId, 'genero': generoVisitado},
   );
   return rows.single.toColumnMap()['id']! as String;
 }
@@ -60,7 +60,7 @@ void main() {
   });
 
   test('FR-005/FR-006: 2 homens visitando mulher é recusada', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, criadorId: _uidHomem1, generoVisitado: 'feminino');
+    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidHomem1, generoVisitado: 'feminino');
     await expectLater(
       _comoUsuario(conn, _uidHomem2, () async {
         await conn.execute(
@@ -73,7 +73,7 @@ void main() {
   });
 
   test('FR-005/FR-006: 2 mulheres visitando homem é recusada', () async {
-    final acaoId = await _criarDuplaMissionaria(conn, criadorId: _uidMulher1, generoVisitado: 'masculino');
+    final acaoId = await _criarDuplaMissionaria(conn, creatorId: _uidMulher1, generoVisitado: 'masculino');
     await expectLater(
       _comoUsuario(conn, _uidMulher2, () async {
         await conn.execute(

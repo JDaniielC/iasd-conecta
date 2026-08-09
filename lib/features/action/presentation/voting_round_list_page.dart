@@ -8,14 +8,14 @@ import '../voting_round_providers.dart';
 
 /// Lista de Rodadas de votação de um Grupo — visível a Visitante e Usuário
 /// igualmente (FR-017).
-class ListaRodadasPage extends ConsumerWidget {
-  const ListaRodadasPage({super.key, required this.grupoId});
+class VotingRoundListPage extends ConsumerWidget {
+  const VotingRoundListPage({super.key, required this.grupoId});
 
   final String grupoId;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final rodadasAsync = ref.watch(rodadasDoGrupoProvider(grupoId));
+    final rodadasAsync = ref.watch(groupVotingRoundsProvider(grupoId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Rodadas de Votação')),
@@ -40,7 +40,7 @@ class ListaRodadasPage extends ConsumerWidget {
                 child: ListTile(
                   title: Text(rodada.aberta ? 'Aberta' : 'Fechada'),
                   subtitle: Text(
-                    'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.prazo)}',
+                    'Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(rodada.deadline)}',
                   ),
                   onTap: () => context.push('/rodadas/${rodada.id}'),
                 ),

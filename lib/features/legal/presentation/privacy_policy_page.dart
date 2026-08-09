@@ -122,16 +122,10 @@ class PrivacyPolicyPage extends ConsumerWidget {
             const LegalBullet(
               'Seu nome (ou Apelido, se você for menor de idade) e a igreja '
               'que escolheu, sempre que você participa de um Grupo, '
-              'confirma presença numa Ação, propõe uma Ação candidata ou '
-              'vota numa Rodada de votação.',
+              'confirma presença numa Ação ou propõe uma Ação candidata.',
             ),
             const LegalBullet('Quais Grupos você participa.'),
             const LegalBullet('Em quais Ações você confirmou presença.'),
-            const LegalBullet(
-              'Em qual candidata você votou, dentro de uma Rodada de '
-              'votação do seu Grupo — o voto não é anônimo entre os '
-              'participantes do Grupo.',
-            ),
             const LegalBullet(
               'Se você é Administrador do distrito, ou se autodeclarou '
               'Líder/Diretor de um Ministério — nesse último caso, mesmo '
@@ -140,6 +134,13 @@ class PrivacyPolicyPage extends ConsumerWidget {
             const LegalParagraph(
               'Nunca ficam públicos, para ninguém: sua idade, seu telefone, '
               'seu gênero.',
+            ),
+            const LegalParagraph(
+              'Em qual candidata você votou também não fica público. Só você '
+              'enxerga o seu voto — nem outros participantes do Grupo, nem '
+              'quem abriu a Rodada de votação, nem o Dono do Grupo. Quando a '
+              'Rodada fecha, o app conta os votos e anuncia a candidata '
+              'vencedora, sem mostrar a ninguém quem votou em quê.',
             ),
 
             const LegalHeading('Com quem compartilhamos'),

@@ -52,9 +52,11 @@ Auth — e-mail e hash de senha ficam no schema `auth`, fora de `public.perfis`.
 
 ## Quem vê o quê (RLS = a fonte de verdade, não a UI)
 
-Todas as policies abaixo concedem `select` a `anon, authenticated` com
+As policies abaixo concedem `select` a `anon, authenticated` com
 `using (true)` — ou seja, **visível até para quem nunca fez cadastro**,
-via API direta, independente do que a tela de fato renderiza:
+via API direta, independente do que a tela de fato renderiza. A exceção é
+`votos`, fechada pela feature 021 e mantida na tabela justamente para
+registrar que ela já esteve aberta:
 
 | Tabela | Policy | Arquivo:linha |
 |---|---|---|
@@ -63,7 +65,7 @@ via API direta, independente do que a tela de fato renderiza:
 | `acoes` | `acoes_select_public` | `20260723230639_acoes.sql:121-124` |
 | `confirmacoes_acao` | `confirmacoes_acao_select_public` | `20260723230639_acoes.sql:136-139` |
 | `rodadas_votacao` | `rodadas_votacao_select_public` | `20260724084300_rodada_votacao.sql:197-200` |
-| `votos` | `votos_select_public` | `20260724084300_rodada_votacao.sql:207-210` |
+| `votos` | **não é público desde a feature 021** — `votos_select_own` devolve só a linha da própria pessoa (`auth.uid() = usuario_id`), e `anon` fica sem policy de `select`, portanto recebe lista vazia. A apuração conta todos os votos por fora da RLS, em `fechar_rodada_se_devido` (`security definer`) | `20260809200000_votos_visibilidade.sql:41-44` |
 | `administradores_distrito` | `administradores_distrito_select_public` | `20260724092132_district_admin.sql:52-55` |
 | `liderancas` | `liderancas_select_public` — **sem filtro por `confirmado_em`**: declaração pendente/rejeitada também é publicamente selecionável, não só a confirmada | `20260724100000_leadership.sql:73-76` |
 

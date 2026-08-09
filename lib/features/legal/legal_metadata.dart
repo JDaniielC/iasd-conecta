@@ -8,8 +8,13 @@
 /// grava só a data/hora do aceite, sem gravar a versão aceita: se o texto
 /// mudar, não há como saber quem aceitou qual versão (ver REVISAO-JURIDICA.md).
 abstract final class LegalMetadata {
-  static const version = '1.1';
-  static const effectiveDate = '6 de agosto de 2026';
+  /// 1.2 (feature 021): o voto deixou de ser público. A versão sobe porque o
+  /// texto exibido mudou, e um número que aponta para dois textos diferentes
+  /// para de servir para o que existe. A mudança só REDUZ exposição — não
+  /// adiciona finalidade —, então não invalida consentimento já colhido nem
+  /// exige novo aceite de quem já se cadastrou.
+  static const version = '1.2';
+  static const effectiveDate = '9 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

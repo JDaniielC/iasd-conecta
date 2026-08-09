@@ -135,7 +135,7 @@ Janela de tempo, aberta por qualquer participante de um Grupo, com prazo automá
 _EN_: `VotingRound`
 
 **Votar**:
-Escolher entre Ações candidatas de uma Rodada de votação. Restrito aos Usuários que participam do Grupo dono da Rodada. Revogável — o Usuário pode trocar de candidata quantas vezes quiser enquanto a Rodada estiver aberta; só a última escolha conta na apuração.
+Escolher entre Ações candidatas de uma Rodada de votação. Restrito aos Usuários que participam do Grupo dono da Rodada. Revogável — o Usuário pode trocar de candidata quantas vezes quiser enquanto a Rodada estiver aberta; só a última escolha conta na apuração. **Só quem votou enxerga o próprio voto** — nem os demais participantes, nem quem abriu a Rodada, nem o Dono do Grupo; a apuração conta os votos por fora da RLS e anuncia só a vencedora (feature 021). A regra é essa, e não "visível aos participantes do Grupo", porque nenhuma tela do app consome voto alheio: abrir para o Grupo seria entregar acesso que nada usa. Até a feature 021 a policy era `using (true)` e qualquer pessoa sem cadastro lia a tabela inteira — ninguém tinha decidido isso, era o padrão que sobreviveu por não estar escrito em lugar nenhum.
 _EN_: `Vote` / `vote`
 
 **Igreja**:

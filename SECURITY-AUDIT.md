@@ -100,3 +100,73 @@ caminho interno legítimo continua funcionando).
 - `grupos_update_dono`'s `WITH CHECK (true)` é seguro porque o trigger
   `checar_dono_participa` independentemente bloqueia a troca de dono pra
   quem não participa — padrão já correto desde a feature 002.
+
+---
+
+# Achado 4 — voto legível por qualquer pessoa sem cadastro (feature 021)
+
+**Data**: 2026-08-09 | **Corrigido em**: `20260809200000_votos_visibilidade.sql`
+
+`votos_select_public ... using (true)` (`20260724084300_rodada_votacao.sql:207-210`),
+somado ao `grant select ... to anon` da linha 190, deixava a tabela `public.votos`
+inteira legível por qualquer pessoa da internet. E a tabela é o par nominal
+`(usuario_id, candidata_id)`, não um agregado.
+
+**Reproduzido antes do fix**, no ambiente local, com três requisições e só a
+chave pública — nenhuma conta, nenhum login:
+
+```
+GET  /rest/v1/votos?select=*        -> os três pares (usuario_id, candidata_id)
+POST /rest/v1/rpc/perfil_publico    -> {"nome_exibido":"Clara Demo"}
+GET  /rest/v1/acoes?select=id,nome  -> {"nome":"Entrega de cestas"}
+```
+
+Resultado montável por qualquer um: **"Clara Demo votou em Entrega de cestas"** —
+frase inteira, não UUID. Reconfirmado depois do fix: o `GET` devolve `[]` com
+HTTP 200, e a cadeia quebra no primeiro elo.
+
+**Por que passou pelas auditorias anteriores**: a tela nunca mostrou voto alheio.
+`voting_round_repository.dart:78-86` sempre filtrou pelo próprio `uid`, então a
+inspeção da interface não revelava nada. Esconder na tela não é proteger, e este
+achado é o exemplo.
+
+**Divergência entre promessa e execução**: a Política de Privacidade afirmava que
+"o voto não é anônimo **entre os participantes do Grupo**" — um círculo menor do
+que a internet. Quem aceitou os termos aceitou outra coisa. Corrigido junto
+(`privacy_policy_page.dart`), inclusive removendo "vota numa Rodada de votação"
+da lista do que torna o nome público, que também deixou de ser verdade.
+
+**Regra adotada**: só a própria pessoa lê o próprio voto. Não "os participantes do
+Grupo", porque nenhuma tela consome voto alheio — abrir para o Grupo entregaria
+acesso que nada usa.
+
+**Teste de regressão**: `test/integration/votos_visibilidade_test.dart`, 9 casos.
+Provados vermelhos antes de serem aceitos: com `using (true)` restaurado, os
+quatro casos de privacidade falham e só eles.
+
+## O risco que este fix CRIA, e que não existia antes
+
+Fechar a leitura arma uma dependência que era inofensiva. Enquanto valia
+`using (true)`, tanto fazia `fechar_rodada_se_devido` ser `security definer` ou
+`invoker` — todos enxergavam todos os votos e a contagem saía igual. Agora,
+convertê-la para `invoker` faz a apuração contar **só os votos de quem chamou**.
+
+Medido, com 2 votos numa candidata e 1 noutra: como `invoker` chamada pela
+minoria, a candidata majoritária **some da consulta** e a minoria vence. A Rodada
+fecha, grava a vencedora errada e apaga as perdedoras — sem erro, sem rastro,
+irreversível.
+
+Coberto pelo caso `(f)` do teste, montado com quem fecha a Rodada tendo votado na
+**perdedora** — montado ao contrário, ele passaria verde numa apuração quebrada.
+Verificado vermelho: com a função convertida para `invoker`, `(f)` falha.
+O aviso está dentro da migration, no ponto onde alguém quebraria.
+
+## O que fica em aberto
+
+- **Verificação em produção**: tudo acima foi medido no ambiente local. O `curl`
+  anônimo contra o ambiente publicado ainda não foi feito — depende do deploy.
+- **Não há como saber se a exposição foi explorada.** Não existe log de acesso
+  (`REVISAO-JURIDICA.md`, Marco Civil art. 15, pendente de parecer). Por isso
+  ninguém foi notificado: não há fato conhecido a notificar, nem canal.
+- **`liderancas_select_public` continua `using (true)`** — mesma classe, outra
+  tabela, já especificada como feature 018 e ainda não implementada.

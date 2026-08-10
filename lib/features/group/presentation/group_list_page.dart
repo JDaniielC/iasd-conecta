@@ -89,6 +89,14 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
               icon: const Icon(Icons.fact_check_outlined),
               onPressed: () => context.push('/district-admin/consentimentos'),
             ),
+            // SC-003: da tela em que a imagem aparece até a remoção, em até 3
+            // toques. Por aqui são dois: abrir a lista e resolver.
+            IconButton(
+              tooltip: 'Imagens denunciadas',
+              icon: const Icon(Icons.flag_outlined),
+              onPressed: () =>
+                  context.push('/district-admin/imagens-denunciadas'),
+            ),
           ],
           if (hasProfile && !hasAccount)
             IconButton(

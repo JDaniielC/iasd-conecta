@@ -185,4 +185,31 @@ void main() {
       expect(find.text('Trocar capa'), findsOneWidget);
     });
   });
+
+  group('FR-011: o Administrador do distrito tira do ar o que não é dele', () {
+    // A regra de quem administra é decidida pelas telas (Grupo: dono; Ação:
+    // criador; e o Administrador do distrito nos dois), e o banco é quem
+    // garante — `fotos_capa_delete_admin`. Aqui se prova o que a pessoa VÊ.
+    testWidgets('vê remover em Grupo alheio, com a capa na tela',
+        (tester) async {
+      await pumpEditor(tester, canManage: true, cover: buildGroupCover());
+
+      // SC-003: da tela onde a imagem aparece até a remoção, em até 3 toques.
+      // Aqui é um.
+      expect(find.text('Remover capa'), findsOneWidget);
+    });
+
+    testWidgets('Usuário comum em Grupo alheio não vê remover', (tester) async {
+      await pumpEditor(tester, canManage: false, cover: buildGroupCover());
+      expect(find.text('Remover capa'), findsNothing);
+    });
+
+    testWidgets('FR-014: depois de remover, pode enviar outra', (tester) async {
+      // Sem capa e podendo administrar, a ação oferecida é "Adicionar capa" —
+      // remover não é uma porta de mão única.
+      await pumpEditor(tester, canManage: true);
+      expect(find.text('Adicionar capa'), findsOneWidget);
+      expect(find.text('Remover capa'), findsNothing);
+    });
+  });
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/image_upload.dart';
+import '../../image_report/presentation/report_image_sheet.dart';
 import '../cover_photo_providers.dart';
 import '../domain/cover_photo.dart';
 import 'cover_photo_advice_sheet.dart';
@@ -179,6 +180,21 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         CoverPhotoView(photo: photo, imageUrl: imageUrl),
+        // FR-015: denunciar parte **da própria imagem**, e está disponível
+        // para qualquer pessoa — inclusive Visitante sem cadastro. É o caminho
+        // de quem vê a foto de um filho e precisa pedir a retirada; fazer isso
+        // depender de cadastro seria pedir os dados dela para retirar os da
+        // criança.
+        if (photo != null)
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () =>
+                  ReportImageSheet.show(context, photoId: photo.id),
+              icon: const Icon(Icons.flag_outlined, size: 18),
+              label: const Text('Denunciar imagem'),
+            ),
+          ),
         if (widget.canManage) ...[
           if (photo != null) const SizedBox(height: 8),
           Row(

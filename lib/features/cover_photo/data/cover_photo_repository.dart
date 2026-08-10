@@ -80,8 +80,12 @@ class CoverPhotoRepository {
   /// é a janela de propagação do cache de borda, medida em fonte primária
   /// (research D-004) e aceita pelo responsável pelo app. A Política de
   /// Privacidade diz isso com essas palavras.
-  String publicUrlFor(CoverPhoto photo) =>
-      _client.storage.from(coverPhotoBucket).getPublicUrl(photo.path);
+  String publicUrlFor(CoverPhoto photo) => publicUrlForPath(photo.path);
+
+  /// A partir do caminho solto — a tela de denúncias trabalha com o caminho,
+  /// não com a linha inteira.
+  String publicUrlForPath(String path) =>
+      _client.storage.from(coverPhotoBucket).getPublicUrl(path);
 
   /// Envia a capa de um Grupo. Se já houver uma, ela é **trocada**.
   Future<void> uploadForGroup({

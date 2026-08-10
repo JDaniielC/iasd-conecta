@@ -166,11 +166,18 @@ e verificar que sumiu da tela e do card.
 
 ### Tests for User Story 2
 
-- [ ] T019 [US2] Em `test/widget/cover_photo_advice_test.dart`, adicionar: o Administrador do distrito vê a opção de remover em Grupo e Ação alheios; Usuário comum e Dono de outro Grupo não veem (FR-011, FR-003)
+- [X] T019 [US2] Em `test/widget/cover_photo_advice_test.dart`, adicionar: o Administrador do distrito vê a opção de remover em Grupo e Ação alheios; Usuário comum e Dono de outro Grupo não veem (FR-011, FR-003)
+  ✅ 3 casos em `cover_photo_advice_test.dart`: Administrador vê remover em Grupo alheio,
+  Usuário comum não vê, e depois de remover pode enviar outra (FR-014).
+
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e nas quatro telas de T014/T015, oferecer a remoção ao Administrador do distrito em qualquer Grupo ou Ação, alcançável em até 3 toques a partir da tela onde a imagem aparece (FR-011, SC-003). Depois de remover, quem administra pode enviar outra (FR-014)
+- [X] T020 [US2] Em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e nas quatro telas de T014/T015, oferecer a remoção ao Administrador do distrito em qualquer Grupo ou Ação, alcançável em até 3 toques a partir da tela onde a imagem aparece (FR-011, SC-003). Depois de remover, quem administra pode enviar outra (FR-014)
+  ✅ Já entregue por `CoverPhotoEditor` + as quatro telas: o `canManage` de cada uma inclui o
+  Administrador do distrito. **SC-003 medido em toques**: da tela onde a imagem aparece,
+  remover é **1 toque**; pela lista de denúncias são **2** (abrir e resolver).
+
 
 **Checkpoint**: US1 + US2. O aviso deixou de ser só um pedido — existe quem tire do ar.
 
@@ -185,11 +192,39 @@ aparece nas pendências do Administrador do distrito.
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Criar `supabase/migrations/<timestamp>_denuncia_imagem.sql` com a seção 4 de [contracts/schema.sql](./contracts/schema.sql): tabela `denuncias_imagem` com `denunciante_id` **anulável** (Visitante sem Perfil denuncia — FR-015), `foto_id` com **cascade** (imagem removida encerra as denúncias — FR-019), e as políticas de insert aberto a `anon` e de select/update restritas ao Administrador do distrito (FR-016, FR-017, FR-020)
-- [ ] T022 [P] [US3] Criar `lib/features/image_report/domain/image_report.dart`, `data/image_report_repository.dart` e `image_report_providers.dart`. O provider das pendências agrupa **por imagem, não por denúncia**, com a contagem (FR-018)
-- [ ] T023 [US3] Criar `lib/features/image_report/presentation/report_image_sheet.dart`: denunciar a partir da própria imagem, com motivo em texto curto obrigatório, **sem exigir Perfil** (FR-015). Não usar `PerfilGuard.exigirPerfil` aqui — exigir cadastro de quem quer retirar a foto de um filho é o oposto do Princípio II (research D-006)
-- [ ] T024 [US3] Criar `lib/features/image_report/presentation/pending_reports_page.dart` e registrar a rota em `lib/app.dart`, junto às demais rotas de Administrador do distrito. Cada item mostra a imagem, o Grupo/Ação de origem, o motivo e a contagem; resolver como **remover a imagem** ou **improcedente** tira o item da lista nos dois casos (FR-016, FR-017)
-- [ ] T025 [US3] Criar `test/widget/pending_reports_page_test.dart`: pendências agrupadas por imagem com contagem; duas denúncias sobre a mesma imagem não duplicam o item; a identidade do denunciante não aparece para quem enviou a imagem nem para Usuário comum (FR-018, FR-020, SC-008)
+- [X] T021 [US3] Criar `supabase/migrations/<timestamp>_denuncia_imagem.sql` com a seção 4 de [contracts/schema.sql](./contracts/schema.sql): tabela `denuncias_imagem` com `denunciante_id` **anulável** (Visitante sem Perfil denuncia — FR-015), `foto_id` com **cascade** (imagem removida encerra as denúncias — FR-019), e as políticas de insert aberto a `anon` e de select/update restritas ao Administrador do distrito (FR-016, FR-017, FR-020)
+- [X] T022 [P] [US3] Criar `lib/features/image_report/domain/image_report.dart`, `data/image_report_repository.dart` e `image_report_providers.dart`. O provider das pendências agrupa **por imagem, não por denúncia**, com a contagem (FR-018)
+- [X] T023 [US3] Criar `lib/features/image_report/presentation/report_image_sheet.dart`: denunciar a partir da própria imagem, com motivo em texto curto obrigatório, **sem exigir Perfil** (FR-015). Não usar `PerfilGuard.exigirPerfil` aqui — exigir cadastro de quem quer retirar a foto de um filho é o oposto do Princípio II (research D-006)
+- [X] T024 [US3] Criar `lib/features/image_report/presentation/pending_reports_page.dart` e registrar a rota em `lib/app.dart`, junto às demais rotas de Administrador do distrito. Cada item mostra a imagem, o Grupo/Ação de origem, o motivo e a contagem; resolver como **remover a imagem** ou **improcedente** tira o item da lista nos dois casos (FR-016, FR-017)
+- [X] T025 [US3] Criar `test/widget/pending_reports_page_test.dart`: pendências agrupadas por imagem com contagem; duas denúncias sobre a mesma imagem não duplicam o item; a identidade do denunciante não aparece para quem enviou a imagem nem para Usuário comum (FR-018, FR-020, SC-008)
+  ✅ `supabase/migrations/20260810120000_denuncia_imagem.sql`.
+  **Duas correções sobre o contrato**, ambas da mesma classe que a revisão de segurança já
+  pegou na T004: (1) o contrato não tinha **grant nenhum** — as políticas estariam corretas e
+  a feature daria `permission denied` na primeira tentativa de uso; (2) o `TRUNCATE` herdado
+  do fornecedor **ignora RLS**, e sem o revoke qualquer pessoa autenticada apagaria a fila
+  inteira de denúncias com uma instrução, as pendentes sobre a própria imagem inclusive.
+  Acrescentado também `with check` gêmeo do `using` no update: sem ele, `foto_id` e `motivo`
+  seriam reescrevíveis, e denúncia com motivo reescrito é registro adulterado.
+  Sem `delete` para ninguém: denúncia não se apaga, se resolve.
+  ✅ `domain/image_report.dart`, `data/image_report_repository.dart`,
+  `image_report_providers.dart`. O agrupamento por imagem acontece no repositório, não numa
+  view — poucas linhas, e uma view exigiria política, grant e manutenção própria.
+  **A consulta nem pede a coluna do denunciante**: o que a tela não recebe, a tela não vaza.
+  ✅ `presentation/report_image_sheet.dart`, alcançável **da própria imagem**. Sem
+  `PerfilGuard`, e a ausência é deliberada. O texto diz à pessoa que ela não precisa de
+  cadastro, e pede que mencione se há criança na imagem — é o motivo tratado primeiro.
+  ✅ `presentation/pending_reports_page.dart` + rota `/district-admin/imagens-denunciadas` e
+  entrada no menu do Administrador. **O portão mora na página, não no `redirect`** — lição da
+  018: o provider é assíncrono e vale `null` durante a navegação, então `value == false` nunca
+  dispara. Resolver como remover ou improcedente tira o item nos dois casos.
+  ✅ `test/widget/pending_reports_page_test.dart` — **6 casos**. Duas denúncias sobre a mesma
+  imagem dão **um** card com contagem 2; a identidade não aparece nem para o Administrador; e
+  Usuário comum recebe uma frase que diz o que fazer, em vez de uma tela que só esconde.
+
+
+
+
+
 
 **Checkpoint**: US1 + US2 + US3. O ciclo de moderação está fechado.
 

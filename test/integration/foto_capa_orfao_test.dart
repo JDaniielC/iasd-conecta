@@ -456,4 +456,159 @@ void main() {
       expect(await isQueued(path), isTrue);
     },
   );
+
+  test(
+    '(g) FR-013/FR-026/SC-009: remover a capa não altera NADA além dela',
+    () async {
+      // O contrário do teste de órfão: lá se prova que a capa some; aqui, que
+      // só ela some. Sem isto, "remover capa" poderia estar levando presença
+      // ou voto junto e os outros testes continuariam verdes — eles contam
+      // capas e fila, não o resto.
+      late Object roundId;
+      late Object candidateId;
+
+      await asUser(_uidOwner, () async {
+        final roundRows = await conn.execute(
+          Sql.named(
+            "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
+            "values (@grupo, @dono, now() + interval '1 day') returning id",
+          ),
+          parameters: {'grupo': groupId, 'dono': _uidOwner},
+        );
+        roundId = roundRows.single.toColumnMap()['id']!;
+
+        final candidateRows = await conn.execute(
+          Sql.named(
+            "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
+            "values ('Candidata Intacta', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
+          ),
+          parameters: {'dono': _uidOwner, 'rodada': roundId},
+        );
+        candidateId = candidateRows.single.toColumnMap()['id']!;
+      });
+
+      await asUser(_uidVoter, () async {
+        await conn.execute(
+          Sql.named(
+            'insert into public.confirmacoes_acao (acao_id, usuario_id) '
+            'values (@acao, @usuario)',
+          ),
+          parameters: {'acao': candidateId, 'usuario': _uidVoter},
+        );
+        await conn.execute(
+          Sql.named(
+            'insert into public.votos (rodada_id, usuario_id, candidata_id) '
+            'values (@rodada, @usuario, @candidata)',
+          ),
+          parameters: {
+            'rodada': roundId,
+            'usuario': _uidVoter,
+            'candidata': candidateId,
+          },
+        );
+      });
+
+      Future<Map<String, int>> snapshot() async {
+        final rows = await conn.execute(
+          Sql.named(
+            'select '
+            '  (select count(*) from public.confirmacoes_acao where acao_id = @acao) as presencas, '
+            '  (select count(*) from public.votos where rodada_id = @rodada) as votos, '
+            '  (select count(*) from public.acoes where id = @acao) as acoes, '
+            '  (select count(*) from public.participacoes_grupo where grupo_id = @grupo) as participacoes, '
+            '  (select count(*) from public.grupos where id = @grupo) as grupos',
+          ),
+          parameters: {
+            'acao': candidateId,
+            'rodada': roundId,
+            'grupo': groupId,
+          },
+        );
+        return rows.single.toColumnMap().map((k, v) => MapEntry(k, v as int));
+      }
+
+      final path = 'acao/$candidateId/intacta-capa.jpg';
+      await asUser(_uidOwner, () async {
+        await conn.execute(
+          Sql.named(
+            'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
+            'values (@acao, @caminho, @dono)',
+          ),
+          parameters: {'acao': candidateId, 'caminho': path, 'dono': _uidOwner},
+        );
+      });
+
+      final before = await snapshot();
+      // 2 presenças, não 1: criar a Ação já confirma o criador. O número exato
+      // não é desta feature — o que importa é ele não mudar. Ainda assim fica
+      // afirmado como não-zero, senão a comparação abaixo passaria comparando
+      // nada com nada.
+      expect(before['presencas'], greaterThan(0));
+      expect(before['votos'], 1);
+
+      await asUser(_uidOwner, () async {
+        await conn.execute(
+          Sql.named('delete from public.fotos_capa where caminho = @c'),
+          parameters: {'c': path},
+        );
+      });
+
+      expect(await snapshot(), before,
+          reason: 'remover a capa não pode mexer em presença, voto, Ação, '
+              'participação nem Grupo');
+      expect(await isQueued(path), isTrue);
+
+      await conn.execute(
+        Sql.named('delete from public.votos where rodada_id = @r'),
+        parameters: {'r': roundId},
+      );
+      await conn.execute(
+        Sql.named('delete from public.confirmacoes_acao where acao_id = @a'),
+        parameters: {'a': candidateId},
+      );
+    },
+  );
+
+  test(
+    '(h) FR-021/SC-005: apagar o Grupo leva a capa e enfileira o arquivo',
+    () async {
+      // Não existe tela que apague Grupo — o plano registra isso no achado 1.
+      // É exatamente por isso que este teste importa: no dia em que ela
+      // existir, ninguém vai lembrar de conferir a capa. O cascade e o gatilho
+      // já cobrem, e aqui isso vira afirmação verificável em vez de intenção.
+      final ownGroupRows = await conn.execute(
+        Sql.named(
+          "insert into public.grupos (nome, categoria, horario, local, dono_id) "
+          "values ('Grupo a Apagar Orfao', 'Ministério Jovem', 's', 'Sede', @dono) returning id",
+        ),
+        parameters: {'dono': _uidOwner},
+      );
+      final doomedGroupId = ownGroupRows.single.toColumnMap()['id']!;
+
+      final path = 'grupo/$doomedGroupId/apagado-orfao.jpg';
+      await conn.execute(
+        Sql.named(
+          'insert into public.fotos_capa (grupo_id, caminho, enviada_por) '
+          'values (@g, @c, @d)',
+        ),
+        parameters: {'g': doomedGroupId, 'c': path, 'd': _uidOwner},
+      );
+      expect(await coverCountFor('grupo_id', doomedGroupId), 1);
+
+      await conn.execute(
+        Sql.named('delete from public.grupos where id = @g'),
+        parameters: {'g': doomedGroupId},
+      );
+
+      expect(await coverCountFor('grupo_id', doomedGroupId), 0);
+      expect(await isQueued(path), isTrue,
+          reason: 'o cascade tem de disparar o gatilho, senão o arquivo fica '
+              'no bucket sem nenhuma linha que o referencie');
+
+      await conn.execute(
+        Sql.named('delete from public.capas_a_remover where caminho = @c'),
+        parameters: {'c': path},
+      );
+    },
+  );
 }

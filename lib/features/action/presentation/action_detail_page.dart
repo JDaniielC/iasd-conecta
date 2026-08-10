@@ -97,13 +97,19 @@ class ActionDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // FR-003: quem criou a Ação, e o Administrador do distrito.
-                // Ação cancelada ou já encerrada não ganha capa nova — é
-                // histórico, e a tela inteira já para de oferecer controles.
+                //
+                // Para quem criou, Ação cancelada ou encerrada não ganha capa
+                // nova — é histórico, e a tela inteira já para de oferecer
+                // controles. Para o **Administrador do distrito** a regra é
+                // outra: FR-011 diz "qualquer Grupo ou Ação", e Ação encerrada
+                // **mantém a capa** por FR-023. Sem esta exceção, uma imagem
+                // imprópria numa Ação encerrada não teria como sair da tela.
                 CoverPhotoEditor(
                   actionId: action.id,
-                  canManage: (action.creatorId == uid || isDistrictAdmin) &&
-                      !action.isCancelled &&
-                      !isEnded,
+                  canManage: isDistrictAdmin ||
+                      (action.creatorId == uid &&
+                          !action.isCancelled &&
+                          !isEnded),
                 ),
                 Row(
                   children: [

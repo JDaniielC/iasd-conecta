@@ -78,12 +78,18 @@ class GroupDetailPage extends ConsumerWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // FR-002/FR-003: a capa e, só para quem administra, as ações
-                // de enviar/trocar/remover. Grupo arquivado não ganha capa
-                // nova — é histórico, e mexer nele já está fechado em toda a
-                // tela (feature 014).
+                // de enviar/trocar/remover.
+                //
+                // Grupo arquivado é histórico e o Dono não mexe mais nele
+                // (feature 014). Mas o Administrador do distrito **continua
+                // podendo remover** — FR-011 diz "de qualquer Grupo ou Ação",
+                // e uma imagem imprópria num Grupo arquivado continua
+                // pública. Fechar isso deixaria a única saída ser a lista de
+                // denúncias, e só se alguém denunciasse.
                 CoverPhotoEditor(
                   groupId: groupId,
-                  canManage: (isOwner || isDistrictAdmin) && !group.isArchived,
+                  canManage:
+                      isDistrictAdmin || (isOwner && !group.isArchived),
                 ),
                 Row(
                   children: [

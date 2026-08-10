@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/providers.dart';
 import '../image_report_providers.dart';
 
 /// Denunciar uma imagem, **sem exigir cadastro** (FR-015).
@@ -54,9 +55,17 @@ class _ReportImageSheetState extends ConsumerState<ReportImageSheet> {
       _error = null;
     });
     try {
-      await ref
-          .read(imageReportRepositoryProvider)
-          .report(photoId: widget.photoId, reason: reason);
+      // Só assina a denúncia quem TEM Perfil. Sessão não é Perfil: o app faz
+      // signInAnonymously na inicialização, então quem nunca se cadastrou
+      // também tem `currentUser` — e usar esse id fazia o insert bater na FK
+      // contra `perfis`, derrubando exatamente a denúncia sem cadastro.
+      final hasProfile = await ref.read(hasProfileProvider.future);
+      await ref.read(imageReportRepositoryProvider).report(
+            photoId: widget.photoId,
+            reason: reason,
+            reporterId:
+                hasProfile ? ref.read(currentUserIdProvider) : null,
+          );
       if (!mounted) return;
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(

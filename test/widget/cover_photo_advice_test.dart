@@ -72,6 +72,10 @@ void main() {
         find.textContaining('qualquer pessoa na internet'),
         findsOneWidget,
       );
+      // FR-009 / research D-002: o limite é informado ANTES do envio, e não
+      // descoberto no erro depois de esperar o upload.
+      expect(find.textContaining('Até 5 MB'), findsOneWidget);
+      expect(find.textContaining('JPG, PNG ou WEBP'), findsOneWidget);
     });
 
     testWidgets('(b) aparece DE NOVO na troca de uma capa que já existe',
@@ -210,6 +214,17 @@ void main() {
       await pumpEditor(tester, canManage: true);
       expect(find.text('Adicionar capa'), findsOneWidget);
       expect(find.text('Remover capa'), findsNothing);
+    });
+  });
+
+  group('FR-011: o Administrador alcança o que é histórico', () {
+    // A regra de "não mexer em histórico" é do Dono e do criador, não do
+    // Administrador do distrito. Ação encerrada MANTÉM a capa (FR-023); se o
+    // Administrador não a alcançasse pela tela, a única saída seria a lista de
+    // denúncias — e só se alguém denunciasse.
+    testWidgets('remove capa mesmo quando o dono já não pode', (tester) async {
+      await pumpEditor(tester, canManage: true, cover: buildGroupCover());
+      expect(find.text('Remover capa'), findsOneWidget);
     });
   });
 }

@@ -9,13 +9,28 @@ class ImageReportRepository {
 
   /// Registra a denúncia. **Não exige Perfil** (FR-015).
   ///
-  /// Quando não há sessão, `denunciante_id` vai nulo e a denúncia é anônima —
-  /// que é exatamente o caso que a feature existe para atender.
-  Future<void> report({required String photoId, required String reason}) async {
+  /// [reporterId] é decidido por quem chama, e **nunca** lido de
+  /// `auth.currentUser` aqui. O motivo é um bug medido:
+  ///
+  /// O app faz `signInAnonymously` na inicialização
+  /// (`lib/core/supabase_client.dart:21`), então **todo Visitante tem
+  /// `currentUser`** — inclusive quem nunca criou Perfil. Usar esse id fazia o
+  /// insert bater na FK `denuncias_imagem_denunciante_id_fkey` contra
+  /// `perfis`, e a denúncia de quem não tem cadastro simplesmente não
+  /// acontecia. Era o único caso que a US3 existe para atender.
+  ///
+  /// Ter sessão não é ter Perfil, e ser anônimo não é não ter Perfil — o app
+  /// permite Perfil sem Conta desde a feature 001. O único sinal correto é
+  /// `hasProfileProvider`, e ele mora na camada que chama.
+  Future<void> report({
+    required String photoId,
+    required String reason,
+    String? reporterId,
+  }) async {
     await _client.from('denuncias_imagem').insert({
       'foto_id': photoId,
       'motivo': reason.trim(),
-      'denunciante_id': _client.auth.currentUser?.id,
+      'denunciante_id': reporterId,
     });
   }
 

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../domain/cover_photo.dart';
+
 /// A **parada obrigatória antes do seletor de arquivo** (FR-004, FR-005).
 ///
 /// Não é um texto ao lado do botão: é um passo que a pessoa precisa reconhecer
@@ -56,6 +58,22 @@ class CoverPhotoAdviceSheet extends StatelessWidget {
               'sem cadastro no app.',
               style: theme.textTheme.bodyLarge?.copyWith(
                 fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // O limite e os formatos, ANTES do seletor.
+            //
+            // Research D-002 exige que o limite seja informado antes do
+            // envio, "não descoberto no erro" — e era só no erro que ele
+            // aparecia, depois de a pessoa esperar o upload de um arquivo
+            // grande demais. Os valores vêm das constantes, gêmeas do bucket:
+            // repetir "5 MB" escrito à mão aqui criaria uma terceira cópia do
+            // número, que é como as três se separam.
+            Text(
+              'Até ${coverPhotoMaxBytes ~/ (1024 * 1024)} MB, em JPG, PNG ou '
+              'WEBP.',
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
             const SizedBox(height: 24),

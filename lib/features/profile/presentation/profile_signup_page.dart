@@ -32,6 +32,11 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   String? _churchId;
   bool _lgpdConsent = false;
   bool _churchConsent = false;
+
+  // Feature 015: só aparecem abaixo de childAgeThreshold.
+  final _guardianNameController = TextEditingController();
+  final _guardianContactController = TextEditingController();
+  bool _guardianAuthorization = false;
   bool _submitting = false;
   String? _error;
 
@@ -41,6 +46,8 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
     _nicknameController.dispose();
     _phoneController.dispose();
     _ageController.dispose();
+    _guardianNameController.dispose();
+    _guardianContactController.dispose();
     super.dispose();
   }
 
@@ -56,10 +63,13 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
       churchId: _churchId,
       phone: _phoneController.text,
       churchLgpdConsentAccepted: _churchConsent,
+      guardianName: _guardianNameController.text,
+      guardianContact: _guardianContactController.text,
+      guardianAuthorizationAccepted: _guardianAuthorization,
     );
   }
 
-  Future<void> _enviar() async {
+  Future<void> _submit() async {
     final profile = _currentProfile;
     if (_formKey.currentState?.validate() != true || profile == null) return;
     if (!NameModeration.cached.isValid(profile.name)) {
@@ -146,7 +156,19 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                   if (n == null || n < 0) return 'Informe uma idade válida';
                   return null;
                 },
-                onChanged: (_) => setState(() {}),
+                onChanged: (v) => setState(() {
+                  // Idade acima do limiar limpa o passo do Responsável. Sem
+                  // isto, quem digitasse 9 e corrigisse para 30 mandaria nome
+                  // e contato de um terceiro junto — e a constraint
+                  // `autorizacao_responsavel_so_para_crianca` recusaria a
+                  // linha, com um erro que a pessoa não teria como entender.
+                  final typedAge = int.tryParse(v);
+                  if (typedAge == null || typedAge >= childAgeThreshold) {
+                    _guardianNameController.clear();
+                    _guardianContactController.clear();
+                    _guardianAuthorization = false;
+                  }
+                }),
               ),
               const SizedBox(height: AppSpacing.md),
               churchesAsync.when(
@@ -193,6 +215,64 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                     const InputDecoration(labelText: 'Telefone (opcional)'),
                 keyboardType: TextInputType.phone,
               ),
+              if (age != null && age < childAgeThreshold) ...[
+                const SizedBox(height: AppSpacing.md),
+                Container(
+                  decoration: BoxDecoration(
+                    border:
+                        Border.all(color: Theme.of(context).colorScheme.primary),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  padding: const EdgeInsets.all(AppSpacing.md),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Autorização de um responsável',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      const Text(
+                        'Por lei, criança com menos de 13 anos só pode ter os '
+                        'dados usados com a autorização de um dos pais ou do '
+                        'responsável legal.',
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _guardianNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Nome do responsável',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: AppSpacing.md),
+                      TextFormField(
+                        controller: _guardianContactController,
+                        decoration: const InputDecoration(
+                          labelText: 'E-mail ou telefone do responsável',
+                          helperText:
+                              'Guardamos só como registro de quem autorizou — '
+                              'o app não escreve para este contato.',
+                        ),
+                        onChanged: (_) => setState(() {}),
+                      ),
+                      const SizedBox(height: AppSpacing.sm),
+                      CheckboxListTile(
+                        value: _guardianAuthorization,
+                        onChanged: (v) =>
+                            setState(() => _guardianAuthorization = v ?? false),
+                        title: const Text(
+                          'Sou responsável por esta criança e autorizo o '
+                          'cadastro dela, incluindo o Apelido e a Igreja de '
+                          'origem, se preenchida. Entendo que o app não '
+                          'verifica a identidade de quem marca esta caixa.',
+                        ),
+                        controlAffinity: ListTileControlAffinity.leading,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
               if (needsNickname) ...[
                 const SizedBox(height: AppSpacing.md),
                 TextFormField(
@@ -242,7 +322,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
               ElevatedButton(
                 onPressed: (_submitting || _currentProfile?.readyToSubmit != true)
                     ? null
-                    : _enviar,
+                    : _submit,
                 child: _submitting
                     ? const SizedBox(
                         height: 20,

@@ -97,18 +97,59 @@ desatualizado é violação do Princípio II, não pendência de documentação.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Criar `test/unit/cover_photo_validation_test.dart`: arquivo acima do tamanho máximo, formato não suportado e arquivo ilegível são recusados, cada um com motivo próprio (FR-009)
-- [ ] T011 [US1] Criar `test/widget/cover_photo_advice_test.dart`: (a) o aviso aparece **antes** de qualquer seletor de arquivo; (b) aparece **de novo** na troca de capa já existente; (c) quem não é Dono do Grupo nem criou a Ação não encontra opção de capa (FR-003, FR-004, FR-005, SC-001)
+- [X] T010 [P] [US1] Criar `test/unit/cover_photo_validation_test.dart`: arquivo acima do tamanho máximo, formato não suportado e arquivo ilegível são recusados, cada um com motivo próprio (FR-009)
+- [X] T011 [US1] Criar `test/widget/cover_photo_advice_test.dart`: (a) o aviso aparece **antes** de qualquer seletor de arquivo; (b) aparece **de novo** na troca de capa já existente; (c) quem não é Dono do Grupo nem criou a Ação não encontra opção de capa (FR-003, FR-004, FR-005, SC-001)
+  ✅ `test/unit/cover_photo_validation_test.dart` — **10 casos**. Inclui o PDF renomeado para
+  `.jpg`, que uma checagem por extensão deixaria passar, e o limite exato (o teto não é
+  exclusivo).
+  ✅ `test/widget/cover_photo_advice_test.dart` — **9 casos**, cobrindo (a) aviso antes de
+  qualquer seletor, (b) aviso de novo na troca, (c) quem não administra não encontra opção
+  nenhuma, mais ausência de "não mostrar de novo" e a proporção fixa reservada.
+
+
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart` com o aviso como **parada obrigatória antes do seletor**, usando o texto de [research.md](./research.md) D-005: imagem ilustrativa, não envie foto de pessoas, nunca de crianças ou adolescentes, e o motivo em uma frase — qualquer pessoa na internet vê, mesmo sem cadastro. Sem opção de "não mostrar de novo" (FR-004, FR-005, FR-006)
-- [ ] T013 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_widget.dart`: exibe a capa, **reserva o espaço antes de carregar** para a lista não pular, carrega de forma preguiçosa, e trata proporção extrema sem deformar o card nem empurrar o resto (FR-007, edge case)
-- [ ] T014 [US1] Em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/group/presentation/group_list_page.dart`, exibir a capa e oferecer enviar/trocar/remover **só ao Dono do Grupo e ao Administrador do distrito**. Grupo sem capa continua íntegro, sem buraco no lugar da imagem (FR-002, FR-003, FR-007, SC-006)
-- [ ] T015 [US1] Em `lib/features/action/presentation/action_detail_page.dart` e `lib/features/action/presentation/action_list_page.dart`, o mesmo para Ação, restrito a quem criou e ao Administrador do distrito
-- [ ] T016 [US1] Garantir que uma falha de envio não altera nada do Grupo/Ação e não perde o que o Usuário estava preenchendo (FR-010, SC-009)
-- [ ] T017 [US1] **Depende de T001.** Atualizar `lib/features/legal/presentation/privacy_policy_page.dart` e `lib/features/legal/legal_metadata.dart` (versão e data): descrever que o app hospeda imagens enviadas por Usuários — finalidade, quem pode ver (**qualquer pessoa, inclusive sem cadastro**), quanto tempo ficam e como pedir remoção; e declarar que o app **não solicita nem verifica consentimento de responsável** para imagem de menor (FR-027, FR-030). **O texto sobre remoção reflete o que T001 apurou**, não o que se desejava garantir
-- [ ] T018 [P] [US1] Atualizar `MAPA-DE-DADOS.md`: a linha 22 hoje afirma, com grep como prova, que foto/avatar **não é coletado**. Substituir pela descrição da Foto de capa, com evidência `arquivo:linha` como nas demais entradas. Deixar explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não da pessoa (FR-028, SC-007)
+- [X] T012 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart` com o aviso como **parada obrigatória antes do seletor**, usando o texto de [research.md](./research.md) D-005: imagem ilustrativa, não envie foto de pessoas, nunca de crianças ou adolescentes, e o motivo em uma frase — qualquer pessoa na internet vê, mesmo sem cadastro. Sem opção de "não mostrar de novo" (FR-004, FR-005, FR-006)
+- [X] T013 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_widget.dart`: exibe a capa, **reserva o espaço antes de carregar** para a lista não pular, carrega de forma preguiçosa, e trata proporção extrema sem deformar o card nem empurrar o resto (FR-007, edge case)
+- [X] T014 [US1] Em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/group/presentation/group_list_page.dart`, exibir a capa e oferecer enviar/trocar/remover **só ao Dono do Grupo e ao Administrador do distrito**. Grupo sem capa continua íntegro, sem buraco no lugar da imagem (FR-002, FR-003, FR-007, SC-006)
+- [X] T015 [US1] Em `lib/features/action/presentation/action_detail_page.dart` e `lib/features/action/presentation/action_list_page.dart`, o mesmo para Ação, restrito a quem criou e ao Administrador do distrito
+- [X] T016 [US1] Garantir que uma falha de envio não altera nada do Grupo/Ação e não perde o que o Usuário estava preenchendo (FR-010, SC-009)
+- [X] T017 [US1] **Depende de T001.** Atualizar `lib/features/legal/presentation/privacy_policy_page.dart` e `lib/features/legal/legal_metadata.dart` (versão e data): descrever que o app hospeda imagens enviadas por Usuários — finalidade, quem pode ver (**qualquer pessoa, inclusive sem cadastro**), quanto tempo ficam e como pedir remoção; e declarar que o app **não solicita nem verifica consentimento de responsável** para imagem de menor (FR-027, FR-030). **O texto sobre remoção reflete o que T001 apurou**, não o que se desejava garantir
+- [X] T018 [P] [US1] Atualizar `MAPA-DE-DADOS.md`: a linha 22 hoje afirma, com grep como prova, que foto/avatar **não é coletado**. Substituir pela descrição da Foto de capa, com evidência `arquivo:linha` como nas demais entradas. Deixar explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não da pessoa (FR-028, SC-007)
+  ✅ `cover_photo_advice_sheet.dart`, com o texto de D-005 e o motivo verdadeiro — "qualquer
+  pessoa na internet vê" —, não apelo jurídico.
+  ✅ `cover_photo_widget.dart`: `CoverPhotoView` (exibição) e `CoverPhotoEditor` (com as ações).
+  Sem capa ocupa **zero**. Com capa, proporção **fixa** 16/9 e `BoxFit.cover` — recorta em vez
+  de deformar, porque rosto achatado é pior que rosto fora do enquadramento.
+  ✅ `group_detail_page.dart` e `group_list_page.dart`. Grupo **arquivado** não ganha capa nova.
+  **Correção de desenho que a tarefa não previu**: capa por card seriam N consultas e cada card
+  cresceria ao receber a sua — o pulo de layout que FR-007 proíbe. A lista resolve tudo numa
+  consulta (`fetchForGroups`) e entrega a capa pronta ao card, que não consulta nada.
+  ✅ `action_detail_page.dart` e `action_list_page.dart`, restrito a quem criou e ao
+  Administrador do distrito. Ação cancelada ou encerrada não ganha capa nova. Mesma consulta
+  em lote da T014 (`fetchForActions`).
+  ✅ Garantido por construção e por teste. O editor de capa **não vive dentro de formulário**:
+  está no detalhe e na lista, e o que quer que a pessoa estivesse preenchendo em outra tela não
+  é tocado. Falha vira aviso, não exceção vermelha, e a capa anterior permanece — provado em
+  `cover_photo_advice_test.dart`.
+  ✅ Política com seção nova de imagens de capa: finalidade, quem vê (**qualquer pessoa,
+  inclusive sem cadastro**), por quanto tempo, e como pedir remoção **com os 60 segundos
+  escritos** — o número medido, não o desejado. Declara também o que o app **não** faz
+  (FR-030): não solicita nem verifica autorização de responsável para imagem de menor, e não
+  analisa conteúdo. `LegalMetadata.version` **1.3 → 1.4**, com a linha correspondente semeada
+  em `versoes_texto_legal` no mesmo commit — `versao_texto_legal_registro_test.dart` passa (4).
+  ✅ `MAPA-DE-DADOS.md`: a linha que afirmava, com grep como prova, que foto/avatar não é
+  coletado, deixou de ser verdade e foi substituída por uma seção própria com evidência
+  `arquivo:linha`. Explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não
+  da pessoa — e que ela *pode conter* dado de terceiro, que é o risco inteiro da feature.
+
+
+
+
+
+
+
 
 **Checkpoint**: US1 pronta e no ar. Capa funcionando, aviso na frente, documentos verdadeiros.
 

@@ -32,7 +32,15 @@ abstract final class LegalMetadata {
   /// de um terceiro), então quem se cadastrar a partir de agora aceita algo
   /// diferente de quem se cadastrou antes. É exatamente a distinção que a
   /// feature 017 passou a registrar.
-  static const version = '1.3';
+  ///
+  /// 1.4 (feature 013): o app passou a hospedar imagens enviadas por Usuários,
+  /// visíveis a qualquer pessoa na internet. A Política ganhou a seção de
+  /// imagens de capa — finalidade, quem vê, por quanto tempo, como pedir
+  /// remoção — e a declaração de que o app **não** solicita nem verifica
+  /// autorização de responsável para imagem de menor. Sobe porque a mudança
+  /// ADICIONA um tratamento: quem se cadastrar agora aceita algo diferente de
+  /// quem se cadastrou antes.
+  static const version = '1.4';
   static const effectiveDate = '10 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.

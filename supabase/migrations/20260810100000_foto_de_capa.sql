@@ -287,3 +287,27 @@ create policy fotos_capa_objetos_select
 -- fora da transação. Dar delete ao cliente reabriria o caminho de apagar o
 -- arquivo sem apagar a linha — órfão ao contrário, com a tela mostrando uma
 -- capa que não existe mais.
+
+-- =====================================================================
+-- 5. A versão nova do texto legal entra no catálogo
+-- =====================================================================
+-- Regra da feature 017: publicar texto novo muda `LegalMetadata.version` E
+-- semeia a linha correspondente, no mesmo commit.
+--
+-- Aqui o texto mudou de verdade e a mudança ADICIONA um tratamento: o app
+-- passou a hospedar imagem enviada por Usuário, visível a qualquer pessoa na
+-- internet, inclusive sem cadastro. Quem se cadastrar a partir de agora aceita
+-- algo diferente de quem se cadastrou antes — que é exatamente a distinção que
+-- a feature 017 passou a registrar.
+--
+-- A Política também passou a DECLARAR o que o app não faz: não solicita nem
+-- verifica autorização de responsável para imagem de menor, e não analisa o
+-- conteúdo do que é enviado. Omitir isso deixaria subentendido um controle
+-- inexistente, que é a divergência entre promessa e execução que a
+-- constituição proíbe.
+--
+-- test/integration/versao_texto_legal_registro_test.dart falha se as duas
+-- divergirem.
+insert into public.versoes_texto_legal (versao, vigente_desde)
+values ('1.4', timestamptz '2026-08-10 00:00:00-03')
+on conflict (versao) do nothing;

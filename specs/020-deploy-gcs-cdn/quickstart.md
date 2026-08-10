@@ -2,6 +2,12 @@
 
 **Feature**: `020-deploy-gcs-cdn` | **Plano**: [plan.md](./plan.md) | **Pesquisa**: [research.md](./research.md)
 
+> ⚠️ **Este documento descreve o fluxo AUTOMÁTICO (CI publica sozinho), que hoje não roda.**
+> `iam.disableServiceAccountKeyCreation` bloqueia a chave JSON de conta de serviço do §1/§3.
+> Enquanto isso durar, publicar é `gcloud auth login` + `make deploy-web` (raiz do repo) — ver
+> `.tickets/IASD-CI-GCS-UPLOAD.md`. As permissões do §1 continuam valendo, só que concedidas à
+> conta pessoal de quem publica, não a uma conta de serviço.
+
 Este documento é a US3 inteira: quem for configurar o deploy segue daqui, sem adivinhar
 permissão e sem perguntar nada.
 

@@ -110,27 +110,39 @@ depender de device/emulador.
 
 ## Deploy
 
-Push em `main` dispara `.github/workflows/deploy-web.yml`: compila o Flutter Web e publica em
-Cloud Storage atrás de Cloud CDN — não mais em branch de git. O banco continua em Supabase
-Cloud gerenciado, camada separada (feature 019), não tocada por esse workflow.
+Front (Flutter Web) publica em Cloud Storage atrás de Cloud CDN — não mais em branch de git.
+O banco continua em Supabase Cloud gerenciado, camada separada (feature 019), não tocada por
+isto.
 
-Nomes de projeto, bucket e url map: `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho completo,
-decisões e runbook de configuração/verificação: `specs/020-deploy-gcs-cdn/` (ver
-`quickstart.md`).
+**Publicação é MANUAL, temporariamente.** Push em `main` dispara
+`.github/workflows/deploy-web.yml`, que só compila e sobe `build/web` como artifact do GitHub
+Actions — não publica sozinho. O plano original era o CI publicar direto, mas o projeto GCP
+tem a política `iam.disableServiceAccountKeyCreation` ("Secure by Default"), que bloqueia criar
+a chave de conta de serviço que o CI precisaria. Workaround pedido ao Google Cloud Support,
+resposta pendente — detalhe em `.tickets/IASD-CI-GCS-UPLOAD.md`.
 
-Para voltar atrás: reexecutar o workflow a partir do commit anterior (`workflow_dispatch` ou
-`git revert` + push). Não há ambiente de homologação — um bucket descartável via
-`workflow_dispatch` (`target_bucket`) é o ensaio antes do merge.
+Enquanto isso, quem publica roda, na própria máquina:
 
-A branch `dist-web`, usada pelo deploy anterior, está descontinuada — decisão em
-`specs/020-deploy-gcs-cdn/quickstart.md` §7.
+```bash
+gcloud auth login   # uma vez, com conta que tem permissão no bucket/CDN
+make deploy-web
+```
 
-**Lacunas conhecidas** (declaradas, não corrigidas nesta feature — ver `plan.md` "Riscos"):
-este workflow não depende de `ci.yml` — um commit que quebra `flutter analyze` ou teste é
-publicado assim mesmo, desde que compile; a publicação não é atômica por conjunto — um job
-interrompido no meio deixa o bucket misturado até alguém rerodar; a credencial é chave JSON de
-longa duração, não Workload Identity Federation; não há verificação automática de que o site
-responde depois de publicar.
+`make deploy-web` builda, confere que só as duas chaves públicas do Supabase foram para o
+bundle, e publica em duas passadas (sobe tudo, só depois apaga o que sumiu) — o alvo está no
+`Makefile` da raiz, comentado. Site em `http://35.211.105.176` (sem domínio próprio ainda).
+
+Nomes de projeto, bucket e url map: `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho original (para
+quando a política de organização for resolvida e o CI voltar a publicar sozinho), decisões e
+runbook: `specs/020-deploy-gcs-cdn/` (ver `quickstart.md` — descreve o fluxo automático, ainda
+não o que roda hoje).
+
+A branch `dist-web`, usada pelo deploy anterior, está descontinuada.
+
+**Lacunas conhecidas**: a publicação não é atômica por conjunto — interromper `make deploy-web`
+no meio deixa o bucket misturado até alguém rerodar; não há verificação automática de que o
+site responde depois de publicar; nada liga a publicação ao resultado de `ci.yml` — um commit
+com teste vermelho vira artifact do mesmo jeito.
 
 ## Estrutura
 

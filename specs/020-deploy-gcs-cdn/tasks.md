@@ -321,6 +321,24 @@ quem está implementando não tem. `.github/workflows/deploy-web.yml` está escr
 nem bucket real para testar, e sem T002 os segredos nem existem no GitHub. Branch
 `020-deploy-gcs-cdn`, não mesclada em `main`.
 
+**CORREÇÃO 2026-08-10, mesma tarde — T001 está BLOQUEADA por política de organização, não só
+pendente.** O projeto GCP tem `iam.disableServiceAccountKeyCreation` ("Secure by Default"),
+aplicada automaticamente — criar a chave JSON da conta de serviço é recusado, no projeto e na
+organização. Sem chave, T002 não existe e o desenho inteiro de "CI autentica sozinho" (T006,
+T007, T009, T017, T018 — cabeçalho de segredo, preflight, `Authenticate to Google Cloud`,
+tratamento de falha de invalidação) fica **sem como rodar** até o Google Cloud Support resolver
+(pedido, resposta pendente — `.tickets/IASD-CI-GCS-UPLOAD.md`).
+
+**O que existe hoje em vez disso**: `.github/workflows/deploy-web.yml` foi **reescrito de novo**
+— builda e sobe `build/web` como artifact do GitHub Actions, sem `gcloud`, sem secret de GCP.
+A lógica de publicação (T010 passada aditiva, T011 passada destrutiva, T014 exclusão de
+`.last_build_id`, T015 cache do `index.html`, T016 invalidação de CDN) **não foi perdida** — ela
+está no `Makefile` novo, alvo `deploy-web`, rodado à mão por quem tiver `gcloud auth login` com
+permissão. As tarefas marcadas `[X]` acima continuam verdadeiras **como desenho documentado**
+(é o que volta quando o bloqueio sair); **não são mais o que roda em produção hoje** — isso é
+o `Makefile` + `.tickets/IASD-CI-GCS-UPLOAD.md`, que tem a explicação completa. `quickstart.md`
+não foi reescrito: ainda descreve o fluxo automático original.
+
 ---
 
 ## Dependências e ordem

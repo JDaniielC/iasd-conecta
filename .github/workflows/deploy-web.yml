@@ -1,64 +1,34 @@
 name: deploy-web
 
-# Build Flutter Web (produção, Supabase Cloud real) e publica em Cloud Storage atrás de
-# Cloud CDN. Nomes de projeto, bucket e url map: fonte única em
+# Build Flutter Web (produção, Supabase Cloud real) e sobe o resultado como artifact do
+# GitHub Actions. Publicação em Cloud Storage + CDN é MANUAL, feita com `make deploy-web`
+# (Makefile, raiz do repo) — não roda no CI. Motivo, e quando isso muda: fonte única em
 # `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho completo: `specs/020-deploy-gcs-cdn/`.
+#
+# ⚠️ TEMPORÁRIO: o desenho original publicava daqui, autenticado por chave JSON de conta de
+# serviço (`GCP_SERVICE_ACCOUNT_JSON`). A política de organização do GCP
+# `iam.disableServiceAccountKeyCreation` — "Secure by Default", aplicada automaticamente pelo
+# Google — bloqueia criar essa chave, no projeto e na organização. Sem chave, o CI não
+# autentica. Workaround pedido ao Google Cloud Support; enquanto não volta, quem publica roda
+# `make deploy-web` na própria máquina, autenticado com a própria conta (`gcloud auth login`).
 
 # 🔴 SEGURANÇA: NUNCA reaproveitar `cp .env.example .env` (job `build-web` do ci.yml) aqui.
 # Esse .env.example lista SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas — e `.env` é
 # `assets:` no pubspec.yaml, ou seja, vai JUNTO no build web público. Este job monta o .env de
 # produção só com as DUAS variáveis seguras por design (RLS). Nunca adicionar
 # SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* aqui.
-#
-# 🔴 SEGURANÇA: `google-github-actions/auth` grava o arquivo de credencial da conta de serviço
-# na RAIZ do workspace ("The credentials file is exported into $GITHUB_WORKSPACE"). A fonte dos
-# comandos de publicação abaixo é `build/web`, e por isso a chave não entra. Trocar essa fonte
-# por `.` — ou publicar da raiz "para simplificar" — manda a CHAVE PRIVADA da conta de serviço
-# para um bucket PÚBLICO. Se você está editando as linhas de rsync, é este o parágrafo para
-# reler.
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
-    inputs:
-      # Ensaio sem homologação (research D-011): permite apontar o deploy para um bucket
-      # descartável, a partir de qualquer branch, antes do merge. Em push para main este input
-      # não existe e o destino é sempre o bucket de produção.
-      target_bucket:
-        description: "Bucket de destino (deixe vazio para o bucket de produção)"
-        required: false
-        type: string
-      skip_invalidation:
-        description: "Pular a invalidação de CDN (só faz sentido no bucket de ensaio, que não tem CDN)"
-        required: false
-        default: false
-        type: boolean
 
-# O workflow deixou de escrever em branch (research D-009), então não precisa mais de
-# `contents: write`.
 permissions:
   contents: read
 
-# research D-004 — serializa os deploys. `cancel-in-progress` PRECISA ser false: cancelar um
-# deploy no meio da passada aditiva é a forma mais fácil de deixar o bucket com metade dos
-# arquivos novos (FR-005).
-concurrency:
-  group: deploy-web
-  cancel-in-progress: false
-
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
-    env:
-      TARGET_BUCKET: ${{ inputs.target_bucket || 'gs://conecta-iasd-site' }}
-      URL_MAP_NAME: "conecta-iasd-site-url-map"
-      # research D-002 — NADA no build do Flutter Web tem nome versionado por hash
-      # (main.dart.js é sobrescrito a cada deploy). Por isso cache longo é proibido em todo o
-      # build, e a invalidação de CDN é o mecanismo de entrega, não higiene.
-      ASSET_CACHE_CONTROL: "public, max-age=3600"
-      HTML_CACHE_CONTROL: "no-cache, max-age=0, must-revalidate"
-
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -67,22 +37,6 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-
-      # FR-004 — falha de credencial precisa dizer O QUE falta sem revelar valor. Testa vazio,
-      # nunca imprime conteúdo. Vem ANTES do build: falhar em segundos é melhor que falhar
-      # depois de compilar o app inteiro.
-      - name: Verify deploy secrets are present
-        env:
-          GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
-          GCP_SERVICE_ACCOUNT_JSON: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-        run: |
-          missing=""
-          [ -n "$GCP_PROJECT_ID" ]          || missing="$missing GCP_PROJECT_ID"
-          [ -n "$GCP_SERVICE_ACCOUNT_JSON" ] || missing="$missing GCP_SERVICE_ACCOUNT_JSON"
-          if [ -n "$missing" ]; then
-            echo "::error::Segredo ausente:$missing. Cadastre em Settings > Secrets and variables > Actions. Ver specs/020-deploy-gcs-cdn/quickstart.md"
-            exit 1
-          fi
 
       - name: Write production .env with the two public keys only
         env:
@@ -97,15 +51,13 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # FR-002 / SC-002 — build quebrado não publica. Isso já vale por construção: `run:` roda
-      # com `bash -e`, e todo passo de publicação vem DEPOIS deste. Nunca colocar
-      # `continue-on-error` nem `|| true` daqui para baixo.
       - name: Build Flutter Web
         run: flutter build web --release
 
       # FR-013 / SC-004 — `.env` é asset do pubspec, então ele vai DENTRO do bundle público, em
-      # build/web/assets/.env. Este passo confere que só as duas chaves públicas viajaram. Conta
-      # nomes de chave; NUNCA imprime valor.
+      # build/web/assets/.env. Este passo confere que só as duas chaves públicas viajaram, tanto
+      # aqui quanto em quem publicar depois via `make deploy-web`. Conta nomes de chave; NUNCA
+      # imprime valor.
       - name: Verify bundled .env carries only the two public keys
         run: |
           keys=$(grep -oE '^[A-Z_]+=' build/web/assets/.env | tr -d '=' | sort | tr '\n' ' ')
@@ -115,96 +67,9 @@ jobs:
             exit 1
           fi
 
-      # FR-003 — credencial vem de segredo do repositório, nunca do código. research D-007: o
-      # próprio fornecedor recomenda Workload Identity Federation em vez de chave JSON. Ficamos
-      # na chave JSON porque é o que o ticket pede e o que uma pessoa só configura sem montar
-      # pool de identidade. Dívida declarada — trocar depois é mudar este bloco `with:`.
-      - name: Authenticate to Google Cloud
-        uses: google-github-actions/auth@v2
+      - name: Upload build/web as artifact
+        uses: actions/upload-artifact@v4
         with:
-          credentials_json: ${{ secrets.GCP_SERVICE_ACCOUNT_JSON }}
-
-      - name: Set up gcloud
-        uses: google-github-actions/setup-gcloud@v2
-        with:
-          project_id: ${{ secrets.GCP_PROJECT_ID }}
-
-      # ─────────────────────────────────────────────────────────────────────
-      # PUBLICAÇÃO EM DUAS PASSADAS (research D-003) — a ordem é a feature.
-      #
-      # Passada 1 (aditiva): sobe/sobrescreve tudo do build novo. NÃO apaga nada. Enquanto ela
-      # roda, o site antigo continua inteiro, porque nenhum arquivo que ele referencia foi
-      # removido.
-      #
-      # Passada 2 (destrutiva): só então apaga o que sumiu do build. Como todo byte novo já está
-      # no lugar, nenhuma remoção pode quebrar a versão nova.
-      #
-      # Numa passada única com --delete-…, a ferramenta pode apagar um arquivo ANTES de subir o
-      # que o substitui — e aí o index.html antigo, ainda sendo servido, aponta para um 404. É
-      # por isso que são duas.
-      #
-      # `gcloud storage`, não `gsutil`: o fornecedor marcou o gsutil como legado com remoção
-      # prevista ("After March 2027, gsutil will no longer be available"). O ticket original
-      # pedia gsutil — a divergência é deliberada (research D-001).
-      # ─────────────────────────────────────────────────────────────────────
-
-      # FR-001 / FR-005
-      - name: Upload build to bucket (additive pass)
-        run: |
-          gcloud storage rsync \
-            --recursive \
-            --exclude='^\.last_build_id$' \
-            --cache-control="$ASSET_CACHE_CONTROL" \
-            build/web "$TARGET_BUCKET"
-
-      # FR-006 / SC-005 — o que deixou de existir no build para de ser servido.
-      # ⚠️ --delete-unmatched-destination-objects apaga rápido se a origem ou o destino
-      # estiverem errados. A origem é build/web e o destino é $TARGET_BUCKET — conferir os dois
-      # antes de mexer.
-      - name: Remove stale objects from bucket (destructive pass)
-        run: |
-          gcloud storage rsync \
-            --recursive \
-            --delete-unmatched-destination-objects \
-            --exclude='^\.last_build_id$' \
-            --cache-control="$ASSET_CACHE_CONTROL" \
-            build/web "$TARGET_BUCKET"
-
-      # FR-010 — `--cache-control` do rsync vale para tudo da passada, então o index.html leva
-      # um terceiro comando, com valor próprio. Vem POR ÚLTIMO, mantendo a regra das duas
-      # passadas.
-      #
-      # ⚠️ Metade do FR-010 mora FORA deste arquivo: se o backend bucket estiver no modo
-      # FORCE_CACHE_ALL, a CDN ignora este cabeçalho e o no-cache some. Ver quickstart.md §2 (é
-      # configuração do responsável, no console).
-      - name: Set no-cache on index.html
-        run: |
-          gcloud storage objects update "$TARGET_BUCKET/index.html" \
-            --cache-control="$HTML_CACHE_CONTROL"
-
-      # FR-007 / FR-008 — três armadilhas conhecidas, e as três são proibidas:
-      #   1. `--async` — o comando voltaria 0 antes de saber o resultado.
-      #   2. `continue-on-error: true` ou `|| true` — engoliriam a falha.
-      #   3. canalizar a saída (`| tee`, `| grep`) — trocaria o código de saída.
-      - name: Invalidate CDN cache
-        if: ${{ !inputs.skip_invalidation }}
-        run: |
-          gcloud compute url-maps invalidate-cdn-cache "$URL_MAP_NAME" --path "/*"
-
-      # O estado depois de uma invalidação que falhou NÃO é "nada foi publicado". Os arquivos
-      # novos já estão no bucket; é o cache que ficou velho, por até 3600 s (TTL padrão
-      # registrado no ticket). Sem esta nota, quem vê o job vermelho conclui o oposto da
-      # verdade.
-      - name: Report production state on failure
-        if: failure()
-        run: |
-          {
-            echo "## Deploy falhou — leia antes de agir"
-            echo ""
-            echo "Se a falha foi no passo de invalidação, **os arquivos novos JÁ ESTÃO no bucket**."
-            echo "A produção está nova; o cache da CDN é que continua servindo a versão anterior,"
-            echo "por até 3600 s."
-            echo ""
-            echo "Recuperação: rerodar este workflow (as passadas de rsync são idempotentes), ou"
-            echo "rodar a invalidação à mão. Ver specs/020-deploy-gcs-cdn/quickstart.md §5."
-          } >> "$GITHUB_STEP_SUMMARY"
+          name: build-web
+          path: build/web
+          retention-days: 14

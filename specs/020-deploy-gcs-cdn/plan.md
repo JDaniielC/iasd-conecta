@@ -2,6 +2,15 @@
 
 **Branch**: `020-deploy-gcs-cdn` | **Date**: 2026-08-09 | **Spec**: [spec.md](./spec.md)
 
+> ⚠️ **Addendum 2026-08-10 — este plano descreve o desenho que NÃO está rodando hoje.** A
+> autenticação por chave JSON de conta de serviço (research D-007, usada em todo este documento)
+> está bloqueada pela política de organização `iam.disableServiceAccountKeyCreation` ("Secure by
+> Default"). Workaround pedido ao Google Cloud Support, pendente. Enquanto isso, o CI só builda
+> e sobe artifact; a publicação (a mesma lógica de duas passadas + invalidação descrita aqui)
+> roda manual via `make deploy-web` (`Makefile`, raiz do repo), com a conta pessoal de quem
+> publica. Detalhe e estado atual: `.tickets/IASD-CI-GCS-UPLOAD.md`. Este plano continua sendo o
+> desenho para quando o bloqueio for resolvido — não precisa ser refeito, só religado.
+
 **Input**: Feature specification from `/specs/020-deploy-gcs-cdn/spec.md`
 
 ## Summary

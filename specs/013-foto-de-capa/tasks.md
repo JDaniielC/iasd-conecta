@@ -586,3 +586,17 @@ Não virou tarefa de convergência porque foi encontrado e consertado dentro da
 T048, no mesmo arquivo e no mesmo caminho de código. Fica registrado aqui porque
 é o achado mais grave da feature depois da T044, e os dois têm a mesma forma:
 **funciona no ambiente em que se testa e morre calado no outro.**
+
+---
+
+## Phase 12: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 11. Segunda
+rodada seguida sem CRITICAL nem HIGH. Os três achados são **consequência das correções da
+Phase 11**, o que já virou o padrão desta feature.
+
+- [ ] T050 Acrescentar a guarda `.is('removido_em', null)` à atualização dos não confirmados em `supabase/functions/drenar-capas/index.ts` (o `.eq('caminho', ...)` por volta da linha 88). Sem ela, duas drenagens concorrentes escrevem falha numa linha que a outra já drenou com sucesso. E a concorrência deixou de ser hipótese na Phase 11: a T045 fez o app pedir drenagem **a cada remoção e a cada troca**, enquanto o `pg_cron` continua rodando de minuto em minuto. **Medido em 2026-08-10** com duas chamadas simultâneas à Edge Function sobre um objeto real: a linha terminou `removido_em` preenchido, **`tentativas = 1`** e `ultimo_erro` dizendo *"A API não confirmou a remoção deste caminho"* — sobre um arquivo que **saiu do bucket**. A coluna que a T048 acabou de tornar confiável passa a mentir justamente para quem for ler a orientação de `INFRA-PRODUCAO.md` § 3. per plan: fila consultável (contradicts)
+
+- [ ] T051 Escrever, em `INFRA-PRODUCAO.md` § 3, **o que fazer** quando um caminho fica pendente e não sai. Hoje o documento ensina a detectar (`tentativas` alta e parada, `ultimo_erro` distinguindo bucket errado de objeto inexistente) e **para aí**. Caminho que nunca vai confirmar — objeto apagado à mão, prefixo inválido, resíduo de teste — fica pendente **para sempre**, e a consulta de fila parada alarma sem parar. Alarme sem conduta é alarme que se aprende a ignorar, e aí a fila deixa de ser a rede de segurança que SC-005 supõe. Já há dois casos concretos: o banco local tem **duas linhas** nesse estado, deixadas por testes. A conduta precisa dizer como confirmar que o objeto realmente não existe e como encerrar a linha depois disso (`update ... set removido_em = now(), ultimo_erro = 'confirmado inexistente em <data>'`), **e** deixar claro que encerrar sem conferir é reintroduzir o órfão invisível. per SC-005 (missing)
+
+- [ ] T052 Fazer a limpeza de `test/integration/foto_capa_orfao_test.dart` (linhas 95-103) cobrir os caminhos que o caso (g) enfileira. Ela apaga `grupo/<groupId>/%` e `acao/%-orfao-%`; o caso (g) usa `acao/<id>/intacta-capa.jpg`, que não casa com nenhum dos dois e **sobra no banco a cada execução da suíte**. É a mesma classe de higiene que a feature 014 consertou, e o efeito colateral é feio: o resíduo se acumula exatamente na tabela cuja vacuidade é o sinal de saúde da feature. Usar um prefixo único do arquivo de teste em todos os caminhos, em vez de padrões que precisam ser lembrados um a um. per higiene de teste, SC-005 (partial)

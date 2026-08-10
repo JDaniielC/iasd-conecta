@@ -525,3 +525,20 @@ tarefa de app, e nunca reexaminada desde. É o elo em que a única garantia da f
   primeiro deploy, e sempre que alguém relatar imagem removida que continua aparecendo) e o
   porquê: é a **única** forma de o problema dar sinal, já que fila parada não aparece em tela
   nenhuma.
+
+---
+
+## Phase 11: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 10. **Primeira
+rodada sem nenhum achado CRITICAL ou HIGH.** Os dois são na Edge Function de drenagem, que
+passou a funcionar na Phase 10 e agora foi lida linha a linha.
+
+Registrado também o que **não** virou achado: a autenticação da drenagem está resolvida e
+documentada — `supabase/config.toml:415-423` declara `verify_jwt = false` para
+`drenar-capas`, com o porquê escrito (quem chama é o `pg_cron` do próprio banco, e exigir
+token obrigaria a guardar credencial, que é o que este desenho evita).
+
+- [ ] T048 Fazer `tentativas` contar de verdade em `supabase/functions/drenar-capas/index.ts`. Hoje a leitura é `.select('caminho')` — **`tentativas` nunca é buscada** —, e no caminho de falha a linha 57 escreve `(pendentes)[0]?.tentativas ?? 0`: sempre **zero**, e o valor da primeira linha aplicado ao lote inteiro por um `.in()`. A coluna existe para separar "falhou uma vez, foi rede" de "falha desde sempre, tem algo errado com este arquivo", e hoje ela responde **zero** para os dois casos. O comentário imediatamente acima afirma que *"registrar o erro e contar a tentativa é o que transforma 'sumiu e ninguém sabe' em algo consultável"* — é comentário prometendo garantia que o código não dá, a mesma classe que a 018, o D-007 e a T045 desta feature já consertaram. Buscar `tentativas` no `select` e incrementar **por linha**, não por lote. `ultimo_erro` já está correto. per plan: fila consultável, SC-005 (contradicts)
+
+- [ ] T049 Decidir e escrever o que acontece com as linhas já drenadas de `public.capas_a_remover`. Hoje elas **nunca saem**: uma linha por imagem removida em toda a história do app, para sempre. Não é vazamento — o caminho contém só UUIDs de Grupo/Ação, nenhum dado pessoal —, e pode muito bem ser registro proposital. O defeito é não estar dito: quem ler a tabela daqui a um ano não sabe se é histórico deliberado ou esquecimento, e a consulta de fila parada de `INFRA-PRODUCAO.md` § 3 vai varrer um volume que só cresce. Duas saídas aceitáveis, e a escolha é de quem mantém: expurgar linhas drenadas depois de N dias no próprio `pg_cron`, ou declarar em comentário na tabela que a permanência é o desenho. per SC-005 (missing)

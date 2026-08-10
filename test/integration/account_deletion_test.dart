@@ -363,14 +363,28 @@ void main() {
     });
 
     tearDownAll(() async {
-      await conn.execute('delete from public.liderancas');
-      await conn.execute('delete from public.rodadas_votacao');
+      // Escopado aos UUIDs deste arquivo (prefixos 951–954). `dart test` roda os
+      // arquivos em paralelo, e um delete sem filtro apaga o arranjo de quem
+      // estiver rodando junto — a falha aparece num arquivo que não fez nada.
+      await conn.execute(
+        "delete from public.liderancas l "
+        "where substring(l.usuario_id::text, 1, 3) in ('951','952','953','954') "
+        "   or exists (select 1 from public.grupos g "
+        "              where g.id = l.grupo_id "
+        "                and substring(g.dono_id::text, 1, 3) "
+        "                    in ('951','952','953','954'))");
+      await conn.execute(
+        "delete from public.rodadas_votacao "
+        "where substring(aberta_por::text, 1, 3) in ('951','952','953','954')");
       await conn.execute(
         Sql.named('delete from public.acoes where criador_id = any(@ids)'),
         parameters: {'ids': [leavingUser, adminAntigo]},
       );
-      await conn.execute('delete from public.grupos');
-      await conn.execute('delete from public.administradores_distrito');
+      await conn.execute(
+        "delete from public.grupos where substring(dono_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.administradores_distrito "
+        "where substring(usuario_id::text, 1, 3) in ('951','952','953','954')");
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
         parameters: {'ids': [leavingUser, member, adminAntigo, adminNovo]},
@@ -513,11 +527,25 @@ void main() {
     });
 
     tearDownAll(() async {
-      await conn.execute('delete from public.votos');
-      await conn.execute('delete from public.acoes');
-      await conn.execute('delete from public.rodadas_votacao');
-      await conn.execute('delete from public.grupos');
-      await conn.execute('delete from public.administradores_distrito');
+      await conn.execute(
+        "delete from public.votos where substring(usuario_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "update public.rodadas_votacao set vencedora_id = null "
+        "where substring(aberta_por::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.confirmacoes_acao c using public.acoes a "
+        "where c.acao_id = a.id "
+        "  and substring(a.criador_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.acoes where substring(criador_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.rodadas_votacao "
+        "where substring(aberta_por::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.grupos where substring(dono_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.administradores_distrito "
+        "where substring(usuario_id::text, 1, 3) in ('951','952','953','954')");
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
         parameters: {'ids': [leavingUser, admin]},
@@ -565,8 +593,11 @@ void main() {
     });
 
     tearDown(() async {
-      await conn.execute('delete from public.grupos');
-      await conn.execute('delete from public.administradores_distrito');
+      await conn.execute(
+        "delete from public.grupos where substring(dono_id::text, 1, 3) in ('951','952','953','954')");
+      await conn.execute(
+        "delete from public.administradores_distrito "
+        "where substring(usuario_id::text, 1, 3) in ('951','952','953','954')");
       await conn.execute(
         Sql.named('delete from public.perfis where id = any(@ids)'),
         parameters: {'ids': [admin1, admin2, semNada]},

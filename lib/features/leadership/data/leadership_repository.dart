@@ -27,6 +27,15 @@ class LeadershipRepository {
   /// Predicado gêmeo do da policy `liderancas_select_confirmada_propria_ou_admin`
   /// (feature 018). Os dois mudam juntos.
   ///
+  /// O filtro de Grupo arquivado (feature 014, FR-016) mora **aqui e só aqui**,
+  /// e é a parte mais frágil das duas features: `liderancas` não é tocada pelo
+  /// arquivamento, de propósito, porque é o registro de quem foi responsável
+  /// perante a igreja. Consequência: **nada no banco impede** um Ministério
+  /// arquivado de continuar exibindo publicamente quem é o Líder/Diretor —
+  /// visível a Visitante sem cadastro. Se este filtro sair, o dado volta ao ar
+  /// em silêncio: nenhum teste de unidade percebe, nenhuma exceção é levantada.
+  /// `test/integration/arquivar_grupo_lideranca_test.dart` é o que percebe.
+  ///
   /// A duplicação é declarada de propósito: se divergirem, o sintoma é
   /// silencioso, porque a RLS remove a linha antes de o Dart ver — ela some da
   /// tela sem erro nenhum. Filtrar só aqui é o que já existia e é literalmente
@@ -35,13 +44,16 @@ class LeadershipRepository {
     required String groupId,
     required int year,
   }) async {
+    // O `!inner` é o que faz o filtro sobre `grupos` excluir a linha, em vez de
+    // só trazer o Grupo aninhado como nulo.
     final rows = await _client
         .from('liderancas')
-        .select()
+        .select('*, grupos!inner(arquivado_em)')
         .eq('grupo_id', groupId)
         .eq('ano', year)
         .not('confirmado_em', 'is', null)
-        .filter('rejeitado_em', 'is', null);
+        .filter('rejeitado_em', 'is', null)
+        .filter('grupos.arquivado_em', 'is', null);
     return rows.map(LeadershipDeclaration.fromMap).toList();
   }
 

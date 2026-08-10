@@ -22,6 +22,7 @@ import 'features/group/presentation/group_list_page.dart';
 import 'features/home/presentation/home_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
+import 'features/group/presentation/archived_groups_page.dart';
 import 'features/profile/presentation/my_profile_page.dart';
 import 'features/legal/presentation/consent_versions_page.dart';
 import 'features/legal/presentation/privacy_policy_page.dart';
@@ -166,6 +167,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/perfil',
         builder: (context, state) => const MyProfilePage(),
+      ),
+      GoRoute(
+        path: '/district-admin/grupos-arquivados',
+        builder: (context, state) => const ArchivedGroupsPage(),
       ),
       GoRoute(
         path: '/district-admin/consentimentos',

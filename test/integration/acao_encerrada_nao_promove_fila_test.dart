@@ -80,8 +80,22 @@ void main() {
   });
 
   tearDownAll(() async {
-    await conn.execute('delete from public.confirmacoes_acao');
-    await conn.execute('delete from public.acoes');
+    // Escopado aos UUIDs deste arquivo. `dart test` roda os arquivos em
+    // paralelo, e um `delete from public.acoes` sem filtro apaga o arranjo de
+    // quem estiver rodando junto — falha que aparece longe da causa.
+    await conn.execute(
+      Sql.named('delete from public.confirmacoes_acao where usuario_id = any(@u)'),
+      parameters: {'u': [_uidOwner, _uidFirst, _uidSecond]},
+    );
+    await conn.execute(
+      Sql.named('delete from public.confirmacoes_acao c using public.acoes a '
+          'where c.acao_id = a.id and a.criador_id = any(@u)'),
+      parameters: {'u': [_uidOwner, _uidFirst, _uidSecond]},
+    );
+    await conn.execute(
+      Sql.named('delete from public.acoes where criador_id = any(@u)'),
+      parameters: {'u': [_uidOwner, _uidFirst, _uidSecond]},
+    );
     for (final uid in [_uidOwner, _uidFirst, _uidSecond]) {
       await cleanUpTestUser(conn, uid);
     }

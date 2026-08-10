@@ -76,6 +76,12 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
               onPressed: () => context.push('/district-admin/suggested-actions'),
             ),
             IconButton(
+              tooltip: 'Grupos/Ministérios arquivados',
+              icon: const Icon(Icons.archive_outlined),
+              onPressed: () =>
+                  context.push('/district-admin/grupos-arquivados'),
+            ),
+            IconButton(
               tooltip: 'Versões de consentimento',
               icon: const Icon(Icons.fact_check_outlined),
               onPressed: () => context.push('/district-admin/consentimentos'),

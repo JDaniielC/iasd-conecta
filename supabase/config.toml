@@ -412,3 +412,12 @@ enabled = true
 # declarative_schema_path = "./database"
 # JSON string passed through to pg-delta SQL formatting.
 # format_options = "{\"keywordCase\":\"upper\",\"indent\":2,\"maxWidth\":80,\"commaStyle\":\"trailing\"}"
+
+# Feature 013. A drenagem não recebe entrada nem devolve dado de usuário: ela
+# só esvazia a fila de arquivos já marcados para remoção. Sem verificação de
+# JWT porque quem a chama é o pg_cron do próprio banco, e exigir token
+# obrigaria a guardar uma credencial em algum lugar — que é justamente o que
+# este desenho evita. O pior que alguém de fora consegue, chamando a URL, é
+# antecipar uma remoção que já ia acontecer.
+[functions.drenar-capas]
+verify_jwt = false

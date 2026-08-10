@@ -218,8 +218,18 @@ alcançável por qualquer caminho.
 
 - **FR-011**: O Administrador do distrito DEVE poder remover a capa de qualquer Grupo ou Ação,
   independentemente de quem a enviou.
-- **FR-012**: Uma imagem removida NÃO DEVE continuar alcançável por nenhum endereço, para
-  ninguém.
+- **FR-012**: Uma imagem removida DEVE sair da origem imediatamente. Por ser servida como
+  objeto público atrás de CDN, ela PODE continuar acessível por até **60 segundos** a quem já
+  tiver o endereço, enquanto a invalidação de cache se propaga.
+
+  **Reescrito em 2026-08-10.** A versão original dizia "NÃO DEVE continuar alcançável por
+  nenhum endereço, para ninguém" — e isso é **falso** com objeto público: a documentação do
+  fornecedor afirma que a invalidação leva *"up to 60 seconds"* (research D-004, resposta 2).
+  A alternativa que tornaria a frase verdadeira — endereço assinado de vida curta — foi
+  apresentada ao responsável pelo app com o custo de cada uma, e ele escolheu o objeto
+  público, avaliando que o risco é baixo para um app cuja finalidade é convidar pessoas para
+  encontros. **A Política de Privacidade tem de dizer os 60 segundos**, e não a versão
+  desejada: FR-027 depende disto.
 - **FR-013**: A remoção da capa NÃO DEVE apagar nem alterar o Grupo, a Ação, as presenças
   confirmadas ou qualquer outro dado.
 - **FR-014**: Depois de uma remoção, quem administra o Grupo/Ação DEVE poder enviar outra
@@ -311,8 +321,14 @@ aberto na entrada do Administrador do distrito.
   do toque inicial até ver a imagem publicada.
 - **SC-003**: O Administrador do distrito consegue remover qualquer imagem em até 3 toques a
   partir da tela onde ela aparece.
-- **SC-004**: Uma imagem removida retorna "não encontrada" em 100% das tentativas de alcance,
-  por qualquer caminho, inclusive endereço direto anotado antes da remoção.
+- **SC-004**: Uma imagem removida retorna "não encontrada" em 100% das tentativas de alcance
+  **feitas mais de 60 segundos depois da remoção**, por qualquer caminho, inclusive endereço
+  direto anotado antes. Dentro da janela de 60 segundos, o endereço já conhecido pode ainda
+  responder — é o limite do cache de borda, não uma falha da remoção.
+
+  **Reescrito em 2026-08-10 junto com FR-012.** A versão original exigia 100% sem janela, o
+  que a documentação do fornecedor contradiz. Medir isso é o item 11 do quickstart, e ele
+  passa a ter um número esperado em vez de zero.
 - **SC-005**: 0 imagens órfãs após apagar um Grupo, cancelar uma Ação, descartar uma candidata
   perdedora ou excluir uma conta — verificado contando as imagens existentes antes e depois.
 - **SC-006**: Grupo e Ação sem capa continuam com 100% das funções disponíveis, e a listagem

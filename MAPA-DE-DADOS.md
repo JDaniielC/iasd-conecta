@@ -94,7 +94,7 @@ aviso de que os dois mudam juntos.
   (`http://127.0.0.1:54321`, `.env.example`, `supabase/config.toml`) continua
   existindo em paralelo.
   A região exigida (`sa-east-1`, São Paulo) e a **verificação da região que a
-  produção de fato usa** ficam em `docs/INFRA-PRODUCAO.md` — é de lá que sai a
+  produção de fato usa** ficam em `INFRA-PRODUCAO.md` — é de lá que sai a
   base para a política afirmar, ou não, que há transferência internacional.
   Enquanto essa verificação não estiver preenchida, a afirmação da política
   descreve uma decisão tomada, não um fato conferido.

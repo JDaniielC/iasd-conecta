@@ -51,7 +51,7 @@ decidido: **Supabase Cloud gerenciado** (região `sa-east-1`), não
 self-hosted (ver `.tickets/IASD-03.md`, descartado 2026-08-05).
 A região é requisito de provisionamento, não default do fornecedor — a
 exigência, e a verificação do ambiente atual, estão em
-[`docs/INFRA-PRODUCAO.md`](docs/INFRA-PRODUCAO.md).
+[`INFRA-PRODUCAO.md`](INFRA-PRODUCAO.md).
 
 ## Rodando localmente
 

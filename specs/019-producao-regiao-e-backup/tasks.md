@@ -162,13 +162,17 @@ está escrita, em unidade de tempo, sem ninguém precisar pesquisar.
 
 ### A decisão (só humano)
 
-- [ ] T013 👤 [HUMANO] [US2] Perguntar **por escrito ao suporte do fornecedor em que região
+- [X] T013 👤 [HUMANO] [US2] Perguntar **por escrito ao suporte do fornecedor em que região
   as cópias de backup ficam**, e guardar a resposta. A documentação pública não diz — só "our
   storage servers" e "backups stored in S3" (research D-002, fonte consultada 2026-08-09).
   Enquanto não houver resposta, a opção de backup gerenciado **não pode** ser registrada como
   "zero transferência internacional". **(FR-010)**
+  ✅ **NÃO SE APLICA** (2026-08-10) — a decisão foi a opção C, que não cria cópia. Sem
+  cópia, não há região de cópia a verificar. FR-010 fica satisfeito por vacuidade, e
+  `INFRA-PRODUCAO.md` § 3 registra a exigência para o dia em que existir cópia.
 
-- [ ] T014 👤 [HUMANO — RESPONSÁVEL PELO APP] [US2] **Escolher** entre as opções de research
+
+- [X] T014 👤 [HUMANO — RESPONSÁVEL PELO APP] [US2] **Escolher** entre as opções de research
   D-002, e declarar junto: **mecanismo**, **RPO** (quanto de dado se perde no pior caso, em
   unidade de tempo), **prazo de expiração automática da cópia**, **onde a cópia fica**, e
   **custo**. A opção D (dump em GitHub Actions) está rejeitada pelo plano — copia o banco inteiro
@@ -178,61 +182,98 @@ está escrita, em unidade de tempo, sem ninguém precisar pesquisar.
   009 anonimiza o banco vivo, não a cópia).
   **Critério de pronto**: as cinco respostas, com nome de quem decidiu e data. **(FR-006, SC-003)**
   — depende de T006, T013
+  ✅ **FEITA** (2026-08-10) — **opção C, sem backup**. Mecanismo: nenhum. RPO: tudo, desde
+  o início. Expiração: não se aplica. Região da cópia: não se aplica. Custo: US$ 0,00.
+  Decidida pelo fundador, responsável pelo app.
+
 
 ### O registro
 
-- [ ] T015 [US2] Registrar a decisão de T014 em `docs/INFRA-PRODUCAO.md` § Decisão de backup:
+- [X] T015 [US2] Registrar a decisão de T014 em `docs/INFRA-PRODUCAO.md` § Decisão de backup:
   mecanismo, frequência, RPO em unidade de tempo, prazo de expiração da cópia, região da cópia
   (resposta de T013), custo, quem decidiu, quando. **(FR-006, FR-010, SC-003)** — depende de T014
+  ✅ **FEITA** (2026-08-10) — registrada em `REVISAO-JURIDICA.md` item 4-B, **não** em
+  `INFRA-PRODUCAO.md`. Desvio do plano, com motivo: `docs/` está no `.gitignore` e o
+  repositório é público; a frase "perde-se tudo desde o início" não vai para lá. Ver a nota
+  de desvio no fim deste arquivo.
 
-- [ ] T016 [US2] **Só se a decisão for não ter backup automático**: registrar em
+
+- [X] T016 [US2] **Só se a decisão for não ter backup automático**: registrar em
   `docs/INFRA-PRODUCAO.md` como **risco aceito**, explícito — *"num incidente de perda do banco,
   perde-se tudo desde o início; não há recuperação"* — com **quem aceitou** e **quando**. Risco
   aceito sem nome e data é risco implícito, que é o que a spec proíbe. **(FR-007, SC-003)** —
   depende de T014
+  ✅ **FEITA** (2026-08-10) — risco aceito escrito em `REVISAO-JURIDICA.md` item 4-B, com
+  quem aceitou (o fundador) e quando (2026-08-10). Texto explícito: num incidente,
+  perde-se tudo desde o início, não há recuperação.
+
 
 ### O procedimento, e a prova de que ele funciona
 
-- [ ] T017 👤 [HUMANO] [US2] **Só se houver backup**: executar a restauração **uma vez**,
+- [X] T017 👤 [HUMANO] [US2] **Só se houver backup**: executar a restauração **uma vez**,
   para destino que não seja produção (projeto descartável ou `supabase start` local). Anotar os
   números do roteiro do quickstart Parte 2: contagem de `perfis`/`grupos`/`acoes`, existência de
   pelo menos um Perfil com `anonimizado_em` não nulo (a cópia preserva o estado de exclusão, não
   o desfaz), o app subindo contra o destino restaurado, e o **tempo total** (= RTO real).
   Sem números, o drill não aconteceu. **(FR-008, SC-004)** — depende de T014
+  ✅ **NÃO SE APLICA** (2026-08-10) — condicional a existir backup. Não existe, logo não há
+  restauração a executar. Um drill inventado seria pior que nenhum.
 
-- [ ] T018 [US2] Escrever o runbook de restauração em `docs/INFRA-PRODUCAO.md`: os passos
+
+- [X] T018 [US2] Escrever o runbook de restauração em `docs/INFRA-PRODUCAO.md`: os passos
   exatos executados em T017, na ordem, com os comandos reais — não um resumo do que deveria
   funcionar. Anexar o resultado do drill (data, quem, números, tempo). **(FR-008, SC-004)** —
   depende de T017
+  ✅ **NÃO SE APLICA** (2026-08-10) — mesmo motivo de T017. Escrever runbook aqui seria
+  documentar uma capacidade que não existe.
+
 
 ### A Política e o mapa
 
-- [ ] T019 [US2] **Só se houver backup**: atualizar
+- [X] T019 [US2] **Só se houver backup**: atualizar
   `lib/features/legal/presentation/privacy_policy_page.dart` — (a) § "Por quanto tempo guardamos"
   (linhas 158-167): a cópia de segurança existe e é guardada por N dias; (b) § "Com quem
   compartilhamos" (145-150): a cópia como destino, e onde ela fica; (c) o bullet de exclusão de
   conta (181-198): qualificar a promessa — some do app na hora, some da cópia de segurança em até
   N dias. Português, na voz da Política. **(FR-009, SC-005)** — depende de T014, T015
+  ✅ **NÃO SE APLICA** (2026-08-10) — condicional a existir backup. Verificado que a Política
+  não precisa de nenhuma mudança: `grep` em `privacy_policy_page.dart` dá **0 ocorrências**
+  de "backup", "cópia" e de "segurança" no sentido de armazenamento. E a promessa da linha
+  203 — *"Não há como desfazer nem recuperar"* — passa a ser literalmente verdadeira sem
+  cópia: a anonimização da feature 009 alcança o único lugar onde o dado existe.
 
-- [ ] T020 [US2] **Só se o texto da Política mudou** (por T008B ou T019): subir
+
+- [X] T020 [US2] **Só se o texto da Política mudou** (por T008B ou T019): subir
   `LegalMetadata.version` de `'1.1'` e atualizar `effectiveDate` em
   `lib/features/legal/legal_metadata.dart:11-12`. Registrar em `docs/INFRA-PRODUCAO.md` a
   limitação conhecida: `perfis.consentimento_lgpd_aceito_em` não grava a versão aceita
   (`legal_metadata.dart:1-9`), então quem aceitou antes fica com versão desconhecida — é a
   feature **017**, não esta. **(SC-005)** — depende de T008B, T019
+  ✅ **NÃO SE APLICA** (2026-08-10) — condicional a o texto da Política mudar. Não mudou
+  (T019). `LegalMetadata.version` continua em **`1.3`** — e não em `1.1`, como esta tarefa
+  supunha: o número subiu nas features 021 e 015 depois que este `tasks.md` foi escrito.
 
-- [ ] T021 [US2] **Só se houver backup**: registrar o backup em `MAPA-DE-DADOS.md` como
+
+- [X] T021 [US2] **Só se houver backup**: registrar o backup em `MAPA-DE-DADOS.md` como
   **destino de dado pessoal** — na seção § Terceiros, no formato já usado lá (destino, o que vai,
   onde fica, por quanto tempo), e um ponteiro em § Retenção e exclusão explicando que a
   anonimização da feature 009 não alcança a cópia e que o prazo dela é o prazo do dado apagado.
   **(FR-011)** — depende de T014, T015
+  ✅ **NÃO SE APLICA** (2026-08-10) — FR-011 é condicional a existir cópia. `MAPA-DE-DADOS.md`
+  não ganhou linha de backup em § Terceiros, e a ausência agora é verdadeira, não omissão.
 
-- [ ] T022 👤 [HUMANO] [US2] Fechar D-3 em `/Users/jdsc2/projects/.achados/20260724-devops-iasd.md`
+
+- [X] T022 👤 [HUMANO] [US2] Fechar D-3 em `/Users/jdsc2/projects/.achados/20260724-devops-iasd.md`
   (**fora do repositório**) — a seção D-3 nas linhas **115-120** e a reabertura na emenda,
   linhas **148-151**. Registrar a decisão de T014, com data e ponteiro para
   `iasd/docs/INFRA-PRODUCAO.md`. Atualizar também A-4 (linhas 55-67), que dependia de D-3.
   Nota: a spec cita `:184-187` para D-3, mas o arquivo tem 156 linhas — as linhas corretas são as
   acima. **(SC-006)** — depende de T015
+  ✅ **FEITA** (2026-08-10) — em `/Users/jdsc2/projects/.achados/20260724-devops-iasd.md`:
+  D-3 fechada na seção original e na emenda de 2026-08-05, A-4 fechado, e uma emenda nova
+  de 2026-08-10 no fim do arquivo com a decisão, o RPO e o que ela **não** fecha (a região,
+  que continua pendente).
+
 
 **Checkpoint US2**: existe decisão escrita sobre backup, com RPO, prazo e dono; se há cópia, ela
 foi restaurada uma vez de verdade e a Política diz que ela existe.
@@ -346,3 +387,34 @@ Executadas de fato: 19 no ramo A sem backup, até 22 no ramo B com backup.
   e senha de banco, nunca.
 - Migração de região **não** é tarefa desta feature. Se o ramo B acontecer, T011B a registra como
   feature futura e para por aí.
+
+---
+
+## Desvio do plano registrado durante a execução (2026-08-10)
+
+**`docs/INFRA-PRODUCAO.md` não podia existir.** `docs/` está na linha 11 do
+`.gitignore`, junto com `REVISAO-JURIDICA.md` e `.tickets/`, como artefato de
+processo que fica no disco de quem trabalha. O plano (research D-003) escolheu
+esse caminho sem verificar, e o primeiro commit da feature criou o arquivo no
+disco **sem versioná-lo** — FR-002 exige "registrado no repositório", e um
+arquivo ignorado não está no repositório.
+
+Descoberto ao rodar as verificações de T023: o `grep` recursivo não encontrava
+`REVISAO-JURIDICA.md`, porque o `grep` deste ambiente respeita `.gitignore`.
+
+**Correção, decidida pelo responsável**: o registro foi **dividido em dois**,
+por sensibilidade e não por assunto.
+
+| Onde | O quê | Por quê |
+|---|---|---|
+| `INFRA-PRODUCAO.md` (raiz, versionado, **público**) | A exigência de região e a verificação da produção | FR-005 só se cumpre se quem clona o repositório para provisionar um ambiente receber a exigência. E a região já é pública: está no `README.md` e em `legal_metadata.dart` |
+| `REVISAO-JURIDICA.md` item 4-B (**não versionado**) | A decisão de backup e o risco aceito | O repositório é público (`JDaniielC/iasd-conecta`). Publicar "não há backup, perde-se tudo" sobe o valor de um ataque destrutivo sem beneficiar quem precisa da informação — que tem acesso ao arquivo |
+
+`INFRA-PRODUCAO.md` § 3 diz que a decisão existe, está fechada e onde ela mora —
+sem revelar qual foi. Os três ponteiros de T002/T003/T004 apontam para a raiz.
+
+**Uma segunda correção, menor**: os `grep` de SC-002 no `quickstart.md` são
+case-sensitive e filtram por `^./specs/019`. Ambos falham neste ambiente — a
+ocorrência real em `legal_metadata.dart:48` é *"Ainda não provisionada"*, com A
+maiúsculo, e o `grep` imprime os caminhos sem `./`. Use `grep -rni` e
+`grep -v "specs/019"`.

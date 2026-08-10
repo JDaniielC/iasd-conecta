@@ -22,6 +22,7 @@ import 'features/group/presentation/group_list_page.dart';
 import 'features/home/presentation/home_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
+import 'features/profile/presentation/my_profile_page.dart';
 import 'features/legal/presentation/consent_versions_page.dart';
 import 'features/legal/presentation/privacy_policy_page.dart';
 import 'features/legal/presentation/terms_of_use_page.dart';
@@ -57,6 +58,13 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // — nenhuma das duas navega sozinha, ambas só invalidam
       // `hasPerfilProvider` e esperam este redirect.
       if (hasProfile && state.matchedLocation == '/cadastro') return '/home';
+      // `== false`, não `!hasProfile`: o caso "ainda carregando" já saiu acima,
+      // e inverter isso empurraria ao cadastro quem só está esperando a rede.
+      // O redirect é o que cumpre FR-005 em web, onde `/perfil` é digitável na
+      // barra de endereço — esconder o link não basta.
+      if (hasProfile == false && state.matchedLocation == '/perfil') {
+        return '/cadastro';
+      }
       // /login sai por sessão deixar de ser anônima, não por ter Perfil:
       // quem entra numa Conta sem Perfil vira Visitante em /home (rota
       // pública), em vez de ficar preso na tela de entrar.
@@ -154,6 +162,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/district-admin/suggested-actions',
         builder: (context, state) => const ManageSuggestedActionsPage(),
+      ),
+      GoRoute(
+        path: '/perfil',
+        builder: (context, state) => const MyProfilePage(),
       ),
       GoRoute(
         path: '/district-admin/consentimentos',

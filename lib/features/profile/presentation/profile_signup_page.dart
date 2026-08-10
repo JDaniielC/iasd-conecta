@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/name_moderation.dart';
+import '../domain/profile_error_message.dart';
 import '../domain/profile.dart';
 
 /// Formulário de criação de Perfil (User Story 1) com etapa condicional de
@@ -26,9 +27,6 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   final _nicknameController = TextEditingController();
   final _phoneController = TextEditingController();
   final _ageController = TextEditingController();
-
-  // Cache local mínima — a checagem que vale é a constraint no banco.
-  final _moderation = const NameModeration(['idiota', 'burro', 'estupido', 'imbecil', 'babaca']);
 
   Gender _gender = Gender.female;
   String? _churchId;
@@ -64,7 +62,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
   Future<void> _enviar() async {
     final profile = _currentProfile;
     if (_formKey.currentState?.validate() != true || profile == null) return;
-    if (!_moderation.isValid(profile.name)) {
+    if (!NameModeration.cached.isValid(profile.name)) {
       setState(() => _error = 'Esse nome não pode ser usado. Tente outro.');
       return;
     }
@@ -89,7 +87,7 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
         // tentando de novo pra sempre.
         ref.invalidate(hasProfileProvider);
       } else {
-        setState(() => _error = _errorMessage(e));
+        setState(() => _error = profileErrorMessage(e, fallback: 'Não deu pra concluir o cadastro agora. Tente de novo.'));
       }
     } catch (_) {
       setState(() => _error =
@@ -97,19 +95,6 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
-  }
-
-  String _errorMessage(PostgrestException e) {
-    if (e.message.contains('nome_valido')) {
-      return 'Esse nome não pode ser usado. Tente outro.';
-    }
-    if (e.message.contains('apelido_obrigatorio_menor')) {
-      return 'Menores de idade precisam definir um Apelido.';
-    }
-    if (e.message.contains('consentimento_igreja_destacado')) {
-      return 'Marque o consentimento específico para usar a igreja de origem.';
-    }
-    return 'Não deu pra concluir o cadastro agora. Tente de novo.';
   }
 
   @override

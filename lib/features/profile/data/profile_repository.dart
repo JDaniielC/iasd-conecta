@@ -5,6 +5,12 @@ import '../domain/profile.dart';
 
 /// Único ponto de acesso a `public.perfis` e `public.igrejas`.
 ///
+/// `updateMyProfile` é a **primeira consumidora** da policy
+/// `perfis_update_own`, criada em 2026-07-23 e nunca usada até aqui: a
+/// permissão de corrigir o próprio Perfil existia no banco desde o começo, e
+/// nenhuma linha de código a exercia — o titular dependia de e-mail para
+/// corrigir o próprio nome.
+///
 /// Leitura de Perfil de outro Usuário sempre passa pela RPC `perfil_publico`
 /// (nunca `select` direto na tabela) — é a tabela base que tem RLS
 /// restringindo linhas ao dono, então um `select` direto de outro id sempre
@@ -22,6 +28,26 @@ class ProfileRepository {
         .eq('id', uid)
         .maybeSingle();
     return row != null;
+  }
+
+  Future<Profile> fetchMyProfile() async {
+    final uid = _client.auth.currentUser!.id;
+    final row =
+        await _client.from('perfis').select().eq('id', uid).maybeSingle();
+    if (row == null) {
+      throw StateError('Perfil não encontrado para a sessão atual');
+    }
+    return Profile.fromMap(row);
+  }
+
+  /// Uma chamada só, de propósito.
+  ///
+  /// As cinco colunas mudam juntas ou não mudam — um `update` é atômico, então
+  /// não existe estado pela metade sem precisar de transação nem de RPC. Se
+  /// falhar, o banco fica exatamente como estava.
+  Future<void> updateMyProfile(Profile profile) async {
+    final uid = _client.auth.currentUser!.id;
+    await _client.from('perfis').update(profile.toUpdateMap()).eq('id', uid);
   }
 
   Future<List<Church>> fetchChurches() async {

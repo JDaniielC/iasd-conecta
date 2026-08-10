@@ -1,17 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iasd_conecta/app.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/group/data/group_repository.dart';
 import 'package:iasd_conecta/features/group/domain/group.dart';
 import 'package:iasd_conecta/features/group/group_providers.dart';
 import 'package:iasd_conecta/features/profile/data/auth_repository.dart';
+import 'package:iasd_conecta/features/profile/data/profile_repository.dart';
+import 'package:iasd_conecta/features/profile/domain/church.dart';
+import 'package:iasd_conecta/features/profile/domain/profile.dart';
+import 'package:iasd_conecta/features/profile/presentation/my_profile_page.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockGroupRepository extends Mock implements GroupRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
+
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 /// Monta o app inteiro como Visitante (sem Perfil), a partir da rota inicial.
 Future<void> _pumpAppAsVisitor(WidgetTester tester) async {
@@ -31,6 +38,38 @@ Future<void> _pumpAppAsVisitor(WidgetTester tester) async {
         isAnonymousProvider.overrideWithValue(true),
         groupRepositoryProvider.overrideWithValue(groupRepo),
         authRepositoryProvider.overrideWithValue(authRepo),
+      ],
+      child: const App(),
+    ),
+  );
+  await tester.pumpAndSettle();
+}
+
+/// Monta o app com Perfil, para as rotas que exigem um.
+Future<void> _pumpAppWithProfile(WidgetTester tester) async {
+  final groupRepo = MockGroupRepository();
+  when(() => groupRepo.fetchGroups()).thenAnswer((_) async => <Group>[]);
+  final authRepo = MockAuthRepository();
+  when(() => authRepo.hasAccount).thenReturn(true);
+  final profileRepo = MockProfileRepository();
+  when(() => profileRepo.fetchMyProfile()).thenAnswer(
+    (_) async => const Profile(
+      name: 'Ana Souza',
+      gender: Gender.female,
+      age: 30,
+      lgpdConsentAccepted: true,
+    ),
+  );
+
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        hasProfileProvider.overrideWith((ref) async => true),
+        isAnonymousProvider.overrideWithValue(false),
+        groupRepositoryProvider.overrideWithValue(groupRepo),
+        authRepositoryProvider.overrideWithValue(authRepo),
+        profileRepositoryProvider.overrideWithValue(profileRepo),
+        churchesProvider.overrideWith((ref) async => <Church>[]),
       ],
       child: const App(),
     ),
@@ -123,4 +162,31 @@ void main() {
       expect(find.textContaining('Vitória de Santo Antão'), findsWidgets);
     },
   );
+
+  testWidgets(
+    'FR-005: sem Perfil, /perfil redireciona para o cadastro',
+    (tester) async {
+      await _pumpAppAsVisitor(tester);
+
+      // Em web, /perfil é digitável na barra de endereço — esconder o link na
+      // Home não basta.
+      final router = GoRouter.of(
+        tester.element(find.byType(Navigator).first),
+      );
+      router.push('/perfil');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MyProfilePage), findsNothing);
+    },
+  );
+
+  testWidgets('FR-001: com Perfil, /perfil abre Meu Perfil', (tester) async {
+    await _pumpAppWithProfile(tester);
+
+    final router = GoRouter.of(tester.element(find.byType(Navigator).first));
+    router.push('/perfil');
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MyProfilePage), findsOneWidget);
+  });
 }

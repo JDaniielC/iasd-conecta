@@ -169,14 +169,19 @@ class PrivacyPolicyPage extends ConsumerWidget {
 
             const LegalHeading('Seus direitos e como usar cada um'),
             const LegalBullet(
-              'Confirmar o que temos sobre você (acesso): escreva para '
-              '${LegalMetadata.contactEmail}. Hoje isso é respondido '
-              'manualmente — ainda não existe uma tela própria de "meu '
-              'perfil" para conferir sozinho.',
+              'Confirmar o que temos sobre você (acesso): abra "Meu Perfil" '
+              'no app. Lá estão seu nome, Apelido, Igreja de origem, '
+              'telefone, gênero, idade e a data em que você aceitou estes '
+              'termos. Para qualquer coisa que a tela não mostre, escreva '
+              'para ${LegalMetadata.contactEmail}.',
             ),
             const LegalBullet(
-              'Corrigir um dado errado: mesmo canal, por e-mail, enquanto '
-              'não existe tela de edição de perfil dentro do app.',
+              'Corrigir um dado errado: nome, Apelido, Igreja de origem e '
+              'telefone você corrige sozinho, na tela "Meu Perfil". Gênero e '
+              'idade continuam sendo corrigidos por e-mail, em '
+              '${LegalMetadata.contactEmail} — eles decidem regras do app '
+              '(exigência de Apelido e composição de Dupla Missionária), e '
+              'por isso não são editáveis sozinho por enquanto.',
             ),
             const LegalBullet(
               'Apagar sua conta e os dados dela: você mesmo faz, pelo app, em '
@@ -260,6 +265,11 @@ class PrivacyPolicyPage extends ConsumerWidget {
             // principal.
             if (hasProfile) ...[
               const SizedBox(height: AppSpacing.lg),
+              OutlinedButton(
+                onPressed: () => context.push('/perfil'),
+                child: const Text('Abrir Meu Perfil'),
+              ),
+              const SizedBox(height: AppSpacing.sm),
               OutlinedButton(
                 onPressed: () => context.push('/delete-account'),
                 style: OutlinedButton.styleFrom(foregroundColor: Colors.red),

@@ -179,6 +179,18 @@ class _MainCallToAction extends ConsumerWidget {
           onPressed: () => context.go('/acoes'),
           child: const Text('Ver Ações'),
         ),
+        // Só para quem tem Perfil: sem Perfil não há o que ver, e a rota
+        // redirecionaria ao cadastro. Rótulo em texto, não só ícone — o
+        // caminho até o próprio dado não pode depender de adivinhar um
+        // desenho.
+        if (hasProfile == true) ...[
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => context.push('/perfil'),
+            icon: const Icon(Icons.person_outline),
+            label: const Text('Meu Perfil'),
+          ),
+        ],
       ],
     );
   }

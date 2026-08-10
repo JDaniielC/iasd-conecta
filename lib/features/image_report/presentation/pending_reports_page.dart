@@ -72,10 +72,16 @@ class _ReportList extends ConsumerWidget {
         // Apaga a linha da capa. O arquivo sai pela fila, e as denúncias desta
         // imagem somem por cascade — o encerramento automático de FR-019.
         await repository.resolveByRemovingImage(image.photoId);
+        // A listagem também, e não só o item: sem isto, o Grupo cuja capa o
+        // Administrador acabou de tirar do ar continuaria exibindo a imagem
+        // na lista, porque a rota de baixo segue montada e o provider
+        // `autoDispose` mantém o valor em cache.
         if (image.groupId != null) {
           ref.invalidate(groupCoverPhotoProvider(image.groupId!));
+          ref.invalidate(groupCoverPhotosProvider);
         } else if (image.actionId != null) {
           ref.invalidate(actionCoverPhotoProvider(image.actionId!));
+          ref.invalidate(actionCoverPhotosProvider);
         }
       } else {
         await repository.dismiss(image.photoId);

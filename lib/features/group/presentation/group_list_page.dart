@@ -148,7 +148,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                 // debaixo do dedo de quem está lendo.
                 final covers = ref
                         .watch(groupCoverPhotosProvider(
-                          [for (final g in sorted) g.id],
+                          coverPhotosKey([for (final g in sorted) g.id]),
                         ))
                         .value ??
                     const <String, CoverPhoto>{};

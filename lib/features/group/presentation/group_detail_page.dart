@@ -88,8 +88,12 @@ class GroupDetailPage extends ConsumerWidget {
                 // denúncias, e só se alguém denunciasse.
                 CoverPhotoEditor(
                   groupId: groupId,
-                  canManage:
-                      isDistrictAdmin || (isOwner && !group.isArchived),
+                  // Grupo arquivado é histórico: ninguém publica capa nova
+                  // nele, nem o Administrador. Mas remover continua valendo
+                  // para o Administrador — imagem imprópria num Grupo
+                  // arquivado continua pública (FR-011).
+                  canUpload: (isOwner || isDistrictAdmin) && !group.isArchived,
+                  canRemove: isOwner || isDistrictAdmin,
                 ),
                 Row(
                   children: [

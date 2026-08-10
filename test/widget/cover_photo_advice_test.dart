@@ -21,6 +21,8 @@ CoverPhoto buildGroupCover({String groupId = 'grupo-1'}) => CoverPhoto(
 Future<void> pumpEditor(
   WidgetTester tester, {
   required bool canManage,
+  bool? canUpload,
+  bool? canRemove,
   CoverPhoto? cover,
   String groupId = 'grupo-1',
 }) async {
@@ -36,7 +38,11 @@ Future<void> pumpEditor(
       ],
       child: MaterialApp(
         home: Scaffold(
-          body: CoverPhotoEditor(groupId: groupId, canManage: canManage),
+          body: CoverPhotoEditor(
+            groupId: groupId,
+            canUpload: canUpload ?? canManage,
+            canRemove: canRemove ?? canManage,
+          ),
         ),
       ),
     ),
@@ -172,7 +178,11 @@ void main() {
           ],
           child: const MaterialApp(
             home: Scaffold(
-              body: CoverPhotoEditor(groupId: 'grupo-1', canManage: true),
+              body: CoverPhotoEditor(
+                groupId: 'grupo-1',
+                canUpload: true,
+                canRemove: true,
+              ),
             ),
           ),
         ),
@@ -225,6 +235,37 @@ void main() {
     testWidgets('remove capa mesmo quando o dono já não pode', (tester) async {
       await pumpEditor(tester, canManage: true, cover: buildGroupCover());
       expect(find.text('Remover capa'), findsOneWidget);
+    });
+  });
+
+  group('FR-011/FR-022: enviar e remover são permissões separadas', () {
+    // Quando eram uma só, dar ao Administrador o poder de remover no histórico
+    // deu junto o poder de PUBLICAR ali. Numa Ação já cancelada isso é pior do
+    // que parece: o gatilho de cancelamento só dispara na transição, então a
+    // capa enviada depois não sairia por caminho nenhum.
+    testWidgets('no histórico: remove, mas não envia', (tester) async {
+      await pumpEditor(
+        tester,
+        canManage: false,
+        canUpload: false,
+        canRemove: true,
+        cover: buildGroupCover(),
+      );
+
+      expect(find.text('Remover capa'), findsOneWidget);
+      expect(find.text('Trocar capa'), findsNothing);
+      expect(find.text('Adicionar capa'), findsNothing);
+    });
+
+    testWidgets('no histórico e sem capa: nenhuma ação aparece',
+        (tester) async {
+      await pumpEditor(
+        tester,
+        canManage: false,
+        canUpload: false,
+        canRemove: true,
+      );
+      expect(find.byType(TextButton), findsNothing);
     });
   });
 }

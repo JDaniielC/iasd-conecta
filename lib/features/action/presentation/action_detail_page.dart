@@ -106,10 +106,17 @@ class ActionDetailPage extends ConsumerWidget {
                 // imprópria numa Ação encerrada não teria como sair da tela.
                 CoverPhotoEditor(
                   actionId: action.id,
-                  canManage: isDistrictAdmin ||
-                      (action.creatorId == uid &&
-                          !action.isCancelled &&
-                          !isEnded),
+                  // Cancelada ou encerrada é histórico: ninguém publica capa
+                  // nova, nem o Administrador. Isso importa mais do que
+                  // parece na cancelada — o gatilho de cancelamento só dispara
+                  // na transição, então capa enviada DEPOIS não sairia por
+                  // caminho nenhum.
+                  canUpload: (action.creatorId == uid || isDistrictAdmin) &&
+                      !action.isCancelled &&
+                      !isEnded,
+                  // Ação encerrada MANTÉM a capa (FR-023), e o Administrador
+                  // precisa alcançá-la (FR-011).
+                  canRemove: action.creatorId == uid || isDistrictAdmin,
                 ),
                 Row(
                   children: [

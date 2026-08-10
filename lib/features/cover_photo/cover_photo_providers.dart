@@ -21,18 +21,45 @@ final actionCoverPhotoProvider =
   return ref.watch(coverPhotoRepositoryProvider).fetchForAction(actionId);
 });
 
+/// A chave de família das capas em lote: os ids **ordenados** e juntados.
+///
+/// Parece cerimônia e não é — é o conserto de um laço de rede medido.
+///
+/// A chave era a própria `List<String>`, e **`List` não implementa `==` por
+/// valor**: duas listas com o mesmo conteúdo são famílias diferentes. Como as
+/// telas montam a lista dentro do `build`, cada quadro criava um provider novo,
+/// que consultava, que completava, que reconstruía. Medido:
+/// **31 consultas em 30 quadros**, nas duas listagens principais do app.
+/// `String` tem igualdade por valor e fecha isso.
+///
+/// **Ordenar** resolve a segunda metade: a listagem de Grupos tem alternador de
+/// ordenação, e sem ordenar a chave trocar a ordem refaria a consulta inteira
+/// por nada — os Grupos são os mesmos.
+///
+/// Quem chamar `groupCoverPhotosProvider` ou `actionCoverPhotosProvider` passa
+/// por aqui. Montar a chave à mão traz o laço de volta.
+String coverPhotosKey(List<String> ids) => (ids.toList()..sort()).join(',');
+
+List<String> _idsFromKey(String key) => key.isEmpty ? const [] : key.split(',');
+
 /// As capas de uma lista de Grupos, numa consulta só.
 ///
 /// A lista **espera** este provider junto com os Grupos, para os cards
 /// nascerem do tamanho final. Uma consulta por card faria a lista pular
 /// conforme cada imagem chegasse (FR-007).
+///
+/// A chave vem de [coverPhotosKey], sempre.
 final groupCoverPhotosProvider = FutureProvider.autoDispose
-    .family<Map<String, CoverPhoto>, List<String>>((ref, groupIds) {
-  return ref.watch(coverPhotoRepositoryProvider).fetchForGroups(groupIds);
+    .family<Map<String, CoverPhoto>, String>((ref, key) {
+  return ref
+      .watch(coverPhotoRepositoryProvider)
+      .fetchForGroups(_idsFromKey(key));
 });
 
 /// O mesmo para Ações.
 final actionCoverPhotosProvider = FutureProvider.autoDispose
-    .family<Map<String, CoverPhoto>, List<String>>((ref, actionIds) {
-  return ref.watch(coverPhotoRepositoryProvider).fetchForActions(actionIds);
+    .family<Map<String, CoverPhoto>, String>((ref, key) {
+  return ref
+      .watch(coverPhotoRepositoryProvider)
+      .fetchForActions(_idsFromKey(key));
 });

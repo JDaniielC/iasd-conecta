@@ -73,15 +73,24 @@ class CoverPhotoView extends StatelessWidget {
 
 /// A capa **com** as ações de quem administra.
 ///
-/// [canManage] é decidido por quem chama, porque a regra é diferente em Grupo
-/// (dono) e em Ação (criador) — e em ambos o Administrador do distrito entra
-/// (FR-003, FR-011). O banco é quem garante: estas políticas estão em
-/// `fotos_capa_insert_admin` e `fotos_capa_delete_admin`. Aqui é só o que a
+/// **Enviar e remover são permissões separadas, e essa separação é o conserto
+/// de um erro.** Quando eram um `canManage` só, dar ao Administrador do
+/// distrito o poder de remover em qualquer estado (FR-011) deu junto o poder de
+/// **publicar** capa em Grupo arquivado e em Ação cancelada. O caso ruim é
+/// concreto: o gatilho `acoes_remover_capa_ao_cancelar` só dispara na transição
+/// `null → não-nulo` de `cancelada_em`, então capa enviada **depois** do
+/// cancelamento não sai por caminho nenhum.
+///
+/// A regra: [canRemove] vale para quem administra **sempre**; [canUpload]
+/// exclui o que é histórico. Quem decide é a tela, porque a regra é diferente
+/// em Grupo (dono) e em Ação (criador). O banco é quem garante —
+/// `fotos_capa_insert_admin` e `fotos_capa_delete_admin`; aqui é só o que a
 /// pessoa **vê**.
 class CoverPhotoEditor extends ConsumerStatefulWidget {
   const CoverPhotoEditor({
     super.key,
-    required this.canManage,
+    required this.canUpload,
+    required this.canRemove,
     this.groupId,
     this.actionId,
   }) : assert(
@@ -89,7 +98,12 @@ class CoverPhotoEditor extends ConsumerStatefulWidget {
           'Exatamente um dono: Grupo ou Ação',
         );
 
-  final bool canManage;
+  /// Enviar capa nova ou trocar a existente. Falso no que é histórico.
+  final bool canUpload;
+
+  /// Tirar a capa do ar. Vale mesmo no que é histórico — imagem imprópria num
+  /// Grupo arquivado continua pública (FR-011).
+  final bool canRemove;
   final String? groupId;
   final String? actionId;
 
@@ -100,11 +114,23 @@ class CoverPhotoEditor extends ConsumerStatefulWidget {
 class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
   bool _busy = false;
 
+  /// Invalida a capa **e as listagens**.
+  ///
+  /// Invalidar só o provider de item único deixava a listagem mostrando a
+  /// imagem removida: com `context.push`, a rota de baixo continua montada, o
+  /// provider `autoDispose` da lista mantém o listener, e o valor em cache
+  /// sobrevive à volta. Uma imagem removida continuar aparecendo é pior que a
+  /// janela de 60 segundos do cache de borda, e essa a Política até declara.
+  ///
+  /// A família inteira é invalidada porque a chave é a lista de ids da tela,
+  /// que este widget não conhece.
   void _invalidatePhoto() {
     if (widget.groupId != null) {
       ref.invalidate(groupCoverPhotoProvider(widget.groupId!));
+      ref.invalidate(groupCoverPhotosProvider);
     } else {
       ref.invalidate(actionCoverPhotoProvider(widget.actionId!));
+      ref.invalidate(actionCoverPhotosProvider);
     }
   }
 
@@ -195,17 +221,18 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
               label: const Text('Denunciar imagem'),
             ),
           ),
-        if (widget.canManage) ...[
+        if (widget.canUpload || (widget.canRemove && photo != null)) ...[
           if (photo != null) const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              TextButton.icon(
-                onPressed: _busy ? null : _pickAndUpload,
-                icon: const Icon(Icons.image_outlined),
-                label: Text(photo == null ? 'Adicionar capa' : 'Trocar capa'),
-              ),
-              if (photo != null)
+              if (widget.canUpload)
+                TextButton.icon(
+                  onPressed: _busy ? null : _pickAndUpload,
+                  icon: const Icon(Icons.image_outlined),
+                  label: Text(photo == null ? 'Adicionar capa' : 'Trocar capa'),
+                ),
+              if (widget.canRemove && photo != null)
                 TextButton.icon(
                   onPressed: _busy ? null : () => _remove(photo),
                   icon: const Icon(Icons.delete_outline),

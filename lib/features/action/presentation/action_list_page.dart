@@ -122,7 +122,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                 // pulo de layout que FR-007 proíbe.
                 final covers = ref
                         .watch(actionCoverPhotosProvider(
-                          [for (final i in sorted) i.action.id],
+                          coverPhotosKey([for (final i in sorted) i.action.id]),
                         ))
                         .value ??
                     const <String, CoverPhoto>{};

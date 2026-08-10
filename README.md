@@ -49,6 +49,9 @@ Local (`supabase start`) e produção usam a mesma peça: Postgres + GoTrue +
 PostgREST em containers Docker. A diferença é só onde os containers moram —
 decidido: **Supabase Cloud gerenciado** (região `sa-east-1`), não
 self-hosted (ver `.tickets/IASD-03.md`, descartado 2026-08-05).
+A região é requisito de provisionamento, não default do fornecedor — a
+exigência, e a verificação do ambiente atual, estão em
+[`INFRA-PRODUCAO.md`](INFRA-PRODUCAO.md).
 
 ## Rodando localmente
 

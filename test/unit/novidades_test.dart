@@ -1,6 +1,8 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/features/news/data/news_repository.dart';
 import 'package:iasd_conecta/features/news/domain/news_item.dart';
+import 'package:iasd_conecta/features/news/news_providers.dart';
 
 NewsItem buildItem({required DateTime date, String text = 'Mudou alguma coisa'}) {
   return NewsItem(date: date, text: text);
@@ -20,22 +22,6 @@ class FakeNewsRepository implements NewsRepository {
     stored = date;
     writeCount++;
   }
-}
-
-/// A mesma decisão que `hasUnseenNewsProvider` toma, isolada para poder ser
-/// testada sem montar um ProviderContainer.
-Future<bool> decideUnseen(
-  List<NewsItem> news,
-  FakeNewsRepository repository,
-) async {
-  if (news.isEmpty) return false;
-  final newest = news.first.date;
-  final lastSeen = await repository.readLastSeenDate();
-  if (lastSeen == null) {
-    await repository.writeLastSeenDate(newest);
-    return false;
-  }
-  return newest.isAfter(lastSeen);
 }
 
 void main() {
@@ -80,44 +66,66 @@ void main() {
     });
   });
 
-  group('há novidade não vista?', () {
-    test('lista vazia: sem aviso, e NADA é gravado', () async {
-      final repository = FakeNewsRepository();
+  group('hasUnseenNewsProvider', () {
+    /// Monta o provider REAL com as dependências trocadas.
+    ///
+    /// A primeira versão deste arquivo tinha um helper `decideUnseen` que
+    /// repetia a lógica do provider "para não montar um ProviderContainer" — e
+    /// com isso os testes certificavam a cópia, não o código. Remover a
+    /// gravação de primeira execução do provider deixaria tudo verde. Achado
+    /// por `/speckit-converge`.
+    ({ProviderContainer container, FakeNewsRepository repository}) build(
+      List<NewsItem> news, {
+      DateTime? lastSeen,
+    }) {
+      final repository = FakeNewsRepository()..stored = lastSeen;
+      final container = ProviderContainer(
+        overrides: [
+          newsRepositoryProvider.overrideWithValue(repository),
+          visibleNewsProvider.overrideWithValue(visibleNews(news)),
+        ],
+      );
+      addTearDown(container.dispose);
+      return (container: container, repository: repository);
+    }
 
-      expect(await decideUnseen(const [], repository), isFalse);
+    test('lista vazia: sem aviso, e NADA é gravado', () async {
+      final t = build(const []);
+
+      expect(await t.container.read(hasUnseenNewsProvider.future), isFalse);
       // Gravar aqui deixaria o app achando que já viu um futuro que não
       // existe, e a primeira Novidade real nasceria sem aviso.
-      expect(repository.writeCount, 0);
+      expect(t.repository.writeCount, 0);
     });
 
     test('sem marcador guardado: sem aviso, e o marcador É gravado', () async {
-      final repository = FakeNewsRepository();
-      final news = visibleNews([buildItem(date: launchDate)]);
+      final t = build([buildItem(date: launchDate)]);
 
-      expect(await decideUnseen(news, repository), isFalse,
+      expect(await t.container.read(hasUnseenNewsProvider.future), isFalse,
           reason: 'para quem chega agora, o app inteiro é novo');
       // A gravação acontece aqui, e não ao abrir a tela — senão quem instala e
       // nunca abre Novidades carrega o aviso para sempre.
-      expect(repository.writeCount, 1);
-      expect(repository.stored, launchDate);
+      expect(t.repository.writeCount, 1);
+      expect(t.repository.stored, launchDate);
     });
 
     test('marcador anterior à mais recente: com aviso', () async {
-      final repository = FakeNewsRepository()..stored = launchDate;
-      final news = visibleNews([
-        buildItem(date: launchDate.add(const Duration(days: 5))),
-        buildItem(date: launchDate),
-      ]);
+      final t = build(
+        [
+          buildItem(date: launchDate.add(const Duration(days: 5))),
+          buildItem(date: launchDate),
+        ],
+        lastSeen: launchDate,
+      );
 
-      expect(await decideUnseen(news, repository), isTrue);
+      expect(await t.container.read(hasUnseenNewsProvider.future), isTrue);
     });
 
     test('marcador igual à mais recente: sem aviso', () async {
       final newest = launchDate.add(const Duration(days: 5));
-      final repository = FakeNewsRepository()..stored = newest;
-      final news = visibleNews([buildItem(date: newest)]);
+      final t = build([buildItem(date: newest)], lastSeen: newest);
 
-      expect(await decideUnseen(news, repository), isFalse);
+      expect(await t.container.read(hasUnseenNewsProvider.future), isFalse);
     });
 
     test('inserir uma Novidade ANTIGA esquecida não dispara aviso', () async {
@@ -125,13 +133,15 @@ void main() {
       // registra em novembro algo que aconteceu em outubro. A pessoa não
       // perdeu nada novo, então não há por que avisar.
       final newest = launchDate.add(const Duration(days: 30));
-      final repository = FakeNewsRepository()..stored = newest;
-      final news = visibleNews([
-        buildItem(date: newest),
-        buildItem(date: launchDate.add(const Duration(days: 10))),
-      ]);
+      final t = build(
+        [
+          buildItem(date: newest),
+          buildItem(date: launchDate.add(const Duration(days: 10))),
+        ],
+        lastSeen: newest,
+      );
 
-      expect(await decideUnseen(news, repository), isFalse);
+      expect(await t.container.read(hasUnseenNewsProvider.future), isFalse);
     });
   });
 

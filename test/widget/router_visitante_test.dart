@@ -11,6 +11,7 @@ import 'package:iasd_conecta/features/profile/data/auth_repository.dart';
 import 'package:iasd_conecta/features/profile/data/profile_repository.dart';
 import 'package:iasd_conecta/features/profile/domain/church.dart';
 import 'package:iasd_conecta/features/profile/domain/profile.dart';
+import 'package:iasd_conecta/features/news/presentation/news_page.dart';
 import 'package:iasd_conecta/features/profile/presentation/my_profile_page.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -189,4 +190,23 @@ void main() {
 
     expect(find.byType(MyProfilePage), findsOneWidget);
   });
+
+  testWidgets(
+    'FR-005/US1/AC3: Visitante sem Perfil alcança /novidades',
+    (tester) async {
+      await _pumpAppAsVisitor(tester);
+
+      // A rota não é gateada de propósito — o que mudou no app não é
+      // informação de quem tem cadastro. Mas nada afirmava isso, e o
+      // `redirect` de app.dart já surpreendeu na feature 010, quando lia
+      // `isAnonymousProvider` incondicionalmente e derrubava as rotas.
+      final router = GoRouter.of(
+        tester.element(find.byType(Navigator).first),
+      );
+      router.push('/novidades');
+      await tester.pumpAndSettle();
+
+      expect(find.byType(NewsPage), findsOneWidget);
+    },
+  );
 }

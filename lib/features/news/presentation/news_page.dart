@@ -11,6 +11,11 @@ import '../news_providers.dart';
 /// A tela não fala com o servidor — nem para listar, nem para registrar que
 /// alguém leu. Se um dia ela precisar, o desenho quebrou: ver
 /// `specs/022-novidades/plan.md`.
+///
+/// **Desvio do plano, deliberado**: `plan.md` previa `ConsumerWidget`. É
+/// `ConsumerStatefulWidget` porque gravar o marcador ao abrir a tela precisa de
+/// `initState`, e `ConsumerWidget` não tem ciclo de vida. Fazer isso no `build`
+/// gravaria a cada reconstrução. Registrado por `/speckit-converge`.
 class NewsPage extends ConsumerStatefulWidget {
   const NewsPage({super.key});
 

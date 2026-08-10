@@ -3,20 +3,38 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/home/presentation/home_page.dart';
+import 'package:iasd_conecta/features/news/data/news_repository.dart';
 import 'package:iasd_conecta/features/news/domain/news_item.dart';
 import 'package:iasd_conecta/features/news/news_providers.dart';
 import 'package:iasd_conecta/features/news/presentation/news_page.dart';
+
+class FakeNewsRepository implements NewsRepository {
+  DateTime? stored;
+  int writeCount = 0;
+
+  @override
+  Future<DateTime?> readLastSeenDate() async => stored;
+
+  @override
+  Future<void> writeLastSeenDate(DateTime date) async {
+    stored = date;
+    writeCount++;
+  }
+}
 
 /// O teste de widget não lê armazenamento nem servidor: sobrescreve os
 /// providers e olha só o que a tela faz com eles.
 Future<void> pumpNewsPage(
   WidgetTester tester, {
   required List<NewsItem> items,
+  FakeNewsRepository? repository,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         visibleNewsProvider.overrideWithValue(visibleNews(items)),
+        if (repository != null)
+          newsRepositoryProvider.overrideWithValue(repository),
       ],
       child: const MaterialApp(home: NewsPage()),
     ),
@@ -124,4 +142,40 @@ void main() {
     );
     expect(marker, findsNothing);
   });
+
+  testWidgets(
+    'FR-009/US2/AC2: abrir a tela grava o marcador na Novidade mais recente',
+    (tester) async {
+      final repository = FakeNewsRepository();
+      final newest = launchDate.add(const Duration(days: 10));
+
+      await pumpNewsPage(
+        tester,
+        repository: repository,
+        items: [
+          NewsItem(date: newest, text: 'Mais recente'),
+          NewsItem(date: launchDate, text: 'Mais antiga'),
+        ],
+      );
+
+      // É o que faz o aviso sumir. Sem este teste, `_markAsSeen` roda num
+      // postFrameCallback que ninguém exercita — e quebrar ele deixaria o
+      // aviso preso para sempre, sem nenhum teste vermelho.
+      expect(repository.writeCount, 1);
+      expect(repository.stored, newest);
+    },
+  );
+
+  testWidgets(
+    'FR-009: com a lista vazia, abrir a tela NÃO grava nada',
+    (tester) async {
+      final repository = FakeNewsRepository();
+
+      await pumpNewsPage(tester, repository: repository, items: const []);
+
+      // Gravar aqui marcaria como visto um futuro que ainda não existe, e a
+      // primeira Novidade real nasceria sem aviso.
+      expect(repository.writeCount, 0);
+    },
+  );
 }

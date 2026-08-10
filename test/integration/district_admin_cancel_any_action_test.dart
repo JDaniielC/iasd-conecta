@@ -4,16 +4,16 @@ import 'package:test/test.dart';
 import 'db_test_helper.dart';
 
 const _uidAdmin = '90000000-0000-0000-0000-000000000030';
-const _uidCriador = '90000000-0000-0000-0000-000000000031';
-const _uidDonoGrupo = '90000000-0000-0000-0000-000000000032';
+const _uidCreator = '90000000-0000-0000-0000-000000000031';
+const _uidGroupOwner = '90000000-0000-0000-0000-000000000032';
 
 void main() {
   late Connection conn;
-  late Object acaoAvulsaId;
+  late Object standaloneActionId;
   late Object groupId;
-  late Object acaoDeGrupoId;
+  late Object groupActionId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -28,42 +28,42 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin CancelAny');
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador CancelAny');
-    await criarPerfilDeTeste(conn, _uidDonoGrupo, name: 'DonoGrupo CancelAny');
-    await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
+    await createTestProfile(conn, _uidAdmin, name: 'Admin CancelAny');
+    await createTestProfile(conn, _uidCreator, name: 'Criador CancelAny');
+    await createTestProfile(conn, _uidGroupOwner, name: 'DonoGrupo CancelAny');
+    await createTestDistrictAdmin(conn, _uidAdmin);
 
-    late Object acaoAvulsa;
-    await comoUsuario(_uidCriador, () async {
+    late Object standaloneAction;
+    await asUser(_uidCreator, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.acoes (nome, data_hora, local, criador_id) "
           "values ('Ação Avulsa CancelAny', now() + interval '5 days', 'Sede', @criador) "
           "returning id",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       );
-      acaoAvulsa = rows.single.toColumnMap()['id']!;
+      standaloneAction = rows.single.toColumnMap()['id']!;
     });
-    acaoAvulsaId = acaoAvulsa;
+    standaloneActionId = standaloneAction;
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo CancelAny', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDonoGrupo},
+      parameters: {'dono': _uidGroupOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
-    late Object acaoDeGrupo;
-    await comoUsuario(_uidDonoGrupo, () async {
+    late Object groupAction;
+    await asUser(_uidGroupOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDonoGrupo},
+        parameters: {'grupo': groupId, 'dono': _uidGroupOwner},
       );
       final votingRoundId = rows.single.toColumnMap()['id'];
 
@@ -73,16 +73,16 @@ void main() {
           "values ('Única Candidata CancelAny', now() + interval '5 days', 'Sede', @dono, @rodada) "
           "returning id",
         ),
-        parameters: {'dono': _uidDonoGrupo, 'rodada': votingRoundId},
+        parameters: {'dono': _uidGroupOwner, 'rodada': votingRoundId},
       );
-      acaoDeGrupo = candRows.single.toColumnMap()['id']!;
+      groupAction = candRows.single.toColumnMap()['id']!;
 
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},
       );
     });
-    acaoDeGrupoId = acaoDeGrupo;
+    groupActionId = groupAction;
   });
 
   tearDownAll(() async {
@@ -92,7 +92,7 @@ void main() {
     );
     await conn.execute(
       Sql.named('delete from public.acoes where id in (@avulsa, @grupo)'),
-      parameters: {'avulsa': acaoAvulsaId, 'grupo': acaoDeGrupoId},
+      parameters: {'avulsa': standaloneActionId, 'grupo': groupActionId},
     );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where grupo_id = @grupo'),
@@ -106,38 +106,38 @@ void main() {
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidAdmin},
     );
-    await limparUsuarioDeTeste(conn, _uidAdmin);
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidDonoGrupo);
+    await cleanUpTestUser(conn, _uidAdmin);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidGroupOwner);
     await conn.close();
   });
 
   test('FR-009: Administrador cancela Ação avulsa que não criou', () async {
-    await comoUsuario(_uidAdmin, () async {
+    await asUser(_uidAdmin, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @id'),
-        parameters: {'id': acaoAvulsaId},
+        parameters: {'id': standaloneActionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @id'),
-      parameters: {'id': acaoAvulsaId},
+      parameters: {'id': standaloneActionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNotNull);
   });
 
   test('FR-009: Administrador cancela Ação de Grupo que não propôs nem administra', () async {
-    await comoUsuario(_uidAdmin, () async {
+    await asUser(_uidAdmin, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @id'),
-        parameters: {'id': acaoDeGrupoId},
+        parameters: {'id': groupActionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @id'),
-      parameters: {'id': acaoDeGrupoId},
+      parameters: {'id': groupActionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNotNull);
   });

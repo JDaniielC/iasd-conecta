@@ -3,14 +3,14 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000033';
+const _uidOwner = '70000000-0000-0000-0000-000000000033';
 
 void main() {
   late Connection conn;
   late Object groupId;
   late Object votingRoundId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -24,27 +24,27 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ApuracaoSemCandidata');
+    await createTestProfile(conn, _uidOwner, name: 'Dono ApuracaoSemCandidata');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo ApuracaoSemCandidata', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
     groupId = rows.single.toColumnMap()['id']!;
 
     late Object votingRound;
-    await comoUsuario(_uidDono, () async {
-      final rodadaRows = await conn.execute(
+    await asUser(_uidOwner, () async {
+      final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidOwner},
       );
-      votingRound = rodadaRows.single.toColumnMap()['id']!;
+      votingRound = roundRows.single.toColumnMap()['id']!;
     });
     votingRoundId = votingRound;
   });
@@ -58,12 +58,12 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
+    await cleanUpTestUser(conn, _uidOwner);
     await conn.close();
   });
 
   test('FR-018: Rodada sem candidata fecha sem vencedora', () async {
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},

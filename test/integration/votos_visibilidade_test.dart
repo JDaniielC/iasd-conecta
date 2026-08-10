@@ -244,8 +244,8 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final uid in _allUids) {
-      await criarUsuarioDeTeste(conn, uid);
-      await criarPerfilDeTeste(conn, uid, name: 'Pessoa ${uid.substring(31)}');
+      await createTestUser(conn, uid);
+      await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(31)}');
     }
   });
 
@@ -256,7 +256,7 @@ void main() {
   tearDownAll(() async {
     await _cleanUpOwnData(conn);
     for (final uid in _allUids) {
-      await limparUsuarioDeTeste(conn, uid);
+      await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });

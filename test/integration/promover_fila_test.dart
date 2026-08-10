@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000032';
+const _uidCreator = '50000000-0000-0000-0000-000000000032';
 const _uidSegundo = '50000000-0000-0000-0000-000000000033';
 const _uidTerceiro = '50000000-0000-0000-0000-000000000034';
 
@@ -13,16 +13,16 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Promove');
-    await criarPerfilDeTeste(conn, _uidSegundo, name: 'Segundo Promove');
-    await criarPerfilDeTeste(conn, _uidTerceiro, name: 'Terceiro Promove');
+    await createTestProfile(conn, _uidCreator, name: 'Criador Promove');
+    await createTestProfile(conn, _uidSegundo, name: 'Segundo Promove');
+    await createTestProfile(conn, _uidTerceiro, name: 'Terceiro Promove');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.acoes (nome, data_hora, local, limite_vagas, criador_id) "
         "values ('Ação Promove', now() + interval '5 days', 'Sede', 1, @criador) returning id",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     actionId = rows.single.toColumnMap()['id']!;
 
@@ -46,9 +46,9 @@ void main() {
       Sql.named('delete from public.acoes where id = @acao'),
       parameters: {'acao': actionId},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidSegundo);
-    await limparUsuarioDeTeste(conn, _uidTerceiro);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidSegundo);
+    await cleanUpTestUser(conn, _uidTerceiro);
     await conn.close();
   });
 
@@ -67,7 +67,7 @@ void main() {
       Sql.named(
         'delete from public.confirmacoes_acao where acao_id = @acao and usuario_id = @criador',
       ),
-      parameters: {'acao': actionId, 'criador': _uidCriador},
+      parameters: {'acao': actionId, 'criador': _uidCreator},
     );
 
     final depois = await conn.execute(

@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000010';
+const _uidCreator = '50000000-0000-0000-0000-000000000010';
 
 void main() {
   late Connection conn;
@@ -16,13 +16,13 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Constraints'));
+  setUp(() => createTestProfile(conn, _uidCreator, name: 'Criador Constraints'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where criador_id = @criador'),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
+    await cleanUpTestUser(conn, _uidCreator);
   });
 
   test('FR-001: insert em acoes com nome em branco falha', () async {
@@ -32,7 +32,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id) "
           "values ('   ', now() + interval '7 days', 'Sede', @criador)",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       ),
       throwsA(isA<ServerException>()),
     );
@@ -45,7 +45,7 @@ void main() {
         "values ('Acampamento', now() + interval '7 days', 'Sítio', @criador) "
         "returning nome",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     expect(rows.single.toColumnMap()['nome'], 'Acampamento');
   });
@@ -57,7 +57,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, limite_vagas, criador_id) "
           "values ('Mutirão', now() + interval '7 days', 'Bairro', 0, @criador)",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       ),
       throwsA(isA<ServerException>()),
     );

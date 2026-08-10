@@ -10,9 +10,9 @@ import 'package:iasd_conecta/features/group/presentation/group_detail_page.dart'
 import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GroupRepository {}
+class MockGroupRepository extends Mock implements GroupRepository {}
 
-final _grupo = Group(
+final _group = Group(
   id: 'g1',
   name: 'SevenBikers',
   category: 'Ministério Jovem',
@@ -26,9 +26,9 @@ void main() {
   testWidgets(
     'FR-008/FR-009: Participar sem Perfil direciona pro cadastro',
     (tester) async {
-      final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
-      when(() => grupoRepo.fetchMembers('g1')).thenAnswer(
+      final groupRepo = MockGroupRepository();
+      when(() => groupRepo.fetchGroup('g1')).thenAnswer((_) async => _group);
+      when(() => groupRepo.fetchMembers('g1')).thenAnswer(
         (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
 
@@ -48,7 +48,7 @@ void main() {
           overrides: [
             hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            groupRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(groupRepo),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -61,7 +61,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('TELA_CADASTRO'), findsOneWidget);
-      verifyNever(() => grupoRepo.join(any()));
+      verifyNever(() => groupRepo.join(any()));
     },
   );
 }

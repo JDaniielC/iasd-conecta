@@ -2,7 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:iasd_conecta/features/profile/domain/account_guard.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-User _usuario({required bool isAnonymous}) {
+User _user({required bool isAnonymous}) {
   return User(
     id: 'abc',
     appMetadata: const {},
@@ -16,11 +16,11 @@ User _usuario({required bool isAnonymous}) {
 void main() {
   group('ContaGuard.podeDeclararLideranca (FR-012)', () {
     test('Perfil sem Conta não pode declarar Líder/Diretor', () {
-      expect(AccountGuard.canDeclareLeadership(_usuario(isAnonymous: true)), isFalse);
+      expect(AccountGuard.canDeclareLeadership(_user(isAnonymous: true)), isFalse);
     });
 
     test('Conta pode declarar Líder/Diretor', () {
-      expect(AccountGuard.canDeclareLeadership(_usuario(isAnonymous: false)), isTrue);
+      expect(AccountGuard.canDeclareLeadership(_user(isAnonymous: false)), isTrue);
     });
 
     test('sem usuário não pode', () {
@@ -31,14 +31,14 @@ void main() {
   group('ContaGuard.podeSerPromovidoAdministrador (CONTEXT.md: Administrador do distrito)', () {
     test('Perfil sem Conta não pode ser promovido a Administrador', () {
       expect(
-        AccountGuard.canBePromotedToAdmin(_usuario(isAnonymous: true)),
+        AccountGuard.canBePromotedToAdmin(_user(isAnonymous: true)),
         isFalse,
       );
     });
 
     test('Usuário com Conta pode ser promovido a Administrador', () {
       expect(
-        AccountGuard.canBePromotedToAdmin(_usuario(isAnonymous: false)),
+        AccountGuard.canBePromotedToAdmin(_user(isAnonymous: false)),
         isTrue,
       );
     });

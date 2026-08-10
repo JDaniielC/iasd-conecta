@@ -9,7 +9,7 @@ void main() {
   late Connection conn;
   late String groupId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -24,15 +24,15 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidLider, name: 'Lider DeclareIdempotent');
-    final grupoRows = await conn.execute(
+    await createTestProfile(conn, _uidLider, name: 'Lider DeclareIdempotent');
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo LeadershipDeclareIdempotent', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
       parameters: {'dono': _uidLider},
     );
-    groupId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = groupRows.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
@@ -44,12 +44,12 @@ void main() {
       Sql.named('delete from public.grupos where id = @id'),
       parameters: {'id': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidLider);
+    await cleanUpTestUser(conn, _uidLider);
     await conn.close();
   });
 
   test('FR-003: autodeclarar duas vezes pro mesmo Grupo/ano é não-operação', () async {
-    await comoUsuario(_uidLider, () async {
+    await asUser(_uidLider, () async {
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
         parameters: {'grupo': groupId},

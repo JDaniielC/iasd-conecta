@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000042';
+const _uidCreator = '50000000-0000-0000-0000-000000000042';
 const _uidOutro = '50000000-0000-0000-0000-000000000043';
 
 void main() {
@@ -12,15 +12,15 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Bloqueia');
-    await criarPerfilDeTeste(conn, _uidOutro, name: 'Outro Bloqueia');
+    await createTestProfile(conn, _uidCreator, name: 'Criador Bloqueia');
+    await createTestProfile(conn, _uidOutro, name: 'Outro Bloqueia');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.acoes (nome, data_hora, local, criador_id) "
         "values ('Ação Bloqueia', now() + interval '5 days', 'Sede', @criador) returning id",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     actionId = rows.single.toColumnMap()['id']!;
 
@@ -35,8 +35,8 @@ void main() {
       Sql.named('delete from public.acoes where id = @acao'),
       parameters: {'acao': actionId},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidOutro);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidOutro);
     await conn.close();
   });
 

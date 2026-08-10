@@ -5,7 +5,7 @@ import 'db_test_helper.dart';
 
 const _uidAdmin = '80000000-0000-0000-0000-000000000040';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
+Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
@@ -18,49 +18,49 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 void main() {
   late Connection conn;
-  late String categoriaAId;
-  late String categoriaBId;
+  late String categoryAId;
+  late String categoryBId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin NomeDuplicado');
-    await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
+    await createTestProfile(conn, _uidAdmin, name: 'Admin NomeDuplicado');
+    await createTestDistrictAdmin(conn, _uidAdmin);
     final catA = await conn.execute(
       Sql.named("insert into public.categorias_grupo (nome) values ('Categoria DupA') returning id"),
     );
-    categoriaAId = catA.single.toColumnMap()['id']! as String;
+    categoryAId = catA.single.toColumnMap()['id']! as String;
     final catB = await conn.execute(
       Sql.named("insert into public.categorias_grupo (nome) values ('Categoria DupB') returning id"),
     );
-    categoriaBId = catB.single.toColumnMap()['id']! as String;
+    categoryBId = catB.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes_sugeridas where categoria_id in (@a, @b)'),
-      parameters: {'a': categoriaAId, 'b': categoriaBId},
+      parameters: {'a': categoryAId, 'b': categoryBId},
     );
     await conn.execute(
       Sql.named('delete from public.categorias_grupo where id in (@a, @b)'),
-      parameters: {'a': categoriaAId, 'b': categoriaBId},
+      parameters: {'a': categoryAId, 'b': categoryBId},
     );
     await conn.execute(
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidAdmin},
     );
-    await limparUsuarioDeTeste(conn, _uidAdmin);
+    await cleanUpTestUser(conn, _uidAdmin);
     await conn.close();
   });
 
   test('FR-009: mesmo nome em Categorias diferentes é permitido', () async {
-    await _comoUsuario(conn, _uidAdmin, () async {
+    await _asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named('insert into public.acoes_sugeridas (categoria_id, nome) values (@cat, @nome)'),
-        parameters: {'cat': categoriaAId, 'nome': 'Retiro'},
+        parameters: {'cat': categoryAId, 'nome': 'Retiro'},
       );
       await conn.execute(
         Sql.named('insert into public.acoes_sugeridas (categoria_id, nome) values (@cat, @nome)'),
-        parameters: {'cat': categoriaBId, 'nome': 'Retiro'},
+        parameters: {'cat': categoryBId, 'nome': 'Retiro'},
       );
     });
 

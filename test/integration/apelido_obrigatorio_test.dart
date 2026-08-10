@@ -16,8 +16,8 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarUsuarioDeTeste(conn, _uidMenor));
-  tearDown(() => limparUsuarioDeTeste(conn, _uidMenor));
+  setUp(() => createTestUser(conn, _uidMenor));
+  tearDown(() => cleanUpTestUser(conn, _uidMenor));
 
   test('FR-005: menor de idade sem apelido viola apelido_obrigatorio_menor', () async {
     await expectLater(

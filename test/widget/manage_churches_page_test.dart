@@ -11,7 +11,7 @@ import 'package:mocktail/mocktail.dart';
 
 class MockDistrictAdminRepository extends Mock implements DistrictAdminRepository {}
 
-class MockPerfilRepository extends Mock implements ProfileRepository {}
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 final _churches = [
   const Church(id: 'c1', name: 'Igreja Ativa'),
@@ -22,7 +22,7 @@ void main() {
   testWidgets(
     'ManageChurchesPage lista ativas e arquivadas, com botão Arquivar só nas ativas',
     (tester) async {
-      final profileRepo = MockPerfilRepository();
+      final profileRepo = MockProfileRepository();
       when(() => profileRepo.fetchChurches()).thenAnswer((_) async => _churches);
 
       await tester.pumpWidget(

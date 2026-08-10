@@ -3,8 +3,8 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000022';
-const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000023';
+const _uidOwner = '70000000-0000-0000-0000-000000000022';
+const _uidOutsider = '70000000-0000-0000-0000-000000000023';
 
 void main() {
   late Connection conn;
@@ -12,7 +12,7 @@ void main() {
   late Object votingRoundId;
   late Object candidateId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -26,27 +26,27 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono VotarParticipante');
-    await criarPerfilDeTeste(conn, _uidForaDoGrupo, name: 'ForaDoGrupo VotarParticipante');
+    await createTestProfile(conn, _uidOwner, name: 'Dono VotarParticipante');
+    await createTestProfile(conn, _uidOutsider, name: 'ForaDoGrupo VotarParticipante');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo VotarParticipante', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     late Object votingRound;
     late Object candidate;
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidOwner},
       );
       votingRound = rows.single.toColumnMap()['id']!;
 
@@ -55,7 +55,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Única', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': votingRound},
+        parameters: {'dono': _uidOwner, 'rodada': votingRound},
       );
       candidate = candRows.single.toColumnMap()['id']!;
     });
@@ -76,20 +76,20 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidForaDoGrupo);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidOutsider);
     await conn.close();
   });
 
   test('FR-007: quem não participa do Grupo não vota', () async {
     await expectLater(
-      comoUsuario(_uidForaDoGrupo, () async {
+      asUser(_uidOutsider, () async {
         await conn.execute(
           Sql.named(
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@rodada, @usuario, @candidata)',
           ),
-          parameters: {'rodada': votingRoundId, 'usuario': _uidForaDoGrupo, 'candidata': candidateId},
+          parameters: {'rodada': votingRoundId, 'usuario': _uidOutsider, 'candidata': candidateId},
         );
       }),
       throwsA(isA<ServerException>()),

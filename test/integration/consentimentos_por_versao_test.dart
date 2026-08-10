@@ -69,11 +69,11 @@ void main() {
     currentVersion = v.first[0] as String;
 
     for (final uid in [_adminUid, _plainUserUid, _anonymizedUid]) {
-      await criarPerfilDeTeste(conn, uid, name: 'Pessoa ${uid.substring(31)}');
+      await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(31)}');
     }
-    await criarUsuarioDeTeste(conn, _legacyUid);
+    await createTestUser(conn, _legacyUid);
     await seedLegacyProfile(_legacyUid);
-    await criarAdministradorDistritoDeTeste(conn, _adminUid);
+    await createTestDistrictAdmin(conn, _adminUid);
 
     await conn.execute(
       Sql.named('update public.perfis set anonimizado_em = now() where id = @u'),
@@ -89,7 +89,7 @@ void main() {
       parameters: {'u': _adminUid},
     );
     for (final uid in _allUids) {
-      await limparUsuarioDeTeste(conn, uid);
+      await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });

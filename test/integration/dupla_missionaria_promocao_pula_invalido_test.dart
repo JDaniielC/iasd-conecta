@@ -8,7 +8,7 @@ const _uidMulherB = '60000000-0000-0000-0000-000000000071';
 const _uidHomemC = '60000000-0000-0000-0000-000000000072';
 const _uidMulherD = '60000000-0000-0000-0000-000000000073';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
+Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
@@ -25,10 +25,10 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomemA, name: 'HomemA PromocaoPulaInvalido', gender: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulherB, name: 'MulherB PromocaoPulaInvalido', gender: 'feminino');
-    await criarPerfilDeTeste(conn, _uidHomemC, name: 'HomemC PromocaoPulaInvalido', gender: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulherD, name: 'MulherD PromocaoPulaInvalido', gender: 'feminino');
+    await createTestProfile(conn, _uidHomemA, name: 'HomemA PromocaoPulaInvalido', gender: 'masculino');
+    await createTestProfile(conn, _uidMulherB, name: 'MulherB PromocaoPulaInvalido', gender: 'feminino');
+    await createTestProfile(conn, _uidHomemC, name: 'HomemC PromocaoPulaInvalido', gender: 'masculino');
+    await createTestProfile(conn, _uidMulherD, name: 'MulherD PromocaoPulaInvalido', gender: 'feminino');
 
     // Dupla visitando mulher: A (homem, criador) + B (mulher) = 1H+1M válido.
     final rows = await conn.execute(
@@ -42,7 +42,7 @@ void main() {
     );
     actionId = rows.single.toColumnMap()['id']! as String;
 
-    await _comoUsuario(conn, _uidMulherB, () async {
+    await _asUser(conn, _uidMulherB, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulherB},
@@ -50,14 +50,14 @@ void main() {
     });
 
     // C (homem) entra na fila primeiro — formaria 2H visitando mulher, inválido.
-    await _comoUsuario(conn, _uidHomemC, () async {
+    await _asUser(conn, _uidHomemC, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidHomemC},
       );
     });
     // D (mulher) entra na fila depois — formaria 2M visitando mulher, válido.
-    await _comoUsuario(conn, _uidMulherD, () async {
+    await _asUser(conn, _uidMulherD, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulherD},
@@ -70,10 +70,10 @@ void main() {
       Sql.named('delete from public.acoes where criador_id = @criador'),
       parameters: {'criador': _uidHomemA},
     );
-    await limparUsuarioDeTeste(conn, _uidHomemA);
-    await limparUsuarioDeTeste(conn, _uidMulherB);
-    await limparUsuarioDeTeste(conn, _uidHomemC);
-    await limparUsuarioDeTeste(conn, _uidMulherD);
+    await cleanUpTestUser(conn, _uidHomemA);
+    await cleanUpTestUser(conn, _uidMulherB);
+    await cleanUpTestUser(conn, _uidHomemC);
+    await cleanUpTestUser(conn, _uidMulherD);
     await conn.close();
   });
 

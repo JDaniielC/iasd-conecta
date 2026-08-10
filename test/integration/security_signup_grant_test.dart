@@ -10,7 +10,7 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarUsuarioDeTeste(conn, _uid);
+    await createTestUser(conn, _uid);
   });
 
   tearDownAll(() async {
@@ -18,7 +18,7 @@ void main() {
       Sql.named('delete from public.perfis where id = @id'),
       parameters: {'id': _uid},
     );
-    await limparUsuarioDeTeste(conn, _uid);
+    await cleanUpTestUser(conn, _uid);
     await conn.close();
   });
 

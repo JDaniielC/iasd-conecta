@@ -4,13 +4,13 @@ import 'package:test/test.dart';
 import 'db_test_helper.dart';
 
 const _uidAdmin = '90000000-0000-0000-0000-000000000012';
-const _uidSoPerfil = '90000000-0000-0000-0000-000000000013';
+const _uidProfileOnly = '90000000-0000-0000-0000-000000000013';
 const _uidComConta = '90000000-0000-0000-0000-000000000014';
 
 void main() {
   late Connection conn;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -25,10 +25,10 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin RequiresAccount');
-    await criarPerfilSemContaDeTeste(conn, _uidSoPerfil, name: 'SoPerfil RequiresAccount');
-    await criarPerfilDeTeste(conn, _uidComConta, name: 'ComConta RequiresAccount');
-    await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
+    await createTestProfile(conn, _uidAdmin, name: 'Admin RequiresAccount');
+    await createTestProfileWithoutAccount(conn, _uidProfileOnly, name: 'SoPerfil RequiresAccount');
+    await createTestProfile(conn, _uidComConta, name: 'ComConta RequiresAccount');
+    await createTestDistrictAdmin(conn, _uidAdmin);
   });
 
   tearDownAll(() async {
@@ -38,21 +38,21 @@ void main() {
       ),
       parameters: {'admin': _uidAdmin, 'comConta': _uidComConta},
     );
-    await limparUsuarioDeTeste(conn, _uidAdmin);
-    await limparUsuarioDeTeste(conn, _uidSoPerfil);
-    await limparUsuarioDeTeste(conn, _uidComConta);
+    await cleanUpTestUser(conn, _uidAdmin);
+    await cleanUpTestUser(conn, _uidProfileOnly);
+    await cleanUpTestUser(conn, _uidComConta);
     await conn.close();
   });
 
   test('FR-002: promover Usuário só com Perfil (sem Conta) falha', () async {
     await expectLater(
-      comoUsuario(_uidAdmin, () async {
+      asUser(_uidAdmin, () async {
         await conn.execute(
           Sql.named(
             'insert into public.administradores_distrito (usuario_id, promovido_por) '
             'values (@alvo, @admin)',
           ),
-          parameters: {'alvo': _uidSoPerfil, 'admin': _uidAdmin},
+          parameters: {'alvo': _uidProfileOnly, 'admin': _uidAdmin},
         );
       }),
       throwsA(isA<ServerException>()),
@@ -60,7 +60,7 @@ void main() {
   });
 
   test('FR-001: promover Usuário com Conta funciona', () async {
-    await comoUsuario(_uidAdmin, () async {
+    await asUser(_uidAdmin, () async {
       await conn.execute(
         Sql.named(
           'insert into public.administradores_distrito (usuario_id, promovido_por) '

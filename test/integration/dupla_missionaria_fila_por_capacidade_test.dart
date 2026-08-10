@@ -7,7 +7,7 @@ const _uidHomem1 = '60000000-0000-0000-0000-000000000060';
 const _uidMulher1 = '60000000-0000-0000-0000-000000000061';
 const _uidTerceiro = '60000000-0000-0000-0000-000000000062';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
+Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
@@ -24,9 +24,9 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomem1, name: 'Homem1 FilaCapacidade', gender: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulher1, name: 'Mulher1 FilaCapacidade', gender: 'feminino');
-    await criarPerfilDeTeste(conn, _uidTerceiro, name: 'Terceiro FilaCapacidade', gender: 'masculino');
+    await createTestProfile(conn, _uidHomem1, name: 'Homem1 FilaCapacidade', gender: 'masculino');
+    await createTestProfile(conn, _uidMulher1, name: 'Mulher1 FilaCapacidade', gender: 'feminino');
+    await createTestProfile(conn, _uidTerceiro, name: 'Terceiro FilaCapacidade', gender: 'masculino');
 
     final rows = await conn.execute(
       Sql.named(
@@ -40,7 +40,7 @@ void main() {
     actionId = rows.single.toColumnMap()['id']! as String;
 
     // 1H + 1M já preenche as 2 vagas validamente.
-    await _comoUsuario(conn, _uidMulher1, () async {
+    await _asUser(conn, _uidMulher1, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulher1},
@@ -53,15 +53,15 @@ void main() {
       Sql.named('delete from public.acoes where criador_id = @criador'),
       parameters: {'criador': _uidHomem1},
     );
-    await limparUsuarioDeTeste(conn, _uidHomem1);
-    await limparUsuarioDeTeste(conn, _uidMulher1);
-    await limparUsuarioDeTeste(conn, _uidTerceiro);
+    await cleanUpTestUser(conn, _uidHomem1);
+    await cleanUpTestUser(conn, _uidMulher1);
+    await cleanUpTestUser(conn, _uidTerceiro);
     await conn.close();
   });
 
   test('Edge Case: com as 2 vagas válidas preenchidas, uma 3ª tentativa vai pra fila, não é recusada por gênero',
       () async {
-    await _comoUsuario(conn, _uidTerceiro, () async {
+    await _asUser(conn, _uidTerceiro, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidTerceiro},

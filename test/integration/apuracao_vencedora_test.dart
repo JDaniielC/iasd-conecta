@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000030';
+const _uidOwner = '70000000-0000-0000-0000-000000000030';
 const _uidVotanteA = '70000000-0000-0000-0000-000000000031';
 const _uidVotanteB = '70000000-0000-0000-0000-000000000032';
 
@@ -11,10 +11,10 @@ void main() {
   late Connection conn;
   late Object groupId;
   late Object votingRoundId;
-  late Object candidataLider;
-  late Object candidataPerdedora;
+  late Object leadingCandidate;
+  late Object losingCandidate;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -28,18 +28,18 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ApuracaoVencedora');
-    await criarPerfilDeTeste(conn, _uidVotanteA, name: 'VotanteA ApuracaoVencedora');
-    await criarPerfilDeTeste(conn, _uidVotanteB, name: 'VotanteB ApuracaoVencedora');
+    await createTestProfile(conn, _uidOwner, name: 'Dono ApuracaoVencedora');
+    await createTestProfile(conn, _uidVotanteA, name: 'VotanteA ApuracaoVencedora');
+    await createTestProfile(conn, _uidVotanteB, name: 'VotanteB ApuracaoVencedora');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo ApuracaoVencedora', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
@@ -51,13 +51,13 @@ void main() {
     late Object votingRound;
     late Object lider;
     late Object perdedora;
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidOwner},
       );
       votingRound = rows.single.toColumnMap()['id']!;
 
@@ -66,7 +66,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Líder', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': votingRound},
+        parameters: {'dono': _uidOwner, 'rodada': votingRound},
       );
       lider = rowsLider.single.toColumnMap()['id']!;
 
@@ -75,39 +75,39 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Perdedora', now() + interval '6 days', 'Praça', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': votingRound},
+        parameters: {'dono': _uidOwner, 'rodada': votingRound},
       );
       perdedora = rowsPerdedora.single.toColumnMap()['id']!;
     });
     votingRoundId = votingRound;
-    candidataLider = lider;
-    candidataPerdedora = perdedora;
+    leadingCandidate = lider;
+    losingCandidate = perdedora;
 
     // Confirma presença na perdedora ANTES de fechar, pra provar que some junto.
-    await comoUsuario(_uidVotanteB, () async {
+    await asUser(_uidVotanteB, () async {
       await conn.execute(
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
         ),
-        parameters: {'acao': candidataPerdedora, 'usuario': _uidVotanteB},
+        parameters: {'acao': losingCandidate, 'usuario': _uidVotanteB},
       );
     });
 
     // 2 votos pra líder, 0 pra perdedora
-    await comoUsuario(_uidVotanteA, () async {
+    await asUser(_uidVotanteA, () async {
       await conn.execute(
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteA, 'candidata': candidataLider},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteA, 'candidata': leadingCandidate},
       );
     });
-    await comoUsuario(_uidVotanteB, () async {
+    await asUser(_uidVotanteB, () async {
       await conn.execute(
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) values (@rodada, @usuario, @candidata)',
         ),
-        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteB, 'candidata': candidataLider},
+        parameters: {'rodada': votingRoundId, 'usuario': _uidVotanteB, 'candidata': leadingCandidate},
       );
     });
   });
@@ -129,44 +129,44 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidVotanteA);
-    await limparUsuarioDeTeste(conn, _uidVotanteB);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidVotanteA);
+    await cleanUpTestUser(conn, _uidVotanteB);
     await conn.close();
   });
 
   test('FR-013/FR-014: vencedora vira confirmada, perdedora some com a presença', () async {
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},
       );
     });
 
-    final rodadaRows = await conn.execute(
+    final roundRows = await conn.execute(
       Sql.named('select vencedora_id from public.rodadas_votacao where id = @rodada'),
       parameters: {'rodada': votingRoundId},
     );
-    expect(rodadaRows.single.toColumnMap()['vencedora_id'], candidataLider);
+    expect(roundRows.single.toColumnMap()['vencedora_id'], leadingCandidate);
 
     final liderRows = await conn.execute(
       Sql.named('select confirmada from public.acoes where id = @id'),
-      parameters: {'id': candidataLider},
+      parameters: {'id': leadingCandidate},
     );
     expect(liderRows.single.toColumnMap()['confirmada'], isTrue);
 
     final perdedoraRows = await conn.execute(
       Sql.named('select count(*) as total from public.acoes where id = @id'),
-      parameters: {'id': candidataPerdedora},
+      parameters: {'id': losingCandidate},
     );
     expect(perdedoraRows.single.toColumnMap()['total'], 0);
 
-    final confirmacoesPerdedora = await conn.execute(
+    final losingConfirmations = await conn.execute(
       Sql.named(
         'select count(*) as total from public.confirmacoes_acao where acao_id = @id',
       ),
-      parameters: {'id': candidataPerdedora},
+      parameters: {'id': losingCandidate},
     );
-    expect(confirmacoesPerdedora.single.toColumnMap()['total'], 0);
+    expect(losingConfirmations.single.toColumnMap()['total'], 0);
   });
 }

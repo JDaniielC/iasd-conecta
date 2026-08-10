@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '60000000-0000-0000-0000-000000000011';
+const _uidCreator = '60000000-0000-0000-0000-000000000011';
 
 void main() {
   late Connection conn;
@@ -16,13 +16,13 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidCriador, name: 'Criador LimiteFixo'));
+  setUp(() => createTestProfile(conn, _uidCreator, name: 'Criador LimiteFixo'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where criador_id = @criador'),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
+    await cleanUpTestUser(conn, _uidCreator);
   });
 
   test('FR-003: eh_dupla_missionaria=true com limite_vagas != 2 viola o CHECK', () async {
@@ -32,7 +32,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, limite_vagas, eh_dupla_missionaria, genero_visitado) "
           "values ('Visita', now() + interval '1 day', 'Casa', @criador, 5, true, 'masculino')",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       ),
       throwsA(isA<ServerException>()),
     );
@@ -45,7 +45,7 @@ void main() {
           "insert into public.acoes (nome, data_hora, local, criador_id, eh_dupla_missionaria, genero_visitado) "
           "values ('Visita', now() + interval '1 day', 'Casa', @criador, true, 'masculino')",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       ),
       throwsA(isA<ServerException>()),
     );

@@ -14,7 +14,7 @@ void main() {
     await conn.close();
   });
 
-  Future<bool> nomeValido(String name) async {
+  Future<bool> validName(String name) async {
     final rows = await conn.execute(
       Sql.named('select public.nome_valido(@nome) as valido'),
       parameters: {'nome': name},
@@ -23,14 +23,14 @@ void main() {
   }
 
   test('FR-002: rejeita nome com palavra da lista de bloqueio', () async {
-    expect(await nomeValido('João Idiota Silva'), isFalse);
+    expect(await validName('João Idiota Silva'), isFalse);
   });
 
   test('FR-002: aceita nome sem palavra bloqueada', () async {
-    expect(await nomeValido('João Silva'), isTrue);
+    expect(await validName('João Silva'), isTrue);
   });
 
   test('FR-002: moderação ignora maiúsculas/minúsculas', () async {
-    expect(await nomeValido('Maria IDIOTA Souza'), isFalse);
+    expect(await validName('Maria IDIOTA Souza'), isFalse);
   });
 }

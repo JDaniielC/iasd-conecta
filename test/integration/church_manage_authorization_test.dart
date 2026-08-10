@@ -8,7 +8,7 @@ const _uidNaoAdmin = '90000000-0000-0000-0000-000000000020';
 void main() {
   late Connection conn;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -23,17 +23,17 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidNaoAdmin, name: 'NaoAdmin ChurchAuth');
+    await createTestProfile(conn, _uidNaoAdmin, name: 'NaoAdmin ChurchAuth');
   });
 
   tearDownAll(() async {
-    await limparUsuarioDeTeste(conn, _uidNaoAdmin);
+    await cleanUpTestUser(conn, _uidNaoAdmin);
     await conn.close();
   });
 
   test('FR-006: quem não é Administrador não consegue adicionar Igreja', () async {
     await expectLater(
-      comoUsuario(_uidNaoAdmin, () async {
+      asUser(_uidNaoAdmin, () async {
         await conn.execute(
           Sql.named("insert into public.igrejas (nome) values ('Igreja Intrusa')"),
         );
@@ -51,7 +51,7 @@ void main() {
     final existente = await conn.execute('select id from public.igrejas limit 1');
     final churchId = existente.single.toColumnMap()['id'];
 
-    await comoUsuario(_uidNaoAdmin, () async {
+    await asUser(_uidNaoAdmin, () async {
       await conn.execute(
         Sql.named('update public.igrejas set arquivada_em = now() where id = @id'),
         parameters: {'id': churchId},

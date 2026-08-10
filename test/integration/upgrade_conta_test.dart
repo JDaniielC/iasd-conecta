@@ -11,9 +11,9 @@ void main() {
       final client = SupabaseClient(_url, _publishableKey);
       addTearDown(client.dispose);
 
-      final anonimo = await client.auth.signInAnonymously();
-      final idAntes = anonimo.session!.user.id;
-      expect(anonimo.session!.user.isAnonymous, isTrue);
+      final anonymous = await client.auth.signInAnonymously();
+      final idAntes = anonymous.session!.user.id;
+      expect(anonymous.session!.user.isAnonymous, isTrue);
 
       final email = 'teste-upgrade-$idAntes@example.com';
       final resposta = await client.auth.updateUser(

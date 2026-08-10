@@ -11,9 +11,9 @@ import 'package:iasd_conecta/features/profile/presentation/profile_signup_page.d
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockPerfilRepository extends Mock implements ProfileRepository {}
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
-const _igrejaTeste = Church(id: 'igreja-1', name: 'Igreja Teste');
+const _testChurch = Church(id: 'igreja-1', name: 'Igreja Teste');
 
 Future<void> _pumpPage(
   WidgetTester tester,
@@ -39,13 +39,13 @@ ElevatedButton _submitButton(WidgetTester tester) =>
 /// a página cresceu com os links de Política de Privacidade/Termos de Uso
 /// (integração da tarefa de LGPD) e o Checkbox nem sempre cabe na viewport
 /// padrão de teste sem rolar.
-Future<void> _tapConsentimento(WidgetTester tester) async {
+Future<void> _tapConsent(WidgetTester tester) async {
   await tester.ensureVisible(find.byType(CheckboxListTile));
   await tester.tap(find.byType(CheckboxListTile));
 }
 
 void main() {
-  late MockPerfilRepository repo;
+  late MockProfileRepository repo;
 
   setUpAll(() {
     registerFallbackValue(
@@ -53,7 +53,7 @@ void main() {
     );
   });
 
-  setUp(() => repo = MockPerfilRepository());
+  setUp(() => repo = MockProfileRepository());
 
   testWidgets(
     'FR-003: botão de concluir fica desabilitado sem consentimento LGPD',
@@ -75,7 +75,7 @@ void main() {
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Ana Souza');
       await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '30');
-      await _tapConsentimento(tester);
+      await _tapConsent(tester);
       await tester.pump();
 
       expect(_submitButton(tester).onPressed, isNotNull);
@@ -89,7 +89,7 @@ void main() {
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Maria Silva');
       await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '15');
-      await _tapConsentimento(tester);
+      await _tapConsent(tester);
       await tester.pump();
 
       expect(
@@ -111,11 +111,11 @@ void main() {
   testWidgets(
     'LGPD art. 11 I: escolher Igreja de origem exige consentimento destacado separado',
     (tester) async {
-      await _pumpPage(tester, repo, churches: const [_igrejaTeste]);
+      await _pumpPage(tester, repo, churches: const [_testChurch]);
 
       await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Ana Souza');
       await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '30');
-      await _tapConsentimento(tester);
+      await _tapConsent(tester);
       await tester.pump();
 
       expect(_submitButton(tester).onPressed, isNotNull);
@@ -144,7 +144,7 @@ void main() {
     await _pumpPage(tester, repo);
     await tester.enterText(find.widgetWithText(TextFormField, 'Nome'), 'Ana Souza');
     await tester.enterText(find.widgetWithText(TextFormField, 'Idade'), '30');
-    await _tapConsentimento(tester);
+    await _tapConsent(tester);
     await tester.pump();
     await tester.tap(find.byType(ElevatedButton));
     await tester.pump();

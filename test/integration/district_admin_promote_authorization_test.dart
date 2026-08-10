@@ -9,7 +9,7 @@ const _uidAlvo = '90000000-0000-0000-0000-000000000011';
 void main() {
   late Connection conn;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -24,8 +24,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidNaoAdmin, name: 'NaoAdmin PromoteAuth');
-    await criarPerfilDeTeste(conn, _uidAlvo, name: 'Alvo PromoteAuth');
+    await createTestProfile(conn, _uidNaoAdmin, name: 'NaoAdmin PromoteAuth');
+    await createTestProfile(conn, _uidAlvo, name: 'Alvo PromoteAuth');
   });
 
   tearDownAll(() async {
@@ -33,14 +33,14 @@ void main() {
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidAlvo},
     );
-    await limparUsuarioDeTeste(conn, _uidNaoAdmin);
-    await limparUsuarioDeTeste(conn, _uidAlvo);
+    await cleanUpTestUser(conn, _uidNaoAdmin);
+    await cleanUpTestUser(conn, _uidAlvo);
     await conn.close();
   });
 
   test('FR-003: quem não é Administrador não consegue promover ninguém', () async {
     await expectLater(
-      comoUsuario(_uidNaoAdmin, () async {
+      asUser(_uidNaoAdmin, () async {
         await conn.execute(
           Sql.named(
             'insert into public.administradores_distrito (usuario_id, promovido_por) '

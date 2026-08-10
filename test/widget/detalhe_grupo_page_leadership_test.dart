@@ -12,9 +12,9 @@ import 'package:iasd_conecta/features/leadership/leadership_providers.dart';
 import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GroupRepository {}
+class MockGroupRepository extends Mock implements GroupRepository {}
 
-final _grupo = Group(
+final _group = Group(
   id: 'g1',
   name: 'Ministério de Louvor',
   category: 'Ministério',
@@ -40,9 +40,9 @@ void main() {
   testWidgets(
     'FR-006/FR-007: exibe todos os Líderes confirmados do ano corrente (codireção)',
     (tester) async {
-      final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
-      when(() => grupoRepo.fetchMembers('g1')).thenAnswer(
+      final groupRepo = MockGroupRepository();
+      when(() => groupRepo.fetchGroup('g1')).thenAnswer((_) async => _group);
+      when(() => groupRepo.fetchMembers('g1')).thenAnswer(
         (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
 
@@ -61,7 +61,7 @@ void main() {
           overrides: [
             hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            groupRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(groupRepo),
             currentLeadersProvider('g1').overrideWith(
               (ref) async => [_confirmed('l1', 'lider-1'), _confirmed('l2', 'lider-2')],
             ),
@@ -86,9 +86,9 @@ void main() {
   testWidgets(
     'sem Líder confirmado, a seção não aparece',
     (tester) async {
-      final grupoRepo = MockGrupoRepository();
-      when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
-      when(() => grupoRepo.fetchMembers('g1')).thenAnswer(
+      final groupRepo = MockGroupRepository();
+      when(() => groupRepo.fetchGroup('g1')).thenAnswer((_) async => _group);
+      when(() => groupRepo.fetchMembers('g1')).thenAnswer(
         (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
       );
 
@@ -107,7 +107,7 @@ void main() {
           overrides: [
             hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
-            groupRepositoryProvider.overrideWithValue(grupoRepo),
+            groupRepositoryProvider.overrideWithValue(groupRepo),
             currentLeadersProvider('g1').overrideWith((ref) async => []),
           ],
           child: MaterialApp.router(routerConfig: router),

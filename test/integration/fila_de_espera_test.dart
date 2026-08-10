@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000030';
+const _uidCreator = '50000000-0000-0000-0000-000000000030';
 const _uidSegundo = '50000000-0000-0000-0000-000000000031';
 
 void main() {
@@ -12,8 +12,8 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Fila');
-    await criarPerfilDeTeste(conn, _uidSegundo, name: 'Segundo Fila');
+    await createTestProfile(conn, _uidCreator, name: 'Criador Fila');
+    await createTestProfile(conn, _uidSegundo, name: 'Segundo Fila');
 
     // limite 1 vaga: criador já ocupa a única vaga (FR-013)
     final rows = await conn.execute(
@@ -21,7 +21,7 @@ void main() {
         "insert into public.acoes (nome, data_hora, local, limite_vagas, criador_id) "
         "values ('Ação Lotada', now() + interval '5 days', 'Sede', 1, @criador) returning id",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     actionId = rows.single.toColumnMap()['id']!;
   });
@@ -31,8 +31,8 @@ void main() {
       Sql.named('delete from public.acoes where id = @acao'),
       parameters: {'acao': actionId},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidSegundo);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidSegundo);
     await conn.close();
   });
 

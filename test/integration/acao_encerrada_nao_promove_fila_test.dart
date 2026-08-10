@@ -74,8 +74,8 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final uid in [_uidOwner, _uidFirst, _uidSecond]) {
-      await criarUsuarioDeTeste(conn, uid);
-      await criarPerfilDeTeste(conn, uid, name: 'Pessoa ${uid.substring(31)}');
+      await createTestUser(conn, uid);
+      await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(31)}');
     }
   });
 
@@ -83,7 +83,7 @@ void main() {
     await conn.execute('delete from public.confirmacoes_acao');
     await conn.execute('delete from public.acoes');
     for (final uid in [_uidOwner, _uidFirst, _uidSecond]) {
-      await limparUsuarioDeTeste(conn, uid);
+      await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });
@@ -178,8 +178,8 @@ void main() {
       // exclusão: Ação futura não está encerrada, e Ação encerrada não é
       // tocada. O teste trava as duas metades.
       const uidLeaving = '70000000-0000-0000-0000-000000000083';
-      await criarUsuarioDeTeste(conn, uidLeaving);
-      await criarPerfilDeTeste(conn, uidLeaving, name: 'Pessoa que sai');
+      await createTestUser(conn, uidLeaving);
+      await createTestProfile(conn, uidLeaving, name: 'Pessoa que sai');
 
       final ended = await _createActionWithTwoSeats(
         conn,

@@ -3,15 +3,15 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000025';
-const _uidParticipante = '70000000-0000-0000-0000-000000000026';
+const _uidOwner = '70000000-0000-0000-0000-000000000025';
+const _uidMember = '70000000-0000-0000-0000-000000000026';
 
 void main() {
   late Connection conn;
   late Object groupId;
   late Object votingRoundId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -25,33 +25,33 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ForcarFechamento');
-    await criarPerfilDeTeste(conn, _uidParticipante, name: 'Participante ForcarFechamento');
+    await createTestProfile(conn, _uidOwner, name: 'Dono ForcarFechamento');
+    await createTestProfile(conn, _uidMember, name: 'Participante ForcarFechamento');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo ForcarFechamento', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @usuario)',
       ),
-      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidMember},
     );
 
     late Object votingRound;
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidOwner},
       );
       votingRound = rows.single.toColumnMap()['id']!;
     });
@@ -67,13 +67,13 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidParticipante);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidMember);
     await conn.close();
   });
 
   test('FR-010: participante que não é Dono não força fechamento', () async {
-    await comoUsuario(_uidParticipante, () async {
+    await asUser(_uidMember, () async {
       await expectLater(
         conn.execute(
           Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
@@ -91,7 +91,7 @@ void main() {
   });
 
   test('FR-009: o Dono do Grupo força fechamento antes do prazo', () async {
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},

@@ -9,9 +9,9 @@ import 'package:iasd_conecta/features/group/presentation/edit_group_page.dart';
 import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GroupRepository {}
+class MockGroupRepository extends Mock implements GroupRepository {}
 
-final _grupo = Group(
+final _group = Group(
   id: 'g1',
   name: 'SevenBikers',
   category: 'Ministério Jovem',
@@ -22,9 +22,9 @@ final _grupo = Group(
 );
 
 Future<void> _pump(WidgetTester tester, {required String? uid}) async {
-  final grupoRepo = MockGrupoRepository();
-  when(() => grupoRepo.fetchGroup('g1')).thenAnswer((_) async => _grupo);
-  when(() => grupoRepo.fetchMembers('g1')).thenAnswer(
+  final groupRepo = MockGroupRepository();
+  when(() => groupRepo.fetchGroup('g1')).thenAnswer((_) async => _group);
+  when(() => groupRepo.fetchMembers('g1')).thenAnswer(
     (_) async => const [PublicProfile(id: 'dono-1', displayName: 'Dono')],
   );
 
@@ -32,7 +32,7 @@ Future<void> _pump(WidgetTester tester, {required String? uid}) async {
     ProviderScope(
       overrides: [
         currentUserIdProvider.overrideWithValue(uid),
-        groupRepositoryProvider.overrideWithValue(grupoRepo),
+        groupRepositoryProvider.overrideWithValue(groupRepo),
       ],
       child: const MaterialApp(home: EditGroupPage(groupId: 'g1')),
     ),
@@ -52,7 +52,7 @@ void main() {
     await _pump(tester, uid: 'dono-1');
 
     expect(find.text('Você não é o Dono deste Grupo.'), findsNothing);
-    final campoNome = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Nome'));
-    expect(campoNome.controller?.text, 'SevenBikers');
+    final nameField = tester.widget<TextFormField>(find.widgetWithText(TextFormField, 'Nome'));
+    expect(nameField.controller?.text, 'SevenBikers');
   });
 }

@@ -408,3 +408,19 @@ T035 confere que os identificadores criados aqui seguem o mapa que a 012 estabel
 - Commit por tarefa ou grupo lógico. T026 e T029 devem ir juntos; T027 e T028 também
 - O teste que mais importa é o caso (c) de T009 — descarte de candidata perdedora. É o único
   caminho de exclusão que não passa por tela nenhuma
+
+---
+
+## Phase 8: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado do código depois de T001–T035.
+
+- [ ] T036 **CRITICAL** — Parar de enviar `denunciante_id` quando quem denuncia não tem Perfil, em `lib/features/image_report/data/image_report_repository.dart`, e cobrir com teste. O app faz `signInAnonymously` (`lib/core/supabase_client.dart:21`), então **todo Visitante tem `currentUser`** — e o repositório manda esse id, que não existe em `perfis`. Medido: `23503 insert or update on table "denuncias_imagem" violates foreign key constraint "denuncias_imagem_denunciante_id_fkey"`. **A denúncia de quem não tem cadastro não funciona**, que é exatamente o caso que motivou a feature: a mãe sem conta pedindo a retirada da foto da filha. O teste de integração (f) passou porque usava `set role anon`, sem sessão — o caminho do app real não é esse. per FR-015, Constitution II (contradicts)
+
+- [ ] T037 Permitir que o Administrador do distrito remova a capa de **qualquer** Grupo ou Ação, inclusive Grupo arquivado e Ação encerrada, em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/action/presentation/action_detail_page.dart`. Hoje `canManage` carrega `!group.isArchived` e `!isEnded`, herdados da regra de "não mexer em histórico" — mas Ação encerrada **mantém a capa** por FR-023, e nesse estado ninguém tem como tirá-la do ar pela tela. A restrição continua valendo para Dono e criador; o que muda é o Administrador. per FR-011 (partial)
+
+- [ ] T038 Informar **antes do seletor** o limite de tamanho e os formatos aceitos, em `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart`, lendo `coverPhotoMaxBytes` e `coverPhotoAllowedMimeTypes` em vez de repetir os valores. Research D-002 exige que o limite "seja informado ao Usuário **antes** do envio, não descoberto no erro", e hoje ele só aparece na recusa. Pior: `lib/features/cover_photo/domain/cover_photo.dart` **comenta** que as constantes existem no cliente por esse motivo — é a mesma classe de defeito que a feature 018 consertou, comentário prometendo garantia que o código não dá. per plan: research D-002 (contradicts)
+
+- [ ] T039 Provar que remover uma capa não altera mais nada, em `test/integration/foto_capa_orfao_test.dart`: com Grupo, Ação, presenças confirmadas e votos montados, contar tudo antes e depois da remoção. Hoje os testes contam capas e fila, e nenhum afirma que o resto ficou intacto — que é literalmente o que FR-013, FR-026 e SC-009 pedem. per FR-013, FR-026, SC-009 (missing)
+
+- [ ] T040 Acrescentar ao `test/integration/foto_capa_orfao_test.dart` o caso de **apagar o Grupo**: a capa deixa de existir e o arquivo entra na fila. É o único dos quatro caminhos de SC-005 sem teste. Não existe tela que apague Grupo (o plano registra isso no achado 1), e é justamente por isso que o teste importa: o dia em que ela existir, ninguém vai lembrar de conferir a capa. per FR-021, SC-005 (missing)

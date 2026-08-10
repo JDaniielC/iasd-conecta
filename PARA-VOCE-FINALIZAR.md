@@ -1,6 +1,10 @@
 # Para você finalizar
 
-**Gerado em**: 2026-08-10 | **Base**: `main`
+**Gerado em**: 2026-08-10 | **Base**: `main` | **Atualizado**: 2026-08-10, com 4 itens já feitos
+
+> **4 dos 18 já estão feitos** — os que não precisam de tela. Resultados na seção
+> "Verificados por mim" no fim. Os 11 da Sessão 1 dependem do Chrome, que desconectou no meio;
+> assim que ele voltar eu faço. A Sessão 3 continua sendo sua: mede pessoas, não código.
 
 São **18 tarefas** nas features já entregues. Nenhuma é de código — todas dependem de algo
 que eu não tenho: uma tela para olhar, uma pessoa para cronometrar, um acesso à nuvem, ou
@@ -118,7 +122,48 @@ começo por falta de ambiente. Agora **dá** para medir: junte com o item 20 da 
 
 ---
 
-## O que eu já verifiquei, para você não repetir
+## Verificados por mim em 2026-08-10 — não precisa repetir
+
+**Item 16 — arquivar Grupo (014 T028): PASSOU.** Montei um Grupo com 3 Ações vencedoras de
+Rodada (uma delas envelhecida para o passado), 5 presenças, 2 participações e 1 Rodada aberta.
+
+| | Antes | Depois |
+|---|---|---|
+| Presenças em Ação confirmada | 5 | **5** |
+| Participações no Grupo | 2 | **2** |
+| Rodadas abertas | 1 | **0** |
+| Ações canceladas | 0 | **2** (as duas futuras) |
+
+E os dois detalhes que o modo de falha esconderia: a Ação **passada** ficou com `cancelada_em`
+**nulo**, e a Rodada que estava aberta fechou com `vencedora_id` **nulo** — encerrou sem
+apurar, como a feature exige.
+
+**Item 3 — corrigir telefone não mexe na base legal (016 T039): PASSOU.**
+`consentimento_lgpd_aceito_em` e `consentimento_lgpd_versao` idênticos antes e depois do
+`update` do telefone, feito com o JWT da própria pessoa.
+
+**Item 11 — Líder de Ministério arquivado (014 T029): mecanismo confirmado, tela ainda não.**
+Com o Ministério arquivado e um Líder confirmado:
+
+- consulta **sem** o filtro do cliente (o que a RLS deixa passar): **1 linha** — é o desenho,
+  `liderancas` não é tocada pelo arquivamento, porque é histórico;
+- consulta **com** o filtro do cliente (o que a tela faz): **0 linhas**.
+
+Confirma que a barreira existe e funciona, e confirma que ela é **só do cliente**. Vale ainda
+abrir a tela — é o único item cuja quebra futura não faria nenhum teste ficar vermelho.
+
+**Item 12 — a caixa e a Política dizem a mesma coisa (015 T030): sem contradição, com uma
+assimetria.** As duas afirmam, com todas as letras, que **o app não verifica a identidade de
+quem marca a caixa**. A Política vai além, e corretamente: contato é registro e não canal, os
+dados do responsável somem com a conta da criança, e como ele exerce os direitos.
+
+A assimetria: a **caixa** diz o que está sendo autorizado — *"incluindo o Apelido e a Igreja de
+origem, se preenchida"* —, e a **Política** descreve o mecanismo sem nomear esse escopo. Não é
+contradição, e não reprova o item. Mas se você quiser fechar, é uma oração na Política.
+
+---
+
+## O que eu já verifiquei antes, para você não repetir
 
 - **021** — `curl` anônimo local: `votos` devolve `[]` com HTTP 200. Antes do conserto,
   devolvia a lista nominal e dava para chegar ao nome pela RPC pública.

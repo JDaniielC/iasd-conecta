@@ -33,22 +33,36 @@ Política só é verdadeira enquanto esta região for cumprida.
 
 ## 2. Verificação da produção atual
 
-Produção **existe** (`.env.prod`, e os secrets `SUPABASE_URL` /
-`SUPABASE_PUBLISHABLE_KEY` injetados por `.github/workflows/deploy-web.yml`).
-A região que ela de fato usa **ainda não foi lida no painel do fornecedor**.
+✅ **Verificado em 2026-08-10. A região cumpre a exigência da seção 1.**
 
-Enquanto esta tabela tiver `[PENDENTE]`, a afirmação da Política sobre
-transferência internacional descreve **uma decisão tomada, não um fato
-conferido**. Não preencha por suposição: a feature 019 existe porque essa mesma
-afirmação foi repetida em quatro documentos sem que ninguém a tivesse verificado.
+A partir desta data, a afirmação da Política de Privacidade de que o dado não sai
+do Brasil descreve **um fato conferido**, e não mais uma decisão tomada. Foi por
+falta desta linha que a feature 019 existiu: a mesma afirmação estava repetida em
+quatro documentos sem que ninguém tivesse aberto o painel.
 
 | Campo | Valor |
 |---|---|
-| Região lida no fornecedor | `[PENDENTE]` |
-| `project-ref` | `[PENDENTE]` |
-| Plano do projeto (Free / Pro / Team / Enterprise) | `[PENDENTE]` |
-| Verificado em (AAAA-MM-DD) | `[PENDENTE]` |
-| Quem verificou | `[PENDENTE]` |
+| Região lida no fornecedor | **South America (São Paulo)** — `sa-east-1` |
+| Nome do projeto | `iasd-conecta-vsa` |
+| `project-ref` | `mbfcnebyxzoagwatjxuh` |
+| Projeto criado em (UTC) | 2026-08-07 00:57:15 |
+| Plano do projeto (Free / Pro / Team / Enterprise) | `[NÃO COLHIDO]` — ver nota abaixo |
+| Verificado em | **2026-08-10** |
+| Quem verificou | O fundador, com a CLI autenticada na própria conta |
+
+**Nota sobre o plano**: não foi colhido, e deixou de bloquear alguma coisa. Ele
+existia como insumo de uma única decisão — se havia backup automático disponível —
+e essa decisão foi fechada por outro caminho (seção 3). Fica registrado como não
+colhido em vez de deduzido.
+
+**Sobre a evidência abaixo**: é a saída literal de `supabase projects list`, com o
+`ORG ID` mascarado. O `project-ref` fica, porque já vai público dentro do build
+web; o identificador da organização não vai a lugar nenhum público e não
+acrescenta nada à prova da região.
+
+A CLI imprime o nome legível da região (`South America (São Paulo)`), não o slug
+`sa-east-1`. São a mesma região na nomenclatura do fornecedor — a seção 1 usa o
+slug porque é ele que se digita ao criar o projeto.
 
 **Como obter** — um acesso só, dois caminhos:
 
@@ -61,20 +75,31 @@ ou Dashboard → projeto de produção → Project Settings → General, transcr
 string de região exatamente como aparece. **Print de tela não serve**: não se
 versiona nem se pesquisa por `grep`.
 
-Cole a saída literal aqui:
+Saída literal (`supabase projects list`, 2026-08-10):
 
 ```text
-[PENDENTE]
+   LINKED | ORG ID     | REFERENCE ID         | NAME             | REGION                    | CREATED AT (UTC)
+  --------|------------|----------------------|------------------|---------------------------|---------------------
+     ●    | [mascarado]| mbfcnebyxzoagwatjxuh | iasd-conecta-vsa | South America (São Paulo) | 2026-08-07 00:57:15
 ```
 
-### O portão
+### O portão — resultado: **Ramo A**
 
-Se a região lida **não** for brasileira, a primeira providência — antes de
-qualquer outra — é corrigir a Política de Privacidade para declarar a
-transferência internacional. Enquanto a Política diz que o dado não sai do
-Brasil e ele sai, o app afirma algo falso a titulares. Migrar de região é
-trabalho separado e maior: na prática, projeto novo e banco em produção movido
-com gente usando.
+A região é brasileira, então a Política de Privacidade **não muda**: continua
+correto não declarar transferência internacional, e agora com evidência atrás.
+
+Se um dia uma verificação destas der região **não** brasileira, a primeira
+providência — antes de qualquer outra — é corrigir a Política para declarar a
+transferência. Enquanto a Política diz que o dado não sai do Brasil e ele sai, o
+app afirma algo falso a titulares. Migrar de região é trabalho separado e maior:
+na prática, projeto novo e banco em produção movido com gente usando.
+
+### Quando reverificar
+
+Esta verificação vale para **este** projeto (`mbfcnebyxzoagwatjxuh`). Ela não se
+herda: qualquer projeto Supabase novo — homologação, ambiente de teste com dado
+real, ou uma recriação deste — começa com a região indefinida do ponto de vista
+deste documento, e a tabela acima precisa ser refeita para ele.
 
 ---
 

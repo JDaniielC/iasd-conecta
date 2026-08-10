@@ -62,23 +62,36 @@ fornecedor, data e nome — e a Política afirma o que essa resposta permite afi
 
 ### Os fatos (só humano)
 
-- [ ] T005 👤 [HUMANO] [US1] Obter a região do projeto Supabase de produção e **colar a saída
+- [X] T005 👤 [HUMANO] [US1] Obter a região do projeto Supabase de produção e **colar a saída
   literal**: `supabase login && supabase projects list` (linha do projeto de produção, inteira),
   **ou** Dashboard → Project Settings → General, transcrevendo a string exatamente como aparece.
   Print de tela não serve — o que vai para o repositório é texto.
   **Critério de pronto**: um bloco de texto colável, com a data de hoje.
   **(FR-001, SC-001)** — ver quickstart.md Parte 1
+  ✅ **FEITA** (2026-08-10) — `supabase projects list`, lido pelo fundador na própria conta.
+  Projeto `iasd-conecta-vsa`, ref `mbfcnebyxzoagwatjxuh`, região **South America (São Paulo)**,
+  criado em 2026-08-07 00:57:15 UTC. Saída literal colada em `INFRA-PRODUCAO.md` § 2, com o
+  `ORG ID` mascarado — ele não vai público no build e não acrescenta nada à prova da região.
 
-- [ ] T006 👤 [HUMANO] [US1] No mesmo acesso, anotar **em que plano o projeto está** (Free /
+
+- [~] T006 👤 [HUMANO] [US1] No mesmo acesso, anotar **em que plano o projeto está** (Free /
   Pro / Team / Enterprise). É o que decide se backup automático existe (research D-002): Free não
   tem nenhum. Insumo obrigatório da US2 — sem ele, T014 não tem o que decidir.
   **Critério de pronto**: nome do plano, anotado.
+  ⏭️ **NÃO COLHIDA, e deixou de bloquear** (2026-08-10) — `supabase projects list` não imprime
+  o plano. Ela existia como insumo de T014, que fechou por outro caminho (opção C, que não
+  depende de haver backup automático disponível). Registrada em `INFRA-PRODUCAO.md` § 2 como
+  **não colhida**, e não deduzida.
 
-- [ ] T007 [US1] Registrar em `docs/INFRA-PRODUCAO.md` a saída de T005 e o plano de T006, com
+
+- [X] T007 [US1] Registrar em `docs/INFRA-PRODUCAO.md` a saída de T005 e o plano de T006, com
   **data** e **quem verificou**. Não parafrasear a saída do fornecedor: colar. Pode escrever o
   `project-ref` (já é público, vai no build web via `deploy-web.yml:34-42`); nunca escrever
   `SUPABASE_SERVICE_ROLE_KEY` nem senha de banco. **(FR-001, FR-002, SC-001)** — depende de
   T001, T005, T006
+  ✅ **FEITA** (2026-08-10) — `INFRA-PRODUCAO.md` § 2 com a saída literal, data, quem leu, e
+  a nota de que a CLI imprime o nome legível da região e não o slug `sa-east-1`.
+
 
 ---
 
@@ -99,38 +112,55 @@ enquanto se arruma o resto.
 
 ### Ramo A — região confirmada como brasileira
 
-- [ ] T008A [US1] Reescrever o comentário de `LegalMetadata.hostingRegion` em
+- [X] T008A [US1] Reescrever o comentário de `LegalMetadata.hostingRegion` em
   `lib/features/legal/legal_metadata.dart:22-27`: remover *"Ainda não provisionada"* e o
   ponteiro para o achado A-3; passar a registrar **a verificação com data** e apontar para
   `docs/INFRA-PRODUCAO.md`. O identificador `hostingRegion` **não é renomeado** (já está em
   inglês, Princípio I); o comentário continua em português. **(FR-003, FR-005, SC-002)**
+  ✅ **FEITA** (2026-08-10) — comentário de `LegalMetadata.hostingRegion` reescrito: sai
+  *"Ainda não provisionada"* e o ponteiro para A-3, entra a verificação com data e o ponteiro
+  para `INFRA-PRODUCAO.md`. Acrescentado o que a tarefa não pedia e o achado tornou óbvio: a
+  verificação **não se herda** — ambiente novo escolhe a região explicitamente. Identificador
+  intocado.
 
-- [ ] T009A [US1] Em `REVISAO-JURIDICA.md` item 4 (linhas 182-208): substituir o bloco ⚠️
+
+- [X] T009A [US1] Em `REVISAO-JURIDICA.md` item 4 (linhas 182-208): substituir o bloco ⚠️
   *"Isto é uma decisão, não um fato ainda em produção"* / *"o projeto Supabase Cloud de produção
   ainda não foi criado"* pela evidência de T007 (região verificada, data, quem). O item passa de
   "resolvido como decisão" para "resolvido como fato verificado" — a diferença é a evidência,
   não a palavra. **(FR-012, SC-002)** — depende de T007
+  ✅ **FEITA** (2026-08-10) — `REVISAO-JURIDICA.md` item 4: o bloco ⚠️ saiu, entrou a saída
+  literal com data e quem leu. Registrado também que a janela real de exposição foi de **três
+  dias** (projeto criado em 07/08, verificado em 10/08), e que o `[NÃO VERIFICADO]` de A-4
+  sobre o perímetro da Supabase Inc. (suporte, logs, billing) **continua aberto**.
+
 
 ---
 
 ### Ramo B — região fora do Brasil
 
-- [ ] T008B 🔴 **PRIMEIRO** [US1] Corrigir `lib/features/legal/presentation/privacy_policy_page.dart:145-150`:
+> **RAMO NÃO PERCORRIDO.** O portão de T007 deu Ramo A: a região é brasileira. Nenhuma
+> tarefa abaixo foi executada, e nenhuma precisava ser. Ficam escritas para o dia em que uma
+> reverificação der outro resultado — inclusive num ambiente novo, já que a verificação não
+> se herda.
+
+
+- [—] T008B 🔴 **PRIMEIRO** [US1] Corrigir `lib/features/legal/presentation/privacy_policy_page.dart:145-150`:
   remover *"O dado não sai do Brasil, então não há transferência internacional de dado a
   declarar aqui"* e **declarar a transferência internacional** — para qual país/região o dado
   vai, e sob qual hipótese do art. 33 da LGPD ela se apoia. Texto em português, na voz da
   Política (`REVISAO-JURIDICA.md:206-208` já indica o caminho se a região for UE/EEE: art. 33, I).
   Nenhuma outra tarefa do Ramo B começa antes desta. **(FR-004, SC-005)** — depende de T007
 
-- [ ] T009B [US1] Atualizar `LegalMetadata.hostingRegion` para a região **real** e reescrever
+- [—] T009B [US1] Atualizar `LegalMetadata.hostingRegion` para a região **real** e reescrever
   o comentário: registrar a verificação com data, que a região diverge da exigida, e apontar para
   `docs/INFRA-PRODUCAO.md`. Identificador intocado. **(FR-003, SC-002)** — depende de T008B
 
-- [ ] T010B [US1] Em `REVISAO-JURIDICA.md` item 4: rebaixar de "RESOLVIDO" para **"NÃO
+- [—] T010B [US1] Em `REVISAO-JURIDICA.md` item 4: rebaixar de "RESOLVIDO" para **"NÃO
   CONFORME — corrigido na Política, execução divergente da decisão"**, com a evidência de T007 e
   o ponteiro para T008B. **(FR-012, SC-002)** — depende de T008B
 
-- [ ] T011B [US1] Registrar a migração de região como **pendência com feature própria** — em
+- [—] T011B [US1] Registrar a migração de região como **pendência com feature própria** — em
   `docs/INFRA-PRODUCAO.md` e no achado de devops. Escrever o que ela implica: a documentação
   oficial de regiões não descreve troca depois de criado o projeto, então na prática é projeto
   novo + mover banco em produção, com gente usando. **Não é escopo desta feature** (research
@@ -140,11 +170,15 @@ enquanto se arruma o resto.
 
 ### Fechamento da US1 (os dois ramos)
 
-- [ ] T012 👤 [HUMANO] [US1] Fechar o achado A-3 em
+- [X] T012 👤 [HUMANO] [US1] Fechar o achado A-3 em
   `/Users/jdsc2/projects/.achados/20260724-direito-digital-iasd.md:114` (**fora do
   repositório**): de *"Região de hospedagem decidida (sa-east-1), mas ainda não provisionada"*
   para o resultado real, com data e ponteiro para `iasd/docs/INFRA-PRODUCAO.md`. Ajustar também o
   resumo das linhas 13-15. **(SC-006)** — depende de T009A ou T010B
+  ✅ **FEITA** (2026-08-10) — A-3 fechado em
+  `/Users/jdsc2/projects/.achados/20260724-direito-digital-iasd.md`: título, corpo e o resumo
+  das linhas 13-15.
+
 
 **Checkpoint US1**: `docs/INFRA-PRODUCAO.md` responde a região com evidência; nenhum documento
 do repositório afirma que produção não existe; a Política diz sobre transferência internacional
@@ -282,24 +316,53 @@ foi restaurada uma vez de verdade e a Política diz que ela existe.
 
 ## Fase 4: Verificação e fechamento
 
-- [ ] T023 Rodar todas as verificações por `grep` do [quickstart.md](./quickstart.md) Parte 3:
+- [X] T023 Rodar todas as verificações por `grep` do [quickstart.md](./quickstart.md) Parte 3:
   SC-002 (as **duas** redações — "ainda não provisionada" e "ainda não foi criado"), SC-001
   (evidência com data), SC-003 (RPO em unidade de tempo), SC-005 (checklist manual de
   contradição entre Política e decisão), SC-006 (achados), FR-005 (os três ponteiros existem).
   Anotar o resultado real de cada uma, com números. **(SC-001, SC-002, SC-003, SC-005, SC-006,
   FR-005)**
+  ✅ **FEITA** (2026-08-10). Números reais:
+  · **SC-002a** ("ainda não provisionada"): **0** afirmações. Uma única linha ainda casa —
+    `PENDENCIAS.md:143` —, e é o **relato da remoção** ("o comentário ... saiu"), não a
+    afirmação. Falso positivo do `grep`, deixado de propósito.
+  · **SC-002b** ("ainda não foi criado"): **0**.
+  · **SC-001**: `INFRA-PRODUCAO.md` § 2, `Verificado em 2026-08-10`, com quem leu.
+  · **SC-003**: RPO escrito em `REVISAO-JURIDICA.md` item 4-B — *tudo, desde o início*.
+  · **SC-005**: 0 contradições. Conferido item a item — a Política não fala de backup, de
+    cópia nem de segurança de armazenamento, e a promessa "não há como desfazer nem
+    recuperar" ficou mais verdadeira, não menos.
+  · **SC-006**: A-3 e D-3/A-4 fechados nos dois arquivos de achados.
+  · **FR-005**: os três ponteiros existem (`README.md`, `.env.example`, `MAPA-DE-DADOS.md`).
+  **Correção nos `grep` do quickstart**: são case-sensitive (a ocorrência real era *"**A**inda
+  não provisionada"*) e filtram por `^./specs/019`, que não casa neste ambiente. Use
+  `grep -rni` e `grep -v "specs/019"`.
 
-- [ ] T024 Rodar os gates de `.github/workflows/ci.yml`, porque dois arquivos Dart foram
+
+- [X] T024 Rodar os gates de `.github/workflows/ci.yml`, porque dois arquivos Dart foram
   tocados: `flutter analyze`, `flutter test test/unit test/widget`, `flutter build web`.
   **Esperado**: analyze limpo, a **mesma contagem** de testes de antes (nenhum novo, nenhum
   alterado — não existe teste que leia o texto da Política, conferido), build web sucedendo. Se
   algum teste precisou mudar, a feature saiu do escopo.
+  ✅ **FEITA** (2026-08-10) — `flutter analyze`: **No issues found**.
+  `flutter test test/unit test/widget`: **225 testes, todos passando** — a mesma contagem de
+  antes da feature, como o critério exigia (nenhum teste novo, nenhum alterado).
+  `flutter build web --release`: **✓ Built build/web**.
+  Um único arquivo Dart tocado (`legal_metadata.dart`), só comentário.
 
-- [ ] T025 Conferir que `docs/INFRA-PRODUCAO.md` responde, sem `[PENDENTE]` sobrando, as
+
+- [X] T025 Conferir que `docs/INFRA-PRODUCAO.md` responde, sem `[PENDENTE]` sobrando, as
   cinco perguntas que justificam a existência do arquivo: (1) qual região qualquer ambiente novo
   DEVE usar; (2) qual região a produção atual usa, verificada quando e por quem; (3) há backup, e
   qual; (4) quanto se perde no pior caso; (5) como se restaura, e quando isso foi testado pela
   última vez. **(FR-002, FR-005, FR-006, FR-008)**
+  ✅ **FEITA** (2026-08-10) — **0 `[PENDENTE]`** em `INFRA-PRODUCAO.md`. As cinco perguntas
+  respondidas: (1) `sa-east-1`, § 1; (2) South America (São Paulo), lida em 2026-08-10, § 2;
+  (3) não há backup — resposta em `REVISAO-JURIDICA.md` item 4-B, com § 3 dizendo publicamente
+  que a decisão existe e onde mora; (4) perde-se tudo desde o início; (5) não há restauração a
+  documentar, e a ausência está escrita como consequência da decisão, não como lacuna.
+  Sobra um `[NÃO COLHIDO]`, o plano do projeto — declarado como não colhido, não deduzido.
+
 
 ---
 

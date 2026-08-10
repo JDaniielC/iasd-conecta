@@ -133,29 +133,40 @@ A 015 já previu o número numa função (`public.limiar_crianca()`), então é 
 
 O dono do app confirma `sa-east-1 (São Paulo, Brasil)`.
 
-**Registrar com honestidade sobre a natureza da evidência**: isto é **afirmação do
-controlador**, não leitura do painel colada no repositório. É base suficiente para a
-Política parar de ser tratada como possivelmente falsa, e a 019 deve gravar assim — quem ler
-daqui a um ano precisa saber que a fonte é a palavra do controlador, com data, e não um
-`select` nem uma captura de tela. Se um dia for preciso provar a terceiro, aí sim vale
-anexar a evidência do painel.
+→ **FECHADO em 2026-08-10 pela feature 019, e a evidência subiu de nível.** Este item pedia
+que se gravasse com honestidade que a fonte era *afirmação do controlador*, e não leitura do
+painel. Deixou de ser: a saída literal de `supabase projects list` está colada em
+`INFRA-PRODUCAO.md` § 2 e em `REVISAO-JURIDICA.md` item 4 — projeto `iasd-conecta-vsa`,
+`mbfcnebyxzoagwatjxuh`, região **South America (São Paulo)**, criado em 2026-08-07.
+A palavra do controlador estava certa.
 
-O comentário `Ainda não provisionada` em `legal_metadata.dart` sai — ele está errado desde
-que produção passou a existir.
+O comentário `Ainda não provisionada` em `legal_metadata.dart` saiu, substituído pelo
+registro da verificação com data. Ele esteve errado por exatamente três dias — de 07/08,
+quando o projeto foi criado, a 10/08.
 
-### 4.3 Backup — **só os usuários; o resto é descartável** ✅ (destrava a 019)
+### 4.3 Backup — ~~só os usuários; o resto é descartável~~ → **nada, risco aceito** ✅
 
-Decisão: **não** contratar backup automático. O que precisa sobreviver é o **cadastro das
-pessoas** (`auth.users` + `public.perfis`); Grupos, Ações, Rodadas, votos, confirmações e
-declarações de liderança são passíveis de deleção e podem ser recriados pela comunidade.
+**Decisão de 2026-08-09 (superada)**: não contratar backup automático, mas manter vivo o
+cadastro das pessoas (`auth.users` + `public.perfis`); Grupos, Ações, Rodadas, votos,
+confirmações e declarações de liderança seriam descartáveis e recriáveis pela comunidade.
 
-A 019 documenta isso como **risco aceito**, com quem aceitou e quando — não como ausência de
-decisão. E precisa dizer o que "perder o resto" significa na prática para quem usa o app.
+**Decisão de 2026-08-10, que prevalece**: **opção C — não há backup nenhum.** Nem do
+cadastro. O dono do app escolheu assim ao ver as opções com custo e RPO na mesa.
 
-**Consequência que a 019 tem de tratar, não contornar**: se existe qualquer cópia do cadastro,
-ela contém dado pessoal, e a Política precisa dizer que ela existe, por quanto tempo é
-guardada, e o que acontece com ela quando alguém pede exclusão de conta (art. 18, VI). Um
-backup de `perfis` esquecido é justamente o caso em que o app promete apagar e não apaga.
+A diferença entre as duas não é de grau: em 09/08, o cadastro das pessoas *precisava
+sobreviver* a um incidente; a partir de 10/08, ele não sobrevive. Num incidente de perda do
+banco, **perde-se tudo desde o início** — nome, apelido, telefone, igreja, além dos Grupos e
+das Ações. A comunidade recomeça do zero, cadastro incluído.
+
+Registrado como risco aceito, com quem aceitou e quando, em `REVISAO-JURIDICA.md` item 4-B
+(arquivo não versionado — o repositório é público). `INFRA-PRODUCAO.md` § 3 diz, na parte
+pública, que a decisão existe e onde ela mora, sem revelar qual foi.
+
+**A consequência que este item mandava tratar deixou de existir, e é o único ganho da
+escolha**: sem cópia nenhuma, não há dado pessoal esquecido fora do banco vivo. A promessa da
+Política — *"Não há como desfazer nem recuperar"* — passa a ser literalmente verdadeira, e a
+anonimização da feature 009 alcança o único lugar onde o dado existe. Por isso nenhuma frase
+da Política mudou e `LegalMetadata.version` segue em `1.3`.
 
 ### 4.4 Alcance da visibilidade do voto — **de acordo** ✅
 

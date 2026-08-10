@@ -43,10 +43,18 @@ abstract final class LegalMetadata {
   /// pequeno o suficiente para não exigir um encarregado dedicado.
   static const contactEmail = 'jdaniielc@gmail.com';
 
-  /// Região de hospedagem do Supabase em produção — escolhida para manter
-  /// o dado em território brasileiro e evitar declarar transferência
-  /// internacional (ver REVISAO-JURIDICA.md, item 4). Ainda não provisionada
-  /// (ver achado A-3 em `.achados/20260724-direito-digital-iasd.md`) — a
-  /// infra que criar o projeto Supabase de produção DEVE usar esta região.
+  /// Região de hospedagem do Supabase em produção — escolhida para manter o
+  /// dado em território brasileiro e evitar declarar transferência
+  /// internacional (ver REVISAO-JURIDICA.md, item 4).
+  ///
+  /// **Verificada em 10/08/2026**: o projeto de produção roda mesmo em
+  /// `South America (São Paulo)`. Evidência (saída literal do fornecedor, com
+  /// data e quem leu) em `INFRA-PRODUCAO.md` § 2 — é de lá que a Política tira
+  /// o direito de afirmar que o dado não sai do Brasil.
+  ///
+  /// A verificação vale para este projeto, não se herda: qualquer ambiente novo
+  /// DEVE escolher esta região explicitamente na criação, porque ela não é o
+  /// default do fornecedor e não é documentada como alterável depois. A
+  /// exigência está em `INFRA-PRODUCAO.md` § 1.
   static const hostingRegion = 'sa-east-1 (São Paulo, Brasil)';
 }

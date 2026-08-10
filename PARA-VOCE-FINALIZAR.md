@@ -2,9 +2,9 @@
 
 **Gerado em**: 2026-08-10 | **Base**: `main` | **Atualizado**: 2026-08-10, com 4 itens já feitos
 
-> **4 dos 18 já estão feitos** — os que não precisam de tela. Resultados na seção
-> "Verificados por mim" no fim. Os 11 da Sessão 1 dependem do Chrome, que desconectou no meio;
-> assim que ele voltar eu faço. A Sessão 3 continua sendo sua: mede pessoas, não código.
+> **13 dos 18 já estão feitos.** Resultados na seção "Verificados por mim" no fim — incluindo
+> **três reprovações**, duas delas de acessibilidade. Sobram: os itens **2 e 4**, que ficaram
+> bloqueados por um problema de automação (não do app), e a **Sessão 3**, que mede pessoas.
 
 São **18 tarefas** nas features já entregues. Nenhuma é de código — todas dependem de algo
 que eu não tenho: uma tela para olhar, uma pessoa para cronometrar, um acesso à nuvem, ou
@@ -77,6 +77,22 @@ O que falta é a experiência: cronometrar de verdade — ver a Sessão 3.
 
 ---
 
+## Os dois que ficaram bloqueados por automação, não pelo app
+
+**Itens 2 e 4** — propagação do nome corrigido, e o corpo do `insert` sem chave de versão.
+
+Os dois exigem **concluir um formulário**, e o botão de enviar não responde a clique sintético
+no Flutter web. Digitar funciona (a idade 9 fez o passo do responsável aparecer, e 30 o fez
+sumir), mas o envio não dispara — quatro tentativas, incluindo clique por coordenada, clique no
+nó semântico e teclado. Nenhum Perfil foi criado.
+
+**Não é defeito do app** — é limite da automação contra o canvas do Flutter. Para você, que
+clica de verdade, são dois minutos. O que já está garantido sem eles: `toInsertMap` não tem
+chave de versão nenhuma (leitura do código e teste de unidade), e o teste de integração prova
+que uma versão mandada pelo cliente seria descartada de qualquer jeito.
+
+---
+
 ## Sessão 3 — Com gente (não dá para eu fazer)
 
 Estas quatro são as únicas que medem o que o app **é para quem usa**. Eu sei onde os botões
@@ -122,7 +138,67 @@ começo por falta de ambiente. Agora **dá** para medir: junte com o item 20 da 
 
 ---
 
+## ⚠️ As três reprovações
+
+**Item 14 — alvos de toque (010 T020): REPROVOU.** Medidos na árvore de acessibilidade do
+Flutter, com a Home a 1200×757:
+
+| Alvo | Tamanho |
+|---|---|
+| Criar Perfil | 1152 × **36** |
+| Ver Grupos/Ministérios | 1152 × **32** |
+| Ver Ações | 1152 × **32** |
+| Novidades | 1152 × **32** |
+| Política de Privacidade | 168 × **32** |
+| Termos de Uso | 119 × **32** |
+
+**Nenhum chega aos 44px** de altura. A largura é folgada, então o toque erra pouco na
+horizontal — o problema é vertical, e afeta mais quem tem dificuldade motora ou usa o app
+com uma mão só.
+
+**Item 13 — a doxologia em paisagem (010 T019): REPROVOU.** A 812×375, com fonte padrão, a
+Home mostra só o título, o subtítulo e os dois cartões de conceito. "A Deus seja a glória"
+fica **muito abaixo da dobra** — os botões também.
+
+A própria tarefa prescreve o conserto e proíbe o atalho: *"Se a doxologia não couber nem em
+fonte padrão, **encurtar o bloco de identidade** — não reduzir tamanho de fonte."*
+
+**Item 9 — `/leadership/pending` como Usuário comum: comportamento diferente do previsto.**
+A expectativa escrita era "Nenhuma declaração pendente.". O que acontece: a pessoa vê **a
+própria declaração pendente**, com botões **Confirmar** e **Rejeitar**.
+
+Não é falha de segurança — cliquei em Confirmar e o banco recusou: `confirmado_em` continuou
+nulo. Mas **a tela não deu retorno nenhum**: nem erro, nem aviso. A pessoa clica, nada
+acontece, e ela não fica sabendo por quê.
+
+A causa é a feature 018, e ela está certa: a pessoa **deve** ver a própria declaração em
+qualquer estado. O que está errado é a tela de Administrador ser o lugar onde isso aparece, com
+botões que ela não pode usar. Duas saídas: gatear a rota por Administrador (e mostrar o estado
+da própria declaração só na página do Grupo, onde já aparece), ou esconder os botões para quem
+não é Administrador.
+
+---
+
 ## Verificados por mim em 2026-08-10 — não precisa repetir
+
+### Na tela, com o app rodando
+
+| # | Item | Resultado |
+|---|---|---|
+| 1 | `/perfil` sem Perfil | **passou** — caiu em `/cadastro`, tela inteira |
+| 5 | Cadastro de maior de idade | **passou** — 5 campos e 1 caixa, nada a mais. Com idade 9 o passo do responsável aparece; voltando a 30, some |
+| 6 | Líder confirmado na página do Ministério | **passou** — "Líder/Diretor: Bia Lider" |
+| 7 | Estado da própria declaração | **passou** — "Sua declaração está pendente de confirmação." |
+| 8 | Administrador vê as pendentes | **passou** — as duas, de Ministérios diferentes |
+| 10 | Rodada em que votei | **passou** — "Seu voto" na minha candidata, "Votar" na outra, **nenhuma contagem** |
+| 11 | Líder de Ministério **arquivado** | **passou** — o aviso de arquivado aparece e o Líder **sumiu da tela**, com a linha ainda no banco |
+| 15 | Ordem de leitura e doxologia como texto | **passou** — a árvore segue a ordem visual e termina em "A Deus seja a glória" |
+
+Sobre o **15**: li a árvore de acessibilidade, não usei leitor de tela de verdade. VoiceOver
+pode se comportar diferente. E vale registrar: minha **primeira** medição disse que a árvore
+só tinha botões — o filtro estava errado, refiz antes de concluir.
+
+### Fora da tela
 
 **Item 16 — arquivar Grupo (014 T028): PASSOU.** Montei um Grupo com 3 Ações vencedoras de
 Rodada (uma delas envelhecida para o passado), 5 presenças, 2 participações e 1 Rodada aberta.

@@ -7,7 +7,7 @@ de operações de tratamento (ROPA, LGPD art. 37). Toda linha tem
 
 ## Dados coletados (tabela `public.perfis`)
 
-`supabase/migrations/20260723191202_perfis_igrejas.sql:28-39`
+`supabase/migrations/20260723191202_perfis_igrejas.sql:28-39` e as duas colunas de versão em `supabase/migrations/20260809220000_versao_do_consentimento.sql:139`
 
 | Campo | Obrigatório | Onde é lido/exibido | Nunca exposto a outros? |
 |---|---|---|---|
@@ -17,7 +17,9 @@ de operações de tratamento (ROPA, LGPD art. 37). Toda linha tem
 | `telefone` | não | só `criarPerfil`/`toInsertMap` grava (`perfil.dart:49`); nenhum outro código lê ou exibe | sim, hoje ninguém lê |
 | `genero` | sim, só `masculino`/`feminino` (check, linha 34) | usado server-side por `confirmacoes_acao_decidir_status()` (`dupla_missionaria.sql:63-77`) pra validar composição de Dupla Missionária | sim — nunca sai em `perfil_publico`, RLS restringe select da tabela base ao próprio dono (`perfis_select_own`) |
 | `idade` | sim (`>= 0`) | só decide `apelido_obrigatorio_menor` no banco e `menorDeIdade`/`precisaDeApelido` no client (`perfil.dart:34-36`) | sim — confirmado em `perfil.dart:57-58` e no comentário de `perfil_repository.dart:11` |
-| `consentimento_lgpd_aceito_em` | sim (`not null`) | gravado em `perfil.dart:52` com `DateTime.now().toUtc()` no momento do envio | não se aplica |
+| `consentimento_lgpd_aceito_em` | sim (`not null`) | o cliente manda o campo como **sinal** de que a caixa foi marcada; o **valor** é o `now()` do banco, gravado pelo gatilho `perfis_carimbar_consentimento` (feature 017) | não se aplica |
+| `consentimento_lgpd_versao` | não (anulável) | versão do texto legal vigente no aceite, carimbada pelo mesmo gatilho a partir de `versao_texto_legal_vigente()`. `NULL` = aceite anterior à feature 017, versão **desconhecida** — nunca um palpite | sim — só o Administrador do distrito vê, e em contagem agregada, nunca por pessoa (`consentimentos_por_versao()`) |
+| `consentimento_lgpd_igreja_versao` | não (anulável) | idem, para o consentimento destacado de Igreja de origem; gravada e zerada junto com `consentimento_lgpd_igreja_aceito_em` | sim, mesma regra |
 
 **Não coletado**: CPF, endereço, foto/avatar, dado de saúde, dado de pagamento
 (nenhuma ocorrência de `foto`/`avatar`/`imagem` em `lib/` ou
@@ -129,16 +131,36 @@ aviso de que os dois mudam juntos.
 
 ## Consentimento
 
-- Um único campo, `consentimento_lgpd_aceito_em` (timestamp), sem coluna de
-  versão do texto aceito — `20260723191202_perfis_igrejas.sql:36`. Se o texto
-  da política mudar, não há como saber qual versão uma pessoa aceitou. Ver
-  achado A-5 e `lib/features/legal/legal_metadata.dart`.
-- Antes desta tarefa, o único texto apresentado no aceite era o rótulo do
-  checkbox ("Aceito o uso dos meus dados (LGPD)") — sem link pra nenhum
-  documento. Corrigido nesta entrega (link pra `/privacidade` e `/termos`
-  antes do checkbox, `cadastro_perfil_page.dart`), mas isso não resolve
-  retroativamente quem já tinha aceitado a versão anterior (não há
-  usuários reais em produção ainda, pelo que o código local indica).
+- **Desde a feature 017, cada aceite grava a versão do texto aceito**, ao lado da
+  data: `consentimento_lgpd_versao` e `consentimento_lgpd_igreja_versao`. Quem
+  grava é o banco, pelo gatilho `perfis_carimbar_consentimento`
+  (`20260809220000_versao_do_consentimento.sql:193`), a partir do catálogo
+  `public.versoes_texto_legal`. Valor de versão mandado pelo cliente é
+  descartado — um registro de base legal que valesse o que o cliente diz não
+  demonstraria nada.
+- **Existem aceites sem versão conhecida.** Foram colhidos entre **2026-07-23**
+  (criação de `public.perfis`, `20260723191202_perfis_igrejas.sql`) e
+  **2026-08-09**, data desta migration. Nesse período o app gravava só a
+  data/hora. Essas linhas ficam com versão `NULL`, que quer dizer
+  **desconhecida** e mais nada — nenhuma foi preenchida retroativamente, e o
+  gatilho impede que sejam.
+- **O que se sabe sobre os documentos, e que não vira dado da pessoa**: a 1.0
+  vigorou até 2026-08-05; a 1.1 desde 2026-08-06; a 1.2 desde 2026-08-09
+  (feature 021, quando o voto deixou de ser público). Só a 1.1 e a 1.2 estão no
+  catálogo — a 1.0 não tem data de vigência documentada no repositório, e
+  inventar uma seria o mesmo chute que a coluna existe para evitar.
+- **Atribuir cada aceite antigo a uma dessas versões pela data é estimativa, não
+  registro.** É possível sob demanda, com as ressalvas de
+  `specs/017-versao-do-consentimento/research.md` D-006 ao lado, e **nunca
+  gravada na coluna**: o valor da coluna é o que o banco carimbou, e mais nada.
+- Consulta de conformidade: `public.consentimentos_por_versao()`, restrita ao
+  Administrador do distrito, devolve contagem por versão com os de versão
+  desconhecida contados à parte. Devolve quantidade, nunca identidade.
+- Antes da tarefa de revisão jurídica, o único texto apresentado no aceite era o
+  rótulo do checkbox ("Aceito o uso dos meus dados (LGPD)") — sem link para
+  nenhum documento. Corrigido (link para `/privacidade` e `/termos` antes do
+  checkbox), mas isso não resolve retroativamente quem já tinha aceitado a
+  versão anterior.
 
 ## Crianças e adolescentes
 

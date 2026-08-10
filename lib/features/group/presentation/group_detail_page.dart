@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../leadership/leadership_providers.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../../district_admin/district_admin_providers.dart';
@@ -76,6 +77,14 @@ class GroupDetailPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // FR-002/FR-003: a capa e, só para quem administra, as ações
+                // de enviar/trocar/remover. Grupo arquivado não ganha capa
+                // nova — é histórico, e mexer nele já está fechado em toda a
+                // tela (feature 014).
+                CoverPhotoEditor(
+                  groupId: groupId,
+                  canManage: (isOwner || isDistrictAdmin) && !group.isArchived,
+                ),
                 Row(
                   children: [
                     Expanded(

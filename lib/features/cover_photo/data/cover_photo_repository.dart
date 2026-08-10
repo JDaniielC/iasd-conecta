@@ -40,6 +40,39 @@ class CoverPhotoRepository {
     return CoverPhoto.fromMap(row);
   }
 
+  /// As capas de vários Grupos de uma vez, indexadas por `grupo_id`.
+  ///
+  /// Existe por causa da **lista**. Uma consulta por card seria N consultas
+  /// para N Grupos, e — pior — cada card cresceria no momento em que a sua
+  /// capa chegasse, que é exatamente o pulo de layout que FR-007 proíbe.
+  /// Resolvendo tudo antes de pintar, a lista nasce do tamanho certo.
+  Future<Map<String, CoverPhoto>> fetchForGroups(List<String> groupIds) async {
+    if (groupIds.isEmpty) return const {};
+    final rows = await _client
+        .from('fotos_capa')
+        .select()
+        .inFilter('grupo_id', groupIds);
+    return {
+      for (final row in rows as List)
+        (row as Map<String, dynamic>)['grupo_id'] as String:
+            CoverPhoto.fromMap(row),
+    };
+  }
+
+  /// O mesmo para Ações, e pelo mesmo motivo.
+  Future<Map<String, CoverPhoto>> fetchForActions(List<String> actionIds) async {
+    if (actionIds.isEmpty) return const {};
+    final rows = await _client
+        .from('fotos_capa')
+        .select()
+        .inFilter('acao_id', actionIds);
+    return {
+      for (final row in rows as List)
+        (row as Map<String, dynamic>)['acao_id'] as String:
+            CoverPhoto.fromMap(row),
+    };
+  }
+
   /// Endereço público da imagem. O bucket é público (FR-008), como o Grupo e a
   /// Ação já são.
   ///

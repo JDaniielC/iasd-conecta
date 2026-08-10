@@ -20,3 +20,19 @@ final actionCoverPhotoProvider =
     FutureProvider.autoDispose.family<CoverPhoto?, String>((ref, actionId) {
   return ref.watch(coverPhotoRepositoryProvider).fetchForAction(actionId);
 });
+
+/// As capas de uma lista de Grupos, numa consulta só.
+///
+/// A lista **espera** este provider junto com os Grupos, para os cards
+/// nascerem do tamanho final. Uma consulta por card faria a lista pular
+/// conforme cada imagem chegasse (FR-007).
+final groupCoverPhotosProvider = FutureProvider.autoDispose
+    .family<Map<String, CoverPhoto>, List<String>>((ref, groupIds) {
+  return ref.watch(coverPhotoRepositoryProvider).fetchForGroups(groupIds);
+});
+
+/// O mesmo para Ações.
+final actionCoverPhotosProvider = FutureProvider.autoDispose
+    .family<Map<String, CoverPhoto>, List<String>>((ref, actionIds) {
+  return ref.watch(coverPhotoRepositoryProvider).fetchForActions(actionIds);
+});

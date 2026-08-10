@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
@@ -95,6 +96,15 @@ class ActionDetailPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // FR-003: quem criou a Ação, e o Administrador do distrito.
+                // Ação cancelada ou já encerrada não ganha capa nova — é
+                // histórico, e a tela inteira já para de oferecer controles.
+                CoverPhotoEditor(
+                  actionId: action.id,
+                  canManage: (action.creatorId == uid || isDistrictAdmin) &&
+                      !action.isCancelled &&
+                      !isEnded,
+                ),
                 Row(
                   children: [
                     Expanded(

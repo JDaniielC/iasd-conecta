@@ -120,12 +120,12 @@ não ver mais.
 
 ### O que só gente mede
 
-- [ ] T027 **Bloqueada até existir o primeiro item** — a varredura de jargão sobre a lista real já roda em `test/unit/novidades_test.dart` (grupo `CRITERIO-DE-NOVIDADE`) e passa vacuamente com a lista vazia; a leitura por três pessoas depende de haver o que ler. **SC-001/SC-002 com o conteúdo real**: quando o primeiro item entrar na lista, rodar a varredura de jargão sobre o **texto real** (`.dart`, nome de tabela, `v1.`, `RLS`, `policy`, `constraint`) e pedir a **três pessoas do distrito** que leiam e digam com as palavras delas o que mudou. Enquanto a lista estiver vazia, esta tarefa fica aberta — e é a primeira a fazer no dia do primeiro item
+- [ ] T027 **Desbloqueada em 2026-08-10** — a varredura de jargão agora roda sobre oito textos reais e passa; falta a leitura pelas três pessoas do distrito. Antes: **Bloqueada até existir o primeiro item** — a varredura de jargão sobre a lista real já roda em `test/unit/novidades_test.dart` (grupo `CRITERIO-DE-NOVIDADE`) e passa vacuamente com a lista vazia; a leitura por três pessoas depende de haver o que ler. **SC-001/SC-002 com o conteúdo real**: quando o primeiro item entrar na lista, rodar a varredura de jargão sobre o **texto real** (`.dart`, nome de tabela, `v1.`, `RLS`, `policy`, `constraint`) e pedir a **três pessoas do distrito** que leiam e digam com as palavras delas o que mudou. Enquanto a lista estiver vazia, esta tarefa fica aberta — e é a primeira a fazer no dia do primeiro item
 - [ ] T028 **SC-006**: cronometrar alguém achando a tela a partir da Home, sem ajuda. Meta: menos de 15 segundos. Se passar, o problema é o caminho (FR-004), não a tela
 
 ### Decisão em aberto, registrada e não resolvida
 
-- [ ] T029 **Confirmar com o dono do app** se a lista nasce vazia (marco em 6/10/2026, como especificado) ou se ele quer as 21 features já entregues listadas retroativamente. **O código não muda com a resposta** — `launchDate` é uma constante e o filtro já existe. O que muda é o trabalho de escrita: 0 itens ou ~15 itens escritos à mão segundo `CRITERIO-DE-NOVIDADE.md`. Registrar a resposta aqui
+- [X] T029 **Respondida em 2026-08-10**: o dono do app pediu que as mudanças já feitas fossem escritas e ficassem visíveis. Oito Novidades escritas à mão em `news_item.dart`, com as datas reais (6, 9 e 10 de agosto de 2026). Como todas antecedem o lançamento, `launchDate` passou de 6 de outubro para 23 de julho de 2026 — senão o filtro esconderia as oito e a tela continuaria vazia. **6 de outubro segue sendo a data de lançamento ao distrito**; ela só deixou de ser o filtro de exibição, e voltar atrás é trocar uma linha
 
 ---
 

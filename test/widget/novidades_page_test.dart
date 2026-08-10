@@ -83,8 +83,11 @@ void main() {
 
   testWidgets('FR-002: a data é exibida em formato brasileiro, não ISO',
       (tester) async {
+    // Data fixa, e não derivada de `launchDate`: a primeira versão usava o
+    // marco e quebrou quando ele mudou, sem que a formatação tivesse defeito.
+    final date = DateTime.utc(2026, 10, 6);
     await pumpNewsPage(tester, items: [
-      NewsItem(date: launchDate, text: 'Alguma coisa'),
+      NewsItem(date: date, text: 'Alguma coisa'),
     ]);
 
     expect(find.text('06/10/2026'), findsOneWidget);

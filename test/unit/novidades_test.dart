@@ -33,8 +33,13 @@ void main() {
         buildItem(date: launchDate.add(const Duration(days: 20))),
       ]);
 
-      expect(list.map((i) => i.date.day).toList(), [15, 26, 16]);
-      expect(list.first.date.isAfter(list.last.date), isTrue);
+      // Afirma a ORDEM, não números de dia: a primeira versão comparava
+      // `[15, 26, 16]`, valores derivados do marco, e quebrou quando o marco
+      // mudou — sem que a ordenação tivesse defeito nenhum.
+      for (var i = 0; i < list.length - 1; i++) {
+        expect(list[i].date.isAfter(list[i + 1].date), isTrue);
+      }
+      expect(list, hasLength(3));
     });
 
     test('descarta o que é anterior ao lançamento', () {
@@ -59,10 +64,12 @@ void main() {
       expect(visibleNews(const []), isEmpty);
     });
 
-    test('a lista real do app está vazia hoje, e isso é o esperado', () {
-      // O marco é 6 de outubro de 2026. Até lá não há o que listar — e a tela
-      // diz isso em palavras, não com uma área em branco.
-      expect(visibleNews(allNews), isEmpty);
+    test('a lista real do app tem conteúdo, e nada dela é filtrado fora', () {
+      // Se um item for escrito com data anterior ao marco, ele some da tela
+      // sem erro nenhum — e ninguém percebe. Este teste é quem percebe.
+      expect(visibleNews(allNews), hasLength(allNews.length),
+          reason: 'algum item tem data anterior a launchDate e não aparece');
+      expect(allNews, isNotEmpty);
     });
   });
 

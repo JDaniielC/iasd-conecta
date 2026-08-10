@@ -48,11 +48,38 @@ imagem enviada já nasce como órfã em potencial.
 **⚠️ CRITICAL**: T004 não começa antes de T001 estar respondida.
 
 - [X] T004 Criar `supabase/migrations/<timestamp>_foto_de_capa.sql` com as seções 1, 2, 3 e 7 de [contracts/schema.sql](./contracts/schema.sql): tabela `fotos_capa` com a restrição de dono único e os dois índices únicos (FR-001), o bucket `fotos-capa` com leitura pública (FR-008), as políticas de insert/delete (FR-003, FR-011), e o **gatilho `after delete` que remove o arquivo**. **Sem policy de UPDATE, de propósito** — trocar capa é DELETE + INSERT, senão o arquivo antigo fica órfão sem aviso
-- [ ] T005 [P] Criar `lib/core/image_upload.dart`: escolher arquivo, obter **bytes** (nunca caminho — em web não existe caminho), e validar formato, tamanho e legibilidade **antes** de qualquer escrita (FR-009). A diferença entre web e mobile morre aqui e não vaza para o resto do app (research D-002)
-- [ ] T006 [P] Criar `lib/features/cover_photo/domain/cover_photo.dart` com o modelo `CoverPhoto` (id, grupoId, acaoId, caminho, enviadaPor, createdAt) e os limites de formato e tamanho como constantes nomeadas. Identificadores em inglês (Princípio I)
-- [ ] T007 Criar `lib/features/cover_photo/data/cover_photo_repository.dart`: enviar (gera **caminho novo e único a cada envio, nunca reaproveitado** — research D-001), trocar (delete + insert, nunca update) e remover. O repositório **não** apaga arquivo: quem apaga é o gatilho de T004
-- [ ] T008 Criar `lib/features/cover_photo/cover_photo_providers.dart` com o provider da capa por Grupo e por Ação
-- [ ] T009 Criar `test/integration/foto_capa_orfao_test.dart` com a base: contar objetos do bucket antes e depois de (a) remoção manual, (b) troca de capa, (c) **descarte de candidata perdedora ao fechar uma Rodada de votação**. O caso (c) é o mais importante da feature — `fechar_rodada_se_devido` apaga as perdedoras com `delete from public.acoes` (`20260724084300_rodada_votacao.sql:178`), sem passar por tela nenhuma (SC-005)
+- [X] T005 [P] Criar `lib/core/image_upload.dart`: escolher arquivo, obter **bytes** (nunca caminho — em web não existe caminho), e validar formato, tamanho e legibilidade **antes** de qualquer escrita (FR-009). A diferença entre web e mobile morre aqui e não vaza para o resto do app (research D-002)
+- [X] T006 [P] Criar `lib/features/cover_photo/domain/cover_photo.dart` com o modelo `CoverPhoto` (id, grupoId, acaoId, caminho, enviadaPor, createdAt) e os limites de formato e tamanho como constantes nomeadas. Identificadores em inglês (Princípio I)
+- [X] T007 Criar `lib/features/cover_photo/data/cover_photo_repository.dart`: enviar (gera **caminho novo e único a cada envio, nunca reaproveitado** — research D-001), trocar (delete + insert, nunca update) e remover. O repositório **não** apaga arquivo: quem apaga é o gatilho de T004
+- [X] T008 Criar `lib/features/cover_photo/cover_photo_providers.dart` com o provider da capa por Grupo e por Ação
+- [X] T009 Criar `test/integration/foto_capa_orfao_test.dart` com a base: contar objetos do bucket antes e depois de (a) remoção manual, (b) troca de capa, (c) **descarte de candidata perdedora ao fechar uma Rodada de votação**. O caso (c) é o mais importante da feature — `fechar_rodada_se_devido` apaga as perdedoras com `delete from public.acoes` (`20260724084300_rodada_votacao.sql:178`), sem passar por tela nenhuma (SC-005)
+  ✅ `lib/core/image_upload.dart`. Valida **antes** de qualquer escrita. O tipo vem dos
+  **primeiros bytes**, não da extensão — renomear um PDF para `.jpg` passaria por qualquer
+  checagem de nome e chegaria ao bucket público como um retângulo quebrado. Ler a assinatura é
+  também a checagem de legibilidade que FR-009 pede, sem decodificar a imagem inteira.
+  ✅ `lib/features/cover_photo/domain/cover_photo.dart`. `coverPhotoMaxBytes` e
+  `coverPhotoAllowedMimeTypes` são **gêmeos declarados** de `file_size_limit` e
+  `allowed_mime_types` do bucket. Existem no cliente para a pessoa saber o limite antes do
+  envio, e não descobrir no erro do fornecedor, em inglês, depois de esperar o upload.
+  ✅ `lib/features/cover_photo/data/cover_photo_repository.dart`. Ordem de envio deliberada e
+  comentada: sobe o arquivo novo, apaga a linha antiga, grava a linha nova. É a ordem que falha
+  melhor — a inversa tem a mesma perda e ainda abre janela em que a tela mostra capa que já não
+  existe. O repositório **não apaga arquivo**, por construção.
+  ✅ `lib/features/cover_photo/cover_photo_providers.dart`. Capa ausente é `null`, estado
+  normal — não erro nem carregamento eterno.
+  ✅ `test/integration/foto_capa_orfao_test.dart` — **3 casos, todos passando**, e **provados
+  vermelhos**: com `fotos_capa_enfileirar_remocao` desabilitado, os 3 falham; religado, os 3
+  passam.
+  **Desvio deliberado da tarefa**: ela pedia contar objetos do bucket antes e depois. Contar
+  `storage.objects` por SQL daria um teste que sempre passa e nunca prova nada — a
+  documentação do fornecedor (D-004) diz que apagar por SQL **não** remove o binário de
+  qualquer jeito. As asserções são sobre `public.capas_a_remover`: um caminho que não enfileira
+  é o órfão, e ele fica visível como ausência na fila.
+
+
+
+
+
 
 **Checkpoint**: `flutter analyze` limpo, migration aplicada, e o teste de órfão passando. Nada aparece na tela ainda.
 

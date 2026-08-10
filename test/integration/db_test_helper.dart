@@ -101,7 +101,7 @@ Future<void> createTestDistrictAdmin(Connection conn, String userId) async {
   await conn.execute('commit');
 }
 
-/// Igual [criarPerfilDeTeste], mas o Usuário é só Perfil — `is_anonymous =
+/// Igual [createTestProfile], mas o Usuário é só Perfil — `is_anonymous =
 /// true` (nunca fez upgrade pra Conta). Usado pra testar regras que exigem
 /// Conta (feature 005: FR-002).
 Future<void> createTestProfileWithoutAccount(

@@ -234,14 +234,35 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'proteções automaticamente a partir dela.',
             ),
             const LegalParagraph(
-              'O Apelido protege quem já está cadastrado de ter o nome '
-              'exposto — mas não substitui a autorização de um responsável. '
-              'Se você é pai, mãe ou responsável por uma criança (até 12 '
-              'anos), o cadastro dela precisa ser feito por você ou com '
-              'você presente, e é você quem aceita esta política e os '
-              'Termos de Uso em nome dela. Para adolescente (13 a 17 anos), '
-              'recomendamos o mesmo acompanhamento, mesmo quando a lei '
-              'permite alguma flexibilidade nessa faixa.',
+              'Para criança com menos de 13 anos, o cadastro só é concluído '
+              'com a autorização de um responsável: o formulário pede o nome '
+              'de quem autoriza, um contato dele, e uma caixa de autorização '
+              'separada do aceite comum. Guardamos essas três coisas mais a '
+              'data e a versão deste texto, para poder demonstrar que a '
+              'autorização foi dada.',
+            ),
+            const LegalParagraph(
+              'Duas coisas que é honesto dizer com todas as letras: o app '
+              'NÃO verifica a identidade de quem marca essa caixa — não temos '
+              'como saber se quem preencheu é mesmo o responsável — e o '
+              'contato informado é REGISTRO, não canal: nunca escrevemos para '
+              'ele. Para adolescente (13 a 17 anos), a lei não exige essa '
+              'autorização, e nós recomendamos o acompanhamento de um '
+              'responsável mesmo assim.',
+            ),
+            const LegalParagraph(
+              'O nome e o contato do responsável são dados de uma pessoa que '
+              'não usa o app. Só a própria criança e nós enxergamos esses '
+              'campos — eles nunca aparecem para outros usuários — e eles são '
+              'apagados junto quando a conta da criança é excluída.',
+            ),
+            const LegalParagraph(
+              'Se você é o responsável e quer ver, corrigir ou apagar os '
+              'dados da criança, escreva para ${LegalMetadata.contactEmail}. '
+              'O contato que você registrou no cadastro é o que usamos para '
+              'confirmar que quem está pedindo é quem autorizou. O Apelido '
+              'protege quem já está cadastrado de ter o nome exposto, mas não '
+              'substitui essa autorização.',
             ),
 
             const LegalHeading('Alterações nesta política'),

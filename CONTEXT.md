@@ -54,6 +54,8 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Propor candidata | `proposeCandidate` |
 | Abrir Rodada | `openRound` |
 | Fechar se devido | `closeIfDue` |
+| Autorização do responsável | `guardianAuthorization` |
+| Limiar de criança | `childAgeThreshold` |
 
 ### Colisões conhecidas, com decisão já tomada
 
@@ -152,6 +154,16 @@ _EN_: `Vote` / `vote`
 Nome numa lista simples mantida pelo Administrador do distrito, sem outros atributos. Usuário escolhe uma no cadastro, ou nenhuma. Grupo e Ação também carregam uma Igreja, limitada à igreja do próprio criador (não escolhe qualquer uma das 15+ do distrito) — usada pra destaque/distribuição: Usuário da Igreja X vê em destaque Grupos/Ações vinculados à Igreja X, mas continua vendo normalmente os vinculados a outras igrejas. Não é restrição de acesso.
 _EN_: `Church`
 
+**Criança**:
+Usuário com idade **abaixo de 13 anos** — 0 a 12. O corte vem do art. 14 da LGPD, que exige consentimento específico e destacado de um dos pais ou do responsável legal para tratar dado de criança; adolescente (13 a 17) não exige. O número vive num lugar só, `public.limiar_crianca()` no banco e `childAgeThreshold` no Dart, e a comparação é sempre `idade < limiar`. Criança continua sujeita a todas as proteções de menor de idade que já existiam — Apelido obrigatório e idade nunca exibida.
+_Avoid_: Menor (menor de idade vai até 17 e é outra coisa), infantil
+_EN_: `Child` / `isChild`
+
+**Responsável**:
+Adulto que autoriza o cadastro de uma Criança e assume a responsabilidade por ele. Informa nome e um contato, e marca uma autorização destacada — separada do consentimento LGPD comum, porque é ele que sustenta a base legal do art. 14. **Não tem conta no app, não tem tela e não aparece para ninguém**: o nome e o contato dele são dado pessoal de terceiro, guardados só para demonstrar a autorização, e são apagados quando a conta da Criança é excluída.
+_Avoid_: Líder/Diretor (é o responsável pelo Ministério, outra coisa), responsável pelo app (esse é o controlador), pai, mãe (o responsável legal não é necessariamente um dos dois)
+_EN_: `Guardian`
+
 **Administrador do distrito**:
 Único papel com privilégio acima dos Usuários comuns. Gerencia a lista de Igrejas do distrito, cuida de moderação e casos excepcionais, e pode cancelar qualquer Ação (além de quem a criou). Escopo exato de moderação ainda não detalhado. Exige Conta (não basta Perfil) — mesmo motivo do Líder/Diretor: papel público de alto privilégio, não pode se perder com reinstalação de aparelho. Diferente do Líder/Diretor: nunca autodeclaração — só um Administrador do distrito existente promove outro Usuário com Conta a Administrador. O primeiro Administrador do distrito é criado fora do fluxo normal do app (seed direto no banco/painel), já que não existe papel acima dele para aprovar.
 _EN_: `DistrictAdmin`
@@ -162,7 +174,7 @@ _EN_: `Ministry`
 
 **Líder/Diretor**:
 Papel de um Usuário num Ministério, com título anual: qualquer Usuário com Conta (não basta Perfil) se autodeclara Líder de um Ministério, o Administrador do distrito vê a lista de declarações pendentes e confirma (ou não). Título expira todo mês de janeiro — precisa redeclarar e ser reconfirmado a cada ano. Independente do Dono do Grupo: Líder é identificação oficial exibida no Ministério (quem é o responsável perante a igreja), Dono do Grupo é quem administra o Grupo no app — podem ser pessoas diferentes.
-_Avoid_: Pastor, responsável
+_Avoid_: Pastor, responsável pelo Ministério (a partir da feature 015, **Responsável** é termo próprio e quer dizer outra coisa — ver a entrada)
 _EN_: `Leader`
 
 **Dupla Missionária**:

@@ -24,13 +24,16 @@
 /// `null` quer dizer *desconhecida*, e preenchê-la seria um palpite
 /// apresentado como fato. Ver MAPA-DE-DADOS.md, seção Consentimento.
 abstract final class LegalMetadata {
-  /// 1.2 (feature 021): o voto deixou de ser público. A versão sobe porque o
-  /// texto exibido mudou, e um número que aponta para dois textos diferentes
-  /// para de servir para o que existe. A mudança só REDUZ exposição — não
-  /// adiciona finalidade —, então não invalida consentimento já colhido nem
-  /// exige novo aceite de quem já se cadastrou.
-  static const version = '1.2';
-  static const effectiveDate = '9 de agosto de 2026';
+  /// 1.2 (feature 021): o voto deixou de ser público.
+  ///
+  /// 1.3 (feature 015): a seção de crianças passou a descrever a autorização
+  /// do responsável, que antes não existia. Sobe porque o texto exibido mudou
+  /// de verdade — e desta vez a mudança ADICIONA um tratamento (nome e contato
+  /// de um terceiro), então quem se cadastrar a partir de agora aceita algo
+  /// diferente de quem se cadastrou antes. É exatamente a distinção que a
+  /// feature 017 passou a registrar.
+  static const version = '1.3';
+  static const effectiveDate = '10 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

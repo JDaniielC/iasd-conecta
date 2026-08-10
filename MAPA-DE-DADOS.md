@@ -7,7 +7,7 @@ de operações de tratamento (ROPA, LGPD art. 37). Toda linha tem
 
 ## Dados coletados (tabela `public.perfis`)
 
-`supabase/migrations/20260723191202_perfis_igrejas.sql:28-39` e as duas colunas de versão em `supabase/migrations/20260809220000_versao_do_consentimento.sql:139`
+`supabase/migrations/20260723191202_perfis_igrejas.sql:28-39`, as quatro colunas de responsável em `supabase/migrations/20260810000000_autorizacao_responsavel.sql:61`, e as duas colunas de versão em `supabase/migrations/20260809220000_versao_do_consentimento.sql:139`
 
 | Campo | Obrigatório | Onde é lido/exibido | Nunca exposto a outros? |
 |---|---|---|---|
@@ -20,6 +20,10 @@ de operações de tratamento (ROPA, LGPD art. 37). Toda linha tem
 | `consentimento_lgpd_aceito_em` | sim (`not null`) | o cliente manda o campo como **sinal** de que a caixa foi marcada; o **valor** é o `now()` do banco, gravado pelo gatilho `perfis_carimbar_consentimento` (feature 017) | não se aplica |
 | `consentimento_lgpd_versao` | não (anulável) | versão do texto legal vigente no aceite, carimbada pelo mesmo gatilho a partir de `versao_texto_legal_vigente()`. `NULL` = aceite anterior à feature 017, versão **desconhecida** — nunca um palpite | sim — só o Administrador do distrito vê, e em contagem agregada, nunca por pessoa (`consentimentos_por_versao()`) |
 | `consentimento_lgpd_igreja_versao` | não (anulável) | idem, para o consentimento destacado de Igreja de origem; gravada e zerada junto com `consentimento_lgpd_igreja_aceito_em` | sim, mesma regra |
+| `responsavel_nome` | sim, se `idade < 13` (constraint `autorizacao_responsavel_crianca`) | nenhuma tela lê — só é gravado no cadastro | sim, e é **dado de terceiro**: a pessoa não usa o app, não tem tela e não tem como pedir exclusão sozinha |
+| `responsavel_contato` | idem | idem. É **registro, não canal** — o app nunca escreve para este endereço | sim, mesma regra |
+| `autorizacao_responsavel_em` | idem | data da autorização; junto com a versão é o que dá valor probatório (LGPD art. 8º §2º) | sim |
+| `autorizacao_responsavel_versao` | idem | versão do texto legal vigente no aceite | sim |
 
 **Não coletado**: CPF, endereço, foto/avatar, dado de saúde, dado de pagamento
 (nenhuma ocorrência de `foto`/`avatar`/`imagem` em `lib/` ou
@@ -168,7 +172,23 @@ aviso de que os dois mudam juntos.
   (`20260723191202_perfis_igrejas.sql:35`) aceita qualquer idade a partir de 0.
 - `CATEGORIAS-DE-ACAO.md:6-18` confirma público infantil ativo: Desbravadores
   (10-15), Aventureiros (6-9).
-- Proteção existente: Apelido obrigatório abaixo de 18
-  (`apelido_obrigatorio_menor`) e idade nunca exposta. **Não existe**
-  nenhum mecanismo de consentimento parental/responsável — nem campo, nem
-  tela, nem verificação. Ver achado A-1 (o mais crítico deste levantamento).
+- **Desde a feature 015 existe consentimento de responsável.** Criança é quem tem
+  **menos de 13** — o número vive em `public.limiar_crianca()` e é espelhado por
+  `childAgeThreshold` em `profile.dart`, com teste de integração comparando os dois.
+  Abaixo do limiar, o cadastro exige nome do responsável, um contato dele e uma
+  autorização destacada, e as duas constraints `autorizacao_responsavel_crianca` e
+  `autorizacao_responsavel_so_para_crianca` garantem isso **no banco** — um `insert`
+  direto sem autorização é recusado.
+- **O que a feature NÃO faz, e precisa continuar dito**: não verifica a identidade de
+  quem marca a caixa, não notifica o responsável por nenhum canal (o contato é
+  registro), e **não corrige retroativamente** cadastros de criança anteriores a ela.
+- **Cadastro antigo de criança virou somente-leitura**: qualquer `update` naquela linha
+  é recusado pela constraint, inclusive de campo sem relação. A exclusão de conta
+  continua funcionando (a anonimização zera `idade` e as constraints passam), então o
+  direito do art. 18 VI está a salvo. A feature 016 traduz essa recusa numa frase que
+  diz o que fazer (`profile_error_message.dart`).
+- Proteções que já existiam e continuam: Apelido obrigatório abaixo de 18
+  (`apelido_obrigatorio_menor`) e idade nunca exposta.
+- **Retenção**: a anonimização de `excluir_minha_conta()` zera as quatro colunas do
+  responsável junto com as da criança — sem isso o app teria excluído a conta da
+  criança e guardado o nome e o telefone da mãe.

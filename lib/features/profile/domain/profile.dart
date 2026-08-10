@@ -1,3 +1,5 @@
+import '../../legal/legal_metadata.dart';
+
 /// Gênero do Perfil. O valor gravado no banco continua em português
 /// (`masculino`/`feminino`), porque schema e strings de UI são português por
 /// decisão da constituição — só o identificador Dart é que é inglês.
@@ -11,6 +13,17 @@ enum Gender {
 }
 
 const _ageOfMajority = 18;
+
+/// Idade abaixo da qual o cadastro exige autorização de um Responsável.
+///
+/// Espelho de `public.limiar_crianca()` no banco — **os dois mudam juntos**, e
+/// `test/integration/limiar_crianca_test.dart` falha se divergirem. A
+/// comparação é sempre `age < childAgeThreshold`, então "até 12 inclusive" se
+/// escreve 13.
+///
+/// Decidido pelo dono do app em 2026-08-09: criança é quem tem menos de 13, o
+/// recorte do art. 14 da LGPD. Adolescente (13 a 17) não exige autorização.
+const childAgeThreshold = 13;
 
 /// Dados de um Perfil ainda não enviado ao banco (formulário de cadastro).
 ///
@@ -29,6 +42,9 @@ class Profile {
     this.churchLgpdConsentAccepted = false,
     this.lgpdConsentAcceptedAt,
     this.churchLgpdConsentAcceptedAt,
+    this.guardianName,
+    this.guardianContact,
+    this.guardianAuthorizationAccepted = false,
   });
 
   final String name;
@@ -50,6 +66,19 @@ class Profile {
   final DateTime? lgpdConsentAcceptedAt;
   final DateTime? churchLgpdConsentAcceptedAt;
 
+  /// Nome e contato de quem autoriza o cadastro de uma Criança.
+  ///
+  /// **Dado pessoal de terceiro**: a pessoa não é usuária do app, não tem tela
+  /// e não aparece para ninguém. É guardado só para demonstrar a autorização, e
+  /// apagado quando a conta da Criança é excluída. Autodeclarado e **não
+  /// verificado** — o app não escreve para este contato.
+  final String? guardianName;
+  final String? guardianContact;
+
+  /// A autorização destacada, separada do consentimento LGPD comum: é ela que
+  /// sustenta a base legal do art. 14.
+  final bool guardianAuthorizationAccepted;
+
   /// Consentimento destacado e recusável independentemente pro uso de
   /// "Igreja de origem" (dado sensível, LGPD art. 11 I) — só é exigido
   /// quando uma Igreja é escolhida (ver `consentimento_igreja_destacado`
@@ -57,6 +86,10 @@ class Profile {
   final bool churchLgpdConsentAccepted;
 
   bool get isMinor => age != null && age! < _ageOfMajority;
+
+  bool get isChild => age != null && age! < childAgeThreshold;
+
+  bool get needsGuardianAuthorization => isChild;
 
   bool get needsNickname => isMinor && (nickname == null || nickname!.trim().isEmpty);
 
@@ -70,7 +103,14 @@ class Profile {
       name.trim().isNotEmpty &&
       age != null &&
       !needsNickname &&
-      (!needsChurchConsent || churchLgpdConsentAccepted);
+      (!needsChurchConsent || churchLgpdConsentAccepted) &&
+      // Os três juntos, não só a caixa: sem nome e contato, a autorização não
+      // demonstra nada — e o ônus da prova do consentimento é do controlador
+      // (LGPD art. 8º §2º).
+      (!needsGuardianAuthorization ||
+          (guardianAuthorizationAccepted &&
+              (guardianName?.trim().isNotEmpty ?? false) &&
+              (guardianContact?.trim().isNotEmpty ?? false)));
 
   /// As duas datas de consentimento aqui são **sinal**, não valor.
   ///
@@ -95,6 +135,19 @@ class Profile {
       'consentimento_lgpd_aceito_em': DateTime.now().toUtc().toIso8601String(),
       'consentimento_lgpd_igreja_aceito_em':
           needsChurchConsent ? DateTime.now().toUtc().toIso8601String() : null,
+      // Acima do limiar as quatro vão nulas, e não é zelo: a constraint
+      // `autorizacao_responsavel_so_para_crianca` recusa a linha se um adulto
+      // trouxer nome de responsável — o caso de um formulário que não limpou o
+      // estado quando a idade subiu.
+      'responsavel_nome':
+          needsGuardianAuthorization ? guardianName?.trim() : null,
+      'responsavel_contato':
+          needsGuardianAuthorization ? guardianContact?.trim() : null,
+      'autorizacao_responsavel_em': needsGuardianAuthorization
+          ? DateTime.now().toUtc().toIso8601String()
+          : null,
+      'autorizacao_responsavel_versao':
+          needsGuardianAuthorization ? LegalMetadata.version : null,
     };
   }
 

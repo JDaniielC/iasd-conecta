@@ -452,3 +452,16 @@ Gerada por `/speckit-converge` em 2026-08-10, contra o estado do código depois 
   ✅ Caso (h): apagar o Grupo leva a capa e **enfileira o arquivo**. Não existe tela que apague
   Grupo, e é por isso que o teste importa — no dia em que existir, ninguém vai lembrar de
   conferir a capa. Fecha o quarto caminho de SC-005.
+
+---
+
+## Phase 9: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 8. Os três
+achados vêm de correções feitas nas fases anteriores — não do desenho original.
+
+- [ ] T041 **CRITICAL** — Dar chave estável às famílias `groupCoverPhotosProvider` e `actionCoverPhotosProvider` em `lib/features/cover_photo/cover_photo_providers.dart`, e cobrir com teste que conte consultas. A chave hoje é uma `List<String>`, e `List` não implementa `==` por valor: `groupCoverPhotosProvider(['g1','g2']) == groupCoverPhotosProvider(['g1','g2'])` é **`false`**. Como as telas montam a lista dentro do `build`, cada quadro cria um provider novo, que dispara consulta, que completa, que reconstrói. **Medido numa réplica do padrão de `group_list_page.dart`: 31 consultas em 30 quadros** — laço de rede que não para, nas duas listagens principais do app. Opções: chave `String` (ids ordenados e concatenados), lista memoizada fora do `build`, ou um provider sem parâmetro que derive dos Grupos/Ações já carregados. **A ironia a registrar: isto entrou como conserto** — a consulta em lote existe para evitar o pulo de layout de FR-007, e o pulo era um problema menor que este. per US1, Constitution V (contradicts)
+
+- [ ] T042 Separar **enviar** de **remover** em `CoverPhotoEditor` (`canUpload` e `canRemove` em vez de um `canManage`), e ajustar `group_detail_page.dart` e `action_detail_page.dart`. A T037 corrigiu FR-011 — o Administrador precisa alcançar o que é histórico — mas `canManage` governa as duas ações juntas, então ele passou a poder **enviar** capa em Grupo arquivado e em Ação cancelada. FR-011 concede ao Administrador **remover**, não publicar. E o caso ruim é concreto: o gatilho `acoes_remover_capa_ao_cancelar` só dispara na transição `null → não-nulo` de `cancelada_em`, então uma capa enviada **depois** do cancelamento não é removida por nenhum caminho. Regra correta: `canRemove = dono/criador || Administrador`, sempre; `canUpload = (dono/criador || Administrador) && não é histórico`. per FR-011, FR-022 (contradicts)
+
+- [ ] T043 Invalidar também os providers de lista ao remover ou trocar a capa — `_invalidatePhoto` em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e `_resolve` em `lib/features/image_report/presentation/pending_reports_page.dart` invalidam só `groupCoverPhotoProvider`/`actionCoverPhotoProvider`, nunca os de lista. Remover uma capa e voltar à listagem mostra a imagem removida, porque a rota de baixo continua montada e o provider `autoDispose` mantém o valor em cache. **Hoje isto está mascarado pelo laço de T041**, que refaz a consulta a cada quadro — consertar T041 sem consertar isto faz o sintoma aparecer. As duas andam juntas. per FR-012 (missing)

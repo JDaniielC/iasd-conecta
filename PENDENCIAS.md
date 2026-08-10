@@ -17,10 +17,10 @@ Nada aqui precisa de trabalho de especificação. É só executar.
 
 | Feature | Tarefas | O que entrega | Bloqueio |
 |---|---|---|---|
-| **015** consentimento-responsavel | 34 | Autorização do responsável para menor de 13 anos | Precisa da resposta sobre o limiar de idade (ver §4) |
+| **015** consentimento-responsavel | 34 | Autorização do responsável para menor de 13 anos | **Destravada** — limiar decidido: abaixo de 13 |
 | **014** arquivar-grupo | 31 | Arquivar Grupo (deletar é impossível hoje — FKs sem `on delete`) | — |
 | **013** foto-de-capa | 35 | Foto de capa de Grupo e Ação, com aviso contra foto pessoal e de menor | — |
-| **019** producao-regiao-e-backup | 27 (6 humanas) | Confirmar a região do Supabase e fechar a decisão de backup | 6 tarefas exigem acesso ao painel — só você |
+| **019** producao-regiao-e-backup | 27 | Registrar a região confirmada e o backup como risco aceito | **Destravada** — virou quase toda documento |
 | **020** deploy-gcs-cdn | 32 (7 humanas) | Publicar em Cloud Storage + CDN, com invalidação de cache | 7 tarefas exigem conta GCP — só você |
 
 **Sugestão de ordem**: 015 → 014 → 013, porque 015 é conformidade com prazo (menor de idade
@@ -108,47 +108,49 @@ esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 
 ---
 
-## 4. Decisões que dependem de você
+## 4. Decisões — respondidas em 2026-08-09 pelo dono do app
 
-### 4.1 Limiar de idade para exigir autorização do responsável (trava a 015)
+### 4.1 Limiar de idade — **abaixo de 13** ✅ (destrava a 015)
 
-A 015 pôs o número numa função (`public.limiar_crianca()`) justamente para que a resposta seja
-de duas linhas. A LGPD art. 14 fala em criança (até 12) e adolescente (13 a 17), com
-consentimento específico de um dos pais só para **criança**. O app tem público de 6 anos para
-cima (Aventureiros 6–9, Desbravadores 10–15).
+Autorização do responsável passa a ser exigida para **menor de 13 anos**, alinhado ao art. 14
+da LGPD (criança até 12; adolescente de 13 a 17 não exige consentimento de um dos pais).
+A 015 já previu o número numa função (`public.limiar_crianca()`), então é uma linha.
 
-**Pergunta**: exigir autorização do responsável abaixo de 13, ou abaixo de 18?
+### 4.2 Região do Supabase — **a documentação está correta** ✅ (destrava parte da 019)
 
-### 4.2 Região do Supabase de produção (trava a 019)
+O dono do app confirma `sa-east-1 (São Paulo, Brasil)`.
 
-Quatro documentos afirmam `sa-east-1` citando a mesma decisão, e nenhum é leitura do painel. Se
-estiver errado, a Política de Privacidade afirma algo falso hoje — ela diz que não há
-transferência internacional.
+**Registrar com honestidade sobre a natureza da evidência**: isto é **afirmação do
+controlador**, não leitura do painel colada no repositório. É base suficiente para a
+Política parar de ser tratada como possivelmente falsa, e a 019 deve gravar assim — quem ler
+daqui a um ano precisa saber que a fonte é a palavra do controlador, com data, e não um
+`select` nem uma captura de tela. Se um dia for preciso provar a terceiro, aí sim vale
+anexar a evidência do painel.
 
-**Pergunta**: você consegue abrir o painel e confirmar a região? É o item que mais pesa, porque
-é o único onde o app **afirma** algo a titulares.
+O comentário `Ainda não provisionada` em `legal_metadata.dart` sai — ele está errado desde
+que produção passou a existir.
 
-### 4.3 Backup do banco (trava a 019)
+### 4.3 Backup — **só os usuários; o resto é descartável** ✅ (destrava a 019)
 
-Supabase Free não tem backup automático nem PITR — confirmado na documentação. Há dado pessoal
-de uma comunidade real num banco sem estratégia de recuperação declarada.
+Decisão: **não** contratar backup automático. O que precisa sobreviver é o **cadastro das
+pessoas** (`auth.users` + `public.perfis`); Grupos, Ações, Rodadas, votos, confirmações e
+declarações de liderança são passíveis de deleção e podem ser recriados pela comunidade.
 
-**Pergunta**: pagar o tier com backup, montar rotina própria, ou aceitar o risco por escrito?
-As três são respostas válidas; a que não vale é continuar sem resposta.
+A 019 documenta isso como **risco aceito**, com quem aceitou e quando — não como ausência de
+decisão. E precisa dizer o que "perder o resto" significa na prática para quem usa o app.
 
-### 4.4 Alcance da visibilidade do voto (já implementado, reversível)
+**Consequência que a 019 tem de tratar, não contornar**: se existe qualquer cópia do cadastro,
+ela contém dado pessoal, e a Política precisa dizer que ela existe, por quanto tempo é
+guardada, e o que acontece com ela quando alguém pede exclusão de conta (art. 18, VI). Um
+backup de `perfis` esquecido é justamente o caso em que o app promete apagar e não apaga.
 
-Implementei "só a própria pessoa lê o próprio voto". A Política antiga prometia "entre os
-participantes do Grupo". Escolhi o mais restrito porque nenhuma tela consome voto alheio.
+### 4.4 Alcance da visibilidade do voto — **de acordo** ✅
 
-**Pergunta**: confirma? Reverter é uma expressão SQL e uma frase.
+Fica "só a própria pessoa lê o próprio voto", como implementado na feature 021. Nada a mudar.
 
-### 4.5 Ordem das três features de produto
+### 4.5 Ordem das features de produto
 
-**Pergunta**: 013 (foto de capa), 014 (arquivar Grupo) — alguma delas é urgente para o uso
-real, ou seguimos pela conformidade primeiro (015)?
-
----
+Respondida na prática: **014 primeiro** (arquivar Grupo), por escolha do dono do app.
 
 ## 5. Conferido e fechado — não reinvestigar
 
@@ -180,10 +182,10 @@ Registrado para ninguém gastar tempo de novo.
 | 012 identificadores-em-ingles | Entregue |
 | 013 foto-de-capa | **Especificada, não implementada** (35 tarefas) |
 | 014 arquivar-grupo | **Especificada, não implementada** (31 tarefas) |
-| 015 consentimento-responsavel | **Especificada, não implementada** (34 tarefas) — trava em §4.1 |
+| 015 consentimento-responsavel | **Especificada, não implementada** (34 tarefas) — destravada |
 | 016 meu-perfil | Entregue; 3 verificações manuais abertas |
 | 017 versao-do-consentimento | Entregue; 1 verificação manual aberta |
 | 018 visibilidade-de-liderancas | Entregue; 1 verificação manual aberta |
-| 019 producao-regiao-e-backup | **Especificada, não implementada** (27) — trava em §4.2 e §4.3 |
+| 019 producao-regiao-e-backup | **Especificada, não implementada** (27) — destravada; vira trabalho de documento |
 | 020 deploy-gcs-cdn | **Especificada, não implementada** (32) — precisa de acesso GCP |
 | 021 visibilidade-do-voto | Entregue; 1 verificação manual aberta |

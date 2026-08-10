@@ -62,6 +62,13 @@ privilégio, não vulnerabilidade viva — e é assim que deve ser descrito, sem
 Vale spec porque o conserto (`revoke truncate, references, trigger`) toca todas as tabelas e
 precisa de teste que prove que nada legítimo quebrou.
 
+**Deixou de ser teórico em 2026-08-10.** A feature 013 mostrou o dano concreto: `TRUNCATE`
+ignora RLS **e não dispara gatilho `after delete`**. Na 013, uma única instrução apagaria todas
+as linhas de capa sem enfileirar nada, e **todos os arquivos do bucket virariam órfãos de uma
+vez** — derrubando o desenho inteiro da feature por uma porta que ela nem abriu. A 013 fechou
+para as suas duas tabelas; **as outras 14 continuam abertas**, e agora se sabe que a
+consequência depende do que cada tabela sustenta.
+
 ### 2.3 Cadastro antigo de criança ficou somente-leitura
 
 Consequência conhecida e aceita da feature 015: um cadastro de criança anterior a ela não tem

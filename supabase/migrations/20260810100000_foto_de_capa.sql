@@ -174,6 +174,43 @@ alter table public.capas_a_remover enable row level security;
 revoke all on public.capas_a_remover from anon, authenticated;
 
 -- =====================================================================
+-- 3b. Os GRANTs — sem eles, tudo acima é código morto
+-- =====================================================================
+--
+-- Política RLS não concede acesso: ela FILTRA um acesso que o grant já deu.
+-- A primeira versão desta migration não tinha grant nenhum, e o resultado
+-- medido foi `permission denied for table fotos_capa` para `authenticated` —
+-- ou seja, a feature não funcionaria na primeira tentativa de uso, com todas
+-- as políticas acima escritas e corretas. Pego por revisão de segurança
+-- automatizada.
+grant select on public.fotos_capa to anon, authenticated;
+grant insert, delete on public.fotos_capa to authenticated;
+
+-- Sem `update`, de propósito: trocar a capa é DELETE + INSERT, e não existe
+-- policy de update. Conceder o privilégio sem policy seria deixar uma porta
+-- que só não abre por causa de outra tranca.
+
+-- ---------------------------------------------------------------------
+-- E o TRUNCATE, que é o que faz este bloco importar de verdade
+-- ---------------------------------------------------------------------
+-- `anon` e `authenticated` herdam TRUNCATE, REFERENCES e TRIGGER do default
+-- do fornecedor, em todas as tabelas do schema. Medido: como `authenticated`,
+-- `truncate public.fotos_capa` FUNCIONA.
+--
+-- E TRUNCATE **ignora RLS** e **não dispara gatilho `after delete`**. Ou seja:
+-- uma única instrução apagaria todas as linhas de capa sem enfileirar nada, e
+-- **todos os arquivos do bucket virariam órfãos de uma vez** — exatamente o
+-- que a fila da seção 2 existe para impedir. O desenho inteiro da feature cai
+-- por uma porta que nem foi aberta por ela.
+--
+-- Aqui isto é fechado para as duas tabelas desta feature. As outras 14 tabelas
+-- do schema continuam com o mesmo problema — está registrado em
+-- PENDENCIAS.md §2.2 como achado que precisa de spec própria, porque mexer no
+-- grant de todas exige teste provando que nada legítimo quebrou.
+revoke truncate, references, trigger on public.fotos_capa from anon, authenticated;
+revoke truncate, references, trigger on public.capas_a_remover from anon, authenticated;
+
+-- =====================================================================
 -- 4. Bucket
 -- =====================================================================
 --

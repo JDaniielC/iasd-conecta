@@ -18,17 +18,16 @@ Nada aqui precisa de trabalho de especificação. É só executar.
 
 | Feature | Tarefas | O que entrega | Bloqueio |
 |---|---|---|---|
-| **013** foto-de-capa | 35 | Foto de capa de Grupo e Ação, com aviso contra foto pessoal e de menor | — |
-| **019** producao-regiao-e-backup | 27 | Registrar a região confirmada e o backup como risco aceito | — (virou quase todo documento) |
+| **013** foto-de-capa | 31 abertas de 35 | Foto de capa de Grupo e Ação, com aviso contra foto pessoal e de menor | — (branch `013-foto-de-capa`, fundação pronta) |
 | **020** deploy-gcs-cdn | 32 (7 humanas) | Publicar em Cloud Storage + CDN, com invalidação de cache | 7 tarefas exigem conta GCP — só você |
 
 **Entregues desde a última versão desta lista**: 014 (arquivar Grupo), 015 (autorização do
 responsável), 016 (Meu Perfil), 017 (versão do consentimento), 018 (visibilidade de
-lideranças) e 021 (visibilidade do voto).
+lideranças), 019 (região e backup), 021 (visibilidade do voto) e 022 (Novidades).
 
-**Sugestão de ordem**: **019 primeiro** — virou quase todo documento depois das suas
-respostas, e é o que fecha as afirmações que a Política faz a titulares. Depois 013 (produto).
-A 020 espera o acesso GCP.
+**Sugestão de ordem**: **013**, que é a única de produto que sobrou — o que falta nela é o
+app, não a infraestrutura. A 020 espera o acesso GCP e destrava as duas verificações que
+exigem produção no ar.
 
 ---
 
@@ -140,29 +139,40 @@ A 015 já previu o número numa função (`public.limiar_crianca()`), então é 
 
 O dono do app confirma `sa-east-1 (São Paulo, Brasil)`.
 
-**Registrar com honestidade sobre a natureza da evidência**: isto é **afirmação do
-controlador**, não leitura do painel colada no repositório. É base suficiente para a
-Política parar de ser tratada como possivelmente falsa, e a 019 deve gravar assim — quem ler
-daqui a um ano precisa saber que a fonte é a palavra do controlador, com data, e não um
-`select` nem uma captura de tela. Se um dia for preciso provar a terceiro, aí sim vale
-anexar a evidência do painel.
+→ **FECHADO em 2026-08-10 pela feature 019, e a evidência subiu de nível.** Este item pedia
+que se gravasse com honestidade que a fonte era *afirmação do controlador*, e não leitura do
+painel. Deixou de ser: a saída literal de `supabase projects list` está colada em
+`INFRA-PRODUCAO.md` § 2 e em `REVISAO-JURIDICA.md` item 4 — projeto `iasd-conecta-vsa`,
+`mbfcnebyxzoagwatjxuh`, região **South America (São Paulo)**, criado em 2026-08-07.
+A palavra do controlador estava certa.
 
-O comentário `Ainda não provisionada` em `legal_metadata.dart` sai — ele está errado desde
-que produção passou a existir.
+O comentário `Ainda não provisionada` em `legal_metadata.dart` saiu, substituído pelo
+registro da verificação com data. Ele esteve errado por exatamente três dias — de 07/08,
+quando o projeto foi criado, a 10/08.
 
-### 4.3 Backup — **só os usuários; o resto é descartável** ✅ (destrava a 019)
+### 4.3 Backup — ~~só os usuários; o resto é descartável~~ → **nada, risco aceito** ✅
 
-Decisão: **não** contratar backup automático. O que precisa sobreviver é o **cadastro das
-pessoas** (`auth.users` + `public.perfis`); Grupos, Ações, Rodadas, votos, confirmações e
-declarações de liderança são passíveis de deleção e podem ser recriados pela comunidade.
+**Decisão de 2026-08-09 (superada)**: não contratar backup automático, mas manter vivo o
+cadastro das pessoas (`auth.users` + `public.perfis`); Grupos, Ações, Rodadas, votos,
+confirmações e declarações de liderança seriam descartáveis e recriáveis pela comunidade.
 
-A 019 documenta isso como **risco aceito**, com quem aceitou e quando — não como ausência de
-decisão. E precisa dizer o que "perder o resto" significa na prática para quem usa o app.
+**Decisão de 2026-08-10, que prevalece**: **opção C — não há backup nenhum.** Nem do
+cadastro. O dono do app escolheu assim ao ver as opções com custo e RPO na mesa.
 
-**Consequência que a 019 tem de tratar, não contornar**: se existe qualquer cópia do cadastro,
-ela contém dado pessoal, e a Política precisa dizer que ela existe, por quanto tempo é
-guardada, e o que acontece com ela quando alguém pede exclusão de conta (art. 18, VI). Um
-backup de `perfis` esquecido é justamente o caso em que o app promete apagar e não apaga.
+A diferença entre as duas não é de grau: em 09/08, o cadastro das pessoas *precisava
+sobreviver* a um incidente; a partir de 10/08, ele não sobrevive. Num incidente de perda do
+banco, **perde-se tudo desde o início** — nome, apelido, telefone, igreja, além dos Grupos e
+das Ações. A comunidade recomeça do zero, cadastro incluído.
+
+Registrado como risco aceito, com quem aceitou e quando, em `REVISAO-JURIDICA.md` item 4-B
+(arquivo não versionado — o repositório é público). `INFRA-PRODUCAO.md` § 3 diz, na parte
+pública, que a decisão existe e onde ela mora, sem revelar qual foi.
+
+**A consequência que este item mandava tratar deixou de existir, e é o único ganho da
+escolha**: sem cópia nenhuma, não há dado pessoal esquecido fora do banco vivo. A promessa da
+Política — *"Não há como desfazer nem recuperar"* — passa a ser literalmente verdadeira, e a
+anonimização da feature 009 alcança o único lugar onde o dado existe. Por isso nenhuma frase
+da Política mudou e `LegalMetadata.version` segue em `1.3`.
 
 ### 4.4 Alcance da visibilidade do voto — **de acordo** ✅
 
@@ -202,15 +212,16 @@ Registrado para ninguém gastar tempo de novo.
 | Feature | Situação |
 |---|---|
 | 001–009 | Entregues |
-| 010 pagina-home | Entregue; 3 verificações de acessibilidade abertas |
+| 010 pagina-home | Entregue; alvos de toque corrigidos e remedidos (48 px) em 10/08 |
 | 011 acoes-titulo-e-encerramento | Entregue; 1 medição com gente aberta |
 | 012 identificadores-em-ingles | Entregue |
-| 013 foto-de-capa | **Especificada, não implementada** (35 tarefas) |
-| 014 arquivar-grupo | **Especificada, não implementada** (31 tarefas) |
-| 015 consentimento-responsavel | **Especificada, não implementada** (34 tarefas) — destravada |
-| 016 meu-perfil | Entregue; 3 verificações manuais abertas |
-| 017 versao-do-consentimento | Entregue; 1 verificação manual aberta |
-| 018 visibilidade-de-liderancas | Entregue; 1 verificação manual aberta |
-| 019 producao-regiao-e-backup | **Especificada, não implementada** (27) — destravada; vira trabalho de documento |
+| 013 foto-de-capa | **Em implementação** — branch `013-foto-de-capa`, 4 de 35 |
+| 014 arquivar-grupo | Entregue; 16 itens do quickstart esperam produção no ar |
+| 015 consentimento-responsavel | Entregue; 1 medição com gente aberta |
+| 016 meu-perfil | Entregue; 1 verificação de tela e 2 com gente abertas |
+| 017 versao-do-consentimento | Entregue; 1 verificação de tela aberta |
+| 018 visibilidade-de-liderancas | **Entregue, sem pendência** |
+| 019 producao-regiao-e-backup | **Entregue, sem pendência** — região verificada em 10/08, backup decidido |
 | 020 deploy-gcs-cdn | **Especificada, não implementada** (32) — precisa de acesso GCP |
-| 021 visibilidade-do-voto | Entregue; 1 verificação manual aberta |
+| 021 visibilidade-do-voto | **Entregue, sem pendência** |
+| 022 novidades | Entregue; a leitura por 3 pessoas do distrito continua aberta |

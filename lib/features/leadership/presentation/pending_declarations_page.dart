@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../district_admin/district_admin_providers.dart';
 import '../../group/group_providers.dart';
 import '../domain/leadership_declaration.dart';
 import '../leadership_providers.dart';
@@ -34,6 +35,31 @@ class PendingDeclarationsPage extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final isDistrictAdmin = ref.watch(isDistrictAdminProvider);
+
+    // O gate mora aqui, e não no `redirect` do go_router, por um motivo
+    // medido: `isDistrictAdminProvider` é assíncrono, e no instante da
+    // navegação ele ainda vale nulo. Um guarda de rota escrito como
+    // `value == false` nunca dispara — foi o que aconteceu na primeira
+    // tentativa de conserto, que passou no código e falhou no navegador.
+    // Aqui a tela espera a resposta chegar, que é o que ela sabe fazer.
+    //
+    // Sem isto, um Usuário comum que digitasse esta rota via a PRÓPRIA
+    // declaração pendente — a policy da feature 018 deixa, e está certa em
+    // deixar — com botões Confirmar e Rejeitar que o banco recusa em silêncio.
+    // Quem quer ver o estado da própria declaração tem a página do Grupo, que
+    // diz "Sua declaração está pendente de confirmação".
+    return isDistrictAdmin.when(
+      loading: () => const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      ),
+      error: (_, _) => const _NotForYou(),
+      data: (ehAdmin) =>
+          ehAdmin ? _buildList(context, ref) : const _NotForYou(),
+    );
+  }
+
+  Widget _buildList(BuildContext context, WidgetRef ref) {
     final pendingAsync = ref.watch(pendingDeclarationsProvider);
 
     return Scaffold(
@@ -101,6 +127,29 @@ class _PendingCard extends ConsumerWidget {
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Quem não é Administrador do distrito não decide declaração de ninguém.
+class _NotForYou extends StatelessWidget {
+  const _NotForYou();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Declarações pendentes')),
+      body: const Center(
+        child: Padding(
+          padding: EdgeInsets.all(AppSpacing.lg),
+          child: Text(
+            'Só o Administrador do distrito decide declarações de Líder ou '
+            'Diretor. Para ver como está a sua, abra o Grupo/Ministério onde '
+            'você se declarou.',
+            textAlign: TextAlign.center,
+          ),
         ),
       ),
     );

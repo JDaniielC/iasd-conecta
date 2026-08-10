@@ -125,12 +125,17 @@ aviso de que os dois mudam juntos.
 ## Terceiros
 
 - **Supabase** — hospeda Postgres + Auth + API. `lib/core/supabase_client.dart:14-17`
-  lê `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` do `.env`; hoje só existe
-  configuração para **ambiente local** (`http://127.0.0.1:54321`,
-  `.env.example:1`, `supabase/config.toml`). **Nenhuma configuração de
-  produção (região do projeto Supabase Cloud, ou self-host) existe no
-  repositório.** Sem isso, a política não pode declarar transferência
-  internacional com precisão — ver achado A-3.
+  lê `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` do `.env`. **Produção existe**:
+  `.env.prod` aponta para um projeto Supabase Cloud real, e
+  `.github/workflows/deploy-web.yml:33-42` injeta os secrets `SUPABASE_URL` e
+  `SUPABASE_PUBLISHABLE_KEY` no build web. O ambiente local
+  (`http://127.0.0.1:54321`, `.env.example`, `supabase/config.toml`) continua
+  existindo em paralelo.
+  A região exigida (`sa-east-1`, São Paulo) e a **verificação da região que a
+  produção de fato usa** ficam em `INFRA-PRODUCAO.md` — é de lá que sai a
+  base para a política afirmar, ou não, que há transferência internacional.
+  Enquanto essa verificação não estiver preenchida, a afirmação da política
+  descreve uma decisão tomada, não um fato conferido.
 - Nenhum outro SDK de terceiro no `pubspec.yaml:33-42`: sem analytics, sem
   push notification, sem e-mail/SMS transacional, sem pagamento.
 

@@ -17,6 +17,12 @@ abstract final class AppSpacing {
   static const xl = 32.0;
 }
 
+/// Altura mínima de qualquer alvo tocável.
+///
+/// 48, e não 44: 44 é o mínimo da Apple e 48 o do Material. Escolher o maior
+/// atende os dois, e a diferença de 4 px não aperta nenhuma tela deste app.
+const _minTapTarget = 48.0;
+
 abstract final class AppTheme {
   static ThemeData light() {
     final colorScheme = ColorScheme.fromSeed(
@@ -47,10 +53,31 @@ abstract final class AppTheme {
           borderRadius: BorderRadius.circular(16),
         ),
       ),
+      // SC-004 da feature 010 exige 44×44 em todo alvo tocável, e a conferência
+      // manual de 2026-08-10 mediu os botões da Home entre 32 e 36 px de
+      // altura — nenhum passava. A causa é o padrão do Material, que encolhe o
+      // alvo em telas densas; a largura nunca foi o problema, a altura sempre
+      // foi.
+      //
+      // `MaterialTapTargetSize.padded` garante o mínimo de 48 do Material
+      // mesmo quando o visual é menor, e o `minimumSize` fixa a altura visível.
+      // Os dois juntos, porque um sozinho deixa passar: `padded` aumenta a área
+      // sem aumentar o desenho, e quem olha a tela continua vendo um botão
+      // apertado.
+      materialTapTargetSize: MaterialTapTargetSize.padded,
+      // E `visualDensity` padrão, não o adaptativo.
+      //
+      // O adaptativo é o default e, em desktop e web, subtrai até 8 px na
+      // vertical. Foi ele que transformou o mínimo de 48 em 40 medidos — o
+      // conserto anterior parecia certo no código e continuava reprovando na
+      // tela. Só a medição no navegador mostrou.
+      visualDensity: VisualDensity.standard,
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.navy,
           foregroundColor: Colors.white,
+          minimumSize: const Size(0, _minTapTarget),
+          tapTargetSize: MaterialTapTargetSize.padded,
           padding: const EdgeInsets.symmetric(
             vertical: AppSpacing.md,
             horizontal: AppSpacing.lg,
@@ -58,6 +85,25 @@ abstract final class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          minimumSize: const Size(0, _minTapTarget),
+          tapTargetSize: MaterialTapTargetSize.padded,
+          padding: const EdgeInsets.symmetric(
+            vertical: AppSpacing.md,
+            horizontal: AppSpacing.lg,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          minimumSize: const Size(0, _minTapTarget),
+          tapTargetSize: MaterialTapTargetSize.padded,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(

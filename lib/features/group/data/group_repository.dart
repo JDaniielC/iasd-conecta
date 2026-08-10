@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../profile/domain/profile.dart';
+import '../domain/archive_preview.dart';
 import '../domain/group_category.dart';
 import '../domain/group.dart';
 
@@ -15,9 +16,91 @@ class GroupRepository {
 
   final SupabaseClient _client;
 
+  /// Só Grupos ativos. Grupo arquivado sai do caminho de todo mundo (FR-010)
+  /// — inclusive de quem participava, que não deve mais ser lembrado dele.
   Future<List<Group>> fetchGroups() async {
+    final rows = await _client
+        .from('grupos')
+        .select()
+        .filter('arquivado_em', 'is', null)
+        .order('created_at');
+    return rows.map(Group.fromMap).toList();
+  }
+
+  /// Todos os Grupos, **inclusive os arquivados**.
+  ///
+  /// Existe por um motivo só: resolver a Igreja de uma Ação
+  /// (`actionsWithChurchProvider`). Ação passada de um Grupo arquivado
+  /// continua existindo e continua pertencendo àquela Igreja — se esta consulta
+  /// filtrasse arquivados, essas Ações perderiam a Igreja e sumiriam do
+  /// agrupamento da lista, em silêncio. Não usar para listar Grupo.
+  Future<List<Group>> fetchAllGroups() async {
     final rows = await _client.from('grupos').select().order('created_at');
     return rows.map(Group.fromMap).toList();
+  }
+
+  /// Só o Administrador do distrito tem tela para isto (FR-019).
+  Future<List<Group>> fetchArchivedGroups() async {
+    final rows = await _client
+        .from('grupos')
+        .select()
+        .not('arquivado_em', 'is', null)
+        .order('arquivado_em', ascending: false);
+    return rows.map(Group.fromMap).toList();
+  }
+
+  /// Os quatro números que a confirmação de arquivamento mostra.
+  ///
+  /// Quatro consultas de leitura, sem RPC nova: as tabelas já têm select
+  /// público e nenhum destes números é segredo. Inventar uma função de banco
+  /// aqui seria complexidade sem regra que a justifique (Princípio V).
+  Future<ArchivePreview> fetchArchivePreview(String groupId) async {
+    final now = DateTime.now().toUtc().toIso8601String();
+
+    final futureActions = await _client
+        .from('acoes')
+        .select('id')
+        .eq('grupo_id', groupId)
+        .eq('confirmada', true)
+        .filter('cancelada_em', 'is', null)
+        .gt('data_hora', now);
+    final futureActionIds =
+        futureActions.map((row) => row['id'] as String).toList();
+
+    var attendances = 0;
+    if (futureActionIds.isNotEmpty) {
+      final rows = await _client
+          .from('confirmacoes_acao')
+          .select('acao_id')
+          .inFilter('acao_id', futureActionIds);
+      attendances = rows.length;
+    }
+
+    final openRounds = await _client
+        .from('rodadas_votacao')
+        .select('id')
+        .eq('grupo_id', groupId)
+        .filter('fechada_em', 'is', null);
+
+    final members = await _client
+        .from('participacoes_grupo')
+        .select('usuario_id')
+        .eq('grupo_id', groupId);
+
+    return ArchivePreview(
+      futureActions: futureActionIds.length,
+      confirmedAttendances: attendances,
+      openVotingRounds: openRounds.length,
+      members: members.length,
+    );
+  }
+
+  Future<void> archiveGroup(String groupId) async {
+    await _client.rpc('arquivar_grupo', params: {'p_grupo_id': groupId});
+  }
+
+  Future<void> unarchiveGroup(String groupId) async {
+    await _client.rpc('desarquivar_grupo', params: {'p_grupo_id': groupId});
   }
 
   Future<Group> fetchGroup(String id) async {

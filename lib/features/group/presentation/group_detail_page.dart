@@ -6,7 +6,9 @@ import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../leadership/leadership_providers.dart';
 import '../../profile/domain/profile_guard.dart';
+import '../../district_admin/district_admin_providers.dart';
 import '../group_providers.dart';
+import 'archive_group_sheet.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
 /// (FR-005). Participar/sair exige Perfil (FR-006/FR-007/FR-008/FR-009).
@@ -43,6 +45,18 @@ class GroupDetailPage extends ConsumerWidget {
     }
   }
 
+  Future<void> _archive(BuildContext context, WidgetRef ref) async {
+    final archived = await showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      builder: (_) => ArchiveGroupSheet(groupId: groupId),
+    );
+    if (archived != true || !context.mounted) return;
+    ref.invalidate(groupProvider(groupId));
+    ref.invalidate(groupsProvider);
+    context.go('/grupos');
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupAsync = ref.watch(groupProvider(groupId));
@@ -55,6 +69,8 @@ class GroupDetailPage extends ConsumerWidget {
       body: groupAsync.when(
         data: (group) {
           final isOwner = group.isOwner(uid);
+          final isDistrictAdmin =
+              ref.watch(isDistrictAdminProvider).value ?? false;
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -65,24 +81,59 @@ class GroupDetailPage extends ConsumerWidget {
                     Expanded(
                       child: Text(group.name, style: Theme.of(context).textTheme.headlineMedium),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.how_to_vote_outlined),
-                      tooltip: 'Rodadas de Votação',
-                      onPressed: () => context.push('/grupos/$groupId/rodadas'),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.badge_outlined),
-                      tooltip: 'Líder/Diretor de Ministério',
-                      onPressed: () => context.push('/grupos/$groupId/leadership/declare'),
-                    ),
-                    if (isOwner)
+                    if (!group.isArchived) ...[
+                      IconButton(
+                        icon: const Icon(Icons.how_to_vote_outlined),
+                        tooltip: 'Rodadas de Votação',
+                        onPressed: () =>
+                            context.push('/grupos/$groupId/rodadas'),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.badge_outlined),
+                        tooltip: 'Líder/Diretor de Ministério',
+                        onPressed: () => context
+                            .push('/grupos/$groupId/leadership/declare'),
+                      ),
+                    ],
+                    if (isOwner && !group.isArchived)
                       IconButton(
                         icon: const Icon(Icons.edit_outlined),
                         onPressed: () => context.push('/grupos/$groupId/editar'),
                       ),
+                    // FR-001/FR-002: Dono do Grupo ou Administrador do
+                    // distrito, e mais ninguém. Grupo já arquivado não oferece
+                    // a opção de novo (FR-009). Quem garante é a função no
+                    // banco; isto aqui é só não oferecer o que seria recusado.
+                    if ((isOwner || isDistrictAdmin) && !group.isArchived)
+                      IconButton(
+                        icon: const Icon(Icons.archive_outlined),
+                        tooltip: 'Arquivar Grupo/Ministério',
+                        onPressed: () => _archive(context, ref),
+                      ),
                   ],
                 ),
                 const SizedBox(height: AppSpacing.sm),
+                if (group.isArchived) ...[
+                  // FR-013: alcançado por link direto, ele se apresenta como
+                  // arquivado — não como erro. Quem chegou aqui por um link
+                  // antigo merece saber o que aconteceu.
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(AppSpacing.md),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Text(
+                      'Este Grupo/Ministério foi arquivado. Ele não aceita '
+                      'novos participantes, Ações nem Rodadas de votação. '
+                      'O que já aconteceu continua registrado.',
+                    ),
+                  ),
+                  const SizedBox(height: AppSpacing.md),
+                ],
                 Text(group.category),
                 if (group.schedule != null || group.local != null) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -96,10 +147,15 @@ class GroupDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 _LeadersSection(groupId: groupId),
                 const SizedBox(height: AppSpacing.lg),
-                ElevatedButton(
-                  onPressed: participa ? () => _leave(context, ref) : () => _join(context, ref),
-                  child: Text(participa ? 'Sair do Grupo/Ministério' : 'Participar'),
-                ),
+                if (!group.isArchived)
+                  ElevatedButton(
+                    onPressed: participa
+                        ? () => _leave(context, ref)
+                        : () => _join(context, ref),
+                    child: Text(
+                      participa ? 'Sair do Grupo/Ministério' : 'Participar',
+                    ),
+                  ),
                 const SizedBox(height: AppSpacing.lg),
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(

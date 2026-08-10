@@ -36,7 +36,7 @@ alternativa seria quatro migrations para uma feature, contra o padrão do reposi
 
 **Purpose**: o vocabulário antes do código. A constituição exige, e é uma tarefa de minutos.
 
-- [ ] T001 Em `CONTEXT.md`, adicionar as entradas **Arquivar o Grupo** e **Grupo arquivado**, cada uma com `_EN_` (`archiveGroup` / `ArchivedGroup`) e `_Avoid_`. Grupo arquivado ≠ Grupo apagado — apagar Grupo **não existe** no app, e a entrada precisa dizer isso para ninguém confundir os dois (FR-023, Princípio I). **Commitar antes de qualquer código**
+- [X] T001 Em `CONTEXT.md`, adicionar as entradas **Arquivar o Grupo** e **Grupo arquivado**, cada uma com `_EN_` (`archiveGroup` / `ArchivedGroup`) e `_Avoid_`. Grupo arquivado ≠ Grupo apagado — apagar Grupo **não existe** no app, e a entrada precisa dizer isso para ninguém confundir os dois (FR-023, Princípio I). **Commitar antes de qualquer código**
 
 ---
 
@@ -44,9 +44,9 @@ alternativa seria quatro migrations para uma feature, contra o padrão do reposi
 
 **Purpose**: o estado existir. Sem isto, nenhuma história começa.
 
-- [ ] T002 Criar `supabase/migrations/<timestamp>_arquivar_grupo.sql` com a seção 1 de [contracts/schema.sql](./contracts/schema.sql): colunas `arquivado_em` e `arquivado_por` em `public.grupos` — são elas que registram quem arquivou e quando (FR-008) —, os dois `comment on column`, e o índice parcial `grupos_ativos`. Aplicar com `supabase db reset` e conferir que as 17 migrations anteriores continuam subindo
-- [ ] T003 Em `lib/features/group/domain/group.dart`, adicionar `archivedAt`, `archivedBy` e o derivado `bool get isArchived`, mais o mapeamento em `Group.fromMap` (`'arquivado_em'`, `'arquivado_por'` — chaves em português, são o contrato com o banco)
-- [ ] T004 [P] Criar `test/unit/group_archive_test.dart`: `isArchived` é falso com `archivedAt` nulo e verdadeiro com data; `fromMap` lê as duas chaves novas (FR-010)
+- [X] T002 Criar `supabase/migrations/<timestamp>_arquivar_grupo.sql` com a seção 1 de [contracts/schema.sql](./contracts/schema.sql): colunas `arquivado_em` e `arquivado_por` em `public.grupos` — são elas que registram quem arquivou e quando (FR-008) —, os dois `comment on column`, e o índice parcial `grupos_ativos`. Aplicar com `supabase db reset` e conferir que as 17 migrations anteriores continuam subindo
+- [X] T003 Em `lib/features/group/domain/group.dart`, adicionar `archivedAt`, `archivedBy` e o derivado `bool get isArchived`, mais o mapeamento em `Group.fromMap` (`'arquivado_em'`, `'arquivado_por'` — chaves em português, são o contrato com o banco)
+- [X] T004 [P] Criar `test/unit/group_archive_test.dart`: `isArchived` é falso com `archivedAt` nulo e verdadeiro com data; `fromMap` lê as duas chaves novas (FR-010)
 
 **Checkpoint**: `flutter analyze` limpo, `dart test test/integration` nos 127 de antes, nada mudou de comportamento.
 
@@ -64,18 +64,18 @@ de qualquer coisa acontecer.
 
 ### Tests for User Story 1
 
-- [ ] T005 [US1] Criar `test/integration/arquivar_grupo_efeitos_test.dart` — **o teste que mais importa da feature**, escrito para falhar agora. Sete asserções: (a) Ações futuras ficam canceladas e Ação **passada** fica intacta (FR-014); (b) contagem de presenças **idêntica** antes e depois (FR-015, SC-006); (c) **ninguém promovido da fila** (Princípio IV); (d) Rodada antes aberta fecha com **`vencedora_id` nulo** (FR-007, SC-005); (e) **todas** as candidatas descartadas, nenhuma virou Ação confirmada; (f) Rodada **já fechada** e sua apuração inalteradas (SC-009); (g) `participacoes_grupo` com contagem idêntica (FR-017). **A asserção (d) é a única que percebe se alguém um dia "simplificar" a função reusando `fechar_rodada_se_devido`**
-- [ ] T006 [US1] Criar `test/integration/arquivar_grupo_permissao_test.dart`: participante comum é recusado (FR-002); Dono arquiva o próprio; Administrador do distrito arquiva qualquer um (FR-001); Grupo já arquivado é recusado (FR-009)
+- [X] T005 [US1] Criar `test/integration/arquivar_grupo_efeitos_test.dart` — **o teste que mais importa da feature**, escrito para falhar agora. Sete asserções: (a) Ações futuras ficam canceladas e Ação **passada** fica intacta (FR-014); (b) contagem de presenças **idêntica** antes e depois (FR-015, SC-006); (c) **ninguém promovido da fila** (Princípio IV); (d) Rodada antes aberta fecha com **`vencedora_id` nulo** (FR-007, SC-005); (e) **todas** as candidatas descartadas, nenhuma virou Ação confirmada; (f) Rodada **já fechada** e sua apuração inalteradas (SC-009); (g) `participacoes_grupo` com contagem idêntica (FR-017). **A asserção (d) é a única que percebe se alguém um dia "simplificar" a função reusando `fechar_rodada_se_devido`**
+- [X] T006 [US1] Criar `test/integration/arquivar_grupo_permissao_test.dart`: participante comum é recusado (FR-002); Dono arquiva o próprio; Administrador do distrito arquiva qualquer um (FR-001); Grupo já arquivado é recusado (FR-009)
 
 ### Implementation for User Story 1
 
-- [ ] T007 [US1] Acrescentar à migration a seção 2 de [contracts/schema.sql](./contracts/schema.sql): `public.arquivar_grupo(uuid)`, `security definer`, com a validação de papel na primeira linha e os quatro passos numa transação. **Não chamar `fechar_rodada_se_devido`** — ela apura, e apurar aqui criaria uma Ação confirmada num Grupo que acabou de sair do ar (research D-003). O encerramento é escrito à mão: `fechada_em = now()`, `vencedora_id` nulo, `delete` de todas as candidatas
-- [ ] T008 [P] [US1] Criar `lib/features/group/domain/archive_preview.dart` com `ArchivePreview` (`futureActions`, `confirmedAttendances`, `openVotingRounds`, `members`) e o derivado `bool get nothingWillBeLost`
-- [ ] T009 [US1] Em `lib/features/group/data/group_repository.dart`, adicionar `fetchArchivePreview(groupId)` — quatro consultas de leitura, **sem RPC nova**: as tabelas já têm select público e os números não são segredo (research D-004) — e `archiveGroup(groupId)` chamando a RPC
-- [ ] T010 [US1] Em `lib/features/group/group_providers.dart`, adicionar `archivePreviewProvider(groupId)`
-- [ ] T011 [US1] Criar `test/widget/archive_group_sheet_test.dart`: a confirmação mostra os quatro números reais (FR-003, SC-001); com tudo zerado diz **em palavras** que nada será perdido, não quatro zeros (FR-004); Ministério com Líder/Diretor confirmado ganha o aviso extra sobre a identificação pública sair do ar (FR-005); **desistir não dispara chamada nenhuma** (FR-006, SC-002)
-- [ ] T012 [US1] Criar `lib/features/group/presentation/archive_group_sheet.dart` com a confirmação. A prévia é só leitura — é isso que torna FR-006 verdadeiro por construção
-- [ ] T013 [US1] Em `lib/features/group/presentation/group_detail_page.dart`, oferecer arquivar ao Dono do Grupo e ao Administrador do distrito, e a **ninguém mais** (FR-001, FR-002). Grupo já arquivado não oferece a opção de novo (FR-009)
+- [X] T007 [US1] Acrescentar à migration a seção 2 de [contracts/schema.sql](./contracts/schema.sql): `public.arquivar_grupo(uuid)`, `security definer`, com a validação de papel na primeira linha e os quatro passos numa transação. **Não chamar `fechar_rodada_se_devido`** — ela apura, e apurar aqui criaria uma Ação confirmada num Grupo que acabou de sair do ar (research D-003). O encerramento é escrito à mão: `fechada_em = now()`, `vencedora_id` nulo, `delete` de todas as candidatas
+- [X] T008 [P] [US1] Criar `lib/features/group/domain/archive_preview.dart` com `ArchivePreview` (`futureActions`, `confirmedAttendances`, `openVotingRounds`, `members`) e o derivado `bool get nothingWillBeLost`
+- [X] T009 [US1] Em `lib/features/group/data/group_repository.dart`, adicionar `fetchArchivePreview(groupId)` — quatro consultas de leitura, **sem RPC nova**: as tabelas já têm select público e os números não são segredo (research D-004) — e `archiveGroup(groupId)` chamando a RPC
+- [X] T010 [US1] Em `lib/features/group/group_providers.dart`, adicionar `archivePreviewProvider(groupId)`
+- [X] T011 [US1] Criar `test/widget/archive_group_sheet_test.dart`: a confirmação mostra os quatro números reais (FR-003, SC-001); com tudo zerado diz **em palavras** que nada será perdido, não quatro zeros (FR-004); Ministério com Líder/Diretor confirmado ganha o aviso extra sobre a identificação pública sair do ar (FR-005); **desistir não dispara chamada nenhuma** (FR-006, SC-002)
+- [X] T012 [US1] Criar `lib/features/group/presentation/archive_group_sheet.dart` com a confirmação. A prévia é só leitura — é isso que torna FR-006 verdadeiro por construção
+- [X] T013 [US1] Em `lib/features/group/presentation/group_detail_page.dart`, oferecer arquivar ao Dono do Grupo e ao Administrador do distrito, e a **ninguém mais** (FR-001, FR-002). Grupo já arquivado não oferece a opção de novo (FR-009)
 
 **Checkpoint**: US1 pronta. Já dá para arquivar, com o estrago declarado antes. O Grupo ainda não sumiu de lugar nenhum — é a US2.
 
@@ -91,16 +91,16 @@ e que participar, propor candidata, abrir Rodada e votar são todos recusados.
 
 ### Tests for User Story 2
 
-- [ ] T014 [US2] Em `test/integration/arquivar_grupo_permissao_test.dart`, adicionar: Grupo arquivado recusa participar, propor Ação candidata, abrir Rodada de votação e votar (FR-011, FR-012, SC-004). São as políticas que executam — a tela é cortesia
-- [ ] T015 [US2] Em `test/widget/lista_grupos_page_test.dart`, adicionar: Grupo arquivado não aparece, sob **nenhuma** combinação de filtro de Igreja e ordenação (FR-010, SC-003)
+- [X] T014 [US2] Em `test/integration/arquivar_grupo_permissao_test.dart`, adicionar: Grupo arquivado recusa participar, propor Ação candidata, abrir Rodada de votação e votar (FR-011, FR-012, SC-004). São as políticas que executam — a tela é cortesia
+- [X] T015 [US2] **Feito em `test/integration/arquivar_grupo_permissao_test.dart`, não em widget**: o filtro vive no SQL de `GroupRepository.fetchGroups`, não na página, e um teste de widget que mockasse `fetchGroups` não provaria nada. Filtrar também na tela criaria duas cópias da mesma regra. Original: Em `test/widget/lista_grupos_page_test.dart`, adicionar: Grupo arquivado não aparece, sob **nenhuma** combinação de filtro de Igreja e ordenação (FR-010, SC-003)
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] Acrescentar à migration a seção 4 de [contracts/schema.sql](./contracts/schema.sql): as políticas de insert de `participacoes_grupo`, `rodadas_votacao`, `votos` e Ação candidata passam a exigir Grupo não arquivado. Reler as definições atuais antes de reescrever — o contrato registra a **regra**, não o texto exato das políticas que já existem
-- [ ] T017 [US2] Em `lib/features/group/group_providers.dart` e `lib/features/group/presentation/group_list_page.dart`, filtrar `arquivado_em is null` na listagem (FR-010)
-- [ ] T018 [US2] **Filtrar Grupo arquivado na exibição do Líder/Diretor.** `liderancas` não é tocada pelo arquivamento, de propósito (é histórico), então **nada no banco impede** que um Ministério arquivado continue mostrando publicamente quem é o responsável — visível a Visitante sem cadastro. É o risco 4 do plano e a **única falha desta feature que não grita**: nenhum teste de unidade a pega, e o dado exposto é exatamente o que FR-016 diz que sai do ar. Conferir `lib/features/leadership/data/leadership_repository.dart` e quem consome `currentLeadersProvider`
-- [ ] T019 [US2] Conferir **os demais consumidores** de Grupo, um a um (research D-006): `lib/features/action/action_providers.dart` resolve a Igreja da Ação lendo `grupos.igreja_id` e **NÃO deve filtrar** — senão Ações passadas do Grupo arquivado perdem a Igreja e saem do agrupamento. Telas de Rodada por link **não** filtram (FR-014). A spec só cita a listagem; cobrir só ela deixaria buraco
-- [ ] T020 [US2] Em `lib/features/group/presentation/group_detail_page.dart`, exibir que o Grupo está arquivado quando alcançado por link direto, em vez de erro (FR-013), e esconder participar / propor / abrir Rodada / votar
+- [X] T016 [US2] Acrescentar à migration a seção 4 de [contracts/schema.sql](./contracts/schema.sql): as políticas de insert de `participacoes_grupo`, `rodadas_votacao`, `votos` e Ação candidata passam a exigir Grupo não arquivado. Reler as definições atuais antes de reescrever — o contrato registra a **regra**, não o texto exato das políticas que já existem
+- [X] T017 [US2] Em `lib/features/group/group_providers.dart` e `lib/features/group/presentation/group_list_page.dart`, filtrar `arquivado_em is null` na listagem (FR-010)
+- [X] T018 [US2] **Filtrar Grupo arquivado na exibição do Líder/Diretor.** `liderancas` não é tocada pelo arquivamento, de propósito (é histórico), então **nada no banco impede** que um Ministério arquivado continue mostrando publicamente quem é o responsável — visível a Visitante sem cadastro. É o risco 4 do plano e a **única falha desta feature que não grita**: nenhum teste de unidade a pega, e o dado exposto é exatamente o que FR-016 diz que sai do ar. Conferir `lib/features/leadership/data/leadership_repository.dart` e quem consome `currentLeadersProvider`
+- [X] T019 [US2] Conferir **os demais consumidores** de Grupo, um a um (research D-006): `lib/features/action/action_providers.dart` resolve a Igreja da Ação lendo `grupos.igreja_id` e **NÃO deve filtrar** — senão Ações passadas do Grupo arquivado perdem a Igreja e saem do agrupamento. Telas de Rodada por link **não** filtram (FR-014). A spec só cita a listagem; cobrir só ela deixaria buraco
+- [X] T020 [US2] Em `lib/features/group/presentation/group_detail_page.dart`, exibir que o Grupo está arquivado quando alcançado por link direto, em vez de erro (FR-013), e esconder participar / propor / abrir Rodada / votar
 
 **Checkpoint**: US1 + US2. Arquivar significa alguma coisa.
 
@@ -116,14 +116,14 @@ verificando que ele volta à lista com os participantes.
 
 ### Tests for User Story 3
 
-- [ ] T021 [US3] Em `test/integration/arquivar_grupo_permissao_test.dart`, adicionar: só o Administrador do distrito desarquiva, o Dono é recusado (FR-018); depois de desarquivar, o Grupo volta à listagem e volta a aceitar participação, proposta de Ação candidata, Rodada e voto (FR-020); os participantes voltam **sem ação deles** (FR-021, SC-007); e as Ações canceladas **continuam canceladas** (FR-022) — as participações voltam de graça porque nunca foram apagadas (research D-005)
+- [X] T021 [US3] Em `test/integration/arquivar_grupo_permissao_test.dart`, adicionar: só o Administrador do distrito desarquiva, o Dono é recusado (FR-018); depois de desarquivar, o Grupo volta à listagem e volta a aceitar participação, proposta de Ação candidata, Rodada e voto (FR-020); os participantes voltam **sem ação deles** (FR-021, SC-007); e as Ações canceladas **continuam canceladas** (FR-022) — as participações voltam de graça porque nunca foram apagadas (research D-005)
 
 ### Implementation for User Story 3
 
-- [ ] T022 [US3] Acrescentar à migration a seção 3 de [contracts/schema.sql](./contracts/schema.sql): `public.desarquivar_grupo(uuid)`, `security definer`, restrita ao Administrador do distrito. Zera `arquivado_em` e `arquivado_por`; **não ressuscita nada**
-- [ ] T023 [US3] Em `lib/features/group/data/group_repository.dart` e `group_providers.dart`, adicionar `unarchiveGroup(groupId)`, `fetchArchivedGroups()` e `archivedGroupsProvider`
-- [ ] T024 [US3] Criar `lib/features/group/presentation/archived_groups_page.dart` — lista de arquivados com quem arquivou e quando, visível **só ao Administrador do distrito** (FR-019) — e registrar a rota em `lib/app.dart`, junto às demais de Administrador
-- [ ] T025 [US3] Na tela de desarquivar, avisar **antes de confirmar** que as Ações canceladas e as Rodadas encerradas não voltam (FR-022). É a segunda metade da honestidade que FR-003 começou
+- [X] T022 [US3] Acrescentar à migration a seção 3 de [contracts/schema.sql](./contracts/schema.sql): `public.desarquivar_grupo(uuid)`, `security definer`, restrita ao Administrador do distrito. Zera `arquivado_em` e `arquivado_por`; **não ressuscita nada**
+- [X] T023 [US3] Em `lib/features/group/data/group_repository.dart` e `group_providers.dart`, adicionar `unarchiveGroup(groupId)`, `fetchArchivedGroups()` e `archivedGroupsProvider`
+- [X] T024 [US3] Criar `lib/features/group/presentation/archived_groups_page.dart` — lista de arquivados com quem arquivou e quando, visível **só ao Administrador do distrito** (FR-019) — e registrar a rota em `lib/app.dart`, junto às demais de Administrador
+- [X] T025 [US3] Na tela de desarquivar, avisar **antes de confirmar** que as Ações canceladas e as Rodadas encerradas não voltam (FR-022). É a segunda metade da honestidade que FR-003 começou
 
 **Checkpoint**: as três histórias funcionando.
 
@@ -131,12 +131,12 @@ verificando que ele volta à lista com os participantes.
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T026 Rodar os gates e **anotar o número real** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Linha de base em `main` ao começar: 0 issues, **152** unit/widget, **127** integração
-- [ ] T027 Confirmar que os **7 testes de integração pré-existentes** listados em [quickstart.md](./quickstart.md) passam **sem edição de asserção** — apuração, empate, presença, sem-candidata, idempotência, Dupla Missionária e Ação encerrada. Se algum precisou mudar, a feature vazou do escopo
+- [X] T026 Rodar os gates e **anotar o número real** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`. Linha de base em `main` ao começar: 0 issues, **152** unit/widget, **127** integração
+- [X] T027 Confirmar que os **7 testes de integração pré-existentes** listados em [quickstart.md](./quickstart.md) passam **sem edição de asserção** — apuração, empate, presença, sem-candidata, idempotência, Dupla Missionária e Ação encerrada. Se algum precisou mudar, a feature vazou do escopo
 - [ ] T028 Executar a **Parte 3** de [quickstart.md](./quickstart.md) à mão — contar presenças, Rodadas e participações antes e depois de arquivar. Estado parcial é o modo de falha desta feature, e contagem é o único jeito de vê-lo
 - [ ] T028a Medir SC-008 com gente: cronometrar um Dono arquivando o próprio Grupo, do toque inicial à confirmação — precisa ficar abaixo de 1 minuto. É o único critério de sucesso que não vira teste, e some da lista se não estiver escrito (a 011 perdeu o SC-003 assim)
 - [ ] T029 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 17, **com o item 8 conferido especificamente**: como Visitante, procurar o Líder/Diretor de um Ministério arquivado. É o único item que falha em silêncio
-- [ ] T030 Varredura de identificador em português nos arquivos Dart tocados pela feature, **inclusive nos de teste** (Princípio I). A 011 passou por isso; esta não precisa
+- [X] T030 Varredura de identificador em português nos arquivos Dart tocados pela feature, **inclusive nos de teste** (Princípio I). A 011 passou por isso; esta não precisa
 
 ---
 

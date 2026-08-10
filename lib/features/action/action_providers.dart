@@ -19,7 +19,11 @@ final actionsProvider = FutureProvider.autoDispose<List<Action>>((ref) {
 /// (mesmo invariante de privacidade das outras leituras de perfil).
 final actionsWithChurchProvider = FutureProvider.autoDispose<List<ActionWithChurch>>((ref) async {
   final actions = await ref.watch(actionsProvider.future);
-  final groups = await ref.watch(groupsProvider.future);
+  // `allGroupsProvider`, não `groupsProvider`: este último esconde Grupo
+  // arquivado (feature 014), e uma Ação passada de Grupo arquivado continua
+  // pertencendo àquela Igreja. Filtrar aqui faria essas Ações perderem a
+  // Igreja e sumirem do agrupamento, sem erro nenhum.
+  final groups = await ref.watch(allGroupsProvider.future);
   final churchByGroup = {for (final g in groups) g.id: g.churchId};
 
   final profileRepo = ref.watch(profileRepositoryProvider);

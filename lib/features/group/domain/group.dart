@@ -46,6 +46,8 @@ class Group {
     this.local,
     this.details,
     this.churchId,
+    this.archivedAt,
+    this.archivedBy,
   });
 
   final String id;
@@ -57,6 +59,15 @@ class Group {
   final String? churchId;
   final String ownerId;
   final DateTime createdAt;
+
+  /// Quando o Grupo saiu de circulação. Nulo = ativo.
+  final DateTime? archivedAt;
+
+  /// Quem arquivou. Só o Administrador do distrito precisa disso — é ele quem
+  /// decide se desarquiva.
+  final String? archivedBy;
+
+  bool get isArchived => archivedAt != null;
 
   bool isOwner(String? currentUserId) => currentUserId != null && currentUserId == ownerId;
 
@@ -71,6 +82,10 @@ class Group {
       churchId: map['igreja_id'] as String?,
       ownerId: map['dono_id'] as String,
       createdAt: DateTime.parse(map['created_at'] as String),
+      archivedAt: map['arquivado_em'] == null
+          ? null
+          : DateTime.parse(map['arquivado_em'] as String),
+      archivedBy: map['arquivado_por'] as String?,
     );
   }
 }

@@ -26,7 +26,7 @@
 **Objetivo**: existir o lugar onde as respostas vão ser escritas, antes de as respostas
 existirem. Assim a tarefa humana é "cole aqui", e não "invente um formato".
 
-- [ ] T001 Criar `docs/INFRA-PRODUCAO.md` com o esqueleto e os campos vazios marcados
+- [X] T001 Criar `docs/INFRA-PRODUCAO.md` com o esqueleto e os campos vazios marcados
   `[PENDENTE]`: (a) **Região exigida para qualquer ambiente** — `sa-east-1` (São Paulo), com a
   frase de que é requisito de provisionamento e não default do fornecedor; (b) **Verificação da
   produção atual** — campos de região lida, data, quem verificou, plano do projeto; (c)
@@ -34,15 +34,15 @@ existirem. Assim a tarefa humana é "cole aqui", e não "invente um formato".
   (d) **Runbook de restauração**; (e) **Resultado do drill**. Cabeçalho dizendo que este arquivo
   é o registro canônico e que os outros documentos apontam para cá. **(FR-002, FR-005)**
 
-- [ ] T002 [P] Em `README.md` § Arquitetura (linhas 48-51), acrescentar uma linha apontando
+- [X] T002 [P] Em `README.md` § Arquitetura (linhas 48-51), acrescentar uma linha apontando
   para `docs/INFRA-PRODUCAO.md` como fonte da exigência de região. Uma linha, ponteiro — não
   copiar o conteúdo. **(FR-005)** — depende de T001
 
-- [ ] T003 [P] No cabeçalho de `.env.example`, acrescentar um comentário apontando para
+- [X] T003 [P] No cabeçalho de `.env.example`, acrescentar um comentário apontando para
   `docs/INFRA-PRODUCAO.md`: quem monta um ambiente novo passa por aqui e hoje não recebe nenhum
   aviso sobre região. **(FR-005)** — depende de T001
 
-- [ ] T004 [P] Em `MAPA-DE-DADOS.md` § Terceiros, corrigir a afirmação que já é falsa hoje —
+- [X] T004 [P] Em `MAPA-DE-DADOS.md` § Terceiros, corrigir a afirmação que já é falsa hoje —
   *"hoje só existe configuração para ambiente local"* e *"Nenhuma configuração de produção
   (região do projeto Supabase Cloud, ou self-host) existe no repositório"*. Produção existe:
   `.env.prod` e os secrets `SUPABASE_URL` / `SUPABASE_PUBLISHABLE_KEY` de

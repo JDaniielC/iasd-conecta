@@ -195,14 +195,58 @@ values (
 )
 on conflict (id) do nothing;
 
--- Escrita no bucket segue a mesma regra da tabela: quem administra o
--- Grupo/Ação. A linha em fotos_capa é a fonte de verdade da permissão.
+-- O CAMINHO CARREGA O DONO, e a política confere.
+--
+-- A primeira versão desta política tinha só `bucket_id = 'fotos-capa'`, com um
+-- comentário afirmando que "a escrita segue a mesma regra da tabela". Era
+-- falso: a política não conferia nada. Qualquer pessoa autenticada podia subir
+-- arquivo arbitrário para um bucket PÚBLICO, sem vínculo com Grupo nenhum — e
+-- sem linha em fotos_capa a fila de remoção nem detectaria, porque ela só
+-- conhece arquivos que um dia tiveram linha. Pego por revisão de segurança
+-- automatizada, e é a mesma classe de erro que a feature 018 consertou:
+-- comentário prometendo uma garantia que o código não dá.
+--
+-- Formato exigido do caminho: `grupo/<uuid>/<arquivo>` ou `acao/<uuid>/<arquivo>`.
+-- Sem isso, "quem administra" não teria a que se referir — conferir que a
+-- pessoa é dona de ALGUM Grupo deixaria o dono de um Grupo subir arquivo no
+-- prefixo de outro.
 create policy fotos_capa_objetos_insert
   on storage.objects for insert
   to authenticated
-  with check (bucket_id = 'fotos-capa');
+  with check (
+    bucket_id = 'fotos-capa'
+    and array_length(storage.foldername(name), 1) >= 2
+    and (
+      (
+        (storage.foldername(name))[1] = 'grupo'
+        and exists (
+          select 1 from public.grupos g
+          where g.id::text = (storage.foldername(name))[2]
+            and g.dono_id = auth.uid()
+        )
+      )
+      or (
+        (storage.foldername(name))[1] = 'acao'
+        and exists (
+          select 1 from public.acoes a
+          where a.id::text = (storage.foldername(name))[2]
+            and a.criador_id = auth.uid()
+        )
+      )
+      or exists (
+        select 1 from public.administradores_distrito d
+        where d.usuario_id = auth.uid()
+      )
+    )
+  );
 
 create policy fotos_capa_objetos_select
   on storage.objects for select
   to anon, authenticated
   using (bucket_id = 'fotos-capa');
+
+-- Sem policy de DELETE nem de UPDATE em storage.objects, de propósito: a
+-- remoção do arquivo é da fila (seção 2), que roda com credencial de serviço
+-- fora da transação. Dar delete ao cliente reabriria o caminho de apagar o
+-- arquivo sem apagar a linha — órfão ao contrário, com a tela mostrando uma
+-- capa que não existe mais.

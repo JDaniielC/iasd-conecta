@@ -136,6 +136,45 @@ a comparação está no relatório de entrega.
 
 ---
 
+## D-007 — O caminho do arquivo carrega o dono, e a política de armazenamento confere
+
+**Decision**: o caminho segue o formato `grupo/<uuid>/<arquivo>` ou `acao/<uuid>/<arquivo>`, e
+a política de insert em `storage.objects` confere o segmento do meio contra quem administra.
+
+**Rationale**: a primeira versão da política tinha só `bucket_id = 'fotos-capa'`, com um
+comentário meu afirmando que "a escrita segue a mesma regra da tabela". Era **falso** — a
+política não conferia nada. Qualquer pessoa autenticada podia subir arquivo arbitrário para um
+bucket **público**, sem vínculo com Grupo nenhum. Pior: sem linha em `fotos_capa`, a fila de
+remoção nem detectaria, porque ela só conhece arquivos que um dia tiveram linha.
+
+Pego por revisão de segurança automatizada. É a mesma classe de erro que a feature 018
+consertou: um comentário prometendo uma garantia que o código não dá.
+
+**Por que conferir "é dono de ALGUM Grupo" não bastaria** — que era a correção mais óbvia: o
+dono de um Grupo poderia subir arquivo no prefixo de outro Grupo, e a capa apareceria lá. O
+caminho precisa carregar a que Grupo ou Ação o arquivo pertence, senão "quem administra" não
+tem a que se referir.
+
+**Verificado no banco local**, com o JWT de uma dona de Grupo:
+
+| Caso | Resultado |
+|---|---|
+| Subir em `grupo/<id do próprio Grupo>/x.jpg` | **aceito** |
+| Subir em `grupo/<id do Grupo de outra pessoa>/x.jpg` | `new row violates row-level security policy` |
+| Subir em `solto.jpg`, na raiz do bucket | `new row violates row-level security policy` |
+
+**O que continua possível, e é aceito**: subir o arquivo no próprio prefixo e nunca criar a
+linha em `fotos_capa`. Fica um arquivo abandonado dentro do próprio prefixo da pessoa, sem
+aparecer em tela nenhuma. O estrago é limitado ao que ela já podia fazer legitimamente, e o
+custo de fechar isso seria uma confirmação em duas fases entre armazenamento e banco — mais
+peças do que o Princípio V justifica para esse ganho.
+
+**Sem policy de DELETE nem UPDATE em `storage.objects`**, de propósito: a remoção é da fila,
+com credencial de serviço. Dar delete ao cliente abriria o caminho de apagar o arquivo sem
+apagar a linha — órfão ao contrário, com a tela mostrando uma capa que não existe mais.
+
+---
+
 ## D-004 (texto original, mantido como registro do que se perguntou)
 
 Duas afirmações sobre o comportamento do fornecedor sustentam D-003 e FR-012, e **nenhuma das

@@ -108,6 +108,30 @@ Requer o Supabase local rodando (`supabase start`) — os testes de contrato em
 `test/integration/` conectam direto no Postgres e no Auth local, sem
 depender de device/emulador.
 
+## Deploy
+
+Push em `main` dispara `.github/workflows/deploy-web.yml`: compila o Flutter Web e publica em
+Cloud Storage atrás de Cloud CDN — não mais em branch de git. O banco continua em Supabase
+Cloud gerenciado, camada separada (feature 019), não tocada por esse workflow.
+
+Nomes de projeto, bucket e url map: `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho completo,
+decisões e runbook de configuração/verificação: `specs/020-deploy-gcs-cdn/` (ver
+`quickstart.md`).
+
+Para voltar atrás: reexecutar o workflow a partir do commit anterior (`workflow_dispatch` ou
+`git revert` + push). Não há ambiente de homologação — um bucket descartável via
+`workflow_dispatch` (`target_bucket`) é o ensaio antes do merge.
+
+A branch `dist-web`, usada pelo deploy anterior, está descontinuada — decisão em
+`specs/020-deploy-gcs-cdn/quickstart.md` §7.
+
+**Lacunas conhecidas** (declaradas, não corrigidas nesta feature — ver `plan.md` "Riscos"):
+este workflow não depende de `ci.yml` — um commit que quebra `flutter analyze` ou teste é
+publicado assim mesmo, desde que compile; a publicação não é atômica por conjunto — um job
+interrompido no meio deixa o bucket misturado até alguém rerodar; a credencial é chave JSON de
+longa duração, não Workload Identity Federation; não há verificação automática de que o site
+responde depois de publicar.
+
 ## Estrutura
 
 - `lib/core/` — cliente Supabase, tema (estética 7me: azul marinho + branco,

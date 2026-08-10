@@ -1,13 +1,14 @@
 # Pendências
 
-**Atualizado**: 2026-08-09 | **Base**: `main`, commit `da60de7`
+**Atualizado**: 2026-08-10 | **Base**: `main`, commit `90c9bee`
 
 O que falta, em quatro grupos: o que **implementar** (já tem spec, plan e tasks), o que
 **especificar** (achado real, sem spec), o que **só gente mede** (verificação manual), e o
 que **depende de decisão sua**.
 
-O último grupo é o que trava mais coisa. Se você responder as cinco perguntas da seção
-"Decisões que dependem de você", três features destravam.
+As cinco decisões da seção 4 foram respondidas em 2026-08-09, e as três features que elas
+travavam foram entregues (014, 015) ou destravadas (019). **Nada está bloqueado por decisão
+hoje** — o que resta é trabalho, mais dois pedidos de acesso à nuvem.
 
 ---
 
@@ -17,20 +18,17 @@ Nada aqui precisa de trabalho de especificação. É só executar.
 
 | Feature | Tarefas | O que entrega | Bloqueio |
 |---|---|---|---|
-| **015** consentimento-responsavel | 34 | Autorização do responsável para menor de 13 anos | **Destravada** — limiar decidido: abaixo de 13 |
-| **014** arquivar-grupo | 31 | Arquivar Grupo (deletar é impossível hoje — FKs sem `on delete`) | — |
 | **013** foto-de-capa | 35 | Foto de capa de Grupo e Ação, com aviso contra foto pessoal e de menor | — |
-| **019** producao-regiao-e-backup | 27 | Registrar a região confirmada e o backup como risco aceito | **Destravada** — virou quase toda documento |
+| **019** producao-regiao-e-backup | 27 | Registrar a região confirmada e o backup como risco aceito | — (virou quase todo documento) |
 | **020** deploy-gcs-cdn | 32 (7 humanas) | Publicar em Cloud Storage + CDN, com invalidação de cache | 7 tarefas exigem conta GCP — só você |
 
-**Sugestão de ordem**: 015 → 014 → 013, porque 015 é conformidade com prazo (menor de idade
-sem autorização de responsável é exposição legal ativa) e as outras duas são produto. A 019 e
-a 020 podem correr em paralelo assim que você abrir os acessos.
+**Entregues desde a última versão desta lista**: 014 (arquivar Grupo), 015 (autorização do
+responsável), 016 (Meu Perfil), 017 (versão do consentimento), 018 (visibilidade de
+lideranças) e 021 (visibilidade do voto).
 
-**A 015 tem uma armadilha já mapeada**, verificada contra o Postgres local durante o
-planejamento: a check constraint precisa de `not valid`, e o preço é que a linha antiga vira
-somente-leitura. É a mesma classe de armadilha que a 017 desarmou — vale reler
-`specs/015-consentimento-responsavel/research.md` antes de começar.
+**Sugestão de ordem**: **019 primeiro** — virou quase todo documento depois das suas
+respostas, e é o que fecha as afirmações que a Política faz a titulares. Depois 013 (produto).
+A 020 espera o acesso GCP.
 
 ---
 
@@ -64,7 +62,22 @@ privilégio, não vulnerabilidade viva — e é assim que deve ser descrito, sem
 Vale spec porque o conserto (`revoke truncate, references, trigger`) toca todas as tabelas e
 precisa de teste que prove que nada legítimo quebrou.
 
-### 2.3 `deploy-web.yml` publica mesmo com teste vermelho
+### 2.3 Cadastro antigo de criança ficou somente-leitura
+
+Consequência conhecida e aceita da feature 015: um cadastro de criança anterior a ela não tem
+os dados do responsável, e a check constraint recusa **qualquer** `update` naquela linha —
+inclusive de campo sem relação, como telefone. Localmente são **0** cadastros assim; em
+produção, desconhecido.
+
+A pessoa não fica presa: a tela traduz a recusa numa frase pedindo que escreva para o e-mail
+de contato, e a **exclusão de conta continua funcionando** (a anonimização zera `idade` e as
+constraints passam), então o art. 18 VI está a salvo.
+
+O que falta decidir: corrigir retroativamente esses cadastros, ou deixar como está. Se
+corrigir, é spec própria — envolve pedir a autorização a quem já está cadastrado, e a spec da
+015 excluiu isso de propósito.
+
+### 2.4 `deploy-web.yml` publica mesmo com teste vermelho
 
 `.github/workflows/deploy-web.yml` dispara em `push: branches: [main]`, sem `needs:` e sem
 `workflow_run:`. Não depende do `ci.yml` — um commit que quebra os testes vai para produção
@@ -157,7 +170,12 @@ Respondida na prática: **014 primeiro** (arquivar Grupo), por escolha do dono d
 Registrado para ninguém gastar tempo de novo.
 
 - **`README.md`**: conferido, só uma linha desatualizada (a lista de rotas em `README.md:140`
-  não cita `/perfil`, `/home` nem as telas de Administrador). Não é dívida grande.
+  não cita `/perfil`, `/home`, `/district-admin/grupos-arquivados` nem
+  `/district-admin/consentimentos`). Não é dívida grande.
+- **Higiene da suíte de integração**: quatro arquivos faziam `delete from public.acoes` e
+  afins **sem filtro**, e `dart test` roda os arquivos em paralelo. Era causa raiz de falha
+  intermitente que aparecia em arquivos que não tinham feito nada errado. Escopados por UUID
+  na feature 014; suíte estável em execuções repetidas.
 - **Tickets fora do Spec Kit**: `IASD-01` e `IASD-02` estão **feitos**, `IASD-03` foi
   **descartado**, e `IASD-CI-GCS-UPLOAD` virou a feature 020. Nenhum ticket órfão.
 - **As nove policies que ainda são `using (true)`** (`acoes`, `grupos`,

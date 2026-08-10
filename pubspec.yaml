@@ -41,6 +41,13 @@ dependencies:
   flutter_dotenv: ^6.0.1
   intl: ^0.20.2
 
+  # Já vinha por supabase_flutter, que o usa para persistir a sessão — o custo
+  # de bundle é zero. Está declarado porque dependência transitiva some no dia
+  # em que quem a arrasta troca de mecanismo, e a quebra apareceria numa
+  # feature que ninguém tocou. Aqui ele guarda, no aparelho, até que data a
+  # pessoa já viu as Novidades (feature 022).
+  shared_preferences: ^2.3.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

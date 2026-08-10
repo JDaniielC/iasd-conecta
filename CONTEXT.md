@@ -56,6 +56,8 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Fechar se devido | `closeIfDue` |
 | Autorização do responsável | `guardianAuthorization` |
 | Limiar de criança | `childAgeThreshold` |
+| Marco de lançamento | `launchDate` |
+| Marcador de leitura | `lastSeenNewsDate` |
 
 ### Colisões conhecidas, com decisão já tomada
 
@@ -153,6 +155,11 @@ _EN_: `Vote` / `vote`
 **Igreja**:
 Nome numa lista simples mantida pelo Administrador do distrito, sem outros atributos. Usuário escolhe uma no cadastro, ou nenhuma. Grupo e Ação também carregam uma Igreja, limitada à igreja do próprio criador (não escolhe qualquer uma das 15+ do distrito) — usada pra destaque/distribuição: Usuário da Igreja X vê em destaque Grupos/Ações vinculados à Igreja X, mas continua vendo normalmente os vinculados a outras igrejas. Não é restrição de acesso.
 _EN_: `Church`
+
+**Novidade**:
+Item da tela de Novidades: uma data e um texto curto contando o que mudou no app **do ponto de vista de quem usa**. Escrita à mão, uma a uma, por quem entende o que a mudança significa para o distrito — nunca gerada do histórico de código. Só aparece o que tem data a partir do lançamento ao distrito, em 6 de outubro de 2026. O critério do que vira Novidade e como se escreve está em `CRITERIO-DE-NOVIDADE.md`.
+_Avoid_: changelog (é registro técnico, para quem constrói), release note (é sobre versão, e a tela não mostra número de versão), aviso do sistema (o app não tem canal de notificação), notificação
+_EN_: `NewsItem` / `news`
 
 **Criança**:
 Usuário com idade **abaixo de 13 anos** — 0 a 12. O corte vem do art. 14 da LGPD, que exige consentimento específico e destacado de um dos pais ou do responsável legal para tratar dado de criança; adolescente (13 a 17) não exige. O número vive num lugar só, `public.limiar_crianca()` no banco e `childAgeThreshold` no Dart, e a comparação é sempre `idade < limiar`. Criança continua sujeita a todas as proteções de menor de idade que já existiam — Apelido obrigatório e idade nunca exibida.

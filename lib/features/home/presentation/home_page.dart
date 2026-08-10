@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../news/news_providers.dart';
 
 /// Primeira tela do app: diz o que ele é, para quem, e como participar.
 ///
@@ -179,6 +180,10 @@ class _MainCallToAction extends ConsumerWidget {
           onPressed: () => context.go('/acoes'),
           child: const Text('Ver Ações'),
         ),
+        const SizedBox(height: AppSpacing.sm),
+        // Para todo mundo, com ou sem Perfil: o que mudou no app não é
+        // informação de quem tem cadastro.
+        const _NewsButton(),
         // Só para quem tem Perfil: sem Perfil não há o que ver, e a rota
         // redirecionaria ao cadastro. Rótulo em texto, não só ícone — o
         // caminho até o próprio dado não pode depender de adivinhar um
@@ -192,6 +197,42 @@ class _MainCallToAction extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Caminho para as Novidades, com aviso quando há item que esta instalação
+/// ainda não viu.
+///
+/// O aviso **não** aparece enquanto o provider carrega: um ponto que pisca a
+/// cada abertura do app é pior do que aviso nenhum.
+class _NewsButton extends ConsumerWidget {
+  const _NewsButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final hasUnseen = ref.watch(hasUnseenNewsProvider).value ?? false;
+
+    return OutlinedButton.icon(
+      onPressed: () => context.push('/novidades'),
+      icon: const Icon(Icons.campaign_outlined),
+      label: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('Novidades'),
+          if (hasUnseen) ...[
+            const SizedBox(width: AppSpacing.sm),
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.primary,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

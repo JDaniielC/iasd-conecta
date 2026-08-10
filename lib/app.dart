@@ -23,6 +23,7 @@ import 'features/home/presentation/home_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
 import 'features/group/presentation/archived_groups_page.dart';
+import 'features/news/presentation/news_page.dart';
 import 'features/profile/presentation/my_profile_page.dart';
 import 'features/legal/presentation/consent_versions_page.dart';
 import 'features/legal/presentation/privacy_policy_page.dart';
@@ -163,6 +164,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/district-admin/suggested-actions',
         builder: (context, state) => const ManageSuggestedActionsPage(),
+      ),
+      GoRoute(
+        path: '/novidades',
+        builder: (context, state) => const NewsPage(),
       ),
       GoRoute(
         path: '/perfil',

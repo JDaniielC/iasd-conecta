@@ -58,6 +58,17 @@ class Profile {
       !needsNickname &&
       (!needsChurchConsent || churchLgpdConsentAccepted);
 
+  /// As duas datas de consentimento aqui são **sinal**, não valor.
+  ///
+  /// O que o cliente legitimamente sabe é SE a caixa foi marcada. O instante e
+  /// a versão do texto aceito são gravados pelo gatilho
+  /// `perfis_carimbar_consentimento` (feature 017), a partir de
+  /// `public.versao_texto_legal_vigente()` — para que os dois saiam do mesmo
+  /// relógio e para que o registro não valha o que o cliente disser.
+  ///
+  /// Por isso **não há chave de versão neste mapa, e não deve haver**: mandar a
+  /// versão é exatamente o que FR-004 proíbe. A ausência é a feature, não um
+  /// esquecimento a ser "consertado" numa refatoração.
   Map<String, dynamic> toInsertMap({required String id}) {
     return {
       'id': id,

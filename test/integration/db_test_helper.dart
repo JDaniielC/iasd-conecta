@@ -73,7 +73,16 @@ Future<void> criarPerfilDeTeste(
 /// trigger de checagem temporariamente — mesmo mecanismo de bootstrap do
 /// primeiro admin descrito em `specs/005-administrador-distrito/quickstart.md`
 /// (RLS bypass de superusuário não pula trigger, então precisa disable/enable).
+/// Cria um Administrador do distrito de teste, contornando o trigger de regras.
+///
+/// Tudo numa transação: `alter table ... disable trigger` é GLOBAL e toma
+/// ACCESS EXCLUSIVE. Fora de transação, o gatilho fica desligado para todo
+/// mundo durante a janela — e `dart test` roda os arquivos em paralelo, então
+/// dois testes chamando este helper ao mesmo tempo se atropelam (um religa o
+/// gatilho enquanto o outro ainda precisa dele desligado). Dentro da transação
+/// o lock é segurado até o commit e os chamadores entram em fila.
 Future<void> criarAdministradorDistritoDeTeste(Connection conn, String userId) async {
+  await conn.execute('begin');
   await conn.execute(
     'alter table public.administradores_distrito '
     'disable trigger administradores_distrito_checar_regras_trigger',
@@ -89,6 +98,7 @@ Future<void> criarAdministradorDistritoDeTeste(Connection conn, String userId) a
     'alter table public.administradores_distrito '
     'enable trigger administradores_distrito_checar_regras_trigger',
   );
+  await conn.execute('commit');
 }
 
 /// Igual [criarPerfilDeTeste], mas o Usuário é só Perfil — `is_anonymous =

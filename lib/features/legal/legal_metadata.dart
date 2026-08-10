@@ -2,11 +2,27 @@
 /// Termos de Uso).
 ///
 /// Consentimento colhido sob uma versão não cobre finalidade que uma versão
-/// posterior venha a adicionar — por isso a versão fica num só lugar,
-/// visível nas duas páginas. `public.perfis.consentimento_lgpd_aceito_em`
-/// (ver `supabase/migrations/20260723191202_perfis_igrejas.sql:36`) hoje
-/// grava só a data/hora do aceite, sem gravar a versão aceita: se o texto
-/// mudar, não há como saber quem aceitou qual versão (ver REVISAO-JURIDICA.md).
+/// posterior venha a adicionar — por isso a versão fica num só lugar, visível
+/// nas duas páginas.
+///
+/// Desde a feature 017, o banco registra qual texto cada pessoa aceitou:
+/// `public.perfis.consentimento_lgpd_versao` e
+/// `consentimento_lgpd_igreja_versao` são carimbadas pelo gatilho
+/// `perfis_carimbar_consentimento`, a partir de
+/// `public.versao_texto_legal_vigente()`. O cliente diz SE aceitou; o banco diz
+/// QUANDO e SOB QUAL TEXTO.
+///
+/// **[version] é a gêmea de exibição da linha correspondente em
+/// `public.versoes_texto_legal`.** Não dá para derivar uma da outra: o texto
+/// legal está compilado no binário, e a versão é metadado dele. Publicar texto
+/// novo muda as duas **no mesmo commit** — semear a linha na migration e mudar
+/// a constante aqui. `test/integration/versao_texto_legal_registro_test.dart`
+/// falha se divergirem, porque a divergência não daria erro: gravaria em cada
+/// cadastro novo uma versão diferente da que a pessoa leu na tela.
+///
+/// Aceites anteriores à feature 017 ficam com versão nula, de propósito —
+/// `null` quer dizer *desconhecida*, e preenchê-la seria um palpite
+/// apresentado como fato. Ver MAPA-DE-DADOS.md, seção Consentimento.
 abstract final class LegalMetadata {
   /// 1.2 (feature 021): o voto deixou de ser público. A versão sobe porque o
   /// texto exibido mudou, e um número que aponta para dois textos diferentes

@@ -8,7 +8,7 @@ const _uidHomem2 = '60000000-0000-0000-0000-000000000031';
 const _uidMulher1 = '60000000-0000-0000-0000-000000000032';
 const _uidMulher2 = '60000000-0000-0000-0000-000000000033';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
+Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
@@ -19,10 +19,10 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
   }
 }
 
-Future<String> _criarDuplaMissionaria(
+Future<String> _createMissionaryPair(
   Connection conn, {
   required String creatorId,
-  required String generoVisitado,
+  required String visitedGender,
 }) async {
   final rows = await conn.execute(
     Sql.named(
@@ -31,7 +31,7 @@ Future<String> _criarDuplaMissionaria(
       "values ('Visita ComposicaoMesmoGenero', now() + interval '1 day', 'Casa', @criador, 2, "
       "true, @genero) returning id",
     ),
-    parameters: {'criador': creatorId, 'genero': generoVisitado},
+    parameters: {'criador': creatorId, 'genero': visitedGender},
   );
   return rows.single.toColumnMap()['id']! as String;
 }
@@ -41,10 +41,10 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidHomem1, name: 'Homem1 MesmoGenero', gender: 'masculino');
-    await criarPerfilDeTeste(conn, _uidHomem2, name: 'Homem2 MesmoGenero', gender: 'masculino');
-    await criarPerfilDeTeste(conn, _uidMulher1, name: 'Mulher1 MesmoGenero', gender: 'feminino');
-    await criarPerfilDeTeste(conn, _uidMulher2, name: 'Mulher2 MesmoGenero', gender: 'feminino');
+    await createTestProfile(conn, _uidHomem1, name: 'Homem1 MesmoGenero', gender: 'masculino');
+    await createTestProfile(conn, _uidHomem2, name: 'Homem2 MesmoGenero', gender: 'masculino');
+    await createTestProfile(conn, _uidMulher1, name: 'Mulher1 MesmoGenero', gender: 'feminino');
+    await createTestProfile(conn, _uidMulher2, name: 'Mulher2 MesmoGenero', gender: 'feminino');
   });
 
   tearDownAll(() async {
@@ -54,20 +54,20 @@ void main() {
       ),
       parameters: {'h1': _uidHomem1, 'm1': _uidMulher1},
     );
-    await limparUsuarioDeTeste(conn, _uidHomem1);
-    await limparUsuarioDeTeste(conn, _uidHomem2);
-    await limparUsuarioDeTeste(conn, _uidMulher1);
-    await limparUsuarioDeTeste(conn, _uidMulher2);
+    await cleanUpTestUser(conn, _uidHomem1);
+    await cleanUpTestUser(conn, _uidHomem2);
+    await cleanUpTestUser(conn, _uidMulher1);
+    await cleanUpTestUser(conn, _uidMulher2);
     await conn.close();
   });
 
   test('FR-004: 2 homens visitando homem é uma composição válida', () async {
-    final actionId = await _criarDuplaMissionaria(
+    final actionId = await _createMissionaryPair(
       conn,
       creatorId: _uidHomem1,
-      generoVisitado: 'masculino',
+      visitedGender: 'masculino',
     );
-    await _comoUsuario(conn, _uidHomem2, () async {
+    await _asUser(conn, _uidHomem2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidHomem2},
@@ -81,12 +81,12 @@ void main() {
   });
 
   test('FR-004: 2 mulheres visitando mulher é uma composição válida', () async {
-    final actionId = await _criarDuplaMissionaria(
+    final actionId = await _createMissionaryPair(
       conn,
       creatorId: _uidMulher1,
-      generoVisitado: 'feminino',
+      visitedGender: 'feminino',
     );
-    await _comoUsuario(conn, _uidMulher2, () async {
+    await _asUser(conn, _uidMulher2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulher2},

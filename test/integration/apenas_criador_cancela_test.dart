@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000040';
+const _uidCreator = '50000000-0000-0000-0000-000000000040';
 const _uidOutro = '50000000-0000-0000-0000-000000000041';
 
 void main() {
@@ -12,15 +12,15 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Cancela');
-    await criarPerfilDeTeste(conn, _uidOutro, name: 'Outro Cancela');
+    await createTestProfile(conn, _uidCreator, name: 'Criador Cancela');
+    await createTestProfile(conn, _uidOutro, name: 'Outro Cancela');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.acoes (nome, data_hora, local, criador_id) "
         "values ('Ação Cancela', now() + interval '5 days', 'Sede', @criador) returning id",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     actionId = rows.single.toColumnMap()['id']!;
   });
@@ -30,12 +30,12 @@ void main() {
       Sql.named('delete from public.acoes where id = @acao'),
       parameters: {'acao': actionId},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidOutro);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidOutro);
     await conn.close();
   });
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -48,7 +48,7 @@ void main() {
   }
 
   test('FR-008: quem não criou não consegue cancelar a Ação', () async {
-    await comoUsuario(_uidOutro, () async {
+    await asUser(_uidOutro, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
         parameters: {'acao': actionId},
@@ -63,7 +63,7 @@ void main() {
   });
 
   test('o criador consegue cancelar a própria Ação', () async {
-    await comoUsuario(_uidCriador, () async {
+    await asUser(_uidCreator, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
         parameters: {'acao': actionId},

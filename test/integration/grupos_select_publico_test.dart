@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '40000000-0000-0000-0000-000000000003';
+const _uidOwner = '40000000-0000-0000-0000-000000000003';
 
 void main() {
   late Connection conn;
@@ -11,14 +11,14 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono Publico');
+    await createTestProfile(conn, _uidOwner, name: 'Dono Publico');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo Público', 'Ministério Jovem', 'sábados 16h', 'Sede', @dono) "
         "returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
     groupId = rows.single.toColumnMap()['id']!;
   });
@@ -26,9 +26,9 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where dono_id = @dono'),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
+    await cleanUpTestUser(conn, _uidOwner);
     await conn.close();
   });
 
@@ -67,7 +67,7 @@ void main() {
             "insert into public.grupos (nome, categoria, horario, local, dono_id) "
             "values ('Invasor', 'Jovem', '19h', 'Sede', @dono)",
           ),
-          parameters: {'dono': _uidDono},
+          parameters: {'dono': _uidOwner},
         ),
         throwsA(isA<ServerException>()),
       );

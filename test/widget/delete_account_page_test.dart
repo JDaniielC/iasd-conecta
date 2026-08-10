@@ -7,12 +7,12 @@ import 'package:iasd_conecta/features/profile/presentation/delete_account_page.d
 import 'package:mocktail/mocktail.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class MockPerfilRepository extends Mock implements ProfileRepository {}
+class MockProfileRepository extends Mock implements ProfileRepository {}
 
 void main() {
-  late MockPerfilRepository repo;
+  late MockProfileRepository repo;
 
-  setUp(() => repo = MockPerfilRepository());
+  setUp(() => repo = MockProfileRepository());
 
   Future<void> abrir(WidgetTester tester) async {
     await tester.pumpWidget(

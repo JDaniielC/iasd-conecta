@@ -3,16 +3,16 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000036';
+const _uidOwner = '70000000-0000-0000-0000-000000000036';
 const _uidConfirmado = '70000000-0000-0000-0000-000000000037';
 
 void main() {
   late Connection conn;
   late Object groupId;
   late Object votingRoundId;
-  late Object candidataVencedora;
+  late Object winningCandidate;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -26,17 +26,17 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ApuracaoPresenca');
-    await criarPerfilDeTeste(conn, _uidConfirmado, name: 'Confirmado ApuracaoPresenca');
+    await createTestProfile(conn, _uidOwner, name: 'Dono ApuracaoPresenca');
+    await createTestProfile(conn, _uidConfirmado, name: 'Confirmado ApuracaoPresenca');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo ApuracaoPresenca', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
@@ -46,36 +46,36 @@ void main() {
     );
 
     late Object votingRound;
-    late Object vencedora;
-    await comoUsuario(_uidDono, () async {
-      final rodadaRows = await conn.execute(
+    late Object winner;
+    await asUser(_uidOwner, () async {
+      final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @dono, now() + interval '1 day') returning id",
         ),
-        parameters: {'grupo': groupId, 'dono': _uidDono},
+        parameters: {'grupo': groupId, 'dono': _uidOwner},
       );
-      votingRound = rodadaRows.single.toColumnMap()['id']!;
+      votingRound = roundRows.single.toColumnMap()['id']!;
 
       final candRows = await conn.execute(
         Sql.named(
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Única Candidata', now() + interval '5 days', 'Sede', @dono, @rodada) returning id",
         ),
-        parameters: {'dono': _uidDono, 'rodada': votingRound},
+        parameters: {'dono': _uidOwner, 'rodada': votingRound},
       );
-      vencedora = candRows.single.toColumnMap()['id']!;
+      winner = candRows.single.toColumnMap()['id']!;
     });
     votingRoundId = votingRound;
-    candidataVencedora = vencedora;
+    winningCandidate = winner;
 
     // confirma presença ANTES de fechar
-    await comoUsuario(_uidConfirmado, () async {
+    await asUser(_uidConfirmado, () async {
       await conn.execute(
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',
         ),
-        parameters: {'acao': candidataVencedora, 'usuario': _uidConfirmado},
+        parameters: {'acao': winningCandidate, 'usuario': _uidConfirmado},
       );
     });
   });
@@ -97,32 +97,32 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidConfirmado);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidConfirmado);
     await conn.close();
   });
 
   test('FR-013: presença confirmada antes de fechar sobrevive na vencedora', () async {
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},
       );
     });
 
-    final rodadaRows = await conn.execute(
+    final roundRows = await conn.execute(
       Sql.named('select vencedora_id from public.rodadas_votacao where id = @rodada'),
       parameters: {'rodada': votingRoundId},
     );
-    expect(rodadaRows.single.toColumnMap()['vencedora_id'], candidataVencedora);
+    expect(roundRows.single.toColumnMap()['vencedora_id'], winningCandidate);
 
-    final confirmacoes = await conn.execute(
+    final confirmations = await conn.execute(
       Sql.named(
         'select status from public.confirmacoes_acao where acao_id = @acao and usuario_id = @usuario',
       ),
-      parameters: {'acao': candidataVencedora, 'usuario': _uidConfirmado},
+      parameters: {'acao': winningCandidate, 'usuario': _uidConfirmado},
     );
-    expect(confirmacoes, hasLength(1));
-    expect(confirmacoes.single.toColumnMap()['status'], 'confirmado');
+    expect(confirmations, hasLength(1));
+    expect(confirmations.single.toColumnMap()['status'], 'confirmado');
   });
 }

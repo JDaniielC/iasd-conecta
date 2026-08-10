@@ -11,15 +11,15 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidLider, name: 'Lider PublicCurrent');
-    final grupoRows = await conn.execute(
+    await createTestProfile(conn, _uidLider, name: 'Lider PublicCurrent');
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo LeadershipPublicCurrent', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
       parameters: {'dono': _uidLider},
     );
-    groupId = grupoRows.single.toColumnMap()['id']! as String;
+    groupId = groupRows.single.toColumnMap()['id']! as String;
     // Confirmada do ano corrente
     await conn.execute(
       Sql.named(
@@ -47,7 +47,7 @@ void main() {
       Sql.named('delete from public.grupos where id = @id'),
       parameters: {'id': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidLider);
+    await cleanUpTestUser(conn, _uidLider);
     await conn.close();
   });
 

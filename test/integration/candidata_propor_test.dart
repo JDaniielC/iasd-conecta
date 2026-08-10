@@ -3,9 +3,9 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000013';
-const _uidParticipante = '70000000-0000-0000-0000-000000000014';
-const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000015';
+const _uidOwner = '70000000-0000-0000-0000-000000000013';
+const _uidMember = '70000000-0000-0000-0000-000000000014';
+const _uidOutsider = '70000000-0000-0000-0000-000000000015';
 
 void main() {
   late Connection conn;
@@ -14,38 +14,38 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono ProporCandidata');
-    await criarPerfilDeTeste(conn, _uidParticipante, name: 'Participante ProporCandidata');
-    await criarPerfilDeTeste(conn, _uidForaDoGrupo, name: 'ForaDoGrupo ProporCandidata');
+    await createTestProfile(conn, _uidOwner, name: 'Dono ProporCandidata');
+    await createTestProfile(conn, _uidMember, name: 'Participante ProporCandidata');
+    await createTestProfile(conn, _uidOutsider, name: 'ForaDoGrupo ProporCandidata');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo ProporCandidata', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @usuario)',
       ),
-      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidMember},
     );
 
     await conn.execute('set role authenticated');
     await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$_uidDono\",\"role\":\"authenticated\"}'",
+      "set request.jwt.claims to '{\"sub\":\"$_uidOwner\",\"role\":\"authenticated\"}'",
     );
-    final rodadaRows = await conn.execute(
+    final roundRows = await conn.execute(
       Sql.named(
         "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
         "values (@grupo, @dono, now() + interval '1 day') returning id",
       ),
-      parameters: {'grupo': groupId, 'dono': _uidDono},
+      parameters: {'grupo': groupId, 'dono': _uidOwner},
     );
-    votingRoundId = rodadaRows.single.toColumnMap()['id']!;
+    votingRoundId = roundRows.single.toColumnMap()['id']!;
     await conn.execute('reset role');
   });
 
@@ -62,13 +62,13 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidParticipante);
-    await limparUsuarioDeTeste(conn, _uidForaDoGrupo);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidMember);
+    await cleanUpTestUser(conn, _uidOutsider);
     await conn.close();
   });
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -82,13 +82,13 @@ void main() {
 
   test('FR-004: quem não participa do Grupo não propõe candidata', () async {
     await expectLater(
-      comoUsuario(_uidForaDoGrupo, () async {
+      asUser(_uidOutsider, () async {
         await conn.execute(
           Sql.named(
             "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
             "values ('Candidata Intrusa', now() + interval '5 days', 'Sede', @usuario, @rodada)",
           ),
-          parameters: {'usuario': _uidForaDoGrupo, 'rodada': votingRoundId},
+          parameters: {'usuario': _uidOutsider, 'rodada': votingRoundId},
         );
       }),
       throwsA(isA<ServerException>()),
@@ -96,13 +96,13 @@ void main() {
   });
 
   test('FR-003: participante propõe candidata e grupo_id é derivado da Rodada', () async {
-    await comoUsuario(_uidParticipante, () async {
+    await asUser(_uidMember, () async {
       await conn.execute(
         Sql.named(
           "insert into public.acoes (nome, data_hora, local, criador_id, rodada_id) "
           "values ('Candidata Válida', now() + interval '5 days', 'Sede', @usuario, @rodada)",
         ),
-        parameters: {'usuario': _uidParticipante, 'rodada': votingRoundId},
+        parameters: {'usuario': _uidMember, 'rodada': votingRoundId},
       );
     });
 

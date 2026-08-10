@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000011';
+const _uidCreator = '50000000-0000-0000-0000-000000000011';
 
 void main() {
   late Connection conn;
@@ -16,13 +16,13 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidCriador, name: 'Criador Auto'));
+  setUp(() => createTestProfile(conn, _uidCreator, name: 'Criador Auto'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.acoes where criador_id = @criador'),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
+    await cleanUpTestUser(conn, _uidCreator);
   });
 
   test(
@@ -34,18 +34,18 @@ void main() {
           "values ('Retiro', now() + interval '10 days', 'Chácara', @criador) "
           "returning id",
         ),
-        parameters: {'criador': _uidCriador},
+        parameters: {'criador': _uidCreator},
       );
       final actionId = rows.single.toColumnMap()['id'];
 
-      final confirmacoes = await conn.execute(
+      final confirmations = await conn.execute(
         Sql.named('select usuario_id, status from public.confirmacoes_acao where acao_id = @acao'),
         parameters: {'acao': actionId},
       );
 
-      expect(confirmacoes, hasLength(1));
-      final row = confirmacoes.single.toColumnMap();
-      expect(row['usuario_id'], _uidCriador);
+      expect(confirmations, hasLength(1));
+      final row = confirmations.single.toColumnMap();
+      expect(row['usuario_id'], _uidCreator);
       expect(row['status'], 'confirmado');
     },
   );

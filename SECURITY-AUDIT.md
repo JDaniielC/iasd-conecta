@@ -170,3 +170,47 @@ O aviso está dentro da migration, no ponto onde alguém quebraria.
   ninguém foi notificado: não há fato conhecido a notificar, nem canal.
 - **`liderancas_select_public` continua `using (true)`** — mesma classe, outra
   tabela, já especificada como feature 018 e ainda não implementada.
+
+---
+
+# Achado 5 — `grant update` em `perfis` é de tabela inteira, sem recorte de coluna
+
+**Data**: 2026-08-09 | **Status**: registrado, NÃO corrigido — precisa de spec própria
+
+`20260723191202_perfis_igrejas.sql:56` concede `update` na tabela `public.perfis`
+inteira a `authenticated`. A policy `perfis_update_own` protege a **linha** —
+ninguém altera Perfil alheio, provado em
+`test/integration/perfil_edicao_rls_test.dart` casos (a) e (b) — mas **não
+protege a coluna**.
+
+Consequência: por chamada direta à API, o próprio Usuário consegue escrever
+`idade`, `genero` e `consentimento_lgpd_aceito_em` do próprio Perfil. A tela
+"Meu Perfil" (feature 016) não oferece isso, e `toUpdateMap()` tem exatamente
+cinco chaves, nenhuma delas essas — mas a tela não é a barreira.
+
+**Gravidade real, sem exagero**: só afeta o próprio dado da pessoa, não o de
+terceiro. O dano concreto é ela conseguir mudar a própria `idade` para escapar
+da exigência de Apelido de menor, ou o `genero` para forjar composição de Dupla
+Missionária. Não é vazamento; é contorno de regra de domínio.
+
+**Nota da feature 017**: `consentimento_lgpd_aceito_em` ficou mais protegido do
+que estava, sem que essa fosse a intenção — o gatilho
+`perfis_carimbar_consentimento` restaura o valor antigo quando o aceite não
+mudou, então reescrever a data por chamada direta não funciona mais. `idade` e
+`genero` continuam expostos.
+
+**É anterior à feature 016** e nenhum FR dela pede o conserto; consertar exige
+migration, o que a spec da 016 exclui explicitamente.
+
+**Conserto identificado**:
+
+```sql
+revoke update on public.perfis from authenticated;
+grant update (nome, apelido, igreja_id, telefone,
+              consentimento_lgpd_igreja_aceito_em)
+  on public.perfis to authenticated;
+```
+
+Antes de aplicar, verificar quem mais escreve em `perfis`: `excluir_minha_conta`
+é `security definer` e não é afetada, mas o cadastro (`insert`) e qualquer
+caminho futuro precisam ser conferidos coluna a coluna.

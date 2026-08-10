@@ -3,9 +3,9 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000010';
-const _uidParticipante = '70000000-0000-0000-0000-000000000011';
-const _uidForaDoGrupo = '70000000-0000-0000-0000-000000000012';
+const _uidOwner = '70000000-0000-0000-0000-000000000010';
+const _uidMember = '70000000-0000-0000-0000-000000000011';
+const _uidOutsider = '70000000-0000-0000-0000-000000000012';
 
 void main() {
   late Connection conn;
@@ -13,16 +13,16 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono AbrirRodada');
-    await criarPerfilDeTeste(conn, _uidParticipante, name: 'Participante AbrirRodada');
-    await criarPerfilDeTeste(conn, _uidForaDoGrupo, name: 'ForaDoGrupo AbrirRodada');
+    await createTestProfile(conn, _uidOwner, name: 'Dono AbrirRodada');
+    await createTestProfile(conn, _uidMember, name: 'Participante AbrirRodada');
+    await createTestProfile(conn, _uidOutsider, name: 'ForaDoGrupo AbrirRodada');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo AbrirRodada', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
     groupId = rows.single.toColumnMap()['id']!;
 
@@ -30,7 +30,7 @@ void main() {
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @usuario)',
       ),
-      parameters: {'grupo': groupId, 'usuario': _uidParticipante},
+      parameters: {'grupo': groupId, 'usuario': _uidMember},
     );
   });
 
@@ -43,13 +43,13 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidParticipante);
-    await limparUsuarioDeTeste(conn, _uidForaDoGrupo);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidMember);
+    await cleanUpTestUser(conn, _uidOutsider);
     await conn.close();
   });
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -63,13 +63,13 @@ void main() {
 
   test('FR-004: quem não participa do Grupo não abre Rodada', () async {
     await expectLater(
-      comoUsuario(_uidForaDoGrupo, () async {
+      asUser(_uidOutsider, () async {
         await conn.execute(
           Sql.named(
             "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
             "values (@grupo, @usuario, now() + interval '1 day')",
           ),
-          parameters: {'grupo': groupId, 'usuario': _uidForaDoGrupo},
+          parameters: {'grupo': groupId, 'usuario': _uidOutsider},
         );
       }),
       throwsA(isA<ServerException>()),
@@ -77,13 +77,13 @@ void main() {
   });
 
   test('participante do Grupo abre Rodada normalmente', () async {
-    await comoUsuario(_uidParticipante, () async {
+    await asUser(_uidMember, () async {
       await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @usuario, now() + interval '1 day')",
         ),
-        parameters: {'grupo': groupId, 'usuario': _uidParticipante},
+        parameters: {'grupo': groupId, 'usuario': _uidMember},
       );
     });
 

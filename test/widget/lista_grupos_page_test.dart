@@ -10,7 +10,7 @@ import 'package:iasd_conecta/features/profile/data/auth_repository.dart';
 import 'package:iasd_conecta/features/profile/domain/church.dart';
 import 'package:mocktail/mocktail.dart';
 
-class MockGrupoRepository extends Mock implements GroupRepository {}
+class MockGroupRepository extends Mock implements GroupRepository {}
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
@@ -19,7 +19,7 @@ const _churches = [
   Church(id: 'igreja-2', name: 'Pombos'),
 ];
 
-final _grupos = [
+final _groups = [
   Group(
     id: 'g1',
     name: 'SevenBikers',
@@ -39,8 +39,8 @@ final _grupos = [
 ];
 
 Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
-  final grupoRepo = MockGrupoRepository();
-  when(() => grupoRepo.fetchGroups()).thenAnswer((_) async => _grupos);
+  final groupRepo = MockGroupRepository();
+  when(() => groupRepo.fetchGroups()).thenAnswer((_) async => _groups);
   final authRepo = MockAuthRepository();
   when(() => authRepo.hasAccount).thenReturn(false);
 
@@ -48,7 +48,7 @@ Future<void> _pump(WidgetTester tester, {required bool hasProfile}) async {
     ProviderScope(
       overrides: [
         hasProfileProvider.overrideWith((ref) async => hasProfile),
-        groupRepositoryProvider.overrideWithValue(grupoRepo),
+        groupRepositoryProvider.overrideWithValue(groupRepo),
         authRepositoryProvider.overrideWithValue(authRepo),
         churchesProvider.overrideWith((ref) async => _churches),
       ],

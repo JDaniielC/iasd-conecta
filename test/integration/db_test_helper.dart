@@ -17,7 +17,7 @@ Future<Connection> openTestConnection() {
 }
 
 /// Cria um `auth.users` mínimo pra servir de dono de um Perfil de teste.
-Future<String> criarUsuarioDeTeste(Connection conn, String id) async {
+Future<String> createTestUser(Connection conn, String id) async {
   await conn.execute(
     Sql.named(
       "insert into auth.users (id, aud, role, instance_id) "
@@ -38,7 +38,7 @@ Future<String> criarUsuarioDeTeste(Connection conn, String id) async {
 /// fim do login, então nada mais cascateia e o `perfis` de teste precisa ser
 /// apagado explicitamente — senão ele vaza entre execuções e o próximo insert
 /// colide na chave primária.
-Future<void> limparUsuarioDeTeste(Connection conn, String id) async {
+Future<void> cleanUpTestUser(Connection conn, String id) async {
   await conn.execute(
     Sql.named('delete from public.perfis where id = @id'),
     parameters: {'id': id},
@@ -53,13 +53,13 @@ Future<void> limparUsuarioDeTeste(Connection conn, String id) async {
 /// em outras features (ex.: `dono_id`/`usuario_id` de Grupo). `auth.users`
 /// tem `is_anonymous default false` — este helper já cria um Usuário com
 /// Conta (a maioria dos testes de outras features quer isso).
-Future<void> criarPerfilDeTeste(
+Future<void> createTestProfile(
   Connection conn,
   String id, {
   String name = 'Usuário de Teste',
   String gender = 'feminino',
 }) async {
-  await criarUsuarioDeTeste(conn, id);
+  await createTestUser(conn, id);
   await conn.execute(
     Sql.named(
       "insert into public.perfis (id, nome, genero, idade, consentimento_lgpd_aceito_em) "
@@ -81,7 +81,7 @@ Future<void> criarPerfilDeTeste(
 /// dois testes chamando este helper ao mesmo tempo se atropelam (um religa o
 /// gatilho enquanto o outro ainda precisa dele desligado). Dentro da transação
 /// o lock é segurado até o commit e os chamadores entram em fila.
-Future<void> criarAdministradorDistritoDeTeste(Connection conn, String userId) async {
+Future<void> createTestDistrictAdmin(Connection conn, String userId) async {
   await conn.execute('begin');
   await conn.execute(
     'alter table public.administradores_distrito '
@@ -104,7 +104,7 @@ Future<void> criarAdministradorDistritoDeTeste(Connection conn, String userId) a
 /// Igual [criarPerfilDeTeste], mas o Usuário é só Perfil — `is_anonymous =
 /// true` (nunca fez upgrade pra Conta). Usado pra testar regras que exigem
 /// Conta (feature 005: FR-002).
-Future<void> criarPerfilSemContaDeTeste(
+Future<void> createTestProfileWithoutAccount(
   Connection conn,
   String id, {
   String name = 'Usuário sem Conta de Teste',

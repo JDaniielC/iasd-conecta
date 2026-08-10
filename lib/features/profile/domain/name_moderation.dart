@@ -5,6 +5,19 @@
 class NameModeration {
   const NameModeration(this._blockedWords);
 
+  /// A mesma lista que antes era literal dentro da tela de cadastro.
+  ///
+  /// Ela vive aqui para que cadastro e edição de Perfil não possam divergir:
+  /// duas cópias da mesma lista é como uma tela passa a recusar um nome que a
+  /// outra aceita, sem ninguém perceber.
+  static const cached = NameModeration([
+    'idiota',
+    'burro',
+    'estupido',
+    'imbecil',
+    'babaca',
+  ]);
+
   final List<String> _blockedWords;
 
   bool isValid(String name) {

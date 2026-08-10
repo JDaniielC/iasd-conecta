@@ -12,9 +12,9 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarUsuarioDeTeste(conn, _uidMenor);
-    await criarUsuarioDeTeste(conn, _uidAdulto);
-    await criarUsuarioDeTeste(conn, _uidOutro);
+    await createTestUser(conn, _uidMenor);
+    await createTestUser(conn, _uidAdulto);
+    await createTestUser(conn, _uidOutro);
 
     await conn.execute(
       Sql.named(
@@ -35,9 +35,9 @@ void main() {
   });
 
   tearDownAll(() async {
-    await limparUsuarioDeTeste(conn, _uidMenor);
-    await limparUsuarioDeTeste(conn, _uidAdulto);
-    await limparUsuarioDeTeste(conn, _uidOutro);
+    await cleanUpTestUser(conn, _uidMenor);
+    await cleanUpTestUser(conn, _uidAdulto);
+    await cleanUpTestUser(conn, _uidOutro);
     await conn.close();
   });
 

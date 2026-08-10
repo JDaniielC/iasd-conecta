@@ -36,11 +36,11 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _profileUid, name: 'Pessoa Versao');
+    await createTestProfile(conn, _profileUid, name: 'Pessoa Versao');
   });
 
   tearDownAll(() async {
-    await limparUsuarioDeTeste(conn, _profileUid);
+    await cleanUpTestUser(conn, _profileUid);
     await conn.close();
   });
 

@@ -64,13 +64,13 @@ void main() {
     final c = await conn.execute('select id from public.igrejas limit 1');
     churchId = c.first[0] as String;
     for (final uid in _allUids) {
-      await criarUsuarioDeTeste(conn, uid);
+      await createTestUser(conn, uid);
     }
   });
 
   tearDownAll(() async {
     for (final uid in _allUids) {
-      await limparUsuarioDeTeste(conn, uid);
+      await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });

@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidCriador = '50000000-0000-0000-0000-000000000035';
+const _uidCreator = '50000000-0000-0000-0000-000000000035';
 const _uidSegundo = '50000000-0000-0000-0000-000000000036';
 const _uidTerceiro = '50000000-0000-0000-0000-000000000037';
 
@@ -13,16 +13,16 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidCriador, name: 'Criador SaiFila');
-    await criarPerfilDeTeste(conn, _uidSegundo, name: 'Segundo SaiFila');
-    await criarPerfilDeTeste(conn, _uidTerceiro, name: 'Terceiro SaiFila');
+    await createTestProfile(conn, _uidCreator, name: 'Criador SaiFila');
+    await createTestProfile(conn, _uidSegundo, name: 'Segundo SaiFila');
+    await createTestProfile(conn, _uidTerceiro, name: 'Terceiro SaiFila');
 
     final rows = await conn.execute(
       Sql.named(
         "insert into public.acoes (nome, data_hora, local, limite_vagas, criador_id) "
         "values ('Ação SaiFila', now() + interval '5 days', 'Sede', 1, @criador) returning id",
       ),
-      parameters: {'criador': _uidCriador},
+      parameters: {'criador': _uidCreator},
     );
     actionId = rows.single.toColumnMap()['id']!;
 
@@ -45,9 +45,9 @@ void main() {
       Sql.named('delete from public.acoes where id = @acao'),
       parameters: {'acao': actionId},
     );
-    await limparUsuarioDeTeste(conn, _uidCriador);
-    await limparUsuarioDeTeste(conn, _uidSegundo);
-    await limparUsuarioDeTeste(conn, _uidTerceiro);
+    await cleanUpTestUser(conn, _uidCreator);
+    await cleanUpTestUser(conn, _uidSegundo);
+    await cleanUpTestUser(conn, _uidTerceiro);
     await conn.close();
   });
 
@@ -70,7 +70,7 @@ void main() {
         for (final r in rows) r.toColumnMap()['usuario_id']: r.toColumnMap()['status'],
       };
 
-      expect(mapa[_uidCriador], 'confirmado');
+      expect(mapa[_uidCreator], 'confirmado');
       expect(mapa[_uidTerceiro], 'fila');
       expect(mapa.containsKey(_uidSegundo), isFalse);
     },

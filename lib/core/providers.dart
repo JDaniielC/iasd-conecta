@@ -43,6 +43,14 @@ final hasProfileProvider = FutureProvider<bool>((ref) async {
   return ref.watch(profileRepositoryProvider).hasProfile();
 });
 
+/// O Perfil da própria pessoa, inteiro. Diferente de `publicProfileProvider`,
+/// que é a projeção que os outros veem, este é o dado como está guardado — é o
+/// direito de acesso da LGPD art. 18, II.
+final myProfileProvider = FutureProvider<Profile>((ref) async {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(profileRepositoryProvider).fetchMyProfile();
+});
+
 final churchesProvider = FutureProvider<List<Church>>((ref) async {
   return ref.watch(profileRepositoryProvider).fetchChurches();
 });

@@ -3,7 +3,7 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '40000000-0000-0000-0000-000000000001';
+const _uidOwner = '40000000-0000-0000-0000-000000000001';
 
 void main() {
   late Connection conn;
@@ -16,13 +16,13 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarPerfilDeTeste(conn, _uidDono, name: 'Dono de Teste'));
+  setUp(() => createTestProfile(conn, _uidOwner, name: 'Dono de Teste'));
   tearDown(() async {
     await conn.execute(
       Sql.named('delete from public.grupos where dono_id = @dono'),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
+    await cleanUpTestUser(conn, _uidOwner);
   });
 
   test('FR-001: insert em grupos com nome em branco falha', () async {
@@ -32,7 +32,7 @@ void main() {
           "insert into public.grupos (nome, categoria, horario, local, dono_id) "
           "values ('   ', 'Ministério Jovem', 'sábados 16h', 'Sede', @dono)",
         ),
-        parameters: {'dono': _uidDono},
+        parameters: {'dono': _uidOwner},
       ),
       throwsA(isA<ServerException>()),
     );
@@ -45,7 +45,7 @@ void main() {
         "values ('SevenBikers', 'Ministério Jovem', 'sábados 6h', 'Praça', @dono) "
         "returning nome",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
     expect(rows.single.toColumnMap()['nome'], 'SevenBikers');
   });

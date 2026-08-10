@@ -5,7 +5,7 @@ import 'db_test_helper.dart';
 
 const _uidAdmin = '80000000-0000-0000-0000-000000000030';
 
-Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() action) async {
+Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
   await conn.execute('set role authenticated');
   await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
   try {
@@ -18,41 +18,41 @@ Future<void> _comoUsuario(Connection conn, String uid, Future<void> Function() a
 
 void main() {
   late Connection conn;
-  late String categoriaId;
+  late String categoryId;
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin CrudTest');
-    await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
+    await createTestProfile(conn, _uidAdmin, name: 'Admin CrudTest');
+    await createTestDistrictAdmin(conn, _uidAdmin);
     final cat = await conn.execute(
       Sql.named("insert into public.categorias_grupo (nome) values ('Categoria CrudTest') returning id"),
     );
-    categoriaId = cat.single.toColumnMap()['id']! as String;
+    categoryId = cat.single.toColumnMap()['id']! as String;
   });
 
   tearDownAll(() async {
     await conn.execute(
       Sql.named('delete from public.acoes_sugeridas where categoria_id = @id'),
-      parameters: {'id': categoriaId},
+      parameters: {'id': categoryId},
     );
     await conn.execute(
       Sql.named('delete from public.categorias_grupo where id = @id'),
-      parameters: {'id': categoriaId},
+      parameters: {'id': categoryId},
     );
     await conn.execute(
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidAdmin},
     );
-    await limparUsuarioDeTeste(conn, _uidAdmin);
+    await cleanUpTestUser(conn, _uidAdmin);
     await conn.close();
   });
 
   test('FR-001/FR-002: Administrador cadastra e remove; remover não afeta Ação já criada', () async {
     late String sugestaoId;
-    await _comoUsuario(conn, _uidAdmin, () async {
+    await _asUser(conn, _uidAdmin, () async {
       final rows = await conn.execute(
         Sql.named('insert into public.acoes_sugeridas (categoria_id, nome) values (@cat, @nome) returning id'),
-        parameters: {'cat': categoriaId, 'nome': 'Culto Jovem'},
+        parameters: {'cat': categoryId, 'nome': 'Culto Jovem'},
       );
       sugestaoId = rows.single.toColumnMap()['id']! as String;
     });
@@ -65,7 +65,7 @@ void main() {
       parameters: {'criador': _uidAdmin},
     );
 
-    await _comoUsuario(conn, _uidAdmin, () async {
+    await _asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named('delete from public.acoes_sugeridas where id = @id'),
         parameters: {'id': sugestaoId},
@@ -78,11 +78,11 @@ void main() {
     );
     expect(sugestaoRows, isEmpty);
 
-    final acaoRows = await conn.execute(
+    final actionRows = await conn.execute(
       Sql.named("select nome from public.acoes where nome = 'Culto Jovem' and criador_id = @criador"),
       parameters: {'criador': _uidAdmin},
     );
-    expect(acaoRows, hasLength(1));
+    expect(actionRows, hasLength(1));
 
     await conn.execute(
       Sql.named("delete from public.acoes where nome = 'Culto Jovem' and criador_id = @criador"),

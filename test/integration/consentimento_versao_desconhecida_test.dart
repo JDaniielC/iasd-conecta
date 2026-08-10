@@ -83,14 +83,14 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final uid in _allUids) {
-      await criarUsuarioDeTeste(conn, uid);
+      await createTestUser(conn, uid);
       await seedLegacyProfile(uid);
     }
   });
 
   tearDownAll(() async {
     for (final uid in _allUids) {
-      await limparUsuarioDeTeste(conn, uid);
+      await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });

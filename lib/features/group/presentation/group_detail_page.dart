@@ -30,7 +30,7 @@ class GroupDetailPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _sair(BuildContext context, WidgetRef ref) async {
+  Future<void> _leave(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(groupRepositoryProvider).leave(groupId);
       ref.invalidate(membersProvider(groupId));
@@ -97,7 +97,7 @@ class GroupDetailPage extends ConsumerWidget {
                 _LeadersSection(groupId: groupId),
                 const SizedBox(height: AppSpacing.lg),
                 ElevatedButton(
-                  onPressed: participa ? () => _sair(context, ref) : () => _join(context, ref),
+                  onPressed: participa ? () => _leave(context, ref) : () => _join(context, ref),
                   child: Text(participa ? 'Sair do Grupo/Ministério' : 'Participar'),
                 ),
                 const SizedBox(height: AppSpacing.lg),

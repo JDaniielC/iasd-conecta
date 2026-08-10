@@ -16,8 +16,8 @@ void main() {
     await conn.close();
   });
 
-  setUp(() => criarUsuarioDeTeste(conn, _uid));
-  tearDown(() => limparUsuarioDeTeste(conn, _uid));
+  setUp(() => createTestUser(conn, _uid));
+  tearDown(() => cleanUpTestUser(conn, _uid));
 
   test('FR-003: insert em perfis sem consentimento LGPD falha', () async {
     await expectLater(

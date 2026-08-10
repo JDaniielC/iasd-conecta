@@ -4,7 +4,7 @@ import 'package:test/test.dart';
 import 'db_test_helper.dart';
 
 const _uidAtacante = '95000000-0000-0000-0000-000000000010';
-const _uidDono = '95000000-0000-0000-0000-000000000011';
+const _uidOwner = '95000000-0000-0000-0000-000000000011';
 
 void main() {
   late Connection conn;
@@ -12,14 +12,14 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAtacante, name: 'Atacante SemRodada');
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono SemRodada');
+    await createTestProfile(conn, _uidAtacante, name: 'Atacante SemRodada');
+    await createTestProfile(conn, _uidOwner, name: 'Dono SemRodada');
     final rows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo SemRodada', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
     groupId = rows.single.toColumnMap()['id']! as String;
   });
@@ -33,8 +33,8 @@ void main() {
       Sql.named('delete from public.grupos where id = @id'),
       parameters: {'id': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidAtacante);
-    await limparUsuarioDeTeste(conn, _uidDono);
+    await cleanUpTestUser(conn, _uidAtacante);
+    await cleanUpTestUser(conn, _uidOwner);
     await conn.close();
   });
 

@@ -3,16 +3,16 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _uidDono = '70000000-0000-0000-0000-000000000038';
+const _uidOwner = '70000000-0000-0000-0000-000000000038';
 const _uidProponente = '70000000-0000-0000-0000-000000000039';
-const _uidOutroParticipante = '70000000-0000-0000-0000-000000000040';
+const _uidOtherMember = '70000000-0000-0000-0000-000000000040';
 
 void main() {
   late Connection conn;
   late Object groupId;
-  late Object acaoConfirmadaId;
+  late Object confirmedActionId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -26,37 +26,37 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidDono, name: 'Dono CancelarAcaoGrupo');
-    await criarPerfilDeTeste(conn, _uidProponente, name: 'Proponente CancelarAcaoGrupo');
-    await criarPerfilDeTeste(conn, _uidOutroParticipante, name: 'Outro CancelarAcaoGrupo');
+    await createTestProfile(conn, _uidOwner, name: 'Dono CancelarAcaoGrupo');
+    await createTestProfile(conn, _uidProponente, name: 'Proponente CancelarAcaoGrupo');
+    await createTestProfile(conn, _uidOtherMember, name: 'Outro CancelarAcaoGrupo');
 
-    final grupoRows = await conn.execute(
+    final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
         "values ('Grupo CancelarAcaoGrupo', 'Ministério Jovem', 'sábados', 'Sede', @dono) returning id",
       ),
-      parameters: {'dono': _uidDono},
+      parameters: {'dono': _uidOwner},
     );
-    groupId = grupoRows.single.toColumnMap()['id']!;
+    groupId = groupRows.single.toColumnMap()['id']!;
 
     await conn.execute(
       Sql.named(
         'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@grupo, @a), (@grupo, @b)',
       ),
-      parameters: {'grupo': groupId, 'a': _uidProponente, 'b': _uidOutroParticipante},
+      parameters: {'grupo': groupId, 'a': _uidProponente, 'b': _uidOtherMember},
     );
 
     late Object actionId;
     late Object votingRoundId;
-    await comoUsuario(_uidProponente, () async {
-      final rodadaRows = await conn.execute(
+    await asUser(_uidProponente, () async {
+      final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
           "values (@grupo, @proponente, now() + interval '1 day') returning id",
         ),
         parameters: {'grupo': groupId, 'proponente': _uidProponente},
       );
-      votingRoundId = rodadaRows.single.toColumnMap()['id']!;
+      votingRoundId = roundRows.single.toColumnMap()['id']!;
 
       final candRows = await conn.execute(
         Sql.named(
@@ -70,14 +70,14 @@ void main() {
     });
 
     // fecha a rodada forçado pelo dono — a única candidata vira Ação de Grupo confirmada
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': votingRoundId},
       );
     });
 
-    acaoConfirmadaId = actionId;
+    confirmedActionId = actionId;
   });
 
   tearDownAll(() async {
@@ -97,38 +97,38 @@ void main() {
       Sql.named('delete from public.grupos where id = @grupo'),
       parameters: {'grupo': groupId},
     );
-    await limparUsuarioDeTeste(conn, _uidDono);
-    await limparUsuarioDeTeste(conn, _uidProponente);
-    await limparUsuarioDeTeste(conn, _uidOutroParticipante);
+    await cleanUpTestUser(conn, _uidOwner);
+    await cleanUpTestUser(conn, _uidProponente);
+    await cleanUpTestUser(conn, _uidOtherMember);
     await conn.close();
   });
 
   test('participante que não é Dono nem propôs não consegue cancelar', () async {
-    await comoUsuario(_uidOutroParticipante, () async {
+    await asUser(_uidOtherMember, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
-        parameters: {'acao': acaoConfirmadaId},
+        parameters: {'acao': confirmedActionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @acao'),
-      parameters: {'acao': acaoConfirmadaId},
+      parameters: {'acao': confirmedActionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNull);
   });
 
   test('FR-016: Dono do Grupo cancela mesmo sem ter proposto a vencedora', () async {
-    await comoUsuario(_uidDono, () async {
+    await asUser(_uidOwner, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
-        parameters: {'acao': acaoConfirmadaId},
+        parameters: {'acao': confirmedActionId},
       );
     });
 
     final rows = await conn.execute(
       Sql.named('select cancelada_em from public.acoes where id = @acao'),
-      parameters: {'acao': acaoConfirmadaId},
+      parameters: {'acao': confirmedActionId},
     );
     expect(rows.single.toColumnMap()['cancelada_em'], isNotNull);
   });

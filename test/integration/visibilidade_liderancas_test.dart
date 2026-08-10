@@ -94,10 +94,10 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final userId in _allUserIds) {
-      await criarPerfilDeTeste(conn, userId,
+      await createTestProfile(conn, userId,
           name: 'Pessoa ${userId.substring(31)}');
     }
-    await criarAdministradorDistritoDeTeste(conn, _adminUserId);
+    await createTestDistrictAdmin(conn, _adminUserId);
 
     await conn.execute(
       Sql.named(
@@ -152,7 +152,7 @@ void main() {
       parameters: {'u': _adminUserId},
     );
     for (final userId in _allUserIds) {
-      await limparUsuarioDeTeste(conn, userId);
+      await cleanUpTestUser(conn, userId);
     }
     await conn.close();
   });

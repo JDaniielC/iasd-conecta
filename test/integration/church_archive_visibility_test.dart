@@ -9,7 +9,7 @@ void main() {
   late Connection conn;
   late Object churchId;
 
-  Future<void> comoUsuario(String uid, Future<void> Function() action) async {
+  Future<void> asUser(String uid, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
     await conn.execute(
       "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
@@ -27,15 +27,15 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
-    await criarPerfilDeTeste(conn, _uidAdmin, name: 'Admin ArchiveVisibility');
-    await criarAdministradorDistritoDeTeste(conn, _uidAdmin);
+    await createTestProfile(conn, _uidAdmin, name: 'Admin ArchiveVisibility');
+    await createTestDistrictAdmin(conn, _uidAdmin);
 
     final rows = await conn.execute(
       Sql.named("insert into public.igrejas (nome) values ('Igreja Pra Arquivar') returning id"),
     );
     churchId = rows.single.toColumnMap()['id']!;
 
-    await comoUsuario(_uidAdmin, () async {
+    await asUser(_uidAdmin, () async {
       await conn.execute(
         Sql.named('update public.igrejas set arquivada_em = now() where id = @id'),
         parameters: {'id': churchId},
@@ -52,7 +52,7 @@ void main() {
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidAdmin},
     );
-    await limparUsuarioDeTeste(conn, _uidAdmin);
+    await cleanUpTestUser(conn, _uidAdmin);
     await conn.close();
   });
 
@@ -72,7 +72,7 @@ void main() {
   });
 
   test('FR-008: Igreja arquivada continua visível pro Administrador', () async {
-    await comoUsuario(_uidAdmin, () async {
+    await asUser(_uidAdmin, () async {
       final rows = await conn.execute(
         Sql.named('select count(*) as total from public.igrejas where id = @id'),
         parameters: {'id': churchId},

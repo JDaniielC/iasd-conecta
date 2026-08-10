@@ -163,6 +163,9 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
         );
       }
       _invalidatePhoto();
+      // Trocar a capa enfileira a ANTIGA — a fila também precisa ser drenada
+      // aqui, não só na remoção.
+      await repository.requestDrain();
     } on ImageRejected catch (e) {
       // A mensagem já vem em português e pronta para a tela — a tela não
       // traduz nada.
@@ -180,8 +183,12 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
   Future<void> _remove(CoverPhoto photo) async {
     setState(() => _busy = true);
     try {
-      await ref.read(coverPhotoRepositoryProvider).remove(photo);
+      final repository = ref.read(coverPhotoRepositoryProvider);
+      await repository.remove(photo);
       _invalidatePhoto();
+      // Pede a limpeza do arquivo agora, sem esperar o cron — que no plano
+      // gratuito para junto com o banco pausado. Não lança.
+      await repository.requestDrain();
     } catch (_) {
       _say('Não deu pra remover a imagem agora. Tente de novo.');
     } finally {

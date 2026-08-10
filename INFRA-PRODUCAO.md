@@ -1,6 +1,7 @@
 # Infraestrutura de produção — região
 
-**Este arquivo é o registro canônico da região.** `README.md`, `.env.example`,
+**Este arquivo é o registro canônico da região e do que produção precisa
+configurar à mão.** `README.md`, `.env.example`,
 `MAPA-DE-DADOS.md` e o comentário de `LegalMetadata.hostingRegion` apontam para
 cá — nenhum deles repete o conteúdo. Quem for provisionar um ambiente novo lê
 aqui.
@@ -103,7 +104,61 @@ deste documento, e a tabela acima precisa ser refeita para ele.
 
 ---
 
-## 3. Backup
+## 3. Drenagem das fotos de capa — **um passo obrigatório no primeiro deploy**
+
+A feature 013 guarda imagens de capa num bucket público. Quando alguém remove
+uma imagem, o banco só **enfileira** o arquivo em `public.capas_a_remover`; quem
+apaga de verdade é uma Edge Function, chamada pelo `pg_cron` e pelo app.
+
+**Essa chamada precisa saber o endereço da função, e ele não vem configurado.**
+De propósito: a primeira versão trazia o endereço do Docker de quem desenvolve
+semeado na migration, o que faria produção disparar de minuto em minuto contra
+um endereço que não resolve — **a fila nunca drenaria, e toda imagem removida
+ficaria no bucket para sempre**, em silêncio. Hoje a função **recusa em voz
+alta** enquanto o ambiente não estiver configurado.
+
+Rodar **uma vez**, contra o banco de produção, trocando `<project-ref>`:
+
+```sql
+insert into public.configuracao_drenagem (url_funcao)
+values ('https://<project-ref>.supabase.co/functions/v1/drenar-capas')
+on conflict (id) do update set url_funcao = excluded.url_funcao,
+                               atualizado_em = now();
+```
+
+O `project-ref` está na seção 2. A Edge Function precisa estar publicada
+(`supabase functions deploy drenar-capas`) — ela recebe a chave de serviço do
+próprio ambiente do Supabase, e **nenhum segredo é guardado aqui nem no banco**.
+
+### Como saber que a fila parou
+
+Se esta consulta devolver algo além de zero por mais de uma hora, há imagem
+removida que **continua acessível**:
+
+```sql
+select count(*) from public.capas_a_remover
+where removido_em is null
+  and enfileirado_em < now() - interval '1 hour';
+```
+
+Vale conferir depois do primeiro deploy e sempre que alguém relatar que uma
+imagem removida continua aparecendo. É a única forma de o problema dar sinal: a
+fila parada não aparece em tela nenhuma.
+
+**Uma limitação conhecida, que não é defeito**: `pg_cron` roda dentro do
+Postgres, e projeto no plano gratuito é pausado depois de uma semana sem
+atividade — com o banco pausado, o cron para junto. Por isso o app também pede a
+drenagem depois de remover ou trocar uma capa: quem acorda o banco é quem usa o
+app.
+
+**Verificação ponta a ponta** (local, com a Edge Function de pé):
+`specs/013-foto-de-capa/scripts/verificar-drenagem.sh`. Executada em 2026-08-10:
+objeto no bucket **1 → 0**, `removido_em` preenchido em **1 segundo**, nenhuma
+tentativa com erro.
+
+---
+
+## 4. Backup
 
 **A decisão sobre backup existe, está fechada e assinada, e não mora aqui.** Ela
 está em `REVISAO-JURIDICA.md`, que não é versionado — é levantamento de risco

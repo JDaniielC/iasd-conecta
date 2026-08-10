@@ -29,6 +29,7 @@ Future<void> pumpEditor(
   final repository = MockCoverPhotoRepository();
   when(() => repository.publicUrlFor(any()))
       .thenReturn('http://127.0.0.1/inexistente.jpg');
+  when(() => repository.requestDrain()).thenAnswer((_) async {});
 
   await tester.pumpWidget(
     ProviderScope(
@@ -168,6 +169,7 @@ void main() {
           .thenReturn('http://127.0.0.1/inexistente.jpg');
       when(() => repository.remove(any()))
           .thenThrow(Exception('rede caiu no meio'));
+      when(() => repository.requestDrain()).thenAnswer((_) async {});
 
       await tester.pumpWidget(
         ProviderScope(
@@ -266,6 +268,78 @@ void main() {
         canRemove: true,
       );
       expect(find.byType(TextButton), findsNothing);
+    });
+  });
+
+  group('a fila é cutucada depois de mexer nela', () {
+    // pg_cron roda dentro do Postgres, e projeto no plano gratuito é pausado
+    // depois de uma semana sem atividade — com o banco pausado o cron para
+    // junto. Quem acorda o banco é o app, então é o app que pede a drenagem.
+    testWidgets('remover pede a drenagem', (tester) async {
+      final repository = MockCoverPhotoRepository();
+      when(() => repository.publicUrlFor(any()))
+          .thenReturn('http://127.0.0.1/inexistente.jpg');
+      when(() => repository.remove(any())).thenAnswer((_) async {});
+      when(() => repository.requestDrain()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            coverPhotoRepositoryProvider.overrideWithValue(repository),
+            groupCoverPhotoProvider('grupo-1')
+                .overrideWith((ref) async => buildGroupCover()),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CoverPhotoEditor(
+                groupId: 'grupo-1',
+                canUpload: true,
+                canRemove: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Remover capa'));
+      await tester.pumpAndSettle();
+
+      verify(() => repository.requestDrain()).called(1);
+    });
+
+    testWidgets('remoção que falha NÃO pede a drenagem — não há o que drenar',
+        (tester) async {
+      final repository = MockCoverPhotoRepository();
+      when(() => repository.publicUrlFor(any()))
+          .thenReturn('http://127.0.0.1/inexistente.jpg');
+      when(() => repository.remove(any())).thenThrow(Exception('rede'));
+      when(() => repository.requestDrain()).thenAnswer((_) async {});
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            coverPhotoRepositoryProvider.overrideWithValue(repository),
+            groupCoverPhotoProvider('grupo-1')
+                .overrideWith((ref) async => buildGroupCover()),
+          ],
+          child: const MaterialApp(
+            home: Scaffold(
+              body: CoverPhotoEditor(
+                groupId: 'grupo-1',
+                canUpload: true,
+                canRemove: true,
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('Remover capa'));
+      await tester.pumpAndSettle();
+
+      verifyNever(() => repository.requestDrain());
     });
   });
 }

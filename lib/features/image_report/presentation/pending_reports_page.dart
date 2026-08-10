@@ -72,6 +72,10 @@ class _ReportList extends ConsumerWidget {
         // Apaga a linha da capa. O arquivo sai pela fila, e as denúncias desta
         // imagem somem por cascade — o encerramento automático de FR-019.
         await repository.resolveByRemovingImage(image.photoId);
+        // Mesma razão do editor de capa: o cron não é garantia no plano
+        // gratuito, e aqui a remoção costuma vir de uma denúncia — é o caso em
+        // que esperar menos importa mais.
+        await ref.read(coverPhotoRepositoryProvider).requestDrain();
         // A listagem também, e não só o item: sem isto, o Grupo cuja capa o
         // Administrador acabou de tirar do ar continuaria exibindo a imagem
         // na lista, porque a rota de baixo segue montada e o provider

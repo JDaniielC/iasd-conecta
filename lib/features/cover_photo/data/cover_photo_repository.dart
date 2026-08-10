@@ -145,6 +145,26 @@ class CoverPhotoRepository {
     await _client.from('fotos_capa').delete().eq('id', photo.id);
   }
 
+  /// Cutuca a drenagem da fila. **Nunca lança.**
+  ///
+  /// É o **segundo gatilho** que a migration da drenagem sempre afirmou ter, e
+  /// que não existia: `pg_cron` roda dentro do Postgres, e projeto no plano
+  /// gratuito é pausado depois de uma semana sem atividade — com o banco
+  /// pausado, o cron para junto. Quem acorda o banco é o app, então é o app que
+  /// precisa pedir a drenagem quando mexe na fila. A escolha do plano gratuito
+  /// virou decisão registrada na feature 019, o que torna isto menos teórico.
+  ///
+  /// Engolir a falha é deliberado: a remoção da linha **já aconteceu** quando
+  /// isto roda, e derrubá-la aqui transformaria uma limpeza atrasada numa
+  /// remoção que a pessoa vê falhar. O atraso tem outro dono — o cron.
+  Future<void> requestDrain() async {
+    try {
+      await _client.rpc('drenar_capas_a_remover');
+    } catch (_) {
+      // Silêncio proposital. Ver acima.
+    }
+  }
+
   /// Caminho **novo e único a cada envio, nunca reaproveitado** (research
   /// D-001).
   ///

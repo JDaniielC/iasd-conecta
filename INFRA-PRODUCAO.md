@@ -145,6 +145,22 @@ Vale conferir depois do primeiro deploy e sempre que alguém relatar que uma
 imagem removida continua aparecendo. É a única forma de o problema dar sinal: a
 fila parada não aparece em tela nenhuma.
 
+E olhe a coluna `tentativas` das linhas pendentes: **contagem alta e parada
+quer dizer que aquele caminho não sai** — bucket errado, ou objeto que já não
+existe. `ultimo_erro` diz qual dos dois.
+
+> **Por que a confirmação é positiva, e não "não deu erro".** Medido em
+> 2026-08-10: com um nome de bucket errado, a API de armazenamento devolve
+> **sucesso** para a remoção. A versão anterior da drenagem acreditava nisso e
+> carimbava a linha como drenada — o arquivo continuava público, a fila ficava
+> vazia e esta consulta mostrava zero. Hoje só sai da fila o caminho que a API
+> devolve **na lista dos removidos**.
+
+Linhas já drenadas **não são expurgadas**, por decisão registrada na migration
+`20260810150000_fila_capas_retencao.sql`: o volume é desprezível, o índice de
+pendentes é parcial (crescimento não afeta esta consulta) e não há dado pessoal
+nos caminhos.
+
 **Uma limitação conhecida, que não é defeito**: `pg_cron` roda dentro do
 Postgres, e projeto no plano gratuito é pausado depois de uma semana sem
 atividade — com o banco pausado, o cron para junto. Por isso o app também pede a

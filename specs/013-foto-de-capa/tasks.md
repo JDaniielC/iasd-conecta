@@ -539,6 +539,50 @@ documentada — `supabase/config.toml:415-423` declara `verify_jwt = false` para
 `drenar-capas`, com o porquê escrito (quem chama é o `pg_cron` do próprio banco, e exigir
 token obrigaria a guardar credencial, que é o que este desenho evita).
 
-- [ ] T048 Fazer `tentativas` contar de verdade em `supabase/functions/drenar-capas/index.ts`. Hoje a leitura é `.select('caminho')` — **`tentativas` nunca é buscada** —, e no caminho de falha a linha 57 escreve `(pendentes)[0]?.tentativas ?? 0`: sempre **zero**, e o valor da primeira linha aplicado ao lote inteiro por um `.in()`. A coluna existe para separar "falhou uma vez, foi rede" de "falha desde sempre, tem algo errado com este arquivo", e hoje ela responde **zero** para os dois casos. O comentário imediatamente acima afirma que *"registrar o erro e contar a tentativa é o que transforma 'sumiu e ninguém sabe' em algo consultável"* — é comentário prometendo garantia que o código não dá, a mesma classe que a 018, o D-007 e a T045 desta feature já consertaram. Buscar `tentativas` no `select` e incrementar **por linha**, não por lote. `ultimo_erro` já está correto. per plan: fila consultável, SC-005 (contradicts)
+- [X] T048 Fazer `tentativas` contar de verdade em `supabase/functions/drenar-capas/index.ts`. Hoje a leitura é `.select('caminho')` — **`tentativas` nunca é buscada** —, e no caminho de falha a linha 57 escreve `(pendentes)[0]?.tentativas ?? 0`: sempre **zero**, e o valor da primeira linha aplicado ao lote inteiro por um `.in()`. A coluna existe para separar "falhou uma vez, foi rede" de "falha desde sempre, tem algo errado com este arquivo", e hoje ela responde **zero** para os dois casos. O comentário imediatamente acima afirma que *"registrar o erro e contar a tentativa é o que transforma 'sumiu e ninguém sabe' em algo consultável"* — é comentário prometendo garantia que o código não dá, a mesma classe que a 018, o D-007 e a T045 desta feature já consertaram. Buscar `tentativas` no `select` e incrementar **por linha**, não por lote. `ultimo_erro` já está correto. per plan: fila consultável, SC-005 (contradicts)
+  ✅ `select` passou a trazer `tentativas`, e o incremento é **por linha** (`.eq`), não por
+  lote. Medido num lote misto: caminho não confirmado ficou com `tentativas=1` e o motivo
+  escrito; o objeto real saiu com `tentativas=0`.
+  ⚠️ **Verificar esta tarefa revelou um defeito maior, consertado junto — ver a nota abaixo.**
 
-- [ ] T049 Decidir e escrever o que acontece com as linhas já drenadas de `public.capas_a_remover`. Hoje elas **nunca saem**: uma linha por imagem removida em toda a história do app, para sempre. Não é vazamento — o caminho contém só UUIDs de Grupo/Ação, nenhum dado pessoal —, e pode muito bem ser registro proposital. O defeito é não estar dito: quem ler a tabela daqui a um ano não sabe se é histórico deliberado ou esquecimento, e a consulta de fila parada de `INFRA-PRODUCAO.md` § 3 vai varrer um volume que só cresce. Duas saídas aceitáveis, e a escolha é de quem mantém: expurgar linhas drenadas depois de N dias no próprio `pg_cron`, ou declarar em comentário na tabela que a permanência é o desenho. per SC-005 (missing)
+
+- [X] T049 Decidir e escrever o que acontece com as linhas já drenadas de `public.capas_a_remover`. Hoje elas **nunca saem**: uma linha por imagem removida em toda a história do app, para sempre. Não é vazamento — o caminho contém só UUIDs de Grupo/Ação, nenhum dado pessoal —, e pode muito bem ser registro proposital. O defeito é não estar dito: quem ler a tabela daqui a um ano não sabe se é histórico deliberado ou esquecimento, e a consulta de fila parada de `INFRA-PRODUCAO.md` § 3 vai varrer um volume que só cresce. Duas saídas aceitáveis, e a escolha é de quem mantém: expurgar linhas drenadas depois de N dias no próprio `pg_cron`, ou declarar em comentário na tabela que a permanência é o desenho. per SC-005 (missing)
+
+  ✅ **Decidido: as linhas drenadas ficam**, e a decisão está escrita em
+  `20260810150000_fila_capas_retencao.sql` e em `INFRA-PRODUCAO.md` § 3. Três razões: o volume
+  é desprezível para um distrito; o índice `capas_a_remover_pendentes` é **parcial**
+  (`where removido_em is null`), então o crescimento **não afeta** a consulta de fila parada; e
+  não há dado pessoal nos caminhos — `enviada_por` mora em `fotos_capa`, que é apagada.
+  Um `pg_cron` de expurgo seria mais peça do que o Princípio V justifica. Fica dito que
+  expurgar depois é seguro, se um dia incomodar.
+
+### Achado fora de tarefa, encontrado ao verificar a T048 (2026-08-10)
+
+**A drenagem marcava como removido o que nunca foi removido.**
+
+Medido: com um nome de bucket que **não existe**, `supabase.storage.remove()`
+devolve `error` **nulo**. A função tratava isso como sucesso e carimbava
+`removido_em`. Resultado: a linha saía da fila como drenada, o arquivo continuava
+público, `tentativas` ficava 0, `ultimo_erro` nulo, e a consulta de fila parada
+de `INFRA-PRODUCAO.md` § 3 mostrava **zero**.
+
+Um nome de bucket errado transformava a fila inteira em teatro, **em silêncio** —
+o "sumiu e ninguém sabe" que este desenho existe para impedir, entrando pela
+porta que ninguém trancou. E entraria sem ser notado: a verificação ponta a ponta
+da T046 usa o bucket certo, e passa.
+
+**Conserto**: a confirmação passou a ser **positiva**. Só sai da fila o caminho
+que a API devolve **na lista dos removidos**; o que não voltar continua pendente,
+conta a tentativa e guarda o motivo.
+
+**Medição do lote misto** — um objeto real e um caminho que nunca existiu:
+
+| caminho | drenado | tentativas | objeto no bucket |
+|---|---|---|---|
+| `grupo/misto/real.jpg` | **true** | 0 | **0** — saiu |
+| `grupo/misto/nunca-existiu.jpg` | **false** | **1** | — |
+
+Não virou tarefa de convergência porque foi encontrado e consertado dentro da
+T048, no mesmo arquivo e no mesmo caminho de código. Fica registrado aqui porque
+é o achado mais grave da feature depois da T044, e os dois têm a mesma forma:
+**funciona no ambiente em que se testa e morre calado no outro.**

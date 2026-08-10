@@ -110,6 +110,11 @@ void main() {
       Sql.named('delete from public.acoes where grupo_id = @grupo'),
       parameters: {'grupo': groupId},
     );
+    // As Ações avulsas dos casos (d) e (e) não caem no delete por Grupo.
+    await conn.execute(
+      Sql.named('delete from public.acoes where criador_id = @dono'),
+      parameters: {'dono': _uidOwner},
+    );
     await conn.execute(
       Sql.named('delete from public.rodadas_votacao where grupo_id = @grupo'),
       parameters: {'grupo': groupId},
@@ -291,6 +296,164 @@ void main() {
         Sql.named('delete from public.fotos_capa where acao_id = @acao'),
         parameters: {'acao': winner},
       );
+    },
+  );
+
+  test('(d) FR-022: cancelar a Ação apaga a capa — não há cascade que dispare',
+      () async {
+    // Cancelar é `update acoes set cancelada_em`: a LINHA DA AÇÃO NÃO SOME.
+    // Sem gatilho explícito, a imagem de uma Ação cancelada ficaria pública
+    // para sempre e ninguém perceberia — a Ação some das listas, a imagem não.
+    late Object actionId;
+    await asUser(_uidOwner, () async {
+      final rows = await conn.execute(
+        Sql.named(
+          // Ação AVULSA: o domínio recusa Ação de Grupo que não seja
+          // candidata de uma Rodada, e essa regra não é desta feature.
+          "insert into public.acoes (nome, data_hora, local, criador_id, confirmada) "
+          "values ('Ação a Cancelar Orfao', now() + interval '5 days', 'Sede', @dono, true) returning id",
+        ),
+        parameters: {'dono': _uidOwner},
+      );
+      actionId = rows.single.toColumnMap()['id']!;
+    });
+
+    final path = 'acao/$actionId/cancelada-orfao-capa.jpg';
+    await asUser(_uidOwner, () async {
+      await conn.execute(
+        Sql.named(
+          'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
+          'values (@acao, @caminho, @dono)',
+        ),
+        parameters: {'acao': actionId, 'caminho': path, 'dono': _uidOwner},
+      );
+      await conn.execute(
+        Sql.named('update public.acoes set cancelada_em = now() where id = @id'),
+        parameters: {'id': actionId},
+      );
+    });
+
+    expect(await coverCountFor('acao_id', actionId), 0);
+    expect(await isQueued(path), isTrue);
+
+    // A Ação continua existindo — cancelar não apaga a Ação.
+    final rows = await conn.execute(
+      Sql.named('select count(*) as total from public.acoes where id = @id'),
+      parameters: {'id': actionId},
+    );
+    expect(rows.single.toColumnMap()['total'], 1);
+  });
+
+  test('(e) FR-023: Ação encerrada por tempo MANTÉM a capa — é histórico',
+      () async {
+    // A diferença entre encerrada e cancelada é deliberada. Encerrada
+    // aconteceu, tem presenças registradas, e a capa faz parte do registro.
+    // Cancelada é o contrário: não aconteceu.
+    late Object actionId;
+    await asUser(_uidOwner, () async {
+      final rows = await conn.execute(
+        Sql.named(
+          // Ação AVULSA e no FUTURO: criar Ação já passada é recusado pela
+          // RLS de confirmacoes_acao, porque criar confirma o criador
+          // automaticamente e ninguém confirma presença no que já passou.
+          // O tempo é empurrado para trás logo abaixo.
+          "insert into public.acoes (nome, data_hora, local, criador_id, confirmada) "
+          "values ('Ação Encerrada Orfao', now() + interval '5 days', 'Sede', @dono, true) returning id",
+        ),
+        parameters: {'dono': _uidOwner},
+      );
+      actionId = rows.single.toColumnMap()['id']!;
+    });
+
+    // Encerrar é passagem do tempo, e o tempo não se acelera num teste: a
+    // data é movida para o passado direto no banco, sem papel de aplicação.
+    await conn.execute(
+      Sql.named(
+        "update public.acoes set data_hora = now() - interval '5 days' where id = @id",
+      ),
+      parameters: {'id': actionId},
+    );
+
+    final path = 'acao/$actionId/encerrada-orfao-capa.jpg';
+    await asUser(_uidOwner, () async {
+      await conn.execute(
+        Sql.named(
+          'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
+          'values (@acao, @caminho, @dono)',
+        ),
+        parameters: {'acao': actionId, 'caminho': path, 'dono': _uidOwner},
+      );
+    });
+
+    // Encerrar é passagem do tempo: nada é executado, nada muda na linha.
+    expect(await coverCountFor('acao_id', actionId), 1);
+    expect(await isQueued(path), isFalse);
+
+    await conn.execute(
+      Sql.named('delete from public.fotos_capa where acao_id = @id'),
+      parameters: {'id': actionId},
+    );
+  });
+
+  test(
+    '(f) FR-019: denúncias pendentes são encerradas quando a imagem some, '
+    'por qualquer caminho',
+    () async {
+      // Sem isto, o Administrador acumula pendências sobre imagens que não
+      // existem mais, e a lista perde credibilidade em poucas semanas.
+      final path = 'grupo/$groupId/denunciada.jpg';
+      late Object photoId;
+
+      await asUser(_uidOwner, () async {
+        final rows = await conn.execute(
+          Sql.named(
+            'insert into public.fotos_capa (grupo_id, caminho, enviada_por) '
+            'values (@grupo, @caminho, @dono) returning id',
+          ),
+          parameters: {'grupo': groupId, 'caminho': path, 'dono': _uidOwner},
+        );
+        photoId = rows.single.toColumnMap()['id']!;
+      });
+
+      // Denúncia de Visitante SEM Perfil — o caso que a feature existe para
+      // atender (FR-015).
+      await conn.execute('set role anon');
+      try {
+        await conn.execute(
+          Sql.named(
+            'insert into public.denuncias_imagem (foto_id, motivo) '
+            "values (@foto, 'Aparece uma criança')",
+          ),
+          parameters: {'foto': photoId},
+        );
+      } finally {
+        await conn.execute('reset role');
+      }
+
+      final before = await conn.execute(
+        Sql.named(
+          'select count(*) as total from public.denuncias_imagem where foto_id = @f',
+        ),
+        parameters: {'f': photoId},
+      );
+      expect(before.single.toColumnMap()['total'], 1);
+
+      await asUser(_uidOwner, () async {
+        await conn.execute(
+          Sql.named('delete from public.fotos_capa where id = @id'),
+          parameters: {'id': photoId},
+        );
+      });
+
+      final after = await conn.execute(
+        Sql.named(
+          'select count(*) as total from public.denuncias_imagem where foto_id = @f',
+        ),
+        parameters: {'f': photoId},
+      );
+      expect(after.single.toColumnMap()['total'], 0,
+          reason: 'o cascade de foto_id é o encerramento automático de FR-019');
+      expect(await isQueued(path), isTrue);
     },
   );
 }

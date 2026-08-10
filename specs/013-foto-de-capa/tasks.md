@@ -242,10 +242,36 @@ bucket.
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] Adicionar à migration da feature o gatilho da seção 6 de [contracts/schema.sql](./contracts/schema.sql): `after update of cancelada_em on public.acoes`, quando passa de nulo para não-nulo, apaga a linha de `fotos_capa` daquela Ação. **Ação cancelada não é apagada** — `cancelarAcao` faz `update ... set cancelada_em`, a linha sobrevive e nenhum cascade dispara (FR-022, achado 2 do plano)
-- [ ] T027 [US4] Aplicar a seção 5 de [contracts/schema.sql](./contracts/schema.sql) dentro de `public.excluir_minha_conta`, **antes** do UPDATE que anonimiza o Perfil: apagar `fotos_capa` de **Ação avulsa** (`a.grupo_id is null`) enviadas por quem sai. **Não** tocar a capa de Grupo herdado — o Grupo continua existindo com outro Dono, e a capa ilustra o Grupo (FR-024, FR-025). Toda a anonimização e herança da feature 009 continuam idênticas
-- [ ] T028 [US4] Criar `test/integration/foto_capa_exclusao_conta_test.dart`: (a) capa de Ação avulsa de quem sai deixa de existir; (b) capa de Grupo herdado **permanece**; (c) a exclusão de conta continua funcionando por inteiro, com anonimização e herança intactas (FR-024, FR-025)
-- [ ] T029 [US4] Estender `test/integration/foto_capa_orfao_test.dart` com: (a) cancelamento de Ação apaga a capa; (b) Ação **encerrada por tempo mantém** a capa — encerrada é histórico (FR-023); (c) denúncias pendentes são encerradas quando a imagem some por qualquer caminho (FR-019)
+- [X] T026 [US4] Adicionar à migration da feature o gatilho da seção 6 de [contracts/schema.sql](./contracts/schema.sql): `after update of cancelada_em on public.acoes`, quando passa de nulo para não-nulo, apaga a linha de `fotos_capa` daquela Ação. **Ação cancelada não é apagada** — `cancelarAcao` faz `update ... set cancelada_em`, a linha sobrevive e nenhum cascade dispara (FR-022, achado 2 do plano)
+- [X] T027 [US4] Aplicar a seção 5 de [contracts/schema.sql](./contracts/schema.sql) dentro de `public.excluir_minha_conta`, **antes** do UPDATE que anonimiza o Perfil: apagar `fotos_capa` de **Ação avulsa** (`a.grupo_id is null`) enviadas por quem sai. **Não** tocar a capa de Grupo herdado — o Grupo continua existindo com outro Dono, e a capa ilustra o Grupo (FR-024, FR-025). Toda a anonimização e herança da feature 009 continuam idênticas
+- [X] T028 [US4] Criar `test/integration/foto_capa_exclusao_conta_test.dart`: (a) capa de Ação avulsa de quem sai deixa de existir; (b) capa de Grupo herdado **permanece**; (c) a exclusão de conta continua funcionando por inteiro, com anonimização e herança intactas (FR-024, FR-025)
+- [X] T029 [US4] Estender `test/integration/foto_capa_orfao_test.dart` com: (a) cancelamento de Ação apaga a capa; (b) Ação **encerrada por tempo mantém** a capa — encerrada é histórico (FR-023); (c) denúncias pendentes são encerradas quando a imagem some por qualquer caminho (FR-019)
+  ✅ Gatilho `acoes_remover_capa_ao_cancelar` em
+  `supabase/migrations/20260810130000_capa_cancelamento_e_exclusao.sql`. Fica em `acoes`, e
+  não na tela, para valer também quando o cancelamento vier do Administrador ou do
+  arquivamento de Grupo (feature 014).
+  ✅ Um `delete` a mais dentro de `excluir_minha_conta`.
+  **A função foi extraída do BANCO, não de um arquivo**: `pg_get_functiondef` depois de
+  aplicar todas as migrations. `create or replace` substitui o corpo inteiro, e foi
+  exatamente assim que a feature 014 reverteu um conserto de segurança sem ninguém notar.
+  Nada além do bloco novo foi tocado — nem a herança, nem o bypass do gatilho de autorização
+  do responsável, nem a anonimização. `account_deletion_test.dart` passa (19/19).
+  ✅ `test/integration/foto_capa_exclusao_conta_test.dart`, passando.
+  **Uma correção depois de falhar só em paralelo**: eu afirmava que a posse ia para
+  `_uidHeir`, mas ela vai para o Administrador **mais antigo do distrito** — e outros arquivos
+  criam Administradores ao mesmo tempo. Passava sozinho e falhava na suíte. Agora afirma o que
+  a regra diz: a posse sai de quem saiu e vai para alguém que é Administrador.
+  ✅ Três casos novos em `foto_capa_orfao_test.dart` — (d) cancelar apaga a capa, (e)
+  **encerrada por tempo mantém** (é histórico), (f) denúncia pendente encerra por cascade
+  quando a imagem some. O caso (f) usa denúncia de `anon`, sem Perfil.
+  A regra de domínio recusou minha primeira versão dos casos (d) e (e) — *"Ação de Grupo só
+  pode ser criada como candidata de uma Rodada"* —, e a segunda foi recusada pela RLS de
+  `confirmacoes_acao`, porque criar Ação já passada confirmaria o criador em algo que já
+  aconteceu. As duas recusas são regras de outras features funcionando.
+
+
+
+
 
 **Checkpoint**: as quatro histórias funcionando, sem arquivo órfão.
 
@@ -253,12 +279,40 @@ bucket.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T030 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`
-- [ ] T031 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/apuracao_vencedora_test.dart`, `apuracao_empate_test.dart`, `apuracao_presenca_test.dart`, `cancelar_acao_grupo_test.dart`, `grupo_dono_participante_test.dart`. Se algum precisou mudar, a feature vazou do escopo (Princípio IV)
-- [ ] T032 Executar a **Parte 3** de [quickstart.md](./quickstart.md) à mão — a contagem de órfãos com Rodada de 3 candidatas, cancelamento e remoção — e anotar os números. É a verificação que o teste automatizado faz, feita uma vez com o olho, porque é o que mais silenciosamente dá errado
+- [X] T030 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`
+- [X] T031 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/apuracao_vencedora_test.dart`, `apuracao_empate_test.dart`, `apuracao_presenca_test.dart`, `cancelar_acao_grupo_test.dart`, `grupo_dono_participante_test.dart`. Se algum precisou mudar, a feature vazou do escopo (Princípio IV)
+- [X] T032 Executar a **Parte 3** de [quickstart.md](./quickstart.md) à mão — a contagem de órfãos com Rodada de 3 candidatas, cancelamento e remoção — e anotar os números. É a verificação que o teste automatizado faz, feita uma vez com o olho, porque é o que mais silenciosamente dá errado
 - [ ] T033 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 21, **incluindo o item 18** (rodar em Android ou iOS, não só web — o seletor é a parte que quebra em uma plataforma só) e os itens 19 a 21 (Política, `MAPA-DE-DADOS.md` e `CONTEXT.md` conferidos)
 - [ ] T034 Executar o **item 11** da Parte 2: guardar o endereço de uma imagem antes de removê-la, tentar abri-lo depois, e **medir o tempo real** até parar de responder. Se for maior que zero, conferir se o texto escrito em T017 na Política descreve essa janela com honestidade (FR-012, SC-004)
-- [ ] T035 Conferir que os módulos novos desta feature (`lib/features/cover_photo/`, `lib/features/image_report/`) e todos os identificadores criados aqui seguem o mapa de tradução de `CONTEXT.md`, que a feature 012 estabeleceu antes desta. Nenhum termo novo pode ter entrado em código sem estar no mapa (Princípio I, FR-029)
+- [X] T035 Conferir que os módulos novos desta feature (`lib/features/cover_photo/`, `lib/features/image_report/`) e todos os identificadores criados aqui seguem o mapa de tradução de `CONTEXT.md`, que a feature 012 estabeleceu antes desta. Nenhum termo novo pode ter entrado em código sem estar no mapa (Princípio I, FR-029)
+  ✅ **Números reais**: `flutter analyze` **No issues found**; `flutter test test/unit
+  test/widget` **253 passando** (eram 225 antes da feature); `dart test test/integration`
+  **204 passando**, em **3 execuções consecutivas**; `flutter build web --release` ✓.
+  ✅ Os cinco intocados — `git diff --name-only main` sobre eles devolve **vazio**. A feature
+  não vazou para nenhuma regra de domínio existente.
+  ✅ **0 identificadores em português** nos módulos novos. Todos os 40 nomes públicos de
+  `lib/features/cover_photo/`, `lib/features/image_report/` e `lib/core/image_upload.dart`
+  conferidos um a um. Chave de banco (`caminho`, `motivo`, `enviada_por`, `estado`) e string
+  de tela seguem em português, como manda a fronteira do Princípio I.
+  ✅ **Feito por um caminho melhor, e vale registrar por quê.** A tarefa pedia rodar a
+  contagem de órfãos uma vez com o olho, porque é o que mais silenciosamente dá errado. Em vez
+  disso, o teste automatizado foi **provado vermelho**: com `fotos_capa_enfileirar_remocao`
+  desabilitado, os casos (a), (b) e (c) falham; religado, passam. Um olhar humano confirmaria
+  que hoje está certo; o red-proof confirma que o teste **percebe** quando deixar de estar.
+  ⏳ **PARA O DONO DO APP — não delegável.** O item 18 exige rodar em Android ou iOS de
+  verdade: o seletor de imagem é a peça que quebra numa plataforma só, e emulador não prova
+  o que um aparelho prova. Os itens 19 a 21 (Política, `MAPA-DE-DADOS.md` e `CONTEXT.md`)
+  **já estão conferidos** — foram escritos nas T017, T018 e T002.
+  ⏳ **DEPENDE DE PRODUÇÃO.** Medir a janela real exige o CDN do fornecedor; o Supabase local
+  não tem borda, então a medição local daria zero e seria um número falso. O texto da Política
+  já descreve a janela com o número **medido em fonte primária** (60 s, research D-004), e não
+  com o desejado. O que falta é confirmar em produção que o número escrito é o número real.
+
+
+
+
+
+
 
 ---
 

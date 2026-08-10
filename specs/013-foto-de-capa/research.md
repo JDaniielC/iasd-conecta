@@ -81,7 +81,62 @@ não tem sintoma.
 
 ---
 
-## D-004 — ⚠️ Verificar em fonte primária antes de implementar
+## D-004 — ✅ VERIFICADO em 2026-08-10, em fonte primária
+
+**As duas respostas chegaram, e as duas são desfavoráveis.** Os trechos literais estão abaixo.
+
+### Resposta 1 — apagar a linha NÃO apaga o arquivo
+
+Documentação oficial do fornecedor, *Storage → Delete Objects*
+(https://supabase.com/docs/guides/storage/management/delete-objects):
+
+> "Deleting objects should always be done via the **Storage API** and NOT via a **SQL query**."
+>
+> "Deleting objects via a SQL query will not remove the object from the bucket and will result
+> in the object being orphaned."
+
+**Consequência direta**: um gatilho que apenas apague a linha em `storage.objects` produz
+exatamente o órfão que SC-005 existe para impedir — e o produz em silêncio, porque órfão não
+aparece em tela nenhuma. O corpo de `remover_objeto_capa` **tem** de alcançar a API de
+armazenamento, não a tabela.
+
+**O que existe no banco para isso** (medido no ambiente local): `pg_net` **0.20.4 instalada**;
+`http` disponível mas não instalada; `pg_cron` disponível mas não instalada.
+
+**E aqui aparece uma armadilha nova, que a pergunta não previa**: chamar a API de dentro do
+gatilho de forma **síncrona** (extensão `http`) põe uma requisição de rede dentro da transação
+que apaga a linha. Uma falha de rede aborta a transação — e uma dessas transações é
+`excluir_minha_conta`. Seria trocar um vazamento de imagem por **perder o direito de apagar a
+conta** (LGPD art. 18, VI), que é a mesma classe de erro que as features 015 e 017 tiveram de
+desarmar. A remoção do arquivo não pode bloquear a exclusão da linha.
+
+### Resposta 2 — a janela de cache é de até 60 segundos
+
+Documentação oficial, *Storage → CDN → Smart CDN*
+(https://supabase.com/docs/guides/storage/cdn/smart-cdn):
+
+> "It can take **up to 60 seconds** for the CDN cache to be invalidated as the asset metadata
+> has to propagate across all the data-centers around the globe."
+>
+> "Deleting the object invalidates all cached entries for that object across all tokens. This
+> can take up to a minute to propagate."
+
+A invalidação é **automática**, mas **não é síncrona**.
+
+**Consequência direta**: FR-012 e SC-004 prometem indisponibilidade em **100%** das tentativas,
+por **qualquer** endereço. Com objeto público, isso é **falso** por até um minuto. A promessa
+honesta passa a ser: *removida da origem imediatamente; pode continuar acessível por endereço
+já conhecido por até 60 segundos.*
+
+### O que isto obriga a decidir — e não é decisão minha
+
+A própria tarefa T001 encaminha esta decisão ao responsável pelo app, e por um motivo que vale
+repetir: **é foto de menor que está em jogo.** As opções estão em "Plano alternativo" acima, e
+a comparação está no relatório de entrega.
+
+---
+
+## D-004 (texto original, mantido como registro do que se perguntou)
 
 Duas afirmações sobre o comportamento do fornecedor sustentam D-003 e FR-012, e **nenhuma das
 duas deve ser assumida de memória**. Este repositório tem regra explícita sobre isso, e a

@@ -112,6 +112,16 @@ Associação leve e revogável de um Usuário a um Grupo — não é filiação 
 _Avoid_: Ser membro do grupo, entrar no grupo
 _EN_: `GroupMembership` / `joinGroup`
 
+**Arquivar o Grupo**:
+Tirar um Grupo de circulação sem apagá-lo. Feito pelo Dono do Grupo ou pelo Administrador do distrito, e sempre com o estrago declarado antes de confirmar: quantas Ações futuras serão canceladas, quantas presenças estavam confirmadas nelas, quantas Rodadas de votação serão encerradas e quantas pessoas participam. Ao arquivar: as Ações **futuras** do Grupo são canceladas (as passadas ficam intactas, histórico é histórico), as Rodadas abertas encerram **sem apurar** — sem vencedora, com todas as candidatas descartadas — e as participações **continuam gravadas**, só deixam de valer. Reversível: só o Administrador do distrito desarquiva, e desarquivar devolve o Grupo e os participantes, mas **não** ressuscita Ação cancelada nem Rodada encerrada.
+_Avoid_: Apagar Grupo, excluir Grupo, deletar Grupo, desativar
+_EN_: `archiveGroup`
+
+**Grupo arquivado**:
+Grupo com `arquivado_em` preenchido. Some da listagem, não aceita mais ninguém participando, nem Ação candidata, nem Rodada de votação, nem voto — e a identificação pública do Líder/Diretor do Ministério sai do ar. Alcançado por link direto, ele se apresenta como arquivado, não como erro. **Grupo arquivado não é Grupo apagado**: apagar Grupo **não existe** no app, e não por esquecimento — `rodadas_votacao.grupo_id`, `acoes.grupo_id` e `liderancas.grupo_id` são chaves estrangeiras sem `on delete`, então o banco recusa. Quem procurar "excluir Grupo" está procurando isto.
+_Avoid_: Grupo apagado, Grupo excluído, Grupo inativo
+_EN_: `ArchivedGroup` / `isArchived`
+
 **Dono do Grupo**:
 Papel único por Grupo, atribuído a quem o criou e transferível depois para outro participante. Administra o Grupo: edita nome/horário/local/detalhes, remove participante, encerra Rodada de votação antes do prazo, e cancela Ação de Grupo (junto com quem propôs a candidata vencedora e o Administrador do distrito).
 _Avoid_: Admin do grupo, moderador do grupo

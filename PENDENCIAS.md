@@ -259,6 +259,30 @@ Registrado para ninguém gastar tempo de novo.
   identificador que *começa* com a palavra portuguesa (`acaoId`, `grupoAsync`), que era o furo
   do scan da feature 012.
 - **`CONTEXT.md`**: nenhum termo novo de domínio entrou nas features 016–021.
+- **Verificações de tela feitas no navegador em 10/08** (vieram de
+  `PARA-VOCE-FINALIZAR.md`, que agora só guarda o que está pendente): `/perfil` sem Perfil cai
+  no cadastro; cadastro de adulto sem passo a mais, e o passo de criança aparecendo com idade 9
+  e sumindo com 30; Líder confirmado visível; estado da própria declaração; Administrador vendo
+  as pendentes; Rodada com "Seu voto" e **nenhuma contagem**; ordem de leitura terminando em "A
+  Deus seja a glória"; Ministério arquivado mostrando o aviso e sumindo o Líder da tela com a
+  linha ainda no banco.
+- **Verificações fora da tela, no banco, em 10/08**: arquivar Grupo (presenças 5→5, participações
+  2→2, Rodadas abertas 1→0, duas Ações futuras canceladas, a passada intacta, Rodada fechando com
+  `vencedora_id` nulo); corrigir telefone sem mexer em `consentimento_lgpd_aceito_em` nem na
+  versão; Líder de Ministério arquivado devolvendo 1 linha sem o filtro do cliente e 0 com ele —
+  o que confirma que a barreira funciona **e** que ela é só do cliente; caixa de autorização
+  contra a Política, sem contradição.
+- **Dois consertos que passaram no `analyze` e continuaram errados na tela**, em 10/08: os alvos
+  de toque da Home (o `visualDensity` adaptativo subtraía 8 px em desktop, então um mínimo de 48
+  virava 40 reais — remedido em **48 px** nos seis alvos) e a tela de pendências de liderança
+  (Usuário comum via a própria declaração com botões que o banco recusava, sem retorno nenhum na
+  tela). **A lição é o registro**: nos dois casos só a medição no navegador mostrou.
+- **Uma reprovação que era erro meu**: a doxologia em paisagem foi reprovada contra um texto de
+  tarefa velho. SC-002 foi reescrita quando a doxologia foi para o rodapé e hoje pede "alcançável
+  rolando até o fim" em 375 px de **largura**, não de altura. Contra o critério certo, passou.
+- **Aviso de método**: medição por `getBoundingClientRect` **mentiu duas vezes** em 10/08 — um
+  `top: 0` e um `33 px` de nó ainda não posicionado, os dois desmentidos pela captura de tela.
+  Quem repetir medição por script confira contra a tela.
 
 ---
 

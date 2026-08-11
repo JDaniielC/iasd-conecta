@@ -130,6 +130,44 @@ O `project-ref` está na seção 2. A Edge Function precisa estar publicada
 (`supabase functions deploy drenar-capas`) — ela recebe a chave de serviço do
 próprio ambiente do Supabase, e **nenhum segredo é guardado aqui nem no banco**.
 
+### Verificado em produção — 2026-08-11
+
+Feito, nesta ordem: `supabase functions deploy drenar-capas`, depois o `insert`
+acima com o `project-ref` da seção 2.
+
+**Como se prova sem publicar imagem nenhuma.** Enfileire um caminho que
+**não existe** no bucket e peça a drenagem:
+
+```sql
+insert into public.capas_a_remover (caminho)
+values ('grupo/verificacao-producao/inexistente.jpg');
+
+select public.drenar_capas_a_remover();
+```
+
+Cinco segundos depois, a linha voltou assim:
+
+```text
+caminho      grupo/verificacao-producao/inexistente.jpg
+removido_em  NULL
+tentativas   1
+ultimo_erro  A API não confirmou a remoção deste caminho. Bucket errado, ou o objeto já não existia.
+```
+
+**Esse é o resultado de sucesso**, por mais estranho que soe. O arquivo não
+existe, então a confirmação positiva recusa — e o que a verificação mede não é a
+remoção, é o **circuito**: Postgres → `pg_net` → internet → Edge Function → chave
+de serviço do ambiente → volta gravando na linha. Se `pg_net` não saísse da rede,
+ou se a função exigisse JWT (o `pg_net` chama sem cabeçalho nenhum), a linha teria
+voltado intocada.
+
+Antes disso, a função foi conferida direto, sem autorização nenhuma:
+`POST https://<project-ref>.supabase.co/functions/v1/drenar-capas` devolveu
+**HTTP 200** e `{"drenados":0,"pendentes":0}` — confirmando que `verify_jwt =
+false` (config.toml) foi aplicado no deploy.
+
+Apague a linha de teste depois, senão ela alarma a consulta abaixo.
+
 ### Como saber que a fila parou
 
 Se esta consulta devolver algo além de zero por mais de uma hora, há imagem

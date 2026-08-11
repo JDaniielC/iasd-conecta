@@ -294,7 +294,7 @@ Registrado para ninguém gastar tempo de novo.
 | 010 pagina-home | Entregue; alvos de toque corrigidos e remedidos (48 px) em 10/08 |
 | 011 acoes-titulo-e-encerramento | Entregue; 1 medição com gente aberta |
 | 012 identificadores-em-ingles | Entregue |
-| 013 foto-de-capa | **Entregue e mergeada** — 57 de 59; restam 2 verificações manuais (§ 3) |
+| 013 foto-de-capa | **Entregue, mergeada e no ar** — schema e drenagem verificados em produção em 11/08; restam 2 verificações manuais (§ 3) |
 | 014 arquivar-grupo | Entregue; 16 itens do quickstart esperam produção no ar |
 | 015 consentimento-responsavel | Entregue; 1 medição com gente aberta |
 | 016 meu-perfil | Entregue; 1 verificação de tela e 2 com gente abertas |

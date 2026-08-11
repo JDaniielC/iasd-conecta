@@ -100,6 +100,19 @@ assim mesmo.
 É conserto de poucas linhas, mas muda quando o deploy acontece, então merece decisão escrita.
 Está registrado como T031 dentro da 020; se a 020 demorar, vale spec própria antes.
 
+**FECHADO em 2026-08-11** pela change `travar-deploy-com-teste-vermelho`. `deploy-web.yml`
+passou a disparar por `workflow_run` sobre a conclusão bem-sucedida de `ci.yml` em `main` (não
+mais por `push` direto), com `workflow_dispatch` mantido para republicar sem commit novo. A
+porta manual fechou junto: `make deploy-web` recusa publicar com árvore não commitada ou sem
+prova de `ci.yml` verde para o commit exato (checado via `gh run list`), a menos que
+`CONFIRM_SEM_PROVA=sim` seja passado explicitamente. Rodar a suíte inteira dentro do `make` foi
+medido (~20s de parede, suíte completa) e descartado — o custo não era o problema, e sim
+gerenciar o ciclo de vida do Supabase local dentro de um alvo de publicação, e ainda assim não
+provar o commit exato se a árvore estivesse suja; checar o veredito que o GitHub já registrou é
+mais barato e é a mesma prova de que o workflow automático agora depende. Verificação de push
+real (branch de teste, teste quebrado de propósito) fica pendente de autorização — não é
+recusa: é ação de CI real em produção, fora do escopo de uma worktree isolada.
+
 ---
 
 ### 2.5 Envio de capa: a atribuição de etapa não tem teste automatizado

@@ -33,8 +33,14 @@ name: deploy-web
 # manda a CHAVE PRIVADA da conta de serviço para um bucket PÚBLICO.
 # Se você está editando as linhas de rsync, é este o parágrafo para reler.
 
+# openspec/changes/travar-deploy-com-teste-vermelho fechou a lacuna T031(a):
+# o gatilho deixou de ser `push` direto e passou a ser `workflow_run` sobre a
+# conclusão bem-sucedida do `ci.yml` em `main` — quando este contrato virar o
+# arquivo real, precisa nascer já assim, e não reabrir a lacuna.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
     inputs:
@@ -67,6 +73,10 @@ concurrency:
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    # workflow_run dispara em sucesso OU falha do ci.yml; sem esta guarda
+    # publicaria mesmo com CI vermelho. workflow_dispatch não tem
+    # workflow_run.conclusion (é manual).
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     env:
       TARGET_BUCKET: ${{ inputs.target_bucket || 'gs://<BUCKET>' }}
       URL_MAP_NAME: "<URL_MAP>"
@@ -80,6 +90,11 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # Pina no commit que o ci.yml validou — o checkout de um evento
+          # workflow_run resolve para o HEAD atual da branch default por
+          # padrão, que pode ter avançado desde que o ci.yml terminou.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

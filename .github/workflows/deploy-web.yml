@@ -28,8 +28,20 @@ name: deploy-web
 #      SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas, e ele existe hoje só para
 #      `scripts/bootstrap_admin.sh`, que roda em bash e nunca vai para dentro de build nenhum.
 
+# openspec/changes/travar-deploy-com-teste-vermelho: antes disparava em todo
+# `push` para `main`, sem depender do resultado de `ci.yml` — um commit que
+# quebrava `flutter analyze`/teste ainda construía e publicava o artefato.
+# `needs:` exigiria fundir os dois workflows num só (públicos diferentes:
+# `ci.yml` roda em toda branch/PR, este só interessa em `main`), então a
+# dependência é por `workflow_run` sobre a CONCLUSÃO do `ci.yml` em `main`.
+#
+# ⚠️ `workflow_run` dispara sempre que o workflow observado termina, sucesso OU
+# falha — por isso o job abaixo tem `if: ... conclusion == 'success'`. Sem essa
+# guarda, este workflow rodaria (e publicaria) mesmo com `ci.yml` vermelho.
 on:
-  push:
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
     branches: [main]
   workflow_dispatch:
 
@@ -39,9 +51,19 @@ permissions:
 jobs:
   build:
     runs-on: ubuntu-latest
+    # workflow_dispatch não tem workflow_run.conclusion (é manual, publica sob
+    # demanda); workflow_run só segue se ci.yml terminou com sucesso.
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # Pina no commit exato que o ci.yml validou — sem isto, o checkout de
+          # um evento workflow_run resolve para o HEAD atual da branch default,
+          # que pode já ter avançado se outro push chegou entre o fim do ci.yml
+          # e este job rodar. github.sha cobre o caso workflow_dispatch, onde
+          # workflow_run.head_sha não existe.
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Set up Flutter
         uses: subosito/flutter-action@v2

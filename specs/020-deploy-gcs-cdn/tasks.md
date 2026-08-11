@@ -284,6 +284,9 @@ documentos (SC-006).
       (d) **sem verificação de disponibilidade depois de publicar** (a spec já declara).
   ✅ `DEFERRED.md` não existe neste repo — as quatro foram para o README, seção Deploy,
   "Lacunas conhecidas".
+  ✅ **(a) fechada em 2026-08-11** pela change `travar-deploy-com-teste-vermelho`:
+  `deploy-web.yml` passou a depender de `ci.yml` via `workflow_run`, e `make deploy-web` passou
+  a exigir prova de CI verde. (b), (c) e (d) continuam abertas — ver PENDENCIAS.md § 2.4.
 - [ ] T032 Rodar [quickstart.md](./quickstart.md) inteiro, do §1 ao §7, como se fosse a
       primeira vez, e corrigir o que travar. É a prova do SC-006, e é a única tarefa que mede a
       US3 de verdade.

@@ -17,9 +17,36 @@
 # passou a ser "não existir arquivo capaz de vazar". Este alvo confere as duas
 # coisas: que as chaves foram passadas, e que nenhum `.env` sobreviveu no bundle.
 #
+# ---------------------------------------------------------------------
+# 🔴 A ÁRVORE PRECISA TER PROVA DE CI VERDE — OU CONFIRMAÇÃO EXPLÍCITA
+# ---------------------------------------------------------------------
+# openspec/changes/travar-deploy-com-teste-vermelho: até aqui este alvo não
+# rodava teste nenhum — só compilava e publicava. Fechar isso rodando a suíte
+# inteira AQUI foi medido e descartado: `flutter analyze` + `flutter test
+# test/unit test/widget` + `dart test test/integration` (com Supabase local já
+# de pé) levou ~20s de parede nesta máquina — o tempo não é o problema. O
+# problema é o que isso exigiria: gerenciar o ciclo de vida do Supabase local
+# (subir/derrubar Docker) DENTRO de um alvo de publicação arrisca matar uma
+# sessão de desenvolvimento já em andamento na mesma máquina (`supabase stop`
+# no meio de outro `flutter run`), e ainda assim só provaria o código contra o
+# Postgres local — não o commit exato que será publicado, se a árvore tiver
+# mudança não commitada.
+#
+# Em vez disso, este alvo pergunta ao GitHub se o `ci.yml` já aprovou o commit
+# exato do HEAD em `main` — a mesma prova de que `deploy-web.yml` agora
+# depende (`workflow_run`). Duas recusas:
+#   - árvore de trabalho suja (mudança não commitada): o CI não pode ter
+#     provado o que não foi commitado;
+#   - HEAD sem execução `success` de `ci.yml` encontrada via `gh run list`.
+# As duas têm escape: `CONFIRM_SEM_PROVA=sim make deploy-web ...` publica
+# mesmo assim, com aviso — para o caso real de publicar de propósito antes do
+# CI terminar, ou sem `gh` autenticado à mão.
+CONFIRM_SEM_PROVA :=
+
 # Pré-requisitos, uma vez por máquina/pessoa:
 #   1. gcloud auth login   — com a conta que tem roles/storage.objectAdmin no bucket
 #                             e roles/compute.loadBalancerAdmin no projeto
+#   1b. gh auth login      — para este alvo checar se o ci.yml do commit está verde
 #   2. as DUAS chaves públicas de produção no ambiente:
 #        export SUPABASE_URL=https://<project-ref>.supabase.co
 #        export SUPABASE_PUBLISHABLE_KEY=<chave publicável de produção>
@@ -52,6 +79,35 @@ deploy-web:
 			echo "       Provável causa: 'source .env'. Use a URL de produção."; \
 			exit 1 ;; \
 	esac
+	@if [ "$$CONFIRM_SEM_PROVA" = "sim" ]; then \
+		echo "⚠️  Publicando SEM checar prova de CI verde — confirmado explicitamente (CONFIRM_SEM_PROVA=sim)."; \
+	else \
+		if [ -n "$$(git status --porcelain)" ]; then \
+			echo "erro: a árvore de trabalho tem mudança não commitada. O ci.yml só prova o que"; \
+			echo "       foi commitado — commite antes, ou publique sem prova com"; \
+			echo "       CONFIRM_SEM_PROVA=sim make deploy-web ..."; \
+			exit 1; \
+		fi; \
+		command -v gh >/dev/null 2>&1 || { \
+			echo "erro: gh (GitHub CLI) não encontrado — não dá para checar se o ci.yml passou"; \
+			echo "       para este commit. Instale e rode 'gh auth login', ou publique sem prova"; \
+			echo "       com CONFIRM_SEM_PROVA=sim make deploy-web ..."; \
+			exit 1; \
+		}; \
+		SHA="$$(git rev-parse HEAD)"; \
+		CONCLUSION="$$(gh run list --workflow=ci.yml --branch main --limit 20 \
+			--json headSha,conclusion,status \
+			--jq ".[] | select(.headSha==\"$$SHA\" and .status==\"completed\") | .conclusion" \
+			2>/dev/null | head -1)"; \
+		if [ "$$CONCLUSION" != "success" ]; then \
+			echo "erro: commit $$SHA não tem execução de ci.yml com sucesso confirmada em main"; \
+			echo "       (achei: '$${CONCLUSION:-nenhuma execução}'). Espere o CI terminar"; \
+			echo "       ('gh run list --workflow=ci.yml --branch main'), ou publique sem prova"; \
+			echo "       com CONFIRM_SEM_PROVA=sim make deploy-web ..."; \
+			exit 1; \
+		fi; \
+		echo "ci.yml confirmado verde em main para $$SHA."; \
+	fi
 	@echo "Publicando contra $$SUPABASE_URL"
 	@gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q . || { echo "erro: nenhuma conta gcloud ativa. Rode: gcloud auth login"; exit 1; }
 	flutter pub get

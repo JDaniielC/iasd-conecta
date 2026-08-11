@@ -131,12 +131,14 @@ Front (Flutter Web) publica em Cloud Storage atrás de Cloud CDN — não mais e
 O banco continua em Supabase Cloud gerenciado, camada separada (feature 019), não tocada por
 isto.
 
-**Publicação é MANUAL, temporariamente.** Push em `main` dispara
-`.github/workflows/deploy-web.yml`, que só compila e sobe `build/web` como artifact do GitHub
-Actions — não publica sozinho. O plano original era o CI publicar direto, mas o projeto GCP
-tem a política `iam.disableServiceAccountKeyCreation` ("Secure by Default"), que bloqueia criar
-a chave de conta de serviço que o CI precisaria. Workaround pedido ao Google Cloud Support,
-resposta pendente — detalhe em `.tickets/IASD-CI-GCS-UPLOAD.md`.
+**Publicação é MANUAL, temporariamente.** `.github/workflows/deploy-web.yml` dispara por
+`workflow_run`, quando `ci.yml` termina com sucesso em `main` (ou por `workflow_dispatch`, sob
+demanda) — não por `push` direto, desde a change `travar-deploy-com-teste-vermelho`: um commit
+com teste vermelho não constrói nem gera artifact. Mesmo assim ele só compila e sobe `build/web`
+como artifact do GitHub Actions — não publica sozinho. O plano original era o CI publicar
+direto, mas o projeto GCP tem a política `iam.disableServiceAccountKeyCreation` ("Secure by
+Default"), que bloqueia criar a chave de conta de serviço que o CI precisaria. Workaround pedido
+ao Google Cloud Support, resposta pendente — detalhe em `.tickets/IASD-CI-GCS-UPLOAD.md`.
 
 Enquanto isso, quem publica roda, na própria máquina:
 
@@ -170,6 +172,13 @@ erro nenhum na publicação; só quem abrisse o site veria. O alvo recusa endere
 disso, mas conte com a guarda como segunda linha de defesa, não como a primeira: ele imprime
 `Publicando contra <URL>` antes de tudo, e vale ler essa linha.
 
+🔴 **`make deploy-web` recusa publicar de árvore não provada.** Antes de tocar em qualquer
+chave, o alvo confere: a árvore de trabalho não pode ter mudança não commitada, e o commit do
+HEAD precisa ter uma execução `success` de `ci.yml` em `main` (checado via `gh run list` —
+requer `gh auth login` uma vez). Sem as duas coisas, ele recusa. Para publicar mesmo assim (CI
+ainda rodando, ou sem `gh` à mão), `CONFIRM_SEM_PROVA=sim make deploy-web ...` — publica com
+aviso, sem checar nada.
+
 `make deploy-web` builda, **recusa publicar se algum `.env` tiver ido parar no bundle**, e
 publica em duas passadas (sobe tudo, só depois apaga o que sumiu) — o alvo está no `Makefile`
 da raiz, comentado. Site em `http://35.211.105.176` (sem domínio próprio ainda).
@@ -183,8 +192,13 @@ A branch `dist-web`, usada pelo deploy anterior, está descontinuada.
 
 **Lacunas conhecidas**: a publicação não é atômica por conjunto — interromper `make deploy-web`
 no meio deixa o bucket misturado até alguém rerodar; não há verificação automática de que o
-site responde depois de publicar; nada liga a publicação ao resultado de `ci.yml` — um commit
-com teste vermelho vira artifact do mesmo jeito.
+site responde depois de publicar; a prova de CI verde que `make deploy-web` checa é o veredito
+já registrado no GitHub, não uma re-execução local — se alguém forçar `CONFIRM_SEM_PROVA=sim`,
+nada nesta máquina impede publicar uma árvore vermelha.
+
+**Fechado em 2026-08-11** pela change `travar-deploy-com-teste-vermelho`: até aqui, nada ligava
+a publicação ao resultado de `ci.yml` — um commit com teste vermelho virava artifact do mesmo
+jeito, e `make deploy-web` publicava sem rodar teste nenhum.
 
 ## Estrutura
 

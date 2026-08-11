@@ -2,6 +2,12 @@
 
 **Feature**: `020-deploy-gcs-cdn` | **Plano**: [plan.md](./plan.md) | **Pesquisa**: [research.md](./research.md)
 
+> ⚠️ **Este documento descreve o fluxo AUTOMÁTICO (CI publica sozinho), que hoje não roda.**
+> `iam.disableServiceAccountKeyCreation` bloqueia a chave JSON de conta de serviço do §1/§3.
+> Enquanto isso durar, publicar é `gcloud auth login` + `make deploy-web` (raiz do repo) — ver
+> `.tickets/IASD-CI-GCS-UPLOAD.md`. As permissões do §1 continuam valendo, só que concedidas à
+> conta pessoal de quem publica, não a uma conta de serviço.
+
 Este documento é a US3 inteira: quem for configurar o deploy segue daqui, sem adivinhar
 permissão e sem perguntar nada.
 
@@ -80,10 +86,16 @@ fluxo (FR-008).
 | `SUPABASE_URL` | URL do projeto Supabase de produção. Vai **dentro** do bundle público — é público por desenho | já existe (`deploy-web.yml:36`) |
 | `SUPABASE_PUBLISHABLE_KEY` | chave publicável do Supabase, protegida por RLS. Vai **dentro** do bundle público — é público por desenho | já existe (`deploy-web.yml:37`) |
 
-🔴 **Nunca cadastre `SUPABASE_SERVICE_ROLE_KEY` nem nenhum `ADMIN_*` neste workflow.** `.env` é
-`assets:` no `pubspec.yaml:74-75`, então tudo que entra nele é publicado em
-`https://<site>/assets/.env` e baixável por qualquer visitante. O comentário em
-`deploy-web.yml:9-14` existe por causa disso e continua valendo.
+🔴 **Nunca cadastre `SUPABASE_SERVICE_ROLE_KEY` nem nenhum `ADMIN_*` neste workflow.** Os dois
+segredos acima entram no build por `--dart-define`, e o que entra por `--dart-define` **entra no
+JavaScript publicado**, legível por qualquer visitante. As duas chaves acima são públicas por
+desenho (a segunda é protegida por RLS); qualquer outra não é.
+
+**Mudou em 2026-08-10**, e o porquê importa: até essa data `.env` era `assets:` no
+`pubspec.yaml`, e tudo que estivesse nele era publicado em `https://<site>/assets/.env`. Não foi
+hipótese — um `flutter build web` local, com o `.env` de trabalho de um desenvolvedor, publicou a
+senha do Administrador. `.env` saiu dos assets; o cabeçalho de `deploy-web.yml` conta a história
+inteira.
 
 Se um segredo faltar, o workflow falha no primeiro passo dizendo **qual** falta, sem imprimir
 valor nenhum (FR-004).
@@ -99,7 +111,7 @@ Não há ambiente de homologação. O que dá para provar antes de tocar em prod
 ```bash
 actionlint .github/workflows/deploy-web.yml   # sintaxe, expressões, nomes de input
 flutter build web --release                   # o artefato existe (o ci.yml já roda isto)
-grep -oE '^[A-Z_]+=' build/web/assets/.env    # tem que sair exatamente 2 linhas
+test ! -e build/web/assets/.env && echo ok    # nenhum .env foi embutido — tem que dizer "ok"
 ```
 
 **Com um bucket descartável (recomendado, custa centavos):**

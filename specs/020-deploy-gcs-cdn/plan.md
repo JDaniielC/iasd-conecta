@@ -2,6 +2,15 @@
 
 **Branch**: `020-deploy-gcs-cdn` | **Date**: 2026-08-09 | **Spec**: [spec.md](./spec.md)
 
+> ⚠️ **Addendum 2026-08-10 — este plano descreve o desenho que NÃO está rodando hoje.** A
+> autenticação por chave JSON de conta de serviço (research D-007, usada em todo este documento)
+> está bloqueada pela política de organização `iam.disableServiceAccountKeyCreation` ("Secure by
+> Default"). Workaround pedido ao Google Cloud Support, pendente. Enquanto isso, o CI só builda
+> e sobe artifact; a publicação (a mesma lógica de duas passadas + invalidação descrita aqui)
+> roda manual via `make deploy-web` (`Makefile`, raiz do repo), com a conta pessoal de quem
+> publica. Detalhe e estado atual: `.tickets/IASD-CI-GCS-UPLOAD.md`. Este plano continua sendo o
+> desenho para quando o bloqueio for resolvido — não precisa ser refeito, só religado.
+
 **Input**: Feature specification from `/specs/020-deploy-gcs-cdn/spec.md`
 
 ## Summary
@@ -95,7 +104,7 @@ research D-010), não corrigido em silêncio nem esquecido.
 | Princípio | Veredito | Evidência |
 |---|---|---|
 | **I. Linguagem Ubíqua** | ✅ PASS — **não se aplica ao glossário**, aplica-se à fronteira de idioma | Nenhum termo de domínio entra ou muda; `CONTEXT.md` não é tocado. Conta de serviço é credencial de máquina, não papel de domínio (a spec já declara isto). A parte do princípio que **se aplica** é a fronteira de idioma, estendida ao artefato que esta feature cria: job/step/input/variável do workflow em inglês, comentário em português — e os dois steps hoje em português (`deploy-web.yml:34`, `:47`) são traduzidos na virada. As strings visíveis ao operador (`::error::`, `$GITHUB_STEP_SUMMARY`) ficam em **português**, pela mesma regra que mantém string de UI em português |
-| **II. Privacidade e LGPD** | ✅ PASS — **não se aplica**, com uma ressalva que virou verificação | Nenhum dado pessoal é lido, movido ou publicado: o que sobe é o app compilado. A ressalva é concreta e foi confirmada lendo o build: `.env` é `assets:` no `pubspec.yaml:74-75`, então **`build/web/assets/.env` está dentro do bundle público** e é baixável por qualquer visitante. É o desenho pretendido (só as duas chaves protegidas por RLS), e o FR-013 é o que garante que continue sendo só elas — por isso virou um passo do workflow que conta as chaves, não uma promessa (contrato, `Verify bundled .env carries only the two public keys`) |
+| **II. Privacidade e LGPD** | ✅ PASS — **não se aplica**, com uma ressalva que virou verificação | Nenhum dado pessoal é lido, movido ou publicado: o que sobe é o app compilado. A ressalva é concreta e foi confirmada lendo o build: `.env` é `assets:` no `pubspec.yaml:74-75`, então **`build/web/assets/.env` está dentro do bundle público** e é baixável por qualquer visitante. É o desenho pretendido (só as duas chaves protegidas por RLS), e o FR-013 é o que garante que continue sendo só elas — por isso virou um passo do workflow, não uma promessa. **Revisto em 2026-08-11**: o desenho aqui descrito era o do vazamento. `.env` saiu dos `assets:`, as chaves passaram a `--dart-define`, e o passo agora confere que **nenhum** `.env` foi embutido (`Verify no .env was bundled`) — a garantia deixou de ser "só as duas chaves viajam" e passou a ser "não há arquivo capaz de viajar" |
 | **III. Desenvolvimento Guiado por Spec** | ⚠️ PASS com ressalva | Spec escrita, checklist de qualidade preenchido (`checklists/requirements.md`). `/speckit-clarify` **pulado**: a única ambiguidade real (front no GCS vs. "sair do EC2" do ticket vs. `.env.prod` apontando para Supabase) foi resolvida direto com o responsável em 2026-08-09 e está registrada em Assumptions da spec e nas Notes do checklist. Mesma ressalva da feature 012 |
 | **IV. Integridade das Regras de Domínio Testada** | ✅ PASS — **não se aplica** | Nenhuma regra de domínio existe nesta feature. Fila de espera, empate por sorteio, revogação de voto, descarte de candidatas e composição de Dupla Missionária **não são tocados** — nenhuma linha de `lib/`, `test/` ou `supabase/` muda. A prova é negativa e verificável: o diff da feature não inclui esses diretórios. Os testes existentes continuam rodando em `ci.yml`, inalterados |
 | **V. Simplicidade e Papéis Mínimos** | ✅ PASS | Nenhum papel de domínio novo. Nenhuma generalização especulativa: o desenho atômico de verdade (prefixo versionado + virada de `pathPrefixRewrite`, research D-003) foi **considerado e adiado** exatamente por este princípio — resolveria FR-005 e rollback de uma vez, mas custa configuração de balanceador, regra de ciclo de vida e um conceito a mais. Nas permissões, o princípio virou decisão concreta: o ticket pede `Storage Admin` + `Compute Network Admin`; o plano usa `roles/storage.objectAdmin` e `roles/compute.loadBalancerAdmin`, os menores com fonte publicada (research D-008) |
@@ -242,7 +251,7 @@ do merge do que só a produção responde (research D-011).
 
 - `actionlint` no workflow — erro de digitação em `secrets.`, `if:`, `inputs.`
 - `flutter build web` — já roda no job `build-web` do `ci.yml:49-62`
-- contagem de chaves em `build/web/assets/.env` — passo do próprio workflow (FR-013)
+- ausência de `build/web/assets/.env` — passo do próprio workflow (FR-013; era contagem de chaves até 2026-08-11, virou ausência quando `.env` saiu dos assets)
 - `gcloud storage rsync --dry-run` — "Print what operations rsync would perform without
   actually executing them"
 - **o fluxo inteiro, num bucket descartável.** `deploy-web.yml` já tem `workflow_dispatch`

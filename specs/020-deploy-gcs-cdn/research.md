@@ -22,7 +22,7 @@ Lido de `build/web` neste repositório (build de 2026-08-09, Flutter SDK `^3.12.
 | `flutter.js` | 9 553 | não |
 | `flutter_service_worker.js` | 784 | não |
 | `version.json`, `manifest.json`, `favicon.png` | — | não |
-| `assets/**` (inclui `assets/.env`) | — | não |
+| `assets/**` (desde 2026-08-11 **sem** `assets/.env`: ver o cabeçalho de `deploy-web.yml`) | — | não |
 | `canvaskit/**` (11 arquivos, `.wasm` + `.js`) | — | não |
 | `icons/**` (4 PNG) | — | não |
 | `.last_build_id` | 32 | metadado de build, não é do site |
@@ -39,8 +39,12 @@ Dois efeitos colaterais registrados:
   Logo, o **único cache entre o usuário e o bucket é o HTTP/CDN** — não há uma segunda camada
   de cache no navegador para brigar com a invalidação. Boa notícia, e é o que torna a
   invalidação de CDN suficiente.
-- `assets/.env` **vai dentro do bundle público** — é `assets:` no `pubspec.yaml:74-75`. É o
-  desenho pretendido (spec, Edge Cases), e é exatamente o arquivo que o FR-013 protege.
+- ~~`assets/.env` **vai dentro do bundle público** — é `assets:` no `pubspec.yaml:74-75`. É o
+  desenho pretendido (spec, Edge Cases), e é exatamente o arquivo que o FR-013 protege.~~
+  **Revogado em 2026-08-11.** O "desenho pretendido" era o caminho do vazamento: um
+  `flutter build web` local, com o `.env` de trabalho de um desenvolvedor, publicou a senha do
+  Administrador. `.env` saiu dos `assets:`; as chaves entram por `--dart-define`, e o bundle não
+  tem mais arquivo de configuração nenhum.
 
 ---
 
@@ -397,7 +401,7 @@ testar" — significa separar o que se prova antes do merge do que só a produç
 |---|---|---|
 | Sintaxe e expressões do workflow | `actionlint .github/workflows/deploy-web.yml` | erro de digitação em `secrets.`, `if:`, `needs:` |
 | O artefato existe e compila | `flutter build web` — já roda no job `build-web` do `ci.yml:49-62` | FR-002 |
-| O `.env` do bundle tem só as 2 chaves | ler `build/web/assets/.env` no runner e contar as linhas; falhar se aparecer terceira | FR-013 |
+| **Nenhum** `.env` foi embutido no bundle | `test ! -e build/web/assets/.env` no runner; falhar se existir (era contagem de chaves até 2026-08-11 — ver a revogação acima) | FR-013 |
 | O que o rsync faria | `gcloud storage rsync --dry-run` — [VERIFICADO — https://docs.cloud.google.com/sdk/gcloud/reference/storage/rsync] "Print what operations rsync would perform without actually executing them." | FR-006 |
 | **O fluxo inteiro, de ponta a ponta** | **bucket descartável** (sem CDN) + `workflow_dispatch` a partir do branch da feature | FR-001, FR-005, FR-006, FR-010 |
 

@@ -1,21 +1,32 @@
 name: deploy-web
 
-# Build Flutter Web (produção, Supabase Cloud real) e publica em uma branch
-# só de artefato (dist-web) — o padrão já usado no resto do portfólio
-# (CI builda+publica, a VM só puxa; nunca deploy via SSH direto). Como iasd
-# é 100% estático, "publicar" aqui é a branch, não um registry de imagem —
-# não existe container pra esse app.
+# Build Flutter Web (produção, Supabase Cloud real) e sobe o resultado como artifact do
+# GitHub Actions. Publicação em Cloud Storage + CDN é MANUAL, feita com `make deploy-web`
+# (Makefile, raiz do repo) — não roda no CI. Motivo, e quando isso muda: fonte única em
+# `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho completo: `specs/020-deploy-gcs-cdn/`.
 #
-# 🔴 SEGURANÇA — histórico: até 2026-08-10, `.env` era `assets:` no
-# pubspec.yaml, e um `flutter build web` local (fora deste workflow, com o
-# .env de trabalho de um desenvolvedor) publicou por engano a senha do
-# Administrador no bundle público. Achado em pentest, corrigido removendo
-# `.env` dos assets — `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` agora são
-# constante de compilação via `--dart-define` (lib/core/supabase_client.dart).
-# Não existe mais arquivo `.env` para vazar: nenhum `flutter build web`,
-# local ou daqui, embute segredo de desenvolvedor por acidente. Ainda assim,
-# NUNCA passe `SUPABASE_SERVICE_ROLE_KEY` nem `ADMIN_*` como `--dart-define`
-# aqui — as duas chaves abaixo são as únicas seguras por design (RLS).
+# ⚠️ TEMPORÁRIO: o desenho original publicava daqui, autenticado por chave JSON de conta de
+# serviço (`GCP_SERVICE_ACCOUNT_JSON`). A política de organização do GCP
+# `iam.disableServiceAccountKeyCreation` — "Secure by Default", aplicada automaticamente pelo
+# Google — bloqueia criar essa chave, no projeto e na organização. Sem chave, o CI não
+# autentica. Workaround pedido ao Google Cloud Support; enquanto não volta, quem publica roda
+# `make deploy-web` na própria máquina, autenticado com a própria conta (`gcloud auth login`).
+#
+# 🔴 SEGURANÇA — histórico: até 2026-08-10, `.env` era `assets:` no pubspec.yaml, e um
+# `flutter build web` local (fora deste workflow, com o .env de trabalho de um desenvolvedor)
+# publicou por engano a senha do Administrador no bundle público. Achado em pentest, corrigido
+# removendo `.env` dos assets — `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` agora são constante
+# de compilação via `--dart-define` (lib/core/supabase_client.dart). Não existe mais arquivo
+# `.env` para vazar: nenhum `flutter build web`, local ou daqui, embute segredo de
+# desenvolvedor por acidente.
+#
+# Duas regras que sobrevivem a esse conserto:
+#   1. NUNCA passe `SUPABASE_SERVICE_ROLE_KEY` nem `ADMIN_*` como `--dart-define`. O que entra
+#      em --dart-define entra no JavaScript publicado, legível por qualquer pessoa. As duas
+#      chaves abaixo são as únicas seguras por design (RLS).
+#   2. NUNCA reaproveite `cp .env.example .env` aqui. Esse arquivo lista
+#      SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas, e ele existe hoje só para
+#      `scripts/bootstrap_admin.sh`, que roda em bash e nunca vai para dentro de build nenhum.
 
 on:
   push:
@@ -23,21 +34,24 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  build-and-publish:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Check out repository
+        uses: actions/checkout@v4
 
-      - uses: subosito/flutter-action@v2
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
           channel: stable
 
-      - run: flutter pub get
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Build web (produção, via --dart-define)
+      - name: Build Flutter Web (produção, via --dart-define)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -46,17 +60,23 @@ jobs:
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
-      - name: Publica build/web na branch dist-web
-        env:
-          SHA: ${{ github.sha }}
-          REPO: ${{ github.repository }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # FR-013 / SC-004, reescrito com o conserto de 2026-08-10.
+      #
+      # O passo anterior abria `build/web/assets/.env` e conferia se só as duas chaves públicas
+      # tinham viajado — ou seja, aceitava que o arquivo viajasse, e vigiava o conteúdo. Agora a
+      # garantia é mais forte e mais simples: o arquivo não pode existir. Se ele voltar a
+      # existir, alguém devolveu `.env` para `assets:` no pubspec.yaml, e o caminho do vazamento
+      # está reaberto — inclusive para quem publicar à mão com `make deploy-web`.
+      - name: Verify no .env was bundled
         run: |
-          cd build/web
-          git init -q
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git checkout -q -b dist-web
-          git add -A
-          git commit -q -m "deploy-web: $SHA"
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${REPO}.git" dist-web:dist-web
+          if [ -e build/web/assets/.env ]; then
+            echo "::error::build/web/assets/.env existe. Alguém devolveu .env para assets: no pubspec.yaml — é o caminho do vazamento de 2026-08-10."
+            exit 1
+          fi
+
+      - name: Upload build/web as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-web
+          path: build/web
+          retention-days: 14

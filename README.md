@@ -115,6 +115,42 @@ Requer o Supabase local rodando (`supabase start`) — os testes de contrato em
 `test/integration/` conectam direto no Postgres e no Auth local, sem
 depender de device/emulador.
 
+## Deploy
+
+Front (Flutter Web) publica em Cloud Storage atrás de Cloud CDN — não mais em branch de git.
+O banco continua em Supabase Cloud gerenciado, camada separada (feature 019), não tocada por
+isto.
+
+**Publicação é MANUAL, temporariamente.** Push em `main` dispara
+`.github/workflows/deploy-web.yml`, que só compila e sobe `build/web` como artifact do GitHub
+Actions — não publica sozinho. O plano original era o CI publicar direto, mas o projeto GCP
+tem a política `iam.disableServiceAccountKeyCreation` ("Secure by Default"), que bloqueia criar
+a chave de conta de serviço que o CI precisaria. Workaround pedido ao Google Cloud Support,
+resposta pendente — detalhe em `.tickets/IASD-CI-GCS-UPLOAD.md`.
+
+Enquanto isso, quem publica roda, na própria máquina:
+
+```bash
+gcloud auth login   # uma vez, com conta que tem permissão no bucket/CDN
+make deploy-web
+```
+
+`make deploy-web` builda, confere que só as duas chaves públicas do Supabase foram para o
+bundle, e publica em duas passadas (sobe tudo, só depois apaga o que sumiu) — o alvo está no
+`Makefile` da raiz, comentado. Site em `http://35.211.105.176` (sem domínio próprio ainda).
+
+Nomes de projeto, bucket e url map: `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho original (para
+quando a política de organização for resolvida e o CI voltar a publicar sozinho), decisões e
+runbook: `specs/020-deploy-gcs-cdn/` (ver `quickstart.md` — descreve o fluxo automático, ainda
+não o que roda hoje).
+
+A branch `dist-web`, usada pelo deploy anterior, está descontinuada.
+
+**Lacunas conhecidas**: a publicação não é atômica por conjunto — interromper `make deploy-web`
+no meio deixa o bucket misturado até alguém rerodar; não há verificação automática de que o
+site responde depois de publicar; nada liga a publicação ao resultado de `ci.yml` — um commit
+com teste vermelho vira artifact do mesmo jeito.
+
 ## Estrutura
 
 - `lib/core/` — cliente Supabase, tema (estética 7me: azul marinho + branco,

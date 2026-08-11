@@ -114,20 +114,30 @@ void main() {
   test(
     '(b) SC-002: backfill por cliente é impossível, não só desaconselhado',
     () async {
-      await asUser(_legacyUid, () async {
-        await conn.execute(
-          Sql.named(
-            "update public.perfis set consentimento_lgpd_versao = '1.1' "
-            'where id = @u',
-          ),
-          parameters: {'u': _legacyUid},
-        );
-      });
+      // Duas camadas, e este teste hoje só alcança a de fora: desde a change
+      // `endurecer-grant-update-perfis`, `consentimento_lgpd_versao` não tem
+      // `grant update` para `authenticated` (nunca foi coluna gravável pela
+      // titular — só o gatilho `perfis_carimbar_consentimento` a carimba), e
+      // o Postgres recusa a cláusula `SET` antes mesmo de a linha existir
+      // para o gatilho ver. `42501` é `permission denied`. Se um dia essa
+      // coluna ganhasse `grant` por engano, o ramo `else` do gatilho ainda
+      // restauraria o valor antigo — é a segunda camada, redundante de
+      // propósito.
+      await expectLater(
+        asUser(_legacyUid, () async {
+          await conn.execute(
+            Sql.named(
+              "update public.perfis set consentimento_lgpd_versao = '1.1' "
+              'where id = @u',
+            ),
+            parameters: {'u': _legacyUid},
+          );
+        }),
+        throwsA(isA<ServerException>().having((e) => e.code, 'código', '42501')),
+        reason: 'nem a própria pessoa consegue fabricar a própria versão',
+      );
 
-      // O ramo `else` do gatilho restaura o valor antigo: o `_aceito_em` não
-      // mudou, então nada foi aceito de novo, então não há versão a carimbar.
-      expect(await versionOf(_legacyUid), isNull,
-          reason: 'nem a própria pessoa consegue fabricar a própria versão');
+      expect(await versionOf(_legacyUid), isNull);
     },
   );
 

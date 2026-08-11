@@ -132,12 +132,37 @@ Enquanto isso, quem publica roda, na própria máquina:
 
 ```bash
 gcloud auth login   # uma vez, com conta que tem permissão no bucket/CDN
+
+SUPABASE_URL=https://mbfcnebyxzoagwatjxuh.supabase.co \
+SUPABASE_PUBLISHABLE_KEY=<chave publicável de PRODUÇÃO> \
 make deploy-web
 ```
 
-`make deploy-web` builda, confere que só as duas chaves públicas do Supabase foram para o
-bundle, e publica em duas passadas (sobe tudo, só depois apaga o que sumiu) — o alvo está no
-`Makefile` da raiz, comentado. Site em `http://35.211.105.176` (sem domínio próprio ainda).
+**As duas variáveis são obrigatórias** — sem elas o alvo recusa antes de fazer qualquer coisa.
+Elas não vêm mais de arquivo: `.env` deixou de ser asset do build depois de um vazamento real
+(`SECURITY-AUDIT.md`, no fim), e as chaves entram no binário por `--dart-define`.
+
+Onde achar cada uma:
+
+| Variável | Onde |
+|---|---|
+| `SUPABASE_URL` | `https://<project-ref>.supabase.co`. O `project-ref` está em `INFRA-PRODUCAO.md` § 2 |
+| `SUPABASE_PUBLISHABLE_KEY` | painel do Supabase → Settings → API, **do projeto de produção** |
+
+🔴 **A chave publicável de produção não é a que `supabase status` imprime** — aquela é a do
+Docker local. E **nada além dessas duas** entra aqui: o que vai em `--dart-define` vai para
+dentro do JavaScript publicado, legível por qualquer visitante. `SUPABASE_SERVICE_ROLE_KEY` e
+`ADMIN_*` nunca.
+
+🔴 **Não preencha com `source .env`.** O `.env` deste repositório aponta para
+`http://127.0.0.1:54321`, e isso publicaria o site de produção falando com o seu Docker — sem
+erro nenhum na publicação; só quem abrisse o site veria. O alvo recusa endereço local por causa
+disso, mas conte com a guarda como segunda linha de defesa, não como a primeira: ele imprime
+`Publicando contra <URL>` antes de tudo, e vale ler essa linha.
+
+`make deploy-web` builda, **recusa publicar se algum `.env` tiver ido parar no bundle**, e
+publica em duas passadas (sobe tudo, só depois apaga o que sumiu) — o alvo está no `Makefile`
+da raiz, comentado. Site em `http://35.211.105.176` (sem domínio próprio ainda).
 
 Nomes de projeto, bucket e url map: `.tickets/IASD-CI-GCS-UPLOAD.md`. Desenho original (para
 quando a política de organização for resolvida e o CI voltar a publicar sozinho), decisões e

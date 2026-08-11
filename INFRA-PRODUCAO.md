@@ -287,3 +287,33 @@ seção 1, e ela precisa de prazo de expiração automática escrito.** O motivo
 Política: a feature 009 anonimiza o banco vivo e não alcança cópia nenhuma, logo
 **prazo de retenção do backup é prazo de retenção do dado de quem pediu
 exclusão**.
+
+---
+
+## 5. As duas chaves que o build de produção exige
+
+O app publicado não lê arquivo de configuração nenhum. `SUPABASE_URL` e
+`SUPABASE_PUBLISHABLE_KEY` são **constante de compilação**, passadas por
+`--dart-define` na hora do build — quem publica precisa tê-las à mão.
+
+| Variável | Valor / onde | Vai para o bundle público? |
+|---|---|---|
+| `SUPABASE_URL` | `https://mbfcnebyxzoagwatjxuh.supabase.co` (o `project-ref` é o da seção 2) | **Sim**, e é público por desenho |
+| `SUPABASE_PUBLISHABLE_KEY` | painel do Supabase → Settings → API, projeto de produção | **Sim**, e é protegida por RLS |
+
+**As duas viajam dentro do JavaScript publicado, e isso é o desenho, não um
+descuido.** O que é descuido — e aconteceu — é qualquer outra coisa viajar
+junto: `SUPABASE_SERVICE_ROLE_KEY` ignora RLS e `ADMIN_*` é credencial de
+pessoa. Nenhuma das duas pode ser passada em `--dart-define`, cadastrada como
+segredo do workflow de deploy, nem colocada num arquivo que o build enxergue.
+
+O histórico dessa regra está em `SECURITY-AUDIT.md`, no fim: até 2026-08-10
+`.env` era asset do `pubspec.yaml`, e um build local com o `.env` de trabalho de
+um desenvolvedor publicou a senha do Administrador no site.
+
+**A chave publicável de produção não é a que `supabase status` imprime** — aquela
+é a do Docker local. Publicar com a local faz o site de produção falar com uma
+máquina que ninguém alcança, e o deploy não acusa nada.
+
+O comando de publicação está no `README.md`, seção Deploy, e não é repetido aqui
+de propósito: procedimento em dois lugares é procedimento que diverge.

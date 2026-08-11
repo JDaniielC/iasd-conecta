@@ -13,7 +13,8 @@ delas mudou o desenho, porque a peça que eu ia adicionar já estava lá.
 dependência **transitiva** para **direta** em `pubspec.yaml`.
 
 **Rationale**: o app não declara nenhum pacote de armazenamento local — `pubspec.yaml` tem
-`supabase_flutter`, `flutter_riverpod`, `go_router`, `flutter_dotenv`, `intl` e
+`supabase_flutter`, `flutter_riverpod`, `go_router`, ~~`flutter_dotenv`~~ (removido em
+2026-08-10 — ver `SECURITY-AUDIT.md`), `intl` e
 `cupertino_icons`, e nada mais. Mas `pubspec.lock` mostra:
 
 ```

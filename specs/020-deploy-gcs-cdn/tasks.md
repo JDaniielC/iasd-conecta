@@ -128,6 +128,13 @@ build chegaram, com o mesmo conteúdo do build local.
       (`SUPABASE_PUBLISHABLE_KEY`, `SUPABASE_URL`) e falha se houver uma terceira. Nunca imprime
       valor. Este arquivo vai **dentro** do bundle público (`pubspec.yaml:74-75`), baixável em
       `https://<site>/assets/.env` — é exatamente o que o FR-013 protege. — **FR-013, SC-004**
+
+  > **Superada em 2026-08-11.** O step existe, mas com outra pergunta: `Verify no .env was
+  > bundled`. `.env` deixou de ser `assets:` no `pubspec.yaml` depois que um `flutter build web`
+  > **local**, com o `.env` de trabalho de um desenvolvedor, publicou a senha do Administrador no
+  > bundle público — achado em pentest. Conferir **o conteúdo** do que vaza pressupõe aceitar que
+  > algo vaze; hoje a garantia é que o arquivo não exista. As chaves entram por `--dart-define`.
+  > FR-013 continua valendo; mudou o que o satisfaz.
 - [X] T014 Excluir `.last_build_id` das duas passadas (`--exclude='^\.last_build_id$'`). É
       metadado de build, não faz parte do site.
   ✅ T009-T014: auth + setup-gcloud, passada aditiva sem `--delete-…`, passada destrutiva com

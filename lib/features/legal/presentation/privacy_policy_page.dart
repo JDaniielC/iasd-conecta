@@ -143,6 +143,56 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'vencedora, sem mostrar a ninguém quem votou em quê.',
             ),
 
+            const LegalHeading('Imagens de capa de Grupo e de Ação'),
+            const LegalParagraph(
+              'Quem é Dono de um Grupo/Ministério, quem criou uma Ação e o '
+              'Administrador do distrito podem enviar uma imagem de capa, '
+              'para ilustrar. A finalidade é essa: dar cara ao Grupo ou à '
+              'Ação, para quem procura reconhecer do que se trata.',
+            ),
+            const LegalBullet(
+              'Quem consegue ver: qualquer pessoa na internet, inclusive quem '
+              'não tem cadastro no app. A imagem fica num endereço público, '
+              'como o nome do Grupo e o horário da Ação já ficam.',
+            ),
+            const LegalBullet(
+              'Por quanto tempo: enquanto o Grupo ou a Ação existir, ou até '
+              'alguém remover a imagem. Quando a Ação é cancelada, quando uma '
+              'candidata perde a votação e é descartada, ou quando quem '
+              'enviou apaga a conta, a imagem é removida junto.',
+            ),
+            // FR-012 escrito com o número medido, e não com o número
+            // desejado. A verificação em fonte primária (research D-004) diz
+            // "up to 60 seconds for the CDN cache to be invalidated" — a
+            // invalidação é automática, mas não é síncrona. Escrever
+            // "removida imediatamente" seria a divergência entre promessa e
+            // execução que a constituição proíbe.
+            const LegalBullet(
+              'Como pedir a remoção, e o que acontece: qualquer pessoa pode '
+              'denunciar uma imagem pelo próprio app, sem precisar de '
+              'cadastro, ou escrever para ${LegalMetadata.contactEmail}. '
+              'Ao ser removida, a imagem sai na hora do app e do nosso '
+              'servidor. Quem já tiver o endereço direto dela guardado pode '
+              'ainda conseguir abri-lo por até 60 segundos, enquanto a cópia '
+              'em cache da internet expira. Depois disso, o endereço para de '
+              'responder.',
+            ),
+            // FR-030: dizer o que o app NÃO faz é tão obrigatório quanto
+            // dizer o que ele faz. Sem esta frase, a Política deixaria
+            // subentendido um controle que não existe.
+            const LegalParagraph(
+              'O app pede a quem envia que use imagem ilustrativa e que não '
+              'envie foto de pessoas — nunca de crianças ou adolescentes. '
+              'Esse aviso aparece antes de cada envio. Mas é importante ser '
+              'claro: o app não solicita nem verifica autorização de '
+              'responsável para imagem em que apareça criança ou '
+              'adolescente, e não analisa automaticamente o conteúdo do que '
+              'é enviado. O controle é o aviso antes do envio e a denúncia '
+              'depois. Se você vir uma imagem com uma criança, denuncie pelo '
+              'app ou escreva para ${LegalMetadata.contactEmail} — nós '
+              'removemos.',
+            ),
+
             const LegalHeading('Com quem compartilhamos'),
             const LegalBullet(
               'Supabase — provedor que guarda o banco de dados e cuida do '
@@ -165,6 +215,11 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'rotina automática que apague cadastro de quem parou de usar '
               'o app: o dado fica guardado até você pedir a exclusão, o que '
               'você pode fazer sozinho pelo app a qualquer momento.',
+            ),
+            const LegalParagraph(
+              'Imagens de capa seguem o Grupo ou a Ação que ilustram — o '
+              'prazo delas está na seção "Imagens de capa de Grupo e de '
+              'Ação", acima.',
             ),
 
             const LegalHeading('Seus direitos e como usar cada um'),

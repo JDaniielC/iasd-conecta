@@ -56,3 +56,18 @@ insert into public.categorias_grupo (nome) values
   ('Serviço Voluntário Adventista'),
   ('Outros')
 on conflict (nome) do nothing;
+
+-- =====================================================================
+-- Feature 013 — endereço da drenagem, SÓ no ambiente local
+-- =====================================================================
+-- Isto mora no seed, e não numa migration, de propósito: `supabase db reset`
+-- roda o seed, e produção **nunca** roda. A migration que semeava este valor
+-- deixava produção apontando para o Docker de quem desenvolve, e a fila de
+-- remoção não drenava nunca — em silêncio. Ver
+-- 20260810140000_drenagem_exige_configuracao.sql.
+--
+-- Em produção, este mesmo insert é feito uma vez, à mão, com o endereço real.
+-- A instrução está em INFRA-PRODUCAO.md.
+insert into public.configuracao_drenagem (url_funcao)
+values ('http://host.docker.internal:54321/functions/v1/drenar-capas')
+on conflict (id) do update set url_funcao = excluded.url_funcao;

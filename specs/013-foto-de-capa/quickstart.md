@@ -136,3 +136,29 @@ retido sem finalidade.
 - [ ] Parte 2, itens 1 a 21
 - [ ] Parte 3 conferida à mão, com os números anotados
 - [ ] Item 11 com o tempo real medido, se a imagem ainda for obtida após a remoção
+
+---
+
+## Parte 4 — A drenagem da fila (o elo que nenhum teste automatizado cobre)
+
+Todos os testes de órfão param em *"o caminho foi enfileirado"*. O que
+efetivamente cumpre SC-005 é o passo seguinte — fila → Edge Function → objeto
+fora do bucket —, e ele exige a Edge Function de pé, que não sobe no CI.
+
+```bash
+supabase start
+supabase functions serve drenar-capas &     # deixe rodando
+./specs/013-foto-de-capa/scripts/verificar-drenagem.sh
+```
+
+**Passou quando**: `OBJETOS ANTES: 1`, `OBJETOS DEPOIS: 0`, e `REMOVIDO_EM` com
+data. Executado em 2026-08-10: removido em **1 segundo**, `tentativas = 0`,
+`ultimo_erro` nulo.
+
+### Em produção, antes de considerar a feature no ar
+
+O endereço da Edge Function **não vem configurado**, e a função recusa em voz
+alta enquanto não estiver. O comando de `update`, com o `project-ref` real, e a
+consulta que revela fila parada estão em `INFRA-PRODUCAO.md` § 3.
+
+Sem esse passo, a remoção de imagem **não acontece** — e falha em silêncio.

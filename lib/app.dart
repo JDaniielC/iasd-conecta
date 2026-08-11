@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 
 import 'core/providers.dart';
 import 'core/theme/app_theme.dart';
+import 'features/image_report/presentation/pending_reports_page.dart';
 import 'features/action/presentation/create_action_page.dart';
 import 'features/action/presentation/create_candidate_page.dart';
 import 'features/action/presentation/create_voting_round_page.dart';
@@ -176,6 +177,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/district-admin/grupos-arquivados',
         builder: (context, state) => const ArchivedGroupsPage(),
+      ),
+      GoRoute(
+        path: '/district-admin/imagens-denunciadas',
+        builder: (context, state) => const PendingReportsPage(),
       ),
       GoRoute(
         path: '/district-admin/consentimentos',

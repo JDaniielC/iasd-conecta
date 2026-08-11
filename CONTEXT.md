@@ -58,6 +58,8 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Limiar de criança | `childAgeThreshold` |
 | Marco de lançamento | `launchDate` |
 | Marcador de leitura | `lastSeenNewsDate` |
+| Enviar foto de capa | `uploadCoverPhoto` |
+| Denunciar imagem | `reportImage` |
 
 ### Colisões conhecidas, com decisão já tomada
 
@@ -155,6 +157,16 @@ _EN_: `Vote` / `vote`
 **Igreja**:
 Nome numa lista simples mantida pelo Administrador do distrito, sem outros atributos. Usuário escolhe uma no cadastro, ou nenhuma. Grupo e Ação também carregam uma Igreja, limitada à igreja do próprio criador (não escolhe qualquer uma das 15+ do distrito) — usada pra destaque/distribuição: Usuário da Igreja X vê em destaque Grupos/Ações vinculados à Igreja X, mas continua vendo normalmente os vinculados a outras igrejas. Não é restrição de acesso.
 _EN_: `Church`
+
+**Foto de capa**:
+Uma imagem por Grupo ou por Ação, para dar rosto ao que está sendo convidado. Enviada pelo Dono do Grupo ou por quem criou a Ação, e removível por eles e pelo Administrador do distrito. **O app aconselha, antes de abrir o seletor, que não se envie foto pessoal nem de menor de idade** — a capa é ilustrativa, não retrato de quem participa. Trocar a capa é remover e enviar outra: não existe editar. Removida, ela sai da origem na hora, mas pode continuar acessível por até 60 segundos a quem já tiver o endereço, enquanto o cache de borda se atualiza.
+_Avoid_: avatar (é retrato de pessoa, e é o que a capa não deve ser), banner, thumbnail, imagem de perfil
+_EN_: `CoverPhoto`
+
+**Denúncia de imagem**:
+Aviso de que uma Foto de capa é imprópria, feito por qualquer pessoa — **inclusive Visitante sem cadastro**, porque exigir cadastro para denunciar foto de menor seria proteger o problema. Tem um motivo em texto curto. Quem decide é o Administrador do distrito, que vê as denúncias agrupadas por imagem, sem a identidade de quem denunciou.
+_Avoid_: report, flag, reclamação, moderação (moderação é o que o Administrador faz com a denúncia, não a denúncia)
+_EN_: `ImageReport`
 
 **Novidade**:
 Item da tela de Novidades: uma data e um texto curto contando o que mudou no app **do ponto de vista de quem usa**. Escrita à mão, uma a uma, por quem entende o que a mudança significa para o distrito — nunca gerada do histórico de código. Só aparece o que tem data a partir do lançamento ao distrito, em 6 de outubro de 2026. O critério do que vira Novidade e como se escreve está em `CRITERIO-DE-NOVIDADE.md`.

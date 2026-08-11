@@ -81,7 +81,101 @@ não tem sintoma.
 
 ---
 
-## D-004 — ⚠️ Verificar em fonte primária antes de implementar
+## D-004 — ✅ VERIFICADO em 2026-08-10, em fonte primária
+
+**As duas respostas chegaram, e as duas são desfavoráveis.** Os trechos literais estão abaixo.
+
+### Resposta 1 — apagar a linha NÃO apaga o arquivo
+
+Documentação oficial do fornecedor, *Storage → Delete Objects*
+(https://supabase.com/docs/guides/storage/management/delete-objects):
+
+> "Deleting objects should always be done via the **Storage API** and NOT via a **SQL query**."
+>
+> "Deleting objects via a SQL query will not remove the object from the bucket and will result
+> in the object being orphaned."
+
+**Consequência direta**: um gatilho que apenas apague a linha em `storage.objects` produz
+exatamente o órfão que SC-005 existe para impedir — e o produz em silêncio, porque órfão não
+aparece em tela nenhuma. O corpo de `remover_objeto_capa` **tem** de alcançar a API de
+armazenamento, não a tabela.
+
+**O que existe no banco para isso** (medido no ambiente local): `pg_net` **0.20.4 instalada**;
+`http` disponível mas não instalada; `pg_cron` disponível mas não instalada.
+
+**E aqui aparece uma armadilha nova, que a pergunta não previa**: chamar a API de dentro do
+gatilho de forma **síncrona** (extensão `http`) põe uma requisição de rede dentro da transação
+que apaga a linha. Uma falha de rede aborta a transação — e uma dessas transações é
+`excluir_minha_conta`. Seria trocar um vazamento de imagem por **perder o direito de apagar a
+conta** (LGPD art. 18, VI), que é a mesma classe de erro que as features 015 e 017 tiveram de
+desarmar. A remoção do arquivo não pode bloquear a exclusão da linha.
+
+### Resposta 2 — a janela de cache é de até 60 segundos
+
+Documentação oficial, *Storage → CDN → Smart CDN*
+(https://supabase.com/docs/guides/storage/cdn/smart-cdn):
+
+> "It can take **up to 60 seconds** for the CDN cache to be invalidated as the asset metadata
+> has to propagate across all the data-centers around the globe."
+>
+> "Deleting the object invalidates all cached entries for that object across all tokens. This
+> can take up to a minute to propagate."
+
+A invalidação é **automática**, mas **não é síncrona**.
+
+**Consequência direta**: FR-012 e SC-004 prometem indisponibilidade em **100%** das tentativas,
+por **qualquer** endereço. Com objeto público, isso é **falso** por até um minuto. A promessa
+honesta passa a ser: *removida da origem imediatamente; pode continuar acessível por endereço
+já conhecido por até 60 segundos.*
+
+### O que isto obriga a decidir — e não é decisão minha
+
+A própria tarefa T001 encaminha esta decisão ao responsável pelo app, e por um motivo que vale
+repetir: **é foto de menor que está em jogo.** As opções estão em "Plano alternativo" acima, e
+a comparação está no relatório de entrega.
+
+---
+
+## D-007 — O caminho do arquivo carrega o dono, e a política de armazenamento confere
+
+**Decision**: o caminho segue o formato `grupo/<uuid>/<arquivo>` ou `acao/<uuid>/<arquivo>`, e
+a política de insert em `storage.objects` confere o segmento do meio contra quem administra.
+
+**Rationale**: a primeira versão da política tinha só `bucket_id = 'fotos-capa'`, com um
+comentário meu afirmando que "a escrita segue a mesma regra da tabela". Era **falso** — a
+política não conferia nada. Qualquer pessoa autenticada podia subir arquivo arbitrário para um
+bucket **público**, sem vínculo com Grupo nenhum. Pior: sem linha em `fotos_capa`, a fila de
+remoção nem detectaria, porque ela só conhece arquivos que um dia tiveram linha.
+
+Pego por revisão de segurança automatizada. É a mesma classe de erro que a feature 018
+consertou: um comentário prometendo uma garantia que o código não dá.
+
+**Por que conferir "é dono de ALGUM Grupo" não bastaria** — que era a correção mais óbvia: o
+dono de um Grupo poderia subir arquivo no prefixo de outro Grupo, e a capa apareceria lá. O
+caminho precisa carregar a que Grupo ou Ação o arquivo pertence, senão "quem administra" não
+tem a que se referir.
+
+**Verificado no banco local**, com o JWT de uma dona de Grupo:
+
+| Caso | Resultado |
+|---|---|
+| Subir em `grupo/<id do próprio Grupo>/x.jpg` | **aceito** |
+| Subir em `grupo/<id do Grupo de outra pessoa>/x.jpg` | `new row violates row-level security policy` |
+| Subir em `solto.jpg`, na raiz do bucket | `new row violates row-level security policy` |
+
+**O que continua possível, e é aceito**: subir o arquivo no próprio prefixo e nunca criar a
+linha em `fotos_capa`. Fica um arquivo abandonado dentro do próprio prefixo da pessoa, sem
+aparecer em tela nenhuma. O estrago é limitado ao que ela já podia fazer legitimamente, e o
+custo de fechar isso seria uma confirmação em duas fases entre armazenamento e banco — mais
+peças do que o Princípio V justifica para esse ganho.
+
+**Sem policy de DELETE nem UPDATE em `storage.objects`**, de propósito: a remoção é da fila,
+com credencial de serviço. Dar delete ao cliente abriria o caminho de apagar o arquivo sem
+apagar a linha — órfão ao contrário, com a tela mostrando uma capa que não existe mais.
+
+---
+
+## D-004 (texto original, mantido como registro do que se perguntou)
 
 Duas afirmações sobre o comportamento do fornecedor sustentam D-003 e FR-012, e **nenhuma das
 duas deve ser assumida de memória**. Este repositório tem regra explícita sobre isso, e a

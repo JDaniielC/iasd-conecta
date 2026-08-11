@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
@@ -95,6 +96,28 @@ class ActionDetailPage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // FR-003: quem criou a Ação, e o Administrador do distrito.
+                //
+                // Para quem criou, Ação cancelada ou encerrada não ganha capa
+                // nova — é histórico, e a tela inteira já para de oferecer
+                // controles. Para o **Administrador do distrito** a regra é
+                // outra: FR-011 diz "qualquer Grupo ou Ação", e Ação encerrada
+                // **mantém a capa** por FR-023. Sem esta exceção, uma imagem
+                // imprópria numa Ação encerrada não teria como sair da tela.
+                CoverPhotoEditor(
+                  actionId: action.id,
+                  // Cancelada ou encerrada é histórico: ninguém publica capa
+                  // nova, nem o Administrador. Isso importa mais do que
+                  // parece na cancelada — o gatilho de cancelamento só dispara
+                  // na transição, então capa enviada DEPOIS não sairia por
+                  // caminho nenhum.
+                  canUpload: (action.creatorId == uid || isDistrictAdmin) &&
+                      !action.isCancelled &&
+                      !isEnded,
+                  // Ação encerrada MANTÉM a capa (FR-023), e o Administrador
+                  // precisa alcançá-la (FR-011).
+                  canRemove: action.creatorId == uid || isDistrictAdmin,
+                ),
                 Row(
                   children: [
                     Expanded(

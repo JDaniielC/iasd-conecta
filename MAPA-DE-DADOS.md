@@ -25,9 +25,47 @@ de operações de tratamento (ROPA, LGPD art. 37). Toda linha tem
 | `autorizacao_responsavel_em` | idem | data da autorização; junto com a versão é o que dá valor probatório (LGPD art. 8º §2º) | sim |
 | `autorizacao_responsavel_versao` | idem | versão do texto legal vigente no aceite | sim |
 
-**Não coletado**: CPF, endereço, foto/avatar, dado de saúde, dado de pagamento
-(nenhuma ocorrência de `foto`/`avatar`/`imagem` em `lib/` ou
-`supabase/migrations/`, confirmado por grep).
+**Não coletado**: CPF, endereço, **foto de Perfil**, dado de saúde, dado de
+pagamento.
+
+⚠️ **Existe imagem no app desde a feature 013, e ela não é da pessoa.** A
+afirmação anterior desta linha — "foto/avatar não coletado, nenhuma ocorrência
+de `foto`/`avatar`/`imagem`, confirmado por grep" — deixou de ser verdade.
+
+## Foto de capa (feature 013)
+
+A imagem ilustra o **Grupo/Ministério ou a Ação**, nunca a pessoa. **Não existe
+foto de Perfil**, e a distinção importa: uma capa não é dado pessoal de quem a
+enviou, mas *pode conter* dado pessoal de terceiro — que é o risco inteiro
+desta feature.
+
+| Onde | O quê |
+|---|---|
+| Tabela | `public.fotos_capa` (`supabase/migrations/20260810100000_foto_de_capa.sql:47`) — `grupo_id` **ou** `acao_id`, `caminho`, `enviada_por`, `created_at`. Exatamente um dono, por constraint |
+| Binário | Bucket `fotos-capa`, **público** (`:245`). Máx. 5 MB, só `image/jpeg`, `image/png`, `image/webp` |
+| Quem envia | Dono do Grupo, criador da Ação, Administrador do distrito — policies `fotos_capa_insert_admin` (`:118`) e `fotos_capa_objetos_insert` (`:271`), que confere o dono pelo **caminho** |
+| Quem vê | **Qualquer pessoa na internet, inclusive sem cadastro.** O bucket é público e a policy de select é `using (true)` (`:112`) |
+| Sensível? | A imagem em si não é classificada. **Mas pode conter rosto de terceiro**, inclusive de criança — e é por isso que existe aviso obrigatório antes de cada envio e denúncia aberta a Visitante |
+
+**O controle é preventivo e reativo, não automático — e isso está escrito na
+Política.** O app mostra um aviso antes de cada envio
+(`cover_photo_advice_sheet.dart`) e aceita denúncia de qualquer pessoa, sem
+cadastro. Ele **não** solicita nem verifica autorização de responsável para
+imagem de menor, e **não** analisa o conteúdo do que é enviado. Omitir isso
+deixaria subentendido um controle que não existe.
+
+**Remoção** (`capas_a_remover`, `:87`): apagar a linha **não** apaga o binário —
+a documentação do fornecedor diz que exclusão por SQL deixa o objeto órfão. Por
+isso o gatilho `fotos_capa_enfileirar_remocao` (`:107`) enfileira, e a drenagem
+chama a API fora da transação. Enfileirar em vez de chamar a rede no gatilho é
+o que impede uma falha de rede de abortar `excluir_minha_conta` — trocar
+vazamento de imagem por perda do direito do art. 18, VI seria pior.
+
+**A janela de 60 segundos**: removida a imagem, quem já tiver o endereço direto
+pode abri-lo por até um minuto, enquanto o cache de borda expira. Medido em
+fonte primária (`specs/013-foto-de-capa/research.md` D-004) e **aceito pelo
+responsável pelo app em 2026-08-10**. A Política diz isso com esse número, e
+não "removida imediatamente".
 
 **Auth (fora de `public.perfis`)**: sessão anônima por padrão
 (`lib/core/supabase_client.dart:19`, `signInAnonymously()`); upgrade opcional

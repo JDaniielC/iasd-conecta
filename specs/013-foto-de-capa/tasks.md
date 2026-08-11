@@ -34,9 +34,9 @@ violação de constituição, não dívida.
 
 **Purpose**: responder o que não pode ser assumido, e abrir caminho para o código.
 
-- [ ] T001 **BLOQUEIA a migration e o texto da Política**. Responder as duas perguntas de [research.md](./research.md) D-004 consultando a documentação oficial do fornecedor, e **colar o trecho literal** em `specs/013-foto-de-capa/research.md`: (1) apagar o registro do objeto remove mesmo o binário, ou deixa órfão invisível? (2) objeto público removido continua servível por cache de borda por quanto tempo, e há invalidação síncrona? **Se (2) revelar janela de cache não desprezível**, decidir com o responsável pelo app entre aceitar a janela — e escrever isso na Política — ou trocar para endereço assinado de vida curta (plano alternativo de D-004). É foto de menor que está em jogo
-- [ ] T002 [P] Em `CONTEXT.md`, adicionar as entradas de glossário **Foto de capa** e **Denúncia de imagem**, com a tradução em inglês (`CoverPhoto`, `ImageReport`) e o `_Avoid_` de cada uma. Exigido pela constituição **antes** de o termo entrar em código (FR-029, Princípio I)
-- [ ] T003 [P] Adicionar ao `pubspec.yaml` a dependência de seleção de imagem escolhida por [research.md](./research.md) D-002, com os três critérios de aceite: funciona em web/Android/iOS, entrega **bytes** de forma uniforme, e não quebra `flutter build web`. Rodar `flutter build web` logo em seguida — é o gate que essa escolha costuma reprovar
+- [X] T001 **RESPONDIDA em 2026-08-10** (as duas perguntas, com trecho literal em research.md D-004). **As duas respostas são desfavoráveis** e a segunda exige decisão do responsável pelo app antes da migration — está no relatório. Original: **BLOQUEIA a migration e o texto da Política**. Responder as duas perguntas de [research.md](./research.md) D-004 consultando a documentação oficial do fornecedor, e **colar o trecho literal** em `specs/013-foto-de-capa/research.md`: (1) apagar o registro do objeto remove mesmo o binário, ou deixa órfão invisível? (2) objeto público removido continua servível por cache de borda por quanto tempo, e há invalidação síncrona? **Se (2) revelar janela de cache não desprezível**, decidir com o responsável pelo app entre aceitar a janela — e escrever isso na Política — ou trocar para endereço assinado de vida curta (plano alternativo de D-004). É foto de menor que está em jogo
+- [X] T002 [P] Em `CONTEXT.md`, adicionar as entradas de glossário **Foto de capa** e **Denúncia de imagem**, com a tradução em inglês (`CoverPhoto`, `ImageReport`) e o `_Avoid_` de cada uma. Exigido pela constituição **antes** de o termo entrar em código (FR-029, Princípio I)
+- [X] T003 [P] Adicionar ao `pubspec.yaml` a dependência de seleção de imagem escolhida por [research.md](./research.md) D-002, com os três critérios de aceite: funciona em web/Android/iOS, entrega **bytes** de forma uniforme, e não quebra `flutter build web`. Rodar `flutter build web` logo em seguida — é o gate que essa escolha costuma reprovar
 
 ---
 
@@ -47,12 +47,39 @@ imagem enviada já nasce como órfã em potencial.
 
 **⚠️ CRITICAL**: T004 não começa antes de T001 estar respondida.
 
-- [ ] T004 Criar `supabase/migrations/<timestamp>_foto_de_capa.sql` com as seções 1, 2, 3 e 7 de [contracts/schema.sql](./contracts/schema.sql): tabela `fotos_capa` com a restrição de dono único e os dois índices únicos (FR-001), o bucket `fotos-capa` com leitura pública (FR-008), as políticas de insert/delete (FR-003, FR-011), e o **gatilho `after delete` que remove o arquivo**. **Sem policy de UPDATE, de propósito** — trocar capa é DELETE + INSERT, senão o arquivo antigo fica órfão sem aviso
-- [ ] T005 [P] Criar `lib/core/image_upload.dart`: escolher arquivo, obter **bytes** (nunca caminho — em web não existe caminho), e validar formato, tamanho e legibilidade **antes** de qualquer escrita (FR-009). A diferença entre web e mobile morre aqui e não vaza para o resto do app (research D-002)
-- [ ] T006 [P] Criar `lib/features/cover_photo/domain/cover_photo.dart` com o modelo `CoverPhoto` (id, grupoId, acaoId, caminho, enviadaPor, createdAt) e os limites de formato e tamanho como constantes nomeadas. Identificadores em inglês (Princípio I)
-- [ ] T007 Criar `lib/features/cover_photo/data/cover_photo_repository.dart`: enviar (gera **caminho novo e único a cada envio, nunca reaproveitado** — research D-001), trocar (delete + insert, nunca update) e remover. O repositório **não** apaga arquivo: quem apaga é o gatilho de T004
-- [ ] T008 Criar `lib/features/cover_photo/cover_photo_providers.dart` com o provider da capa por Grupo e por Ação
-- [ ] T009 Criar `test/integration/foto_capa_orfao_test.dart` com a base: contar objetos do bucket antes e depois de (a) remoção manual, (b) troca de capa, (c) **descarte de candidata perdedora ao fechar uma Rodada de votação**. O caso (c) é o mais importante da feature — `fechar_rodada_se_devido` apaga as perdedoras com `delete from public.acoes` (`20260724084300_rodada_votacao.sql:178`), sem passar por tela nenhuma (SC-005)
+- [X] T004 Criar `supabase/migrations/<timestamp>_foto_de_capa.sql` com as seções 1, 2, 3 e 7 de [contracts/schema.sql](./contracts/schema.sql): tabela `fotos_capa` com a restrição de dono único e os dois índices únicos (FR-001), o bucket `fotos-capa` com leitura pública (FR-008), as políticas de insert/delete (FR-003, FR-011), e o **gatilho `after delete` que remove o arquivo**. **Sem policy de UPDATE, de propósito** — trocar capa é DELETE + INSERT, senão o arquivo antigo fica órfão sem aviso
+- [X] T005 [P] Criar `lib/core/image_upload.dart`: escolher arquivo, obter **bytes** (nunca caminho — em web não existe caminho), e validar formato, tamanho e legibilidade **antes** de qualquer escrita (FR-009). A diferença entre web e mobile morre aqui e não vaza para o resto do app (research D-002)
+- [X] T006 [P] Criar `lib/features/cover_photo/domain/cover_photo.dart` com o modelo `CoverPhoto` (id, grupoId, acaoId, caminho, enviadaPor, createdAt) e os limites de formato e tamanho como constantes nomeadas. Identificadores em inglês (Princípio I)
+- [X] T007 Criar `lib/features/cover_photo/data/cover_photo_repository.dart`: enviar (gera **caminho novo e único a cada envio, nunca reaproveitado** — research D-001), trocar (delete + insert, nunca update) e remover. O repositório **não** apaga arquivo: quem apaga é o gatilho de T004
+- [X] T008 Criar `lib/features/cover_photo/cover_photo_providers.dart` com o provider da capa por Grupo e por Ação
+- [X] T009 Criar `test/integration/foto_capa_orfao_test.dart` com a base: contar objetos do bucket antes e depois de (a) remoção manual, (b) troca de capa, (c) **descarte de candidata perdedora ao fechar uma Rodada de votação**. O caso (c) é o mais importante da feature — `fechar_rodada_se_devido` apaga as perdedoras com `delete from public.acoes` (`20260724084300_rodada_votacao.sql:178`), sem passar por tela nenhuma (SC-005)
+  ✅ `lib/core/image_upload.dart`. Valida **antes** de qualquer escrita. O tipo vem dos
+  **primeiros bytes**, não da extensão — renomear um PDF para `.jpg` passaria por qualquer
+  checagem de nome e chegaria ao bucket público como um retângulo quebrado. Ler a assinatura é
+  também a checagem de legibilidade que FR-009 pede, sem decodificar a imagem inteira.
+  ✅ `lib/features/cover_photo/domain/cover_photo.dart`. `coverPhotoMaxBytes` e
+  `coverPhotoAllowedMimeTypes` são **gêmeos declarados** de `file_size_limit` e
+  `allowed_mime_types` do bucket. Existem no cliente para a pessoa saber o limite antes do
+  envio, e não descobrir no erro do fornecedor, em inglês, depois de esperar o upload.
+  ✅ `lib/features/cover_photo/data/cover_photo_repository.dart`. Ordem de envio deliberada e
+  comentada: sobe o arquivo novo, apaga a linha antiga, grava a linha nova. É a ordem que falha
+  melhor — a inversa tem a mesma perda e ainda abre janela em que a tela mostra capa que já não
+  existe. O repositório **não apaga arquivo**, por construção.
+  ✅ `lib/features/cover_photo/cover_photo_providers.dart`. Capa ausente é `null`, estado
+  normal — não erro nem carregamento eterno.
+  ✅ `test/integration/foto_capa_orfao_test.dart` — **3 casos, todos passando**, e **provados
+  vermelhos**: com `fotos_capa_enfileirar_remocao` desabilitado, os 3 falham; religado, os 3
+  passam.
+  **Desvio deliberado da tarefa**: ela pedia contar objetos do bucket antes e depois. Contar
+  `storage.objects` por SQL daria um teste que sempre passa e nunca prova nada — a
+  documentação do fornecedor (D-004) diz que apagar por SQL **não** remove o binário de
+  qualquer jeito. As asserções são sobre `public.capas_a_remover`: um caminho que não enfileira
+  é o órfão, e ele fica visível como ausência na fila.
+
+
+
+
+
 
 **Checkpoint**: `flutter analyze` limpo, migration aplicada, e o teste de órfão passando. Nada aparece na tela ainda.
 
@@ -70,18 +97,59 @@ desatualizado é violação do Princípio II, não pendência de documentação.
 
 ### Tests for User Story 1
 
-- [ ] T010 [P] [US1] Criar `test/unit/cover_photo_validation_test.dart`: arquivo acima do tamanho máximo, formato não suportado e arquivo ilegível são recusados, cada um com motivo próprio (FR-009)
-- [ ] T011 [US1] Criar `test/widget/cover_photo_advice_test.dart`: (a) o aviso aparece **antes** de qualquer seletor de arquivo; (b) aparece **de novo** na troca de capa já existente; (c) quem não é Dono do Grupo nem criou a Ação não encontra opção de capa (FR-003, FR-004, FR-005, SC-001)
+- [X] T010 [P] [US1] Criar `test/unit/cover_photo_validation_test.dart`: arquivo acima do tamanho máximo, formato não suportado e arquivo ilegível são recusados, cada um com motivo próprio (FR-009)
+- [X] T011 [US1] Criar `test/widget/cover_photo_advice_test.dart`: (a) o aviso aparece **antes** de qualquer seletor de arquivo; (b) aparece **de novo** na troca de capa já existente; (c) quem não é Dono do Grupo nem criou a Ação não encontra opção de capa (FR-003, FR-004, FR-005, SC-001)
+  ✅ `test/unit/cover_photo_validation_test.dart` — **10 casos**. Inclui o PDF renomeado para
+  `.jpg`, que uma checagem por extensão deixaria passar, e o limite exato (o teto não é
+  exclusivo).
+  ✅ `test/widget/cover_photo_advice_test.dart` — **9 casos**, cobrindo (a) aviso antes de
+  qualquer seletor, (b) aviso de novo na troca, (c) quem não administra não encontra opção
+  nenhuma, mais ausência de "não mostrar de novo" e a proporção fixa reservada.
+
+
 
 ### Implementation for User Story 1
 
-- [ ] T012 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart` com o aviso como **parada obrigatória antes do seletor**, usando o texto de [research.md](./research.md) D-005: imagem ilustrativa, não envie foto de pessoas, nunca de crianças ou adolescentes, e o motivo em uma frase — qualquer pessoa na internet vê, mesmo sem cadastro. Sem opção de "não mostrar de novo" (FR-004, FR-005, FR-006)
-- [ ] T013 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_widget.dart`: exibe a capa, **reserva o espaço antes de carregar** para a lista não pular, carrega de forma preguiçosa, e trata proporção extrema sem deformar o card nem empurrar o resto (FR-007, edge case)
-- [ ] T014 [US1] Em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/group/presentation/group_list_page.dart`, exibir a capa e oferecer enviar/trocar/remover **só ao Dono do Grupo e ao Administrador do distrito**. Grupo sem capa continua íntegro, sem buraco no lugar da imagem (FR-002, FR-003, FR-007, SC-006)
-- [ ] T015 [US1] Em `lib/features/action/presentation/action_detail_page.dart` e `lib/features/action/presentation/action_list_page.dart`, o mesmo para Ação, restrito a quem criou e ao Administrador do distrito
-- [ ] T016 [US1] Garantir que uma falha de envio não altera nada do Grupo/Ação e não perde o que o Usuário estava preenchendo (FR-010, SC-009)
-- [ ] T017 [US1] **Depende de T001.** Atualizar `lib/features/legal/presentation/privacy_policy_page.dart` e `lib/features/legal/legal_metadata.dart` (versão e data): descrever que o app hospeda imagens enviadas por Usuários — finalidade, quem pode ver (**qualquer pessoa, inclusive sem cadastro**), quanto tempo ficam e como pedir remoção; e declarar que o app **não solicita nem verifica consentimento de responsável** para imagem de menor (FR-027, FR-030). **O texto sobre remoção reflete o que T001 apurou**, não o que se desejava garantir
-- [ ] T018 [P] [US1] Atualizar `MAPA-DE-DADOS.md`: a linha 22 hoje afirma, com grep como prova, que foto/avatar **não é coletado**. Substituir pela descrição da Foto de capa, com evidência `arquivo:linha` como nas demais entradas. Deixar explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não da pessoa (FR-028, SC-007)
+- [X] T012 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart` com o aviso como **parada obrigatória antes do seletor**, usando o texto de [research.md](./research.md) D-005: imagem ilustrativa, não envie foto de pessoas, nunca de crianças ou adolescentes, e o motivo em uma frase — qualquer pessoa na internet vê, mesmo sem cadastro. Sem opção de "não mostrar de novo" (FR-004, FR-005, FR-006)
+- [X] T013 [US1] Criar `lib/features/cover_photo/presentation/cover_photo_widget.dart`: exibe a capa, **reserva o espaço antes de carregar** para a lista não pular, carrega de forma preguiçosa, e trata proporção extrema sem deformar o card nem empurrar o resto (FR-007, edge case)
+- [X] T014 [US1] Em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/group/presentation/group_list_page.dart`, exibir a capa e oferecer enviar/trocar/remover **só ao Dono do Grupo e ao Administrador do distrito**. Grupo sem capa continua íntegro, sem buraco no lugar da imagem (FR-002, FR-003, FR-007, SC-006)
+- [X] T015 [US1] Em `lib/features/action/presentation/action_detail_page.dart` e `lib/features/action/presentation/action_list_page.dart`, o mesmo para Ação, restrito a quem criou e ao Administrador do distrito
+- [X] T016 [US1] Garantir que uma falha de envio não altera nada do Grupo/Ação e não perde o que o Usuário estava preenchendo (FR-010, SC-009)
+- [X] T017 [US1] **Depende de T001.** Atualizar `lib/features/legal/presentation/privacy_policy_page.dart` e `lib/features/legal/legal_metadata.dart` (versão e data): descrever que o app hospeda imagens enviadas por Usuários — finalidade, quem pode ver (**qualquer pessoa, inclusive sem cadastro**), quanto tempo ficam e como pedir remoção; e declarar que o app **não solicita nem verifica consentimento de responsável** para imagem de menor (FR-027, FR-030). **O texto sobre remoção reflete o que T001 apurou**, não o que se desejava garantir
+- [X] T018 [P] [US1] Atualizar `MAPA-DE-DADOS.md`: a linha 22 hoje afirma, com grep como prova, que foto/avatar **não é coletado**. Substituir pela descrição da Foto de capa, com evidência `arquivo:linha` como nas demais entradas. Deixar explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não da pessoa (FR-028, SC-007)
+  ✅ `cover_photo_advice_sheet.dart`, com o texto de D-005 e o motivo verdadeiro — "qualquer
+  pessoa na internet vê" —, não apelo jurídico.
+  ✅ `cover_photo_widget.dart`: `CoverPhotoView` (exibição) e `CoverPhotoEditor` (com as ações).
+  Sem capa ocupa **zero**. Com capa, proporção **fixa** 16/9 e `BoxFit.cover` — recorta em vez
+  de deformar, porque rosto achatado é pior que rosto fora do enquadramento.
+  ✅ `group_detail_page.dart` e `group_list_page.dart`. Grupo **arquivado** não ganha capa nova.
+  **Correção de desenho que a tarefa não previu**: capa por card seriam N consultas e cada card
+  cresceria ao receber a sua — o pulo de layout que FR-007 proíbe. A lista resolve tudo numa
+  consulta (`fetchForGroups`) e entrega a capa pronta ao card, que não consulta nada.
+  ✅ `action_detail_page.dart` e `action_list_page.dart`, restrito a quem criou e ao
+  Administrador do distrito. Ação cancelada ou encerrada não ganha capa nova. Mesma consulta
+  em lote da T014 (`fetchForActions`).
+  ✅ Garantido por construção e por teste. O editor de capa **não vive dentro de formulário**:
+  está no detalhe e na lista, e o que quer que a pessoa estivesse preenchendo em outra tela não
+  é tocado. Falha vira aviso, não exceção vermelha, e a capa anterior permanece — provado em
+  `cover_photo_advice_test.dart`.
+  ✅ Política com seção nova de imagens de capa: finalidade, quem vê (**qualquer pessoa,
+  inclusive sem cadastro**), por quanto tempo, e como pedir remoção **com os 60 segundos
+  escritos** — o número medido, não o desejado. Declara também o que o app **não** faz
+  (FR-030): não solicita nem verifica autorização de responsável para imagem de menor, e não
+  analisa conteúdo. `LegalMetadata.version` **1.3 → 1.4**, com a linha correspondente semeada
+  em `versoes_texto_legal` no mesmo commit — `versao_texto_legal_registro_test.dart` passa (4).
+  ✅ `MAPA-DE-DADOS.md`: a linha que afirmava, com grep como prova, que foto/avatar não é
+  coletado, deixou de ser verdade e foi substituída por uma seção própria com evidência
+  `arquivo:linha`. Explícito que **não existe foto de Perfil** — a imagem é do Grupo/Ação, não
+  da pessoa — e que ela *pode conter* dado de terceiro, que é o risco inteiro da feature.
+
+
+
+
+
+
+
 
 **Checkpoint**: US1 pronta e no ar. Capa funcionando, aviso na frente, documentos verdadeiros.
 
@@ -98,11 +166,18 @@ e verificar que sumiu da tela e do card.
 
 ### Tests for User Story 2
 
-- [ ] T019 [US2] Em `test/widget/cover_photo_advice_test.dart`, adicionar: o Administrador do distrito vê a opção de remover em Grupo e Ação alheios; Usuário comum e Dono de outro Grupo não veem (FR-011, FR-003)
+- [X] T019 [US2] Em `test/widget/cover_photo_advice_test.dart`, adicionar: o Administrador do distrito vê a opção de remover em Grupo e Ação alheios; Usuário comum e Dono de outro Grupo não veem (FR-011, FR-003)
+  ✅ 3 casos em `cover_photo_advice_test.dart`: Administrador vê remover em Grupo alheio,
+  Usuário comum não vê, e depois de remover pode enviar outra (FR-014).
+
 
 ### Implementation for User Story 2
 
-- [ ] T020 [US2] Em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e nas quatro telas de T014/T015, oferecer a remoção ao Administrador do distrito em qualquer Grupo ou Ação, alcançável em até 3 toques a partir da tela onde a imagem aparece (FR-011, SC-003). Depois de remover, quem administra pode enviar outra (FR-014)
+- [X] T020 [US2] Em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e nas quatro telas de T014/T015, oferecer a remoção ao Administrador do distrito em qualquer Grupo ou Ação, alcançável em até 3 toques a partir da tela onde a imagem aparece (FR-011, SC-003). Depois de remover, quem administra pode enviar outra (FR-014)
+  ✅ Já entregue por `CoverPhotoEditor` + as quatro telas: o `canManage` de cada uma inclui o
+  Administrador do distrito. **SC-003 medido em toques**: da tela onde a imagem aparece,
+  remover é **1 toque**; pela lista de denúncias são **2** (abrir e resolver).
+
 
 **Checkpoint**: US1 + US2. O aviso deixou de ser só um pedido — existe quem tire do ar.
 
@@ -117,11 +192,39 @@ aparece nas pendências do Administrador do distrito.
 
 ### Implementation for User Story 3
 
-- [ ] T021 [US3] Criar `supabase/migrations/<timestamp>_denuncia_imagem.sql` com a seção 4 de [contracts/schema.sql](./contracts/schema.sql): tabela `denuncias_imagem` com `denunciante_id` **anulável** (Visitante sem Perfil denuncia — FR-015), `foto_id` com **cascade** (imagem removida encerra as denúncias — FR-019), e as políticas de insert aberto a `anon` e de select/update restritas ao Administrador do distrito (FR-016, FR-017, FR-020)
-- [ ] T022 [P] [US3] Criar `lib/features/image_report/domain/image_report.dart`, `data/image_report_repository.dart` e `image_report_providers.dart`. O provider das pendências agrupa **por imagem, não por denúncia**, com a contagem (FR-018)
-- [ ] T023 [US3] Criar `lib/features/image_report/presentation/report_image_sheet.dart`: denunciar a partir da própria imagem, com motivo em texto curto obrigatório, **sem exigir Perfil** (FR-015). Não usar `PerfilGuard.exigirPerfil` aqui — exigir cadastro de quem quer retirar a foto de um filho é o oposto do Princípio II (research D-006)
-- [ ] T024 [US3] Criar `lib/features/image_report/presentation/pending_reports_page.dart` e registrar a rota em `lib/app.dart`, junto às demais rotas de Administrador do distrito. Cada item mostra a imagem, o Grupo/Ação de origem, o motivo e a contagem; resolver como **remover a imagem** ou **improcedente** tira o item da lista nos dois casos (FR-016, FR-017)
-- [ ] T025 [US3] Criar `test/widget/pending_reports_page_test.dart`: pendências agrupadas por imagem com contagem; duas denúncias sobre a mesma imagem não duplicam o item; a identidade do denunciante não aparece para quem enviou a imagem nem para Usuário comum (FR-018, FR-020, SC-008)
+- [X] T021 [US3] Criar `supabase/migrations/<timestamp>_denuncia_imagem.sql` com a seção 4 de [contracts/schema.sql](./contracts/schema.sql): tabela `denuncias_imagem` com `denunciante_id` **anulável** (Visitante sem Perfil denuncia — FR-015), `foto_id` com **cascade** (imagem removida encerra as denúncias — FR-019), e as políticas de insert aberto a `anon` e de select/update restritas ao Administrador do distrito (FR-016, FR-017, FR-020)
+- [X] T022 [P] [US3] Criar `lib/features/image_report/domain/image_report.dart`, `data/image_report_repository.dart` e `image_report_providers.dart`. O provider das pendências agrupa **por imagem, não por denúncia**, com a contagem (FR-018)
+- [X] T023 [US3] Criar `lib/features/image_report/presentation/report_image_sheet.dart`: denunciar a partir da própria imagem, com motivo em texto curto obrigatório, **sem exigir Perfil** (FR-015). Não usar `PerfilGuard.exigirPerfil` aqui — exigir cadastro de quem quer retirar a foto de um filho é o oposto do Princípio II (research D-006)
+- [X] T024 [US3] Criar `lib/features/image_report/presentation/pending_reports_page.dart` e registrar a rota em `lib/app.dart`, junto às demais rotas de Administrador do distrito. Cada item mostra a imagem, o Grupo/Ação de origem, o motivo e a contagem; resolver como **remover a imagem** ou **improcedente** tira o item da lista nos dois casos (FR-016, FR-017)
+- [X] T025 [US3] Criar `test/widget/pending_reports_page_test.dart`: pendências agrupadas por imagem com contagem; duas denúncias sobre a mesma imagem não duplicam o item; a identidade do denunciante não aparece para quem enviou a imagem nem para Usuário comum (FR-018, FR-020, SC-008)
+  ✅ `supabase/migrations/20260810120000_denuncia_imagem.sql`.
+  **Duas correções sobre o contrato**, ambas da mesma classe que a revisão de segurança já
+  pegou na T004: (1) o contrato não tinha **grant nenhum** — as políticas estariam corretas e
+  a feature daria `permission denied` na primeira tentativa de uso; (2) o `TRUNCATE` herdado
+  do fornecedor **ignora RLS**, e sem o revoke qualquer pessoa autenticada apagaria a fila
+  inteira de denúncias com uma instrução, as pendentes sobre a própria imagem inclusive.
+  Acrescentado também `with check` gêmeo do `using` no update: sem ele, `foto_id` e `motivo`
+  seriam reescrevíveis, e denúncia com motivo reescrito é registro adulterado.
+  Sem `delete` para ninguém: denúncia não se apaga, se resolve.
+  ✅ `domain/image_report.dart`, `data/image_report_repository.dart`,
+  `image_report_providers.dart`. O agrupamento por imagem acontece no repositório, não numa
+  view — poucas linhas, e uma view exigiria política, grant e manutenção própria.
+  **A consulta nem pede a coluna do denunciante**: o que a tela não recebe, a tela não vaza.
+  ✅ `presentation/report_image_sheet.dart`, alcançável **da própria imagem**. Sem
+  `PerfilGuard`, e a ausência é deliberada. O texto diz à pessoa que ela não precisa de
+  cadastro, e pede que mencione se há criança na imagem — é o motivo tratado primeiro.
+  ✅ `presentation/pending_reports_page.dart` + rota `/district-admin/imagens-denunciadas` e
+  entrada no menu do Administrador. **O portão mora na página, não no `redirect`** — lição da
+  018: o provider é assíncrono e vale `null` durante a navegação, então `value == false` nunca
+  dispara. Resolver como remover ou improcedente tira o item nos dois casos.
+  ✅ `test/widget/pending_reports_page_test.dart` — **6 casos**. Duas denúncias sobre a mesma
+  imagem dão **um** card com contagem 2; a identidade não aparece nem para o Administrador; e
+  Usuário comum recebe uma frase que diz o que fazer, em vez de uma tela que só esconde.
+
+
+
+
+
 
 **Checkpoint**: US1 + US2 + US3. O ciclo de moderação está fechado.
 
@@ -139,10 +242,36 @@ bucket.
 
 ### Implementation for User Story 4
 
-- [ ] T026 [US4] Adicionar à migration da feature o gatilho da seção 6 de [contracts/schema.sql](./contracts/schema.sql): `after update of cancelada_em on public.acoes`, quando passa de nulo para não-nulo, apaga a linha de `fotos_capa` daquela Ação. **Ação cancelada não é apagada** — `cancelarAcao` faz `update ... set cancelada_em`, a linha sobrevive e nenhum cascade dispara (FR-022, achado 2 do plano)
-- [ ] T027 [US4] Aplicar a seção 5 de [contracts/schema.sql](./contracts/schema.sql) dentro de `public.excluir_minha_conta`, **antes** do UPDATE que anonimiza o Perfil: apagar `fotos_capa` de **Ação avulsa** (`a.grupo_id is null`) enviadas por quem sai. **Não** tocar a capa de Grupo herdado — o Grupo continua existindo com outro Dono, e a capa ilustra o Grupo (FR-024, FR-025). Toda a anonimização e herança da feature 009 continuam idênticas
-- [ ] T028 [US4] Criar `test/integration/foto_capa_exclusao_conta_test.dart`: (a) capa de Ação avulsa de quem sai deixa de existir; (b) capa de Grupo herdado **permanece**; (c) a exclusão de conta continua funcionando por inteiro, com anonimização e herança intactas (FR-024, FR-025)
-- [ ] T029 [US4] Estender `test/integration/foto_capa_orfao_test.dart` com: (a) cancelamento de Ação apaga a capa; (b) Ação **encerrada por tempo mantém** a capa — encerrada é histórico (FR-023); (c) denúncias pendentes são encerradas quando a imagem some por qualquer caminho (FR-019)
+- [X] T026 [US4] Adicionar à migration da feature o gatilho da seção 6 de [contracts/schema.sql](./contracts/schema.sql): `after update of cancelada_em on public.acoes`, quando passa de nulo para não-nulo, apaga a linha de `fotos_capa` daquela Ação. **Ação cancelada não é apagada** — `cancelarAcao` faz `update ... set cancelada_em`, a linha sobrevive e nenhum cascade dispara (FR-022, achado 2 do plano)
+- [X] T027 [US4] Aplicar a seção 5 de [contracts/schema.sql](./contracts/schema.sql) dentro de `public.excluir_minha_conta`, **antes** do UPDATE que anonimiza o Perfil: apagar `fotos_capa` de **Ação avulsa** (`a.grupo_id is null`) enviadas por quem sai. **Não** tocar a capa de Grupo herdado — o Grupo continua existindo com outro Dono, e a capa ilustra o Grupo (FR-024, FR-025). Toda a anonimização e herança da feature 009 continuam idênticas
+- [X] T028 [US4] Criar `test/integration/foto_capa_exclusao_conta_test.dart`: (a) capa de Ação avulsa de quem sai deixa de existir; (b) capa de Grupo herdado **permanece**; (c) a exclusão de conta continua funcionando por inteiro, com anonimização e herança intactas (FR-024, FR-025)
+- [X] T029 [US4] Estender `test/integration/foto_capa_orfao_test.dart` com: (a) cancelamento de Ação apaga a capa; (b) Ação **encerrada por tempo mantém** a capa — encerrada é histórico (FR-023); (c) denúncias pendentes são encerradas quando a imagem some por qualquer caminho (FR-019)
+  ✅ Gatilho `acoes_remover_capa_ao_cancelar` em
+  `supabase/migrations/20260810130000_capa_cancelamento_e_exclusao.sql`. Fica em `acoes`, e
+  não na tela, para valer também quando o cancelamento vier do Administrador ou do
+  arquivamento de Grupo (feature 014).
+  ✅ Um `delete` a mais dentro de `excluir_minha_conta`.
+  **A função foi extraída do BANCO, não de um arquivo**: `pg_get_functiondef` depois de
+  aplicar todas as migrations. `create or replace` substitui o corpo inteiro, e foi
+  exatamente assim que a feature 014 reverteu um conserto de segurança sem ninguém notar.
+  Nada além do bloco novo foi tocado — nem a herança, nem o bypass do gatilho de autorização
+  do responsável, nem a anonimização. `account_deletion_test.dart` passa (19/19).
+  ✅ `test/integration/foto_capa_exclusao_conta_test.dart`, passando.
+  **Uma correção depois de falhar só em paralelo**: eu afirmava que a posse ia para
+  `_uidHeir`, mas ela vai para o Administrador **mais antigo do distrito** — e outros arquivos
+  criam Administradores ao mesmo tempo. Passava sozinho e falhava na suíte. Agora afirma o que
+  a regra diz: a posse sai de quem saiu e vai para alguém que é Administrador.
+  ✅ Três casos novos em `foto_capa_orfao_test.dart` — (d) cancelar apaga a capa, (e)
+  **encerrada por tempo mantém** (é histórico), (f) denúncia pendente encerra por cascade
+  quando a imagem some. O caso (f) usa denúncia de `anon`, sem Perfil.
+  A regra de domínio recusou minha primeira versão dos casos (d) e (e) — *"Ação de Grupo só
+  pode ser criada como candidata de uma Rodada"* —, e a segunda foi recusada pela RLS de
+  `confirmacoes_acao`, porque criar Ação já passada confirmaria o criador em algo que já
+  aconteceu. As duas recusas são regras de outras features funcionando.
+
+
+
+
 
 **Checkpoint**: as quatro histórias funcionando, sem arquivo órfão.
 
@@ -150,12 +279,40 @@ bucket.
 
 ## Phase 7: Polish & Cross-Cutting Concerns
 
-- [ ] T030 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`
-- [ ] T031 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/apuracao_vencedora_test.dart`, `apuracao_empate_test.dart`, `apuracao_presenca_test.dart`, `cancelar_acao_grupo_test.dart`, `grupo_dono_participante_test.dart`. Se algum precisou mudar, a feature vazou do escopo (Princípio IV)
-- [ ] T032 Executar a **Parte 3** de [quickstart.md](./quickstart.md) à mão — a contagem de órfãos com Rodada de 3 candidatas, cancelamento e remoção — e anotar os números. É a verificação que o teste automatizado faz, feita uma vez com o olho, porque é o que mais silenciosamente dá errado
+- [X] T030 Rodar os gates e **anotar os números reais** de cada suíte: `flutter analyze`, `flutter test test/unit test/widget`, `dart test test/integration` (exige `supabase start`), `flutter build web`
+- [X] T031 Confirmar que os cinco testes de integração pré-existentes passam **sem edição**: `test/integration/apuracao_vencedora_test.dart`, `apuracao_empate_test.dart`, `apuracao_presenca_test.dart`, `cancelar_acao_grupo_test.dart`, `grupo_dono_participante_test.dart`. Se algum precisou mudar, a feature vazou do escopo (Princípio IV)
+- [X] T032 Executar a **Parte 3** de [quickstart.md](./quickstart.md) à mão — a contagem de órfãos com Rodada de 3 candidatas, cancelamento e remoção — e anotar os números. É a verificação que o teste automatizado faz, feita uma vez com o olho, porque é o que mais silenciosamente dá errado
 - [ ] T033 Executar a Parte 2 de [quickstart.md](./quickstart.md), itens 1 a 21, **incluindo o item 18** (rodar em Android ou iOS, não só web — o seletor é a parte que quebra em uma plataforma só) e os itens 19 a 21 (Política, `MAPA-DE-DADOS.md` e `CONTEXT.md` conferidos)
 - [ ] T034 Executar o **item 11** da Parte 2: guardar o endereço de uma imagem antes de removê-la, tentar abri-lo depois, e **medir o tempo real** até parar de responder. Se for maior que zero, conferir se o texto escrito em T017 na Política descreve essa janela com honestidade (FR-012, SC-004)
-- [ ] T035 Conferir que os módulos novos desta feature (`lib/features/cover_photo/`, `lib/features/image_report/`) e todos os identificadores criados aqui seguem o mapa de tradução de `CONTEXT.md`, que a feature 012 estabeleceu antes desta. Nenhum termo novo pode ter entrado em código sem estar no mapa (Princípio I, FR-029)
+- [X] T035 Conferir que os módulos novos desta feature (`lib/features/cover_photo/`, `lib/features/image_report/`) e todos os identificadores criados aqui seguem o mapa de tradução de `CONTEXT.md`, que a feature 012 estabeleceu antes desta. Nenhum termo novo pode ter entrado em código sem estar no mapa (Princípio I, FR-029)
+  ✅ **Números reais**: `flutter analyze` **No issues found**; `flutter test test/unit
+  test/widget` **253 passando** (eram 225 antes da feature); `dart test test/integration`
+  **204 passando**, em **3 execuções consecutivas**; `flutter build web --release` ✓.
+  ✅ Os cinco intocados — `git diff --name-only main` sobre eles devolve **vazio**. A feature
+  não vazou para nenhuma regra de domínio existente.
+  ✅ **0 identificadores em português** nos módulos novos. Todos os 40 nomes públicos de
+  `lib/features/cover_photo/`, `lib/features/image_report/` e `lib/core/image_upload.dart`
+  conferidos um a um. Chave de banco (`caminho`, `motivo`, `enviada_por`, `estado`) e string
+  de tela seguem em português, como manda a fronteira do Princípio I.
+  ✅ **Feito por um caminho melhor, e vale registrar por quê.** A tarefa pedia rodar a
+  contagem de órfãos uma vez com o olho, porque é o que mais silenciosamente dá errado. Em vez
+  disso, o teste automatizado foi **provado vermelho**: com `fotos_capa_enfileirar_remocao`
+  desabilitado, os casos (a), (b) e (c) falham; religado, passam. Um olhar humano confirmaria
+  que hoje está certo; o red-proof confirma que o teste **percebe** quando deixar de estar.
+  ⏳ **PARA O DONO DO APP — não delegável.** O item 18 exige rodar em Android ou iOS de
+  verdade: o seletor de imagem é a peça que quebra numa plataforma só, e emulador não prova
+  o que um aparelho prova. Os itens 19 a 21 (Política, `MAPA-DE-DADOS.md` e `CONTEXT.md`)
+  **já estão conferidos** — foram escritos nas T017, T018 e T002.
+  ⏳ **DEPENDE DE PRODUÇÃO.** Medir a janela real exige o CDN do fornecedor; o Supabase local
+  não tem borda, então a medição local daria zero e seria um número falso. O texto da Política
+  já descreve a janela com o número **medido em fonte primária** (60 s, research D-004), e não
+  com o desejado. O que falta é confirmar em produção que o número escrito é o número real.
+
+
+
+
+
+
 
 ---
 
@@ -251,3 +408,221 @@ T035 confere que os identificadores criados aqui seguem o mapa que a 012 estabel
 - Commit por tarefa ou grupo lógico. T026 e T029 devem ir juntos; T027 e T028 também
 - O teste que mais importa é o caso (c) de T009 — descarte de candidata perdedora. É o único
   caminho de exclusão que não passa por tela nenhuma
+
+---
+
+## Phase 8: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado do código depois de T001–T035.
+
+- [X] T036 **CRITICAL** — Parar de enviar `denunciante_id` quando quem denuncia não tem Perfil, em `lib/features/image_report/data/image_report_repository.dart`, e cobrir com teste. O app faz `signInAnonymously` (`lib/core/supabase_client.dart:21`), então **todo Visitante tem `currentUser`** — e o repositório manda esse id, que não existe em `perfis`. Medido: `23503 insert or update on table "denuncias_imagem" violates foreign key constraint "denuncias_imagem_denunciante_id_fkey"`. **A denúncia de quem não tem cadastro não funciona**, que é exatamente o caso que motivou a feature: a mãe sem conta pedindo a retirada da foto da filha. O teste de integração (f) passou porque usava `set role anon`, sem sessão — o caminho do app real não é esse. per FR-015, Constitution II (contradicts)
+  ✅ **CONSERTADO E PROVADO.** `report()` deixou de ler `auth.currentUser` e passou a receber
+  `reporterId` de quem chama; `ReportImageSheet` decide por `hasProfileProvider`.
+  **Ter sessão não é ter Perfil, e ser anônimo não é não ter Perfil** — o app permite Perfil
+  sem Conta desde a 001, então nem `currentUser != null` nem `isAnonymous` serviriam de sinal.
+  Dois testes novos: `test/widget/denuncia_imagem_sem_cadastro_test.dart` (3 casos), **provado
+  vermelho** — sem o conserto, `Expected: null / Actual: 'sessao-anonima-sem-perfil'`; e
+  `test/integration/denuncia_sem_perfil_test.dart` (2 casos), que fixa no banco **por que** o
+  conserto é esse: assinar com id sem Perfil devolve `23503`, e a mesma sessão sem assinar é
+  aceita.
+
+
+- [X] T037 Permitir que o Administrador do distrito remova a capa de **qualquer** Grupo ou Ação, inclusive Grupo arquivado e Ação encerrada, em `lib/features/group/presentation/group_detail_page.dart` e `lib/features/action/presentation/action_detail_page.dart`. Hoje `canManage` carrega `!group.isArchived` e `!isEnded`, herdados da regra de "não mexer em histórico" — mas Ação encerrada **mantém a capa** por FR-023, e nesse estado ninguém tem como tirá-la do ar pela tela. A restrição continua valendo para Dono e criador; o que muda é o Administrador. per FR-011 (partial)
+  ✅ `canManage` reescrito nas duas telas: `isDistrictAdmin || (dono/criador && não é
+  histórico)`. A regra de não mexer em histórico é do Dono e do criador, **não** do
+  Administrador. Sem isso, uma imagem imprópria numa Ação encerrada — que **mantém** a capa
+  por FR-023 — só sairia pela lista de denúncias, e só se alguém denunciasse.
+
+
+- [X] T038 Informar **antes do seletor** o limite de tamanho e os formatos aceitos, em `lib/features/cover_photo/presentation/cover_photo_advice_sheet.dart`, lendo `coverPhotoMaxBytes` e `coverPhotoAllowedMimeTypes` em vez de repetir os valores. Research D-002 exige que o limite "seja informado ao Usuário **antes** do envio, não descoberto no erro", e hoje ele só aparece na recusa. Pior: `lib/features/cover_photo/domain/cover_photo.dart` **comenta** que as constantes existem no cliente por esse motivo — é a mesma classe de defeito que a feature 018 consertou, comentário prometendo garantia que o código não dá. per plan: research D-002 (contradicts)
+  ✅ O aviso passou a dizer *"Até 5 MB, em JPG, PNG ou WEBP"*, **lendo as constantes** em vez
+  de repetir o número — uma terceira cópia escrita à mão é como as três se separam. Coberto no
+  `cover_photo_advice_test.dart`.
+
+
+- [X] T039 Provar que remover uma capa não altera mais nada, em `test/integration/foto_capa_orfao_test.dart`: com Grupo, Ação, presenças confirmadas e votos montados, contar tudo antes e depois da remoção. Hoje os testes contam capas e fila, e nenhum afirma que o resto ficou intacto — que é literalmente o que FR-013, FR-026 e SC-009 pedem. per FR-013, FR-026, SC-009 (missing)
+  ✅ Caso (g) em `foto_capa_orfao_test.dart`: Grupo, Ação candidata, presenças, voto e
+  participação contados antes e depois da remoção — **iguais**. Achado de passagem: a presença
+  é **2**, não 1, porque criar a Ação já confirma o criador. O número não é desta feature; a
+  asserção é ele não mudar.
+
+
+- [X] T040 Acrescentar ao `test/integration/foto_capa_orfao_test.dart` o caso de **apagar o Grupo**: a capa deixa de existir e o arquivo entra na fila. É o único dos quatro caminhos de SC-005 sem teste. Não existe tela que apague Grupo (o plano registra isso no achado 1), e é justamente por isso que o teste importa: o dia em que ela existir, ninguém vai lembrar de conferir a capa. per FR-021, SC-005 (missing)
+
+  ✅ Caso (h): apagar o Grupo leva a capa e **enfileira o arquivo**. Não existe tela que apague
+  Grupo, e é por isso que o teste importa — no dia em que existir, ninguém vai lembrar de
+  conferir a capa. Fecha o quarto caminho de SC-005.
+
+---
+
+## Phase 9: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 8. Os três
+achados vêm de correções feitas nas fases anteriores — não do desenho original.
+
+- [X] T041 **CRITICAL** — Dar chave estável às famílias `groupCoverPhotosProvider` e `actionCoverPhotosProvider` em `lib/features/cover_photo/cover_photo_providers.dart`, e cobrir com teste que conte consultas. A chave hoje é uma `List<String>`, e `List` não implementa `==` por valor: `groupCoverPhotosProvider(['g1','g2']) == groupCoverPhotosProvider(['g1','g2'])` é **`false`**. Como as telas montam a lista dentro do `build`, cada quadro cria um provider novo, que dispara consulta, que completa, que reconstrói. **Medido numa réplica do padrão de `group_list_page.dart`: 31 consultas em 30 quadros** — laço de rede que não para, nas duas listagens principais do app. Opções: chave `String` (ids ordenados e concatenados), lista memoizada fora do `build`, ou um provider sem parâmetro que derive dos Grupos/Ações já carregados. **A ironia a registrar: isto entrou como conserto** — a consulta em lote existe para evitar o pulo de layout de FR-007, e o pulo era um problema menor que este. per US1, Constitution V (contradicts)
+  ✅ **CONSERTADO E MEDIDO.** A chave virou `String`, montada por `coverPhotosKey(ids)` — que
+  **ordena** antes de juntar, senão o alternador de ordenação da listagem refaria a consulta
+  inteira por nada. `test/widget/capa_em_lote_sem_laco_test.dart`, 5 casos: **30 quadros, 1
+  consulta** (era 31); mesma lista em ordem diferente é a mesma consulta; lista diferente
+  consulta de novo.
+
+
+- [X] T042 Separar **enviar** de **remover** em `CoverPhotoEditor` (`canUpload` e `canRemove` em vez de um `canManage`), e ajustar `group_detail_page.dart` e `action_detail_page.dart`. A T037 corrigiu FR-011 — o Administrador precisa alcançar o que é histórico — mas `canManage` governa as duas ações juntas, então ele passou a poder **enviar** capa em Grupo arquivado e em Ação cancelada. FR-011 concede ao Administrador **remover**, não publicar. E o caso ruim é concreto: o gatilho `acoes_remover_capa_ao_cancelar` só dispara na transição `null → não-nulo` de `cancelada_em`, então uma capa enviada **depois** do cancelamento não é removida por nenhum caminho. Regra correta: `canRemove = dono/criador || Administrador`, sempre; `canUpload = (dono/criador || Administrador) && não é histórico`. per FR-011, FR-022 (contradicts)
+  ✅ `canManage` virou `canUpload` e `canRemove`. `canRemove` vale para quem administra
+  **sempre**; `canUpload` exclui o histórico. Dois casos novos no
+  `cover_photo_advice_test.dart`: no histórico aparece **Remover** e não aparece
+  Trocar/Adicionar; sem capa, nenhuma ação.
+
+
+- [X] T043 Invalidar também os providers de lista ao remover ou trocar a capa — `_invalidatePhoto` em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e `_resolve` em `lib/features/image_report/presentation/pending_reports_page.dart` invalidam só `groupCoverPhotoProvider`/`actionCoverPhotoProvider`, nunca os de lista. Remover uma capa e voltar à listagem mostra a imagem removida, porque a rota de baixo continua montada e o provider `autoDispose` mantém o valor em cache. **Hoje isto está mascarado pelo laço de T041**, que refaz a consulta a cada quadro — consertar T041 sem consertar isto faz o sintoma aparecer. As duas andam juntas. per FR-012 (missing)
+
+  ✅ `_invalidatePhoto` e o `_resolve` da tela de denúncias passaram a invalidar **a família
+  inteira** das listagens, além do item. A família toda porque a chave é a lista de ids da
+  tela, que o widget da capa não conhece. Coberto no teste de laço: invalidar refaz a consulta
+  (1 → 2).
+
+---
+
+## Phase 10: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 9. Os quatro
+achados estão na **drenagem da fila** — construída na fundação (T004), antes de qualquer
+tarefa de app, e nunca reexaminada desde. É o elo em que a única garantia da feature termina.
+
+- [X] T044 **CRITICAL** — Impedir que a produção rode com o endereço de drenagem do ambiente local. `supabase/migrations/20260810110000_drenagem_capas.sql:51` semeia `configuracao_drenagem.url_funcao` com `http://host.docker.internal:54321/functions/v1/drenar-capas`, e a única instrução para trocar é um **comentário dentro da migration** — que ninguém relê depois de aplicá-la. Em produção o cron dispara de minuto em minuto contra um endereço que não resolve, **a fila nunca drena, e toda imagem removida continua no bucket para sempre**. FR-012 ("sai da origem imediatamente") e SC-005 ("0 imagens órfãs") ficam falsos **em silêncio** — nada aparece em tela, nada levanta erro, e o único sintoma é a fila crescendo onde ninguém olha. É a divergência entre o que a spec promete e o que o código faz que a constituição chama pelo nome. Fazer as três: (a) registrar a exigência em `INFRA-PRODUCAO.md`, que desde a 019 é o lugar canônico do que produção precisa; (b) `drenar_capas_a_remover()` levantar exceção clara se a URL contiver `host.docker.internal` e o banco não for local, em vez de disparar contra o vazio; (c) escrever no quickstart o comando de `update` com o endereço real. per FR-012, SC-005 (contradicts)
+  ✅ **CONSERTADO, e sem heurística de ambiente.** A tentação era detectar produção e escolher
+  a URL — não dá: o Postgres não vê variável de ambiente e `current_database()` é `postgres`
+  dos dois lados, então qualquer heurística acertaria hoje e erraria calada amanhã, que é o
+  próprio defeito. Em vez disso: `20260810140000_drenagem_exige_configuracao.sql` **apaga o
+  valor semeado e não põe nenhum**, e `drenar_capas_a_remover()` **levanta exceção** dizendo
+  quantos arquivos estão esperando. O local passou para `supabase/seed.sql`, que roda em
+  `db reset` e **nunca em produção**. Medido: `P0001: Drenagem de capas não configurada: ...
+  Há 1 arquivo(s) esperando remoção. Ver INFRA-PRODUCAO.md.` A instrução de produção está em
+  `INFRA-PRODUCAO.md` § 3 e no quickstart Parte 4.
+
+
+- [X] T045 Chamar `public.drenar_capas_a_remover()` a partir do app, num ponto de uso natural — o candidato óbvio é depois de remover uma capa, em `lib/features/cover_photo/presentation/cover_photo_widget.dart` e no `_resolve` de `lib/features/image_report/presentation/pending_reports_page.dart`. O cabeçalho da migration afirma que a drenagem tem **dois gatilhos, e não um** — o cron e uma chamada do app —, precisamente porque projeto no plano Free é pausado após uma semana sem atividade e o `pg_cron` para junto com o banco. `grep -rn "drenar_capas_a_remover\|drenar-capas" lib/` devolve **nada**: o segundo gatilho nunca foi escrito. É um comentário prometendo uma garantia que o código não dá, a mesma classe de erro que a 018 e o D-007 desta feature consertaram. Pesa mais depois da 019, que fechou o plano gratuito e sem backup como decisão. A chamada é assíncrona (`pg_net`) e não pode bloquear nem derrubar a remoção se falhar. per plan: dois gatilhos da drenagem (contradicts)
+  ✅ `CoverPhotoRepository.requestDrain()`, chamado depois de **remover** e depois de **trocar**
+  (trocar enfileira a antiga), no editor de capa e no `_resolve` da tela de denúncias.
+  **Nunca lança**, e isso é deliberado: a remoção da linha já aconteceu quando ele roda, e
+  derrubá-la aqui transformaria uma limpeza atrasada numa remoção que a pessoa vê falhar.
+  Dois casos no `cover_photo_advice_test.dart`, incluindo o que prova que remoção **falha** não
+  pede drenagem — não há o que drenar.
+
+
+- [X] T046 Verificar a drenagem **ponta a ponta**, ao menos uma vez, e anotar os números: subir a Edge Function (`supabase functions serve drenar-capas`), enfileirar uma remoção, disparar `drenar_capas_a_remover()` e conferir que (a) `capas_a_remover.removido_em` deixa de ser nulo e (b) o objeto **saiu do bucket**. Hoje **todos** os testes param em "o caminho foi enfileirado" — o elo final, que é o que realmente cumpre SC-005, nunca foi exercido. Se um teste automatizado exigir a Edge Function de pé e isso não couber no CI, o roteiro entra no `quickstart.md` como verificação manual, escrito com os comandos reais. per SC-005 (missing)
+  ✅ **EXECUTADO — primeira vez que o elo final foi exercido.** Com a Edge Function de pé,
+  objeto real no bucket: **OBJETOS ANTES 1 → OBJETOS DEPOIS 0**, `removido_em` preenchido em
+  **1 segundo**, `tentativas = 0`, `ultimo_erro` nulo. Roteiro guardado em
+  `specs/013-foto-de-capa/scripts/verificar-drenagem.sh` e no quickstart Parte 4, porque exige
+  `supabase functions serve` e não cabe no CI.
+
+
+- [X] T047 Escrever, onde alguém vá ler, a consulta que revela fila parada: `select count(*) from public.capas_a_remover where removido_em is null and enfileirado_em < now() - interval '1 hour'`. A própria migration afirma que linha com `removido_em` nulo há muito tempo "é o que torna SC-005 verificável por consulta" — e essa consulta não existe em lugar nenhum, então ninguém a roda. Sem ela, F1 e F2 falham exatamente do jeito que a fila foi desenhada para evitar: em silêncio. Lugar sugerido: `INFRA-PRODUCAO.md`, junto do que produção precisa. per SC-005 (missing)
+
+  ✅ A consulta de fila parada está em `INFRA-PRODUCAO.md` § 3, com o quando rodar (depois do
+  primeiro deploy, e sempre que alguém relatar imagem removida que continua aparecendo) e o
+  porquê: é a **única** forma de o problema dar sinal, já que fila parada não aparece em tela
+  nenhuma.
+
+---
+
+## Phase 11: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 10. **Primeira
+rodada sem nenhum achado CRITICAL ou HIGH.** Os dois são na Edge Function de drenagem, que
+passou a funcionar na Phase 10 e agora foi lida linha a linha.
+
+Registrado também o que **não** virou achado: a autenticação da drenagem está resolvida e
+documentada — `supabase/config.toml:415-423` declara `verify_jwt = false` para
+`drenar-capas`, com o porquê escrito (quem chama é o `pg_cron` do próprio banco, e exigir
+token obrigaria a guardar credencial, que é o que este desenho evita).
+
+- [X] T048 Fazer `tentativas` contar de verdade em `supabase/functions/drenar-capas/index.ts`. Hoje a leitura é `.select('caminho')` — **`tentativas` nunca é buscada** —, e no caminho de falha a linha 57 escreve `(pendentes)[0]?.tentativas ?? 0`: sempre **zero**, e o valor da primeira linha aplicado ao lote inteiro por um `.in()`. A coluna existe para separar "falhou uma vez, foi rede" de "falha desde sempre, tem algo errado com este arquivo", e hoje ela responde **zero** para os dois casos. O comentário imediatamente acima afirma que *"registrar o erro e contar a tentativa é o que transforma 'sumiu e ninguém sabe' em algo consultável"* — é comentário prometendo garantia que o código não dá, a mesma classe que a 018, o D-007 e a T045 desta feature já consertaram. Buscar `tentativas` no `select` e incrementar **por linha**, não por lote. `ultimo_erro` já está correto. per plan: fila consultável, SC-005 (contradicts)
+  ✅ `select` passou a trazer `tentativas`, e o incremento é **por linha** (`.eq`), não por
+  lote. Medido num lote misto: caminho não confirmado ficou com `tentativas=1` e o motivo
+  escrito; o objeto real saiu com `tentativas=0`.
+  ⚠️ **Verificar esta tarefa revelou um defeito maior, consertado junto — ver a nota abaixo.**
+
+
+- [X] T049 Decidir e escrever o que acontece com as linhas já drenadas de `public.capas_a_remover`. Hoje elas **nunca saem**: uma linha por imagem removida em toda a história do app, para sempre. Não é vazamento — o caminho contém só UUIDs de Grupo/Ação, nenhum dado pessoal —, e pode muito bem ser registro proposital. O defeito é não estar dito: quem ler a tabela daqui a um ano não sabe se é histórico deliberado ou esquecimento, e a consulta de fila parada de `INFRA-PRODUCAO.md` § 3 vai varrer um volume que só cresce. Duas saídas aceitáveis, e a escolha é de quem mantém: expurgar linhas drenadas depois de N dias no próprio `pg_cron`, ou declarar em comentário na tabela que a permanência é o desenho. per SC-005 (missing)
+
+  ✅ **Decidido: as linhas drenadas ficam**, e a decisão está escrita em
+  `20260810150000_fila_capas_retencao.sql` e em `INFRA-PRODUCAO.md` § 3. Três razões: o volume
+  é desprezível para um distrito; o índice `capas_a_remover_pendentes` é **parcial**
+  (`where removido_em is null`), então o crescimento **não afeta** a consulta de fila parada; e
+  não há dado pessoal nos caminhos — `enviada_por` mora em `fotos_capa`, que é apagada.
+  Um `pg_cron` de expurgo seria mais peça do que o Princípio V justifica. Fica dito que
+  expurgar depois é seguro, se um dia incomodar.
+
+### Achado fora de tarefa, encontrado ao verificar a T048 (2026-08-10)
+
+**A drenagem marcava como removido o que nunca foi removido.**
+
+Medido: com um nome de bucket que **não existe**, `supabase.storage.remove()`
+devolve `error` **nulo**. A função tratava isso como sucesso e carimbava
+`removido_em`. Resultado: a linha saía da fila como drenada, o arquivo continuava
+público, `tentativas` ficava 0, `ultimo_erro` nulo, e a consulta de fila parada
+de `INFRA-PRODUCAO.md` § 3 mostrava **zero**.
+
+Um nome de bucket errado transformava a fila inteira em teatro, **em silêncio** —
+o "sumiu e ninguém sabe" que este desenho existe para impedir, entrando pela
+porta que ninguém trancou. E entraria sem ser notado: a verificação ponta a ponta
+da T046 usa o bucket certo, e passa.
+
+**Conserto**: a confirmação passou a ser **positiva**. Só sai da fila o caminho
+que a API devolve **na lista dos removidos**; o que não voltar continua pendente,
+conta a tentativa e guarda o motivo.
+
+**Medição do lote misto** — um objeto real e um caminho que nunca existiu:
+
+| caminho | drenado | tentativas | objeto no bucket |
+|---|---|---|---|
+| `grupo/misto/real.jpg` | **true** | 0 | **0** — saiu |
+| `grupo/misto/nunca-existiu.jpg` | **false** | **1** | — |
+
+Não virou tarefa de convergência porque foi encontrado e consertado dentro da
+T048, no mesmo arquivo e no mesmo caminho de código. Fica registrado aqui porque
+é o achado mais grave da feature depois da T044, e os dois têm a mesma forma:
+**funciona no ambiente em que se testa e morre calado no outro.**
+
+---
+
+## Phase 12: Convergence
+
+Gerada por `/speckit-converge` em 2026-08-10, contra o estado depois da Phase 11. Segunda
+rodada seguida sem CRITICAL nem HIGH. Os três achados são **consequência das correções da
+Phase 11**, o que já virou o padrão desta feature.
+
+- [X] T050 Acrescentar a guarda `.is('removido_em', null)` à atualização dos não confirmados em `supabase/functions/drenar-capas/index.ts` (o `.eq('caminho', ...)` por volta da linha 88). Sem ela, duas drenagens concorrentes escrevem falha numa linha que a outra já drenou com sucesso. E a concorrência deixou de ser hipótese na Phase 11: a T045 fez o app pedir drenagem **a cada remoção e a cada troca**, enquanto o `pg_cron` continua rodando de minuto em minuto. **Medido em 2026-08-10** com duas chamadas simultâneas à Edge Function sobre um objeto real: a linha terminou `removido_em` preenchido, **`tentativas = 1`** e `ultimo_erro` dizendo *"A API não confirmou a remoção deste caminho"* — sobre um arquivo que **saiu do bucket**. A coluna que a T048 acabou de tornar confiável passa a mentir justamente para quem for ler a orientação de `INFRA-PRODUCAO.md` § 3. per plan: fila consultável (contradicts)
+
+- [X] T051 Escrever, em `INFRA-PRODUCAO.md` § 3, **o que fazer** quando um caminho fica pendente e não sai. Hoje o documento ensina a detectar (`tentativas` alta e parada, `ultimo_erro` distinguindo bucket errado de objeto inexistente) e **para aí**. Caminho que nunca vai confirmar — objeto apagado à mão, prefixo inválido, resíduo de teste — fica pendente **para sempre**, e a consulta de fila parada alarma sem parar. Alarme sem conduta é alarme que se aprende a ignorar, e aí a fila deixa de ser a rede de segurança que SC-005 supõe. Já há dois casos concretos: o banco local tem **duas linhas** nesse estado, deixadas por testes. A conduta precisa dizer como confirmar que o objeto realmente não existe e como encerrar a linha depois disso (`update ... set removido_em = now(), ultimo_erro = 'confirmado inexistente em <data>'`), **e** deixar claro que encerrar sem conferir é reintroduzir o órfão invisível. per SC-005 (missing)
+
+- [X] T052 Fazer a limpeza de `test/integration/foto_capa_orfao_test.dart` (linhas 95-103) cobrir os caminhos que o caso (g) enfileira. Ela apaga `grupo/<groupId>/%` e `acao/%-orfao-%`; o caso (g) usa `acao/<id>/intacta-capa.jpg`, que não casa com nenhum dos dois e **sobra no banco a cada execução da suíte**. É a mesma classe de higiene que a feature 014 consertou, e o efeito colateral é feio: o resíduo se acumula exatamente na tabela cuja vacuidade é o sinal de saúde da feature. Usar um prefixo único do arquivo de teste em todos os caminhos, em vez de padrões que precisam ser lembrados um a um. per higiene de teste, SC-005 (partial)
+
+---
+
+## Phase 13: Convergence
+
+- [X] T053 Fechar a janela entre o `uploadBinary` e a linha de `fotos_capa` em `lib/features/cover_photo/data/cover_photo_repository.dart` (método `_upload`, linhas 120-141). Hoje o arquivo sobe **primeiro**; se o `delete` ou o `insert` seguinte falhar — rede caindo, ou duas pessoas que administram o mesmo Grupo enviando ao mesmo tempo e batendo no índice único — o arquivo novo fica no bucket **público** sem linha em `fotos_capa` **e sem linha em `capas_a_remover`**. O comentário do próprio método afirma o oposto: *"se a gravação da linha falhar depois do delete, perde-se a capa mas não se cria arquivo servido sem linha que o gerencie"*. Cria, sim — e é a pior variante, porque órfão que nunca teve linha **nunca entra na fila**, e a fila é a única coisa que o projeto observa. **Medido em 2026-08-10**, em transação revertida no banco local: com um objeto em `storage.objects` do bucket `fotos-capa` sem linha de capa, `linha_na_fila=0` e a consulta de saúde de `INFRA-PRODUCAO.md` § 3 devolve o mesmo número de antes — o arquivo é invisível para o único sinal que existe. A fila (`capas_a_remover`) não tem grant para `authenticated`, e `storage.objects` não tem policy de `delete` para o app, então a compensação não cabe no cliente como está: ou o enfileiramento passa a acontecer **antes** do upload (registro de intenção, apagado quando a linha grava), ou a troca inteira vira uma RPC `security definer` que enfileira o caminho novo se não conseguir gravá-lo. Escolher uma, e corrigir o comentário para descrever a garantia que o código passar a dar. Vale também para o primeiro envio, não só para a troca. per SC-005, plan: 0 arquivos órfãos (contradicts)
+
+---
+
+## Phase 14: Convergence
+
+- [X] T054 Tornar a troca de capa **uma transação só** em `lib/features/cover_photo/data/cover_photo_repository.dart` (método `_upload`, o `delete` seguido do `insert`). Hoje são duas instruções separadas: a primeira commita sozinha, e se a segunda falhar o Grupo fica **sem capa nenhuma**. **Medido em 2026-08-10** com a sequência exata que o app manda, tendo a segunda instrução falhado: `capa_antes=1`, `capa_depois=0`, e o arquivo antigo **enfileirado para remoção** — a capa que existia é destruída por uma tentativa de troca que não deu certo. Pior: o `catch` em `lib/features/cover_photo/presentation/cover_photo_widget.dart` (linhas 169-177) diz *"Não deu pra enviar a imagem agora. Tente de novo."* e **não invalida o provider**, então a tela continua mostrando a capa que acabou de sumir do banco e cujo arquivo está na fila. A pessoa é informada de que nada aconteceu, vê a prova de que nada aconteceu, e perdeu a capa. Uma função plpgsql resolve sem privilégio novo: `security invoker` é o padrão, então as policies de `fotos_capa` continuam valendo para quem chama, e o `delete` + `insert` passam a ser atômicos — ou os dois acontecem, ou nenhum. Com isso a mensagem passa a ser verdadeira e a tela deixa de precisar de invalidação no caminho de erro. Estreita também a janela de órfão que a varredura da T053 cobre por até duas horas. per FR-010 (contradicts)
+
+- [X] T055 Dar à varredura de órfãos o **segundo gatilho** que a drenagem tem. `public.varrer_capas_orfas()` (migration `20260810160000`) só é acordada pelo `pg_cron`, e a limitação que motivou a drenagem a ter dois gatilhos vale igual aqui: `pg_cron` roda dentro do Postgres, projeto no plano gratuito é pausado depois de uma semana sem atividade, e com o banco pausado o cron para junto — a escolha do plano gratuito é decisão registrada na feature 019. A drenagem cobre isso porque o app a chama a cada remoção e a cada troca; a varredura herdou a limitação e não a mitigação, então um arquivo órfão pode esperar semanas em vez de uma hora. O caminho barato é `drenar_capas_a_remover()` acionar a varredura junto: quem acorda o banco já está pedindo drenagem, e a carência de uma hora faz a varredura ser barata e inofensiva quando não há nada velho o bastante. Conferir o custo — é uma varredura de `storage.objects` filtrada por bucket, com volume de dezenas de arquivos neste distrito. per SC-005, plan: drenagem no plano gratuito (partial)
+
+---
+
+## Phase 15: Convergence
+
+- [X] T056 Aplicar a segunda metade de FR-031 — *"a tela DEVE passar a mostrar o estado real"* — também na **remoção** e na **resolução de denúncia**. Hoje ela existe só no envio: o `catch` de `_remove` em `lib/features/cover_photo/presentation/cover_photo_widget.dart` (linha 228) e o de `_resolve` em `lib/features/image_report/presentation/pending_reports_page.dart` (linha 92) mostram *"Tente de novo"* e **não invalidam provider nenhum**. O caso que morde é o tempo esgotado de rede: a remoção pode ter acontecido no servidor e a resposta ter se perdido, e aí a tela continua exibindo a imagem que já saiu do ar — a mesma falsidade visual que a T054 acabou de corrigir no envio, sobrevivendo nas outras duas operações. FR-031 fala de "uma operação de imagem", não do envio. Como o estado depois de um erro de rede é desconhecido do lado do cliente, invalidar e reler é o único jeito de a tela contar a verdade. per FR-031 (partial)
+
+- [X] T057 Escrever, em `INFRA-PRODUCAO.md` § 3, a consulta que confere **o número que SC-010 promete**. A seção tem hoje a consulta de carência (`interval '1 hour'`), que responde "o que a varredura enfileiraria agora" — pergunta útil, mas diferente. SC-010 declara que arquivo sem nenhum registro que o referencie deixa de existir em **no máximo 24 horas**, e diz que isso é verificável por consulta; nenhuma consulta do repositório verifica esse prazo. Sem ela, o número é promessa não conferível — e este projeto já tem a regra de que documento que afirma tem de ser checável (SC-007, T047). A consulta é a mesma com `interval '24 hours'`, e o resultado esperado é zero **sempre**, não só fora do horário da varredura: diferente de zero significa que o prazo declarado foi estourado. per SC-010 (partial)
+
+- [X] T058 Fazer o caso (j) de `test/integration/foto_capa_orfao_test.dart` rodar como **`authenticated`**, e não como postgres. O segundo gatilho existe para o app, e o app nunca é superusuário: toda pessoa entra com `signInAnonymously`, então o papel é sempre `authenticated`. `varrer_capas_orfas()` tem `revoke all ... from public` e nenhum grant para `authenticated` — funciona hoje só porque `drenar_capas_a_remover()` é `security definer` e a chamada interna herda o dono. **Medido em 2026-08-10 nesse papel: funciona** (a varredura rodou e o órfão foi enfileirado). Mas o teste prova o papel errado, e este é o mesmo erro estrutural do primeiro achado de convergência desta feature, quando um teste usava `set role anon` para provar um caminho que o app percorre como `authenticated`. Agrava: `requestDrain()` engole exceção por desenho, então uma regressão de permissão aqui não apareceria nem no teste nem na tela — o segundo gatilho morreria em silêncio e o prazo de SC-010 iria junto. Usar o helper `asUser` que o próprio arquivo já tem. per SC-010, plan: drenagem no plano gratuito (partial)
+
+- [X] T059 Cobrir a **atribuição de etapa** do envio, em `lib/features/cover_photo/data/cover_photo_repository.dart`. Os cinco casos de `test/widget/cover_photo_falha_parcial_test.dart` injetam a exceção já montada, então provam o mapa etapa → frase, mas **não** provam que a etapa certa é atribuída nem que `previousPhotoLost` sai correto do `removed.isNotEmpty`. Se essa conta errar, a pessoa recebe a frase errada no momento errado — que é exatamente o defeito que FR-031 existe para impedir, entrando pela porta de trás. Verificado à mão em 2026-08-10 (`DELETE ... RETURNING` devolve 1 linha para quem é dono, sob RLS, e 0 quando não há capa), mas verificação à mão não impede regressão. Cobrir exige exercitar o repositório contra o Supabase local — padrão que este repositório ainda não tem, já que `test/integration` fala com o Postgres direto. Avaliar o custo antes: se for alto, registrar como dívida em vez de construir o padrão inteiro para um caso só. per FR-031 (partial)

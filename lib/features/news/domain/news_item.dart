@@ -95,6 +95,27 @@ final allNews = <NewsItem>[
         'responsável, um contato dele e a autorização dele. É o que a lei '
         'exige para dado de criança.',
   ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 10),
+    text: 'Seu Grupo/Ministério e suas Ações podem ter uma imagem de capa. '
+        'Quem é Dono do Grupo, ou criou a Ação, escolhe a imagem — e ela fica '
+        'visível para qualquer pessoa que vê o Grupo, inclusive quem não tem '
+        'cadastro. Por isso o app pede imagem ilustrativa, como logo, arte ou '
+        'foto do local: não envie foto de pessoa, e nunca de criança ou '
+        'adolescente.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 10),
+    text: 'Se você vir uma imagem que não deveria estar ali, pode avisar pelo '
+        'próprio app, sem precisar de cadastro e sem dizer quem você é. O '
+        'Administrador do distrito recebe o aviso e tira a imagem do ar.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 10),
+    text: 'Imagem tirada do ar pode continuar aparecendo por até um minuto '
+        'para quem já tinha guardado o endereço dela. Passado esse minuto, o '
+        'endereço deixa de responder para todo mundo.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

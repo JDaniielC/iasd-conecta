@@ -48,6 +48,17 @@ dependencies:
   # pessoa já viu as Novidades (feature 022).
   shared_preferences: ^2.3.0
 
+  # Seletor de imagem. Escolhido por atender os três critérios de research
+  # D-002: funciona em web/Android/iOS, entrega os BYTES de forma uniforme
+  # (`XFile.readAsBytes()`), e não puxa código de plataforma que quebre
+  # `flutter build web`.
+  #
+  # Os bytes importam mais do que parece: em mobile o seletor devolve um
+  # caminho de arquivo, em web não existe caminho. Código escrito contra o
+  # caminho compila e quebra justamente em produção, que é onde o app está.
+  # A diferença morre em lib/core/image_upload.dart e não vaza para o resto.
+  image_picker: ^1.1.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

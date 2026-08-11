@@ -294,13 +294,13 @@ Registrado para ninguém gastar tempo de novo.
 | 010 pagina-home | Entregue; alvos de toque corrigidos e remedidos (48 px) em 10/08 |
 | 011 acoes-titulo-e-encerramento | Entregue; 1 medição com gente aberta |
 | 012 identificadores-em-ingles | Entregue |
-| 013 foto-de-capa | **Entregue** — 57 de 59; restam 2 verificações manuais (§ 3) |
+| 013 foto-de-capa | **Entregue e mergeada** — 57 de 59; restam 2 verificações manuais (§ 3) |
 | 014 arquivar-grupo | Entregue; 16 itens do quickstart esperam produção no ar |
 | 015 consentimento-responsavel | Entregue; 1 medição com gente aberta |
 | 016 meu-perfil | Entregue; 1 verificação de tela e 2 com gente abertas |
 | 017 versao-do-consentimento | Entregue; 1 verificação de tela aberta |
 | 018 visibilidade-de-liderancas | **Entregue, sem pendência** |
 | 019 producao-regiao-e-backup | **Entregue, sem pendência** — região verificada em 10/08, backup decidido |
-| 020 deploy-gcs-cdn | **Especificada, não implementada** (32) — precisa de acesso GCP |
+| 020 deploy-gcs-cdn | **Implementada e mergeada** — 24 de 32; as 8 abertas exigem acesso ao GCP (§ 3) |
 | 021 visibilidade-do-voto | **Entregue, sem pendência** |
 | 022 novidades | Entregue; a leitura por 3 pessoas do distrito continua aberta |

@@ -214,3 +214,62 @@ grant update (nome, apelido, igreja_id, telefone,
 Antes de aplicar, verificar quem mais escreve em `perfis`: `excluir_minha_conta`
 é `security definer` e não é afetada, mas o cadastro (`insert`) e qualquer
 caminho futuro precisam ser conferidos coluna a coluna.
+
+---
+
+# Incidente — `.env` publicado no bundle web (2026-08-10)
+
+Diferente do resto deste arquivo: não é achado de auditoria de RLS, é **um
+vazamento que aconteceu**. Registrado aqui porque não estava registrado em lugar
+nenhum — vivia só num comentário do workflow de deploy.
+
+## O que aconteceu
+
+`.env` era o **único** asset declarado em `pubspec.yaml`, então todo o conteúdo
+do arquivo ia para dentro de `build/web/assets/.env`, que o site serve
+publicamente. Um `flutter build web` **local**, rodado por quem tinha o `.env`
+de trabalho completo no diretório, publicou junto **a senha do Administrador**.
+
+O vetor mais provável é o alvo `deploy-web` do `Makefile` como ele existia até
+aqui: ele fazia `flutter build web --release` e subia `build/web` para o bucket
+público, sem nada entre uma coisa e outra. Achado em pentest.
+
+## O que foi feito (2026-08-10 e 11)
+
+Não se passou a filtrar o que entra no arquivo: **passou a não existir arquivo**.
+
+- `.env` saiu de `assets:` no `pubspec.yaml`, e `flutter_dotenv` saiu das
+  dependências;
+- `SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY` viraram `String.fromEnvironment`,
+  preenchidas por `--dart-define` no `run` e no `build`. Sem elas o app falha na
+  inicialização dizendo o que fazer, em vez de subir apontando para lugar nenhum;
+- o passo de verificação do workflow foi **invertido**: era "o `.env` do bundle
+  só tem as duas chaves públicas", virou "nenhum `.env` foi embutido". Conferir o
+  conteúdo do que vaza pressupõe aceitar que algo vaze;
+- o `Makefile` ganhou a mesma recusa, porque foi por ele que passou o vazamento;
+- os artefatos da feature 020 (quickstart, tasks, plan, research) descreviam o
+  desenho antigo como "pretendido" e foram corrigidos ou revogados.
+
+Verificado depois do build: `build/web/assets/.env` não existe, e nenhum arquivo
+do bundle contém nome de chave nem token.
+
+## O que continua em aberto — e só o dono do app resolve
+
+O conserto fecha o **caminho**. Ele não desfaz o que já foi publicado.
+
+1. **Trocar a senha do Administrador que foi ao ar.** Enquanto ela for a mesma,
+   o conserto não protege nada: quem baixou o arquivo continua com ela.
+2. **Conferir o que mais estava naquele `.env`.** O `.env.example` deste
+   repositório lista `SUPABASE_SERVICE_ROLE_KEY` e variáveis `ADMIN_*` ao lado
+   das chaves públicas. Se a chave de serviço estava no arquivo publicado, ela
+   **ignora RLS** e precisa ser rotacionada no painel do Supabase — é a chave
+   mais perigosa do projeto.
+3. **Estimar a janela de exposição**: de quando foi o build que publicou até o
+   deploy que o substituiu. O bucket e o CDN têm histórico de objetos; o CDN pode
+   ter servido cópia por mais tempo que o bucket.
+4. **Decidir se houve incidente com dado pessoal.** Se apenas credencial vazou e
+   não há indício de acesso, não há comunicação à ANPD a fazer; se a chave de
+   serviço vazou, o alcance passa a ser todo o banco, e a decisão muda. Vale
+   registrar a conclusão em `REVISAO-JURIDICA.md` com data, qualquer que seja.
+
+Os quatro dependem de informação que só quem publicou tem. Nenhum deles é código.

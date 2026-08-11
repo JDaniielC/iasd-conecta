@@ -2,11 +2,37 @@
 
 **Atualizado**: 2026-08-10 | **Base**: `main`
 
-Sobraram **14 itens**, e **nenhum é código**. Dois são dois minutos seus clicando num botão que
-a automação não alcança, sete dependem de **outras pessoas**, dois da **foto de capa** (um deles
-exige um celular de verdade), um só se responde daqui a 30 dias, e dois esperam o **deploy**.
+Sobraram **18 itens**, e **nenhum é código**. Quatro são urgentes e vêm do vazamento do `.env`;
+os outros catorze são medição, aparelho ou tempo.
 
 O que eu já verifiquei saiu daqui: está em `PENDENCIAS.md` § 5, para ninguém refazer.
+
+---
+
+## 0. Urgente — o `.env` que foi ao ar (itens 30 a 33)
+
+O conserto está feito e mergeado: `.env` não é mais asset, as chaves entram por
+`--dart-define`, e o workflow e o `Makefile` recusam publicar se um `.env` aparecer no build.
+**Isso fecha o caminho. Não desfaz o que já foi publicado.**
+
+**Item 30** — **trocar a senha do Administrador que foi ao ar.** Enquanto for a mesma, o
+conserto não protege nada: quem baixou o arquivo continua com ela.
+
+**Item 31** — conferir **o que mais** estava naquele `.env`. O `.env.example` lista
+`SUPABASE_SERVICE_ROLE_KEY` e variáveis `ADMIN_*` ao lado das chaves públicas. Se a chave de
+serviço estava lá, ela **ignora RLS** e precisa ser rotacionada no painel do Supabase — é a
+chave mais perigosa do projeto.
+
+**Item 32** — estimar a **janela de exposição**: do build que publicou até o deploy que o
+substituiu. O CDN pode ter servido cópia por mais tempo que o bucket.
+
+**Item 33** — decidir se houve **incidente com dado pessoal**. Só credencial vazada, sem
+indício de acesso, não gera comunicação à ANPD; chave de serviço vazada muda o alcance para o
+banco inteiro, e muda a decisão. Registre a conclusão em `REVISAO-JURIDICA.md` com data,
+qualquer que seja ela.
+
+Os quatro dependem de informação que só quem publicou tem. O registro completo do incidente
+está em `SECURITY-AUDIT.md`, no fim.
 
 ---
 

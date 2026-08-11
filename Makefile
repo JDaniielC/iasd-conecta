@@ -25,6 +25,16 @@
 #        export SUPABASE_PUBLISHABLE_KEY=<chave publicável de produção>
 #      NUNCA exporte SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* aqui: o que entra em
 #      --dart-define entra no JavaScript publicado, legível por qualquer pessoa.
+#
+# Numa linha só, sem exportar nada na sessão:
+#   SUPABASE_URL=https://<project-ref>.supabase.co \
+#   SUPABASE_PUBLISHABLE_KEY=<chave publicável de produção> \
+#   make deploy-web
+#
+# 🔴 NÃO faça `source .env`: o `.env` deste repositório aponta para
+# http://127.0.0.1:54321, e o deploy publicaria o site de produção falando com o
+# Docker de quem publicou — sem erro nenhum na publicação. Há uma guarda abaixo
+# para isso, mas a guarda é a segunda linha de defesa, não a primeira.
 BUCKET := gs://conecta-iasd-site
 URL_MAP := conecta-iasd-site-url-map
 ASSET_CACHE_CONTROL := public, max-age=3600
@@ -33,6 +43,15 @@ HTML_CACHE_CONTROL := no-cache, max-age=0, must-revalidate
 deploy-web:
 	@test -n "$$SUPABASE_URL" || { echo "erro: SUPABASE_URL não está no ambiente. Ver o cabeçalho deste Makefile."; exit 1; }
 	@test -n "$$SUPABASE_PUBLISHABLE_KEY" || { echo "erro: SUPABASE_PUBLISHABLE_KEY não está no ambiente. Ver o cabeçalho deste Makefile."; exit 1; }
+	@case "$$SUPABASE_URL" in \
+		*127.0.0.1*|*localhost*|*host.docker.internal*) \
+			echo "erro: SUPABASE_URL aponta para o ambiente local ($$SUPABASE_URL)."; \
+			echo "       Isso publicaria o site de produção falando com o seu Docker — e o"; \
+			echo "       deploy não daria erro nenhum; só quem abrisse o site veria."; \
+			echo "       Provável causa: 'source .env'. Use a URL de produção."; \
+			exit 1 ;; \
+	esac
+	@echo "Publicando contra $$SUPABASE_URL"
 	@gcloud auth list --filter=status:ACTIVE --format="value(account)" | grep -q . || { echo "erro: nenhuma conta gcloud ativa. Rode: gcloud auth login"; exit 1; }
 	flutter pub get
 	flutter build web --release \

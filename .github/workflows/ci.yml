@@ -16,10 +16,6 @@ jobs:
         with:
           channel: stable
 
-      # `flutter analyze` reclama de asset declarado e ausente, e .env é
-      # gitignored — sem isto o job falha antes de olhar uma linha de Dart.
-      - run: cp .env.example .env
-
       - run: flutter pub get
       - run: flutter analyze
       - run: flutter test test/unit test/widget
@@ -55,8 +51,6 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-
-      - run: cp .env.example .env
 
       - run: flutter pub get
       - run: flutter build web

@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Inicializa o cliente Supabase e garante uma sessão (anônima, se preciso).
@@ -10,11 +9,28 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 class AppSupabase {
   AppSupabase._();
 
+  /// Constantes de compilação, nunca um arquivo. `.env` não é mais asset do
+  /// build (ver `pubspec.yaml`) — um `.env` de desenvolvedor esquecido no
+  /// diretório não pode mais vazar para o bundle público, porque não existe
+  /// mais um arquivo `.env` embutido para vazar. Preencher via
+  /// `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`
+  /// (ou `--dart-define-from-file`) em `flutter run`/`flutter build`.
+  static const String _supabaseUrl = String.fromEnvironment('SUPABASE_URL');
+  static const String _supabasePublishableKey = String.fromEnvironment(
+    'SUPABASE_PUBLISHABLE_KEY',
+  );
+
   static Future<void> bootstrap() async {
-    await dotenv.load(fileName: '.env');
+    if (_supabaseUrl.isEmpty || _supabasePublishableKey.isEmpty) {
+      throw StateError(
+        'SUPABASE_URL/SUPABASE_PUBLISHABLE_KEY não configurados. Rode com '
+        '--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=... '
+        '(ver README.md).',
+      );
+    }
     await Supabase.initialize(
-      url: dotenv.get('SUPABASE_URL'),
-      publishableKey: dotenv.get('SUPABASE_PUBLISHABLE_KEY'),
+      url: _supabaseUrl,
+      publishableKey: _supabasePublishableKey,
     );
     await ensureSession(
       hasSession: client.auth.currentUser != null,

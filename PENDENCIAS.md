@@ -139,34 +139,86 @@ produção só para o teste — mudar a forma do que funciona para cobrir três 
 **O que reabre isto**: se a atribuição de etapa ganhar regra (mais etapas, retentativa,
 mensagens por tipo de erro), o cálculo deixa de ser trivial e a costura passa a se pagar.
 
-### 2.6 `consentimentos_por_versao_test` falha de forma intermitente na suíte
+### 2.6 `consentimentos_por_versao_test` falhava de forma intermitente na suíte — **FECHADO em 2026-08-11**
 
-Achado enquanto se rodavam os gates da 013 — **não é da 013**, que não toca em consentimento,
-Perfil nem versão de texto legal.
+Achado enquanto se rodavam os gates da 013 — não era da 013, que não toca em consentimento,
+Perfil nem versão de texto legal. Consertado pela change OpenSpec
+`estabilizar-suite-de-integracao`.
 
-**Sintoma medido**, em 2026-08-10: `test/integration/consentimentos_por_versao_test.dart`, caso
-*"(d) Perfil anonimizado sai da contagem"*, falha com `Expected: <1> Actual: <0>` — e a falha é
-na contagem de **baldes**, não na de pessoas: `consentimentos_por_versao()` devolve **nenhuma
-linha** para a versão isolada `9.9-anon`, quando o teste espera uma.
+**Sintoma original**, medido em 2026-08-10: `test/integration/consentimentos_por_versao_test.dart`,
+caso *"(d) Perfil anonimizado sai da contagem"*, falha com `Expected: <1> Actual: <0>` na
+contagem de **baldes**: `consentimentos_por_versao()` devolvia nenhuma linha para a versão
+isolada `9.9-anon`.
 
-**Frequência**: 2 falhas em cerca de 8 execuções da suíte completa. Rodado sozinho, o arquivo
-passa sempre. Três suítes completas seguidas, logo depois de uma falha, passaram todas.
+**Causa real, confirmada por reprodução em 2026-08-11**: NÃO eram as duas hipóteses do design
+(linha de `perfis` apagada, ou linha de `versoes_texto_legal` apagada). Era
+`test/integration/versao_texto_legal_registro_test.dart`, caso *"FR-002: a FK existe e recusa
+versão fora do catálogo — provado com o gatilho desligado"`, que rodava
+`alter table public.perfis disable trigger perfis_carimbar_consentimento_trigger` **fora de
+transação**. Em Postgres isso é DDL autocommitada: o gatilho ficava desligado, GLOBAL, para
+todas as sessões, durante a janela até o `enable trigger` seguinte — e `dart test` roda os
+arquivos em paralelo contra o mesmo banco. Qualquer `insert`/`update` em `public.perfis` de
+OUTRO arquivo que caísse nessa janela gravava `consentimento_lgpd_versao` como `NULL` em vez do
+valor esperado, porque o gatilho que carimba a versão (`perfis_carimbar_consentimento`) não
+disparava.
 
-**Uma hipótese já descartada**: `versao_texto_legal_registro_test.dart` executa `delete from
-public.versoes_texto_legal`, mas como `authenticated` e **esperando que falhe** — não é ele que
-apaga o catálogo.
+O mesmo defeito tinha DOIS sintomas, confirmados por reprodução (30 execuções, concorrência 12,
+antes do conserto): 6 falhas — 4×
+`consentimento_versao_carimbada_test.dart` caso "(f) SC-005: publicar versão nova muda o
+carimbo", `Expected: '1.2-teste' Actual: <null>`; e 2× o `(d)` original acima. Mesma causa, dois
+arquivos-vítima.
 
-**Onde procurar**: o balde some, então ou as duas linhas de `perfis` criadas pelo caso (d)
-deixaram de existir no meio do teste, ou a linha de `versoes_texto_legal` com `9.9-anon` saiu.
-`dart test` roda os arquivos em paralelo contra o mesmo banco, e este projeto já teve esta
-mesma classe de falha antes (feature 014, limpeza sem escopo em `tearDownAll`). O caminho é
-procurar qual outro arquivo alcança essas linhas — por `uid` fixo repetido, por limpeza sem
-filtro, ou por versão de texto legal compartilhada.
+**Conserto**: `versao_texto_legal_registro_test.dart` passou a rodar o `disable trigger`, o
+`update`, e o `rollback` dentro de uma transação (`begin`/`rollback`, sem `enable trigger`
+explícito — o `rollback` desfaz o `disable` junto). É o mesmo padrão que `db_test_helper.dart`,
+`consentimentos_por_versao_test.dart` e `consentimento_versao_desconhecida_test.dart` já usavam
+para o mesmo gatilho — só este arquivo não seguia.
 
-**Por que não foi consertado agora**: é a superfície da 009/017, não da 013, e consertar teste
-alheio no meio da entrega de outra feature é como se introduz o defeito seguinte. Merece spec
-curta própria, com a reprodução em laço (`for i in $(seq 1 20)`) como primeiro passo — sem laço
-que falhe de propósito, qualquer conserto aqui é adivinhação.
+**Prova**: 30 execuções seguidas da suíte inteira, concorrência 12 (a mesma condição que media
+6 falhas em 30 antes do conserto) — **0 recorrências do defeito original** depois do conserto.
+
+**Achado colateral, ainda ABERTO**: a mesma rodada de 30 execuções pós-conserto expôs uma
+**segunda corrida, não relacionada**, entre `account_deletion_test.dart` (cenários 11–14,
+eleição de herdeiro) e qualquer outro arquivo que crie Administrador de distrito de teste (ex.:
+`arquivar_grupo_permissao_test.dart`) — ver item novo abaixo. Fora do escopo desta change, que
+era só o defeito acima.
+
+### 2.7 Eleição de herdeiro em `account_deletion_test` alcança Administrador de outro arquivo
+
+Achado em 2026-08-11, no laço de prova de 30 execuções (concorrência 12) depois do conserto do
+§ 2.6. Run 29 de 30 falhou com dois sintomas na mesma execução:
+
+- `account_deletion_test.dart`, cenário 12 *"a única Administradora é recusada, mesmo com
+  Grupo"*: esperava `throwsA(isA<ServerException>())` e recebeu sucesso.
+- Logo em seguida, `arquivar_grupo_permissao_test.dart: (tearDownAll)` falhou com
+  `Severity.error 23503: update or delete on table "perfis" violates foreign key constraint
+  "grupos_dono_id_fkey"` — apagar o Perfil do `_uidAdmin` daquele arquivo (
+  `91000000-0000-0000-0000-000000000003`) foi recusado porque um Grupo ainda referenciava esse
+  `id` como `dono_id`.
+
+**Hipótese, não confirmada por desligamento do culpado** (§ 2.3 do processo de diagnóstico não
+foi feito para este achado — só a reprodução em laço, uma vez): o cenário 12 espera que "a única
+Administradora" seja recusada porque é a **única** linha em `public.administradores_distrito`.
+Essa contagem é global — correta em produção, onde só existe um distrito real — mas
+`createTestDistrictAdmin` (em `db_test_helper.dart`) insere linhas nessa mesma tabela
+compartilhada a partir de QUALQUER arquivo de teste, sem escopo por arquivo. Se
+`arquivar_grupo_permissao_test.dart` (ou outro arquivo) tinha seu próprio Administrador de teste
+vivo no exato instante em que o cenário 12 rodava, a contagem deixa de ser 1, a recusa não
+dispara, e a lógica de herança do banco elege esse Administrador de outro arquivo como herdeiro
+— transferindo `dono_id` do Grupo do cenário 12 para um `id` que não pertence a
+`account_deletion_test.dart`. O arquivo dono desse `id` (`arquivar_grupo_permissao_test.dart`)
+não sabe que ganhou um Grupo e não o inclui no próprio `delete from public.grupos where dono_id
+= any(@u)` da `tearDownAll` — exceto que inclui, porque o `id` está no seu próprio `_allUids`;
+a corrida real é de **tempo**, entre esse `delete` e o `cleanUpTestUser` do mesmo `tearDownAll`,
+com a transferência acontecendo no meio.
+
+**Por que não foi consertado agora**: fora do escopo da change `estabilizar-suite-de-integracao`,
+que mirava só o § 2.6. É a mesma classe de bug (isolamento entre arquivos que rodam em
+paralelo), mas mecanismo e arquivos diferentes — merece sua própria reprodução em laço antes de
+qualquer conserto, pelo mesmo motivo que o § 2.6 exigiu.
+
+**Frequência medida**: 1 em 30 execuções completas, concorrência 12 — não dá pra saber se é
+alta ou baixa com uma amostra só.
 
 ## 3. Verificação manual — só gente mede
 

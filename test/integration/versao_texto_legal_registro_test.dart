@@ -120,11 +120,23 @@ void main() {
       // O gatilho torna a FK inalcançável por qualquer caminho normal, o que é
       // bom mas também esconde se ela funciona. Desligá-lo é o único jeito de
       // provar que a segunda camada existe de verdade.
-      await conn.execute(
-        'alter table public.perfis '
-        'disable trigger perfis_carimbar_consentimento_trigger',
-      );
+      //
+      // Tudo numa transação com rollback: `alter table ... disable trigger`
+      // toma ACCESS EXCLUSIVE e é GLOBAL. Fora de transação, o gatilho fica
+      // desligado para todo mundo durante a janela, e `dart test` roda os
+      // arquivos em paralelo — outro teste inserindo/atualizando Perfil nesse
+      // instante gravaria sem carimbo (achado em 2026-08-11: derrubava
+      // consentimentos_por_versao_test.dart e consentimento_versao_carimbada_
+      // test.dart de forma intermitente). Dentro da transação o lock é
+      // segurado até o rollback, que também desfaz o disable — dispensa
+      // `enable trigger` explícito, inclusive quando o update abaixo lança e
+      // aborta a transação.
+      await conn.execute('begin');
       try {
+        await conn.execute(
+          'alter table public.perfis '
+          'disable trigger perfis_carimbar_consentimento_trigger',
+        );
         await expectLater(
           conn.execute(
             Sql.named(
@@ -136,10 +148,7 @@ void main() {
           throwsA(isA<Exception>()),
         );
       } finally {
-        await conn.execute(
-          'alter table public.perfis '
-          'enable trigger perfis_carimbar_consentimento_trigger',
-        );
+        await conn.execute('rollback');
       }
     },
   );

@@ -56,7 +56,7 @@ da exigência de Apelido de menor, mudar o `genero` forja composição de Dupla 
 O conserto está escrito no achado (`revoke update` + `grant update (colunas)`). Exige migration
 e conferir coluna a coluna quem mais escreve em `perfis`.
 
-### 2.2 `anon` tem `TRUNCATE` em todas as tabelas
+### 2.2 `anon` tem `TRUNCATE` em todas as tabelas — **FECHADO em 2026-08-11**
 
 Descoberto ao verificar as premissas da 018. `anon` e `authenticated` têm `TRUNCATE`,
 `REFERENCES` e `TRIGGER` nas 14 tabelas de `public` — herança do default do Supabase. **TRUNCATE
@@ -75,6 +75,33 @@ as linhas de capa sem enfileirar nada, e **todos os arquivos do bucket virariam 
 vez** — derrubando o desenho inteiro da feature por uma porta que ela nem abriu. A 013 fechou
 para as suas duas tabelas; **as outras 14 continuam abertas**, e agora se sabe que a
 consequência depende do que cada tabela sustenta.
+
+**Conserto**, openspec `revogar-truncate-de-anon-e-authenticated`:
+`supabase/migrations/20260811120000_revogar_truncate_de_anon_e_authenticated.sql` —
+`revoke truncate, references, trigger on all tables in schema public from anon, authenticated`
+(fecha o presente) + `alter default privileges for role postgres in schema public revoke ...`
+(fecha o futuro; `for role postgres` porque é o papel que roda as migrations deste projeto, mesma
+descoberta de `20260805090000_service_role_default_privileges.sql`).
+
+**Antes**: `information_schema.role_table_grants` — 14 tabelas × 2 papéis = 28 linhas com
+`REFERENCES, TRIGGER, TRUNCATE` pra `anon`/`authenticated`. **Depois**: 0 linhas; `pg_default_acl
+FOR ROLE postgres` confirmado sem `D`/`x`/`t` pros dois papéis.
+
+**Prova, não só "TRUNCATE falha"**: suíte de integração inteira antes e depois da migration.
+Antes: `flutter analyze` 0 issues, `flutter test test/unit test/widget` 273 passando, `dart test
+test/integration` 210 passando. Depois: mesmos números pras duas primeiras; integração foi 210 →
+214 — delta de +4 é exatamente os 4 testes novos que provam a revogação
+(`test/integration/privilegios_publicos_truncate_test.dart`: `truncate` recusado com `42501` em
+`acoes` [RLS pública], `perfis` [gatilho] e `participacoes_grupo` [junção]; tabela criada numa
+transação `begin`/`rollback` nasce sem os três privilégios). Nenhum teste pré-existente quebrou —
+nenhum caminho legítimo do app dependia de `REFERENCES`/`TRIGGER`/`TRUNCATE` em `anon`/
+`authenticated`.
+
+Achado colateral durante a medição: o Postgres local estava com uma migration de outra worktree
+aplicada (`grant update` em `perfis` por coluna) que não existe no histórico desta branch —
+`supabase db reset` foi necessário antes da baseline pra alinhar o banco só com as migrations
+desta worktree. Isso é característica do Supabase local ser compartilhado entre worktrees por
+porta fixa, não bug desta change.
 
 ### 2.3 Cadastro antigo de criança ficou somente-leitura
 

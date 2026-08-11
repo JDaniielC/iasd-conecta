@@ -376,6 +376,42 @@ escrever uma migration nova que corrija, nunca editar a que já foi aplicada —
 CLI compara pelo nome do arquivo, então editar uma já registrada faz o remoto
 ficar diferente do repositório em silêncio.
 
+### ⛔ A armadilha do `migration repair --status reverted`
+
+Aconteceu em 2026-08-11, e custou meia hora: `supabase db pull` recusou com
+*"The remote database's migration history does not match local files"* e
+**sugeriu por conta própria** uma lista de `migration repair --status reverted`.
+Rodar aquilo marcou como *revertidas* migrations que estavam **aplicadas** —
+`perfis`, `grupos`, `acoes`, `rodadas_votacao`, `administradores_distrito`, com
+dado de gente dentro.
+
+O estrago não é o repair em si: é o passo seguinte. Com o histórico dizendo que
+as tabelas nunca foram criadas, o `db push` passa a oferecer `--include-all`, e
+isso tentaria rodar `create table public.perfis` sobre a tabela que atende as
+pessoas hoje.
+
+**A regra:** `--status reverted` só vale para migration que de fato **não** está
+no banco. Antes de rodar qualquer repair, confira o que existe:
+
+```bash
+supabase inspect db table-sizes --linked
+```
+
+Se a tabela está lá com linhas dentro, a migration foi aplicada — e o conserto é
+o inverso:
+
+```bash
+supabase migration repair --status applied <versão> [<versão> ...]
+```
+
+`repair` escreve **só na tabela de histórico**; não executa uma linha das
+migrations. É seguro nas duas direções — o que não é seguro é o `db push` que
+vem depois de um histórico mentiroso.
+
+**Como saber que ficou certo**: `db push --dry-run` tem de listar apenas as
+migrations novas. Se aparecer qualquer coisa antiga, ou se ele sugerir
+`--include-all`, o histórico ainda está torto — pare ali.
+
 ### Passo 4 — o que o push NÃO faz, e produção precisa
 
 Duas coisas ficam faltando **de propósito**, e sem elas a remoção de imagem não

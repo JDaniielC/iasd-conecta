@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../cover_photo/cover_photo_providers.dart';
+import '../../cover_photo/domain/cover_photo.dart';
+import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../profile/domain/church.dart';
@@ -113,6 +116,16 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                   final period = actionPeriod(item.action.dateTime, now);
                   byPeriod.putIfAbsent(period, () => []).add(item);
                 }
+                // Uma consulta só para todas as capas da lista, e a lista
+                // pinta com o que já tem. Consulta por card faria N consultas
+                // e faria cada card crescer quando a sua capa chegasse — o
+                // pulo de layout que FR-007 proíbe.
+                final covers = ref
+                        .watch(actionCoverPhotosProvider(
+                          coverPhotosKey([for (final i in sorted) i.action.id]),
+                        ))
+                        .value ??
+                    const <String, CoverPhoto>{};
                 return ListView(
                   children: [
                     for (final period in _periodOrder)
@@ -129,6 +142,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                                 ActionTimeStatus.happeningNow,
                             counts: countsAsync.value?[item.action.id] ??
                                 const ConfirmationCounts(),
+                            cover: covers[item.action.id],
                           ),
                       ],
                   ],
@@ -261,15 +275,19 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _ActionCard extends StatelessWidget {
+class _ActionCard extends ConsumerWidget {
   const _ActionCard({
     required this.action,
     this.sabbathHighlight = false,
     this.happeningNow = false,
     this.counts = const ConfirmationCounts(),
+    this.cover,
   });
 
   final Action action;
+
+  /// Já resolvida pela lista, de propósito — o card não consulta nada.
+  final CoverPhoto? cover;
   final bool sabbathHighlight;
 
   /// FR-002: entre a hora marcada e 4h depois, a Ação continua na lista e
@@ -306,7 +324,7 @@ class _ActionCard extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final tertiary = Theme.of(context).colorScheme.tertiary;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
@@ -317,7 +335,19 @@ class _ActionCard extends StatelessWidget {
             )
           : null,
       color: sabbathHighlight ? tertiary.withValues(alpha: 0.08) : null,
-      child: ListTile(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Ação sem capa não deixa buraco: CoverPhotoView ocupa zero.
+          CoverPhotoView(
+            photo: cover,
+            imageUrl: cover == null
+                ? null
+                : ref.read(coverPhotoRepositoryProvider).publicUrlFor(cover!),
+            borderRadius: BorderRadius.zero,
+          ),
+          ListTile(
         leading: sabbathHighlight ? Icon(Icons.nights_stay, color: tertiary) : null,
         title: Text(action.name),
         subtitle: Column(
@@ -331,8 +361,10 @@ class _ActionCard extends StatelessWidget {
             Text(_attendanceLabel),
           ],
         ),
-        isThreeLine: true,
-        onTap: () => context.push('/acoes/${action.id}'),
+            isThreeLine: true,
+            onTap: () => context.push('/acoes/${action.id}'),
+          ),
+        ],
       ),
     );
   }

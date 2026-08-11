@@ -11,12 +11,22 @@ name: deploy-web
 # Google — bloqueia criar essa chave, no projeto e na organização. Sem chave, o CI não
 # autentica. Workaround pedido ao Google Cloud Support; enquanto não volta, quem publica roda
 # `make deploy-web` na própria máquina, autenticado com a própria conta (`gcloud auth login`).
-
-# 🔴 SEGURANÇA: NUNCA reaproveitar `cp .env.example .env` (job `build-web` do ci.yml) aqui.
-# Esse .env.example lista SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas — e `.env` é
-# `assets:` no pubspec.yaml, ou seja, vai JUNTO no build web público. Este job monta o .env de
-# produção só com as DUAS variáveis seguras por design (RLS). Nunca adicionar
-# SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* aqui.
+#
+# 🔴 SEGURANÇA — histórico: até 2026-08-10, `.env` era `assets:` no pubspec.yaml, e um
+# `flutter build web` local (fora deste workflow, com o .env de trabalho de um desenvolvedor)
+# publicou por engano a senha do Administrador no bundle público. Achado em pentest, corrigido
+# removendo `.env` dos assets — `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` agora são constante
+# de compilação via `--dart-define` (lib/core/supabase_client.dart). Não existe mais arquivo
+# `.env` para vazar: nenhum `flutter build web`, local ou daqui, embute segredo de
+# desenvolvedor por acidente.
+#
+# Duas regras que sobrevivem a esse conserto:
+#   1. NUNCA passe `SUPABASE_SERVICE_ROLE_KEY` nem `ADMIN_*` como `--dart-define`. O que entra
+#      em --dart-define entra no JavaScript publicado, legível por qualquer pessoa. As duas
+#      chaves abaixo são as únicas seguras por design (RLS).
+#   2. NUNCA reaproveite `cp .env.example .env` aqui. Esse arquivo lista
+#      SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas, e ele existe hoje só para
+#      `scripts/bootstrap_admin.sh`, que roda em bash e nunca vai para dentro de build nenhum.
 
 on:
   push:
@@ -38,32 +48,29 @@ jobs:
         with:
           channel: stable
 
-      - name: Write production .env with the two public keys only
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web (produção, via --dart-define)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          cat > .env <<EOF
-          SUPABASE_URL=${SUPABASE_URL}
-          SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
-          EOF
+          flutter build web --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Build Flutter Web
-        run: flutter build web --release
-
-      # FR-013 / SC-004 — `.env` é asset do pubspec, então ele vai DENTRO do bundle público, em
-      # build/web/assets/.env. Este passo confere que só as duas chaves públicas viajaram, tanto
-      # aqui quanto em quem publicar depois via `make deploy-web`. Conta nomes de chave; NUNCA
-      # imprime valor.
-      - name: Verify bundled .env carries only the two public keys
+      # FR-013 / SC-004, reescrito com o conserto de 2026-08-10.
+      #
+      # O passo anterior abria `build/web/assets/.env` e conferia se só as duas chaves públicas
+      # tinham viajado — ou seja, aceitava que o arquivo viajasse, e vigiava o conteúdo. Agora a
+      # garantia é mais forte e mais simples: o arquivo não pode existir. Se ele voltar a
+      # existir, alguém devolveu `.env` para `assets:` no pubspec.yaml, e o caminho do vazamento
+      # está reaberto — inclusive para quem publicar à mão com `make deploy-web`.
+      - name: Verify no .env was bundled
         run: |
-          keys=$(grep -oE '^[A-Z_]+=' build/web/assets/.env | tr -d '=' | sort | tr '\n' ' ')
-          expected="SUPABASE_PUBLISHABLE_KEY SUPABASE_URL "
-          if [ "$keys" != "$expected" ]; then
-            echo "::error::build/web/assets/.env tem chaves além das duas públicas. Encontrado: $keys"
+          if [ -e build/web/assets/.env ]; then
+            echo "::error::build/web/assets/.env existe. Alguém devolveu .env para assets: no pubspec.yaml — é o caminho do vazamento de 2026-08-10."
             exit 1
           fi
 

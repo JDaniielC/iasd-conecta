@@ -15,12 +15,15 @@
 
 name: deploy-web
 
-# 🔴 SEGURANÇA (herdado do arquivo atual — continua valendo palavra por palavra):
-# NUNCA reaproveitar `cp .env.example .env` (job `build-web` do ci.yml) aqui.
-# Esse .env.example lista SUPABASE_SERVICE_ROLE_KEY junto das chaves públicas —
-# e `.env` é `assets:` no pubspec.yaml, ou seja, vai JUNTO no build web público.
-# Este job monta o .env de produção só com as DUAS variáveis seguras por design
-# (RLS). Nunca adicionar SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* aqui.
+# 🔴 SEGURANÇA — atualizado 2026-08-10 (pentest achou o bug que este parágrafo
+# previne): NUNCA volte a fazer `.env` ser `assets:` no pubspec.yaml, e NUNCA
+# escreva um arquivo `.env` neste job. `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`
+# são constante de compilação via `--dart-define` (lib/core/supabase_client.dart)
+# desde a correção do achado A-1 — nenhum `.env`, local ou daqui, entra no
+# bundle publicado. Foi exatamente um `.env` de desenvolvedor (com a senha do
+# Administrador) publicado por um `flutter build web` LOCAL — fora deste
+# workflow, provavelmente via `gcloud storage` rodado à mão — que vazou em
+# produção. Nunca passe SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* como --dart-define.
 #
 # 🔴 SEGURANÇA (novo, e da mesma família do de cima):
 # `google-github-actions/auth` grava o arquivo de credencial da conta de serviço
@@ -100,37 +103,25 @@ jobs:
             exit 1
           fi
 
-      - name: Write production .env with the two public keys only
-        env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
-        run: |
-          cat > .env <<EOF
-          SUPABASE_URL=${SUPABASE_URL}
-          SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
-          EOF
-
       - name: Install dependencies
         run: flutter pub get
 
       # FR-002 / SC-002 — build quebrado não publica. Isso já vale por construção:
       # `run:` roda com `bash -e`, e todo passo de publicação vem DEPOIS deste.
       # Nunca colocar `continue-on-error` nem `|| true` daqui para baixo.
+      #
+      # FR-013 / SC-004 (atualizado) — `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY`
+      # entram como `--dart-define`, não como arquivo. Não existe mais
+      # `build/web/assets/.env` para conferir: a garantia não é mais "verificar
+      # o que vazou", é "não existir arquivo capaz de vazar".
       - name: Build Flutter Web
-        run: flutter build web --release
-
-      # FR-013 / SC-004 — `.env` é asset do pubspec, então ele vai DENTRO do
-      # bundle público, em build/web/assets/.env. Este passo confere que só as
-      # duas chaves públicas viajaram. Conta linhas e nomes de chave; NUNCA
-      # imprime valor.
-      - name: Verify bundled .env carries only the two public keys
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          keys=$(grep -oE '^[A-Z_]+=' build/web/assets/.env | tr -d '=' | sort | tr '\n' ' ')
-          expected="SUPABASE_PUBLISHABLE_KEY SUPABASE_URL "
-          if [ "$keys" != "$expected" ]; then
-            echo "::error::build/web/assets/.env tem chaves além das duas públicas. Encontrado: $keys"
-            exit 1
-          fi
+          flutter build web --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
       # FR-003 — credencial vem de segredo do repositório, nunca do código.
       # research D-007: o próprio fornecedor recomenda Workload Identity

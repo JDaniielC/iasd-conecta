@@ -5,6 +5,9 @@ import 'package:go_router/go_router.dart';
 import '../../../core/group_by_church.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../cover_photo/cover_photo_providers.dart';
+import '../../cover_photo/domain/cover_photo.dart';
+import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../district_admin/district_admin_providers.dart';
 import '../../profile/domain/church.dart';
 import '../../profile/domain/profile_guard.dart';
@@ -86,6 +89,14 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
               icon: const Icon(Icons.fact_check_outlined),
               onPressed: () => context.push('/district-admin/consentimentos'),
             ),
+            // SC-003: da tela em que a imagem aparece até a remoção, em até 3
+            // toques. Por aqui são dois: abrir a lista e resolver.
+            IconButton(
+              tooltip: 'Imagens denunciadas',
+              icon: const Icon(Icons.flag_outlined),
+              onPressed: () =>
+                  context.push('/district-admin/imagens-denunciadas'),
+            ),
           ],
           if (hasProfile && !hasAccount)
             IconButton(
@@ -129,11 +140,24 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                 }
                 final sorted = [...filtered]..sort(_comparador(_sortOrder));
                 final sections = groupByChurch(sorted, (g) => g.churchId, nameByChurchId);
+                // As capas vêm numa consulta só, e a lista só pinta quando
+                // elas chegam. É o que impede o card de crescer depois de
+                // pintado, que é o pulo de layout de FR-007. Enquanto não
+                // chegam, os cards aparecem sem capa — e essa é a degradação
+                // certa: melhor lista sem imagem do que lista que se mexe
+                // debaixo do dedo de quem está lendo.
+                final covers = ref
+                        .watch(groupCoverPhotosProvider(
+                          coverPhotosKey([for (final g in sorted) g.id]),
+                        ))
+                        .value ??
+                    const <String, CoverPhoto>{};
                 return ListView(
                   children: [
                     for (final section in sections) ...[
                       _SectionHeader(name: section.churchName),
-                      for (final group in section.items) _GroupCard(group: group),
+                      for (final group in section.items)
+                        _GroupCard(group: group, cover: covers[group.id]),
                     ],
                   ],
                 );
@@ -239,19 +263,39 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.group});
+class _GroupCard extends ConsumerWidget {
+  const _GroupCard({required this.group, this.cover});
 
   final Group group;
 
+  /// Já resolvida pela lista, de propósito — o card não consulta nada. Ver o
+  /// comentário sobre pulo de layout em [GroupListPage].
+  final CoverPhoto? cover;
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-      child: ListTile(
-        title: Text(group.name),
-        subtitle: Text(group.category),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
         onTap: () => context.push('/grupos/${group.id}'),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // Grupo sem capa não deixa buraco: CoverPhotoView ocupa zero.
+            CoverPhotoView(
+              photo: cover,
+              imageUrl: cover == null
+                  ? null
+                  : ref.read(coverPhotoRepositoryProvider).publicUrlFor(cover!),
+              borderRadius: BorderRadius.zero,
+            ),
+            ListTile(
+              title: Text(group.name),
+              subtitle: Text(group.category),
+            ),
+          ],
+        ),
       ),
     );
   }

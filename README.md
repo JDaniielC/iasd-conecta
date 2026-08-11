@@ -58,11 +58,18 @@ exigência, e a verificação do ambiente atual, estão em
 Pré-requisitos: Flutter 3.x, Docker (pro Supabase local), Supabase CLI.
 
 ```bash
-supabase start          # sobe Postgres+Auth+API local e aplica migrations+seed
-cp .env.example .env    # preencha SUPABASE_PUBLISHABLE_KEY com o valor que "supabase start" imprimiu
+supabase start    # sobe Postgres+Auth+API local e aplica migrations+seed,
+                   # e imprime a publishable key local
 flutter pub get
-flutter run
+flutter run \
+  --dart-define=SUPABASE_URL=http://127.0.0.1:54321 \
+  --dart-define=SUPABASE_PUBLISHABLE_KEY=<valor impresso por "supabase start">
 ```
+
+`SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` são constante de compilação
+(`--dart-define`), não vêm de `.env` — de propósito, ver `INFRA-PRODUCAO.md`
+e o comentário em `lib/core/supabase_client.dart`. `.env` continua existindo
+só para `scripts/bootstrap_admin.sh` (abaixo).
 
 Pra reaplicar o schema do zero (depois de mudar uma migration):
 

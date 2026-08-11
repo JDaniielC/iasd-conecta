@@ -6,12 +6,16 @@ name: deploy-web
 # é 100% estático, "publicar" aqui é a branch, não um registry de imagem —
 # não existe container pra esse app.
 #
-# 🔴 SEGURANÇA: NUNCA reaproveitar `cp .env.example .env` (job `build-web`
-# do ci.yml) aqui. Esse .env.example lista SUPABASE_SERVICE_ROLE_KEY junto
-# das chaves públicas — e `.env` é `assets:` no pubspec.yaml, ou seja, vai
-# JUNTO no build web público. Este job monta o .env de produção só com as
-# DUAS variáveis seguras por design (RLS). Nunca adicionar
-# SUPABASE_SERVICE_ROLE_KEY nem ADMIN_* aqui.
+# 🔴 SEGURANÇA — histórico: até 2026-08-10, `.env` era `assets:` no
+# pubspec.yaml, e um `flutter build web` local (fora deste workflow, com o
+# .env de trabalho de um desenvolvedor) publicou por engano a senha do
+# Administrador no bundle público. Achado em pentest, corrigido removendo
+# `.env` dos assets — `SUPABASE_URL`/`SUPABASE_PUBLISHABLE_KEY` agora são
+# constante de compilação via `--dart-define` (lib/core/supabase_client.dart).
+# Não existe mais arquivo `.env` para vazar: nenhum `flutter build web`,
+# local ou daqui, embute segredo de desenvolvedor por acidente. Ainda assim,
+# NUNCA passe `SUPABASE_SERVICE_ROLE_KEY` nem `ADMIN_*` como `--dart-define`
+# aqui — as duas chaves abaixo são as únicas seguras por design (RLS).
 
 on:
   push:
@@ -31,18 +35,16 @@ jobs:
         with:
           channel: stable
 
-      - name: Monta .env de produção (só as 2 chaves públicas)
+      - run: flutter pub get
+
+      - name: Build web (produção, via --dart-define)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
-          cat > .env <<EOF
-          SUPABASE_URL=${SUPABASE_URL}
-          SUPABASE_PUBLISHABLE_KEY=${SUPABASE_PUBLISHABLE_KEY}
-          EOF
-
-      - run: flutter pub get
-      - run: flutter build web --release
+          flutter build web --release \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="$SUPABASE_PUBLISHABLE_KEY"
 
       - name: Publica build/web na branch dist-web
         env:

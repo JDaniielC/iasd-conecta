@@ -73,4 +73,4 @@ deploy-web:
 	gcloud storage objects update $(BUCKET)/index.html \
 		--cache-control="$(HTML_CACHE_CONTROL)"
 	gcloud compute url-maps invalidate-cdn-cache $(URL_MAP) --project=$(PROJECT) --path "/*"
-	@echo "Publicado. Site: http://35.211.105.176"
+	@echo "Publicado. Site: http://8.233.229.106/ (IP do load balancer, que é o mesmo que https://conecta-iasd.site/)"

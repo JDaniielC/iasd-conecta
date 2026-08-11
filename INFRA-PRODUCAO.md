@@ -365,7 +365,9 @@ o comando não é transacional entre arquivos.
 ### Onde isto costuma falhar, e o que fazer
 
 **`create extension pg_cron` / `pg_net`** (`20260810110000_drenagem_capas.sql`) é
-o ponto mais provável de recusa: no Supabase gerenciado, extensão costuma ser
+o ponto mais provável de recusa — embora no push de 2026-08-11, com 14
+migrations aplicadas de uma vez neste projeto, as duas extensões tenham passado
+sem reclamar. Se um dia recusar: no Supabase gerenciado, extensão costuma ser
 habilitada pelo painel (Database → Extensions), e nem todo papel pode criar por
 SQL. Se der `permission denied`, habilite as duas pelo painel e rode `db push` de
 novo — as migrations anteriores já aplicadas serão puladas, porque o CLI registra
@@ -429,7 +431,18 @@ acontece (feature 013):
 
 ```bash
 supabase migration list                       # nenhuma linha com remote vazio
+supabase inspect db table-sizes --linked      # as tabelas novas existem
 ```
+
+Em 2026-08-11, depois do push das 14: **31 aplicadas, 0 pendentes**, e
+`fotos_capa`, `capas_a_remover`, `configuracao_drenagem` e `denuncias_imagem`
+presentes e vazias. `configuracao_drenagem` vazia é o **esperado** — é o passo 4.
+
+Uma consequência boa de como a drenagem foi escrita: enquanto a fila estiver
+vazia, `drenar_capas_a_remover()` sai antes de ler a configuração, então o cron
+roda em silêncio e nada alarma. A recusa em voz alta só chega quando existir a
+primeira imagem para remover — dá tempo de fazer o passo 4 com calma, mas ele
+tem de estar feito **antes de alguém publicar uma capa**.
 
 E, no SQL Editor do painel, as duas consultas da seção 3: a de fila parada e a
 das 24 horas. Ambas têm de devolver zero.

@@ -195,8 +195,18 @@ void main() {
       await tester.pumpAndSettle();
 
       // A falha vira aviso, não exceção vermelha nem tela em branco.
-      expect(find.textContaining('Não deu pra remover'), findsOneWidget);
-      // E a capa continua lá: nada foi alterado no Grupo.
+      //
+      // A frase mudou em 2026-08-10 por FR-031: a antiga era "Não deu pra
+      // remover a imagem agora. Tente de novo.", que **afirma** que a remoção
+      // não aconteceu. Num tempo esgotado de rede o cliente não sabe disso —
+      // o servidor pode ter removido e a resposta ter se perdido. A frase de
+      // hoje admite a dúvida e manda conferir a tela, que foi relida.
+      expect(
+        find.textContaining('Não deu pra confirmar a remoção'),
+        findsOneWidget,
+      );
+      // E a capa continua lá: a releitura devolveu a mesma capa, então neste
+      // caso a remoção realmente não aconteceu.
       expect(find.byType(CoverPhotoView), findsOneWidget);
       expect(find.text('Trocar capa'), findsOneWidget);
     });

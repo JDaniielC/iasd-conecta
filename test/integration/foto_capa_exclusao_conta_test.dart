@@ -88,10 +88,13 @@ void main() {
   });
 
   tearDownAll(() async {
-    await conn.execute(
-      Sql.named('delete from public.capas_a_remover where caminho like @p'),
-      parameters: {'p': '%capa-exclusao.jpg'},
-    );
+    // A fila sai NO FIM, e não aqui. Os deletes de Ação e de Grupo abaixo
+    // cascateiam em `fotos_capa`, e o gatilho de enfileiramento põe o caminho
+    // de volta — limpar antes deles apagava o que existia e deixava o que a
+    // própria limpeza provocava. Medido em 2026-08-10: a capa do Grupo
+    // herdado, que este teste exige que PERMANEÇA durante a exclusão (FR-025),
+    // reaparecia na fila a cada execução da suíte, ao ser derrubada no
+    // teardown.
     await conn.execute(
       Sql.named('delete from public.acoes where id = @id'),
       parameters: {'id': standaloneActionId},
@@ -105,6 +108,10 @@ void main() {
     await conn.execute(
       Sql.named('delete from public.administradores_distrito where usuario_id = @id'),
       parameters: {'id': _uidHeir},
+    );
+    await conn.execute(
+      Sql.named('delete from public.capas_a_remover where caminho like @p'),
+      parameters: {'p': '%capa-exclusao.jpg'},
     );
     await cleanUpTestUser(conn, _uidLeaving);
     await cleanUpTestUser(conn, _uidHeir);

@@ -81,6 +81,27 @@ Deno.serve(async () => {
   // tem a sua contagem, e é a diferença entre elas que denuncia o arquivo que
   // falha desde sempre no meio de falhas transitórias. São no máximo LOTE
   // requisições, e só quando algo deu errado.
+  //
+  // ===================================================================
+  // A GUARDA `.is('removido_em', null)` — CONCORRÊNCIA DEIXOU DE SER HIPÓTESE
+  // ===================================================================
+  // Duas drenagens podem estar no ar ao mesmo tempo: o `pg_cron` roda de
+  // minuto em minuto e o app pede drenagem a cada remoção e a cada troca de
+  // capa. As duas leem a fila antes de qualquer uma escrever, então o mesmo
+  // caminho pode estar nos dois lotes.
+  //
+  // Quem chega primeiro remove o objeto e carimba `removido_em`. Quem chega
+  // depois pede a remoção de um objeto que já não existe, a API não o devolve
+  // na lista dos removidos, e sem esta guarda a linha JÁ DRENADA receberia
+  // `tentativas + 1` e um `ultimo_erro` dizendo que a remoção não foi
+  // confirmada. Medido em 2026-08-10 com duas chamadas simultâneas sobre um
+  // objeto real: `removido_em` preenchido, `tentativas = 1`, `ultimo_erro`
+  // reclamando — sobre um arquivo que saiu do bucket.
+  //
+  // Isso importa porque a orientação de INFRA-PRODUCAO.md § 3 manda ler
+  // exatamente essas duas colunas para separar falha transitória de arquivo
+  // que não sai. A guarda existe para elas não mentirem justamente para quem
+  // seguir a orientação.
   if (naoConfirmados.length > 0) {
     const motivo = erroRemocao?.message ??
       'A API não confirmou a remoção deste caminho. Bucket errado, ou o ' +
@@ -94,6 +115,7 @@ Deno.serve(async () => {
             ultimo_erro: motivo,
           })
           .eq('caminho', linha.caminho as string)
+          .is('removido_em', null)
       ),
     );
   }

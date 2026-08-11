@@ -94,6 +94,59 @@ Está registrado como T031 dentro da 020; se a 020 demorar, vale spec própria a
 
 ---
 
+### 2.5 Envio de capa: a atribuição de etapa não tem teste automatizado
+
+Da feature 013 (T059). O envio de capa tem três etapas — subir o arquivo, tirar a linha antiga,
+gravar a linha nova — e cada falha produz uma frase diferente para a pessoa (FR-031). Os cinco
+casos de `test/widget/cover_photo_falha_parcial_test.dart` provam o mapa **etapa → frase**, mas
+injetam a exceção já montada. Quem decide a etapa e calcula `previousPhotoLost` é
+`lib/features/cover_photo/data/cover_photo_repository.dart`, e **isso não é exercitado por
+nenhum teste**.
+
+**Verificado à mão em 2026-08-10**, em SQL, sob RLS e como dono: `DELETE ... RETURNING` devolve
+1 linha quando havia capa e 0 quando não havia — que é a conta inteira de `previousPhotoLost`.
+
+**Por que fica como dívida em vez de teste.** Cobrir exige exercitar o repositório contra o
+Supabase local com um `SupabaseClient` de verdade — padrão que este repositório não tem, já que
+`test/integration` fala com o Postgres direto. E não basta o padrão: forçar cada etapa a falhar
+**de propósito** não é possível de fora. Falhar o upload exigiria um bucket inexistente, que é
+constante; falhar só o `delete` exigiria uma policy contraditória; falhar só o `insert` exigiria
+vencer uma corrida no índice único. Cada um deles precisaria de uma costura aberta no código de
+produção só para o teste — mudar a forma do que funciona para cobrir três `try` e um
+`isNotEmpty`.
+
+**O que reabre isto**: se a atribuição de etapa ganhar regra (mais etapas, retentativa,
+mensagens por tipo de erro), o cálculo deixa de ser trivial e a costura passa a se pagar.
+
+### 2.6 `consentimentos_por_versao_test` falha de forma intermitente na suíte
+
+Achado enquanto se rodavam os gates da 013 — **não é da 013**, que não toca em consentimento,
+Perfil nem versão de texto legal.
+
+**Sintoma medido**, em 2026-08-10: `test/integration/consentimentos_por_versao_test.dart`, caso
+*"(d) Perfil anonimizado sai da contagem"*, falha com `Expected: <1> Actual: <0>` — e a falha é
+na contagem de **baldes**, não na de pessoas: `consentimentos_por_versao()` devolve **nenhuma
+linha** para a versão isolada `9.9-anon`, quando o teste espera uma.
+
+**Frequência**: 2 falhas em cerca de 8 execuções da suíte completa. Rodado sozinho, o arquivo
+passa sempre. Três suítes completas seguidas, logo depois de uma falha, passaram todas.
+
+**Uma hipótese já descartada**: `versao_texto_legal_registro_test.dart` executa `delete from
+public.versoes_texto_legal`, mas como `authenticated` e **esperando que falhe** — não é ele que
+apaga o catálogo.
+
+**Onde procurar**: o balde some, então ou as duas linhas de `perfis` criadas pelo caso (d)
+deixaram de existir no meio do teste, ou a linha de `versoes_texto_legal` com `9.9-anon` saiu.
+`dart test` roda os arquivos em paralelo contra o mesmo banco, e este projeto já teve esta
+mesma classe de falha antes (feature 014, limpeza sem escopo em `tearDownAll`). O caminho é
+procurar qual outro arquivo alcança essas linhas — por `uid` fixo repetido, por limpeza sem
+filtro, ou por versão de texto legal compartilhada.
+
+**Por que não foi consertado agora**: é a superfície da 009/017, não da 013, e consertar teste
+alheio no meio da entrega de outra feature é como se introduz o defeito seguinte. Merece spec
+curta própria, com a reprodução em laço (`for i in $(seq 1 20)`) como primeiro passo — sem laço
+que falhe de propósito, qualquer conserto aqui é adivinhação.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou
@@ -106,6 +159,7 @@ esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 | 016 T039 | Quickstart, 16 itens. Três obrigatórios: `/perfil` sem Perfil, nome corrigido propagando na página do Grupo, e a data do consentimento não mudando ao corrigir o nome |
 | 017 T021 | O corpo do `insert` no DevTools não pode ter chave de versão; e a tela de cadastro não ganhou campo nem passo |
 | 018 T015 | Quatro telas: Líder visível a Visitante, estado da própria declaração, pendências do Administrador, e Usuário comum em `/leadership/pending` vendo lista vazia sem erro |
+| 013 T033 | Quickstart Parte 2, 21 itens. **O item 18 é o que importa**: rodar em Android ou iOS de verdade, porque o seletor de imagem é a parte que se comporta diferente fora da web — e a web é o único ambiente em que isto foi exercitado |
 | 021 T025 | Item 3.3: a tela da Rodada continua marcando sua candidata e não mostra contagem de votos |
 | 010 T019–T021 | Paisagem a ~375px, contraste dos pares texto/fundo, alvos de toque e leitor de tela |
 
@@ -117,6 +171,7 @@ esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 | 016 T044 | Conferir `jdaniielc@gmail.com` 30 dias depois do lançamento: chegou pedido de acesso ou correção que a tela já cobre? |
 | 011 T026a | Dar 5 Ações a alguém e cronometrar se identifica a mais confirmada em menos de 10s |
 | 001 T039 | Tempos de cadastro (<2min) e reabertura (<5s) — bloqueado desde o começo por falta de ambiente |
+| 013 T034 | Guardar o endereço de uma imagem de capa, removê-la, e **cronometrar** quanto tempo o endereço ainda responde. A Política de Privacidade promete até 60 segundos; se der mais, é a Política que está errada, não a medição |
 
 ### Exige produção no ar
 
@@ -215,7 +270,7 @@ Registrado para ninguém gastar tempo de novo.
 | 010 pagina-home | Entregue; alvos de toque corrigidos e remedidos (48 px) em 10/08 |
 | 011 acoes-titulo-e-encerramento | Entregue; 1 medição com gente aberta |
 | 012 identificadores-em-ingles | Entregue |
-| 013 foto-de-capa | **Em implementação** — branch `013-foto-de-capa`, 4 de 35 |
+| 013 foto-de-capa | **Entregue** — 57 de 59; restam 2 verificações manuais (§ 3) |
 | 014 arquivar-grupo | Entregue; 16 itens do quickstart esperam produção no ar |
 | 015 consentimento-responsavel | Entregue; 1 medição com gente aberta |
 | 016 meu-perfil | Entregue; 1 verificação de tela e 2 com gente abertas |

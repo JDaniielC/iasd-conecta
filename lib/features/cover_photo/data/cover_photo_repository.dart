@@ -118,26 +118,79 @@ class CoverPhotoRepository {
     //
     // O índice único por Grupo/Ação impede duas linhas ao mesmo tempo, então
     // alguma ordem tinha de ser escolhida. Esta é a que falha melhor: se o
-    // upload falhar, nada mudou; se a gravação da linha falhar depois do
-    // delete, perde-se a capa mas não se cria arquivo servido sem linha que o
-    // gerencie. A ordem inversa (apagar primeiro) tem a mesma perda e ainda
-    // deixa uma janela em que a tela mostra capa que já não existe.
-    await _client.storage.from(coverPhotoBucket).uploadBinary(
-          path,
-          image.bytes,
-          fileOptions: FileOptions(contentType: image.mimeType),
-        );
+    // upload falhar, nada mudou. A ordem inversa (apagar primeiro) perde a capa
+    // do mesmo jeito e ainda deixa uma janela em que a tela mostra capa que já
+    // não existe.
+    //
+    // ================================================================
+    // O QUE ESTA ORDEM **NÃO** GARANTE — e quem cobre isso
+    // ================================================================
+    // Uma versão anterior deste comentário afirmava que uma falha depois do
+    // upload "não cria arquivo servido sem linha que o gerencie". Era falso.
+    // O arquivo já subiu quando o `delete` e o `insert` abaixo rodam; se
+    // qualquer um dos dois falhar — rede caindo, ou duas pessoas que
+    // administram o mesmo Grupo enviando ao mesmo tempo e batendo no índice
+    // único — o arquivo fica no bucket público sem linha em `fotos_capa` e
+    // **sem entrar na fila de remoção**, porque a fila é alimentada pelo
+    // gatilho de DELETE de `fotos_capa`, e este arquivo nunca teve linha para
+    // apagar.
+    //
+    // Medido em 2026-08-10: um objeto nesse estado não move a consulta de
+    // saúde de INFRA-PRODUCAO.md § 3 — é invisível para o único sinal que o
+    // projeto tem.
+    //
+    // Fechar isso aqui não dá: `capas_a_remover` não tem grant para o app e
+    // `storage.objects` não tem policy de delete para ele; e a compensação
+    // rodaria no mesmo cliente que acabou de falhar. Quem cobre é a varredura
+    // `public.varrer_capas_orfas()`
+    // (`supabase/migrations/20260810160000_varredura_capas_orfas.sql`), de hora
+    // em hora, com carência de uma hora para não matar upload em andamento.
+    //
+    // A garantia real, então, é esta: **nenhum arquivo fica no bucket para
+    // sempre**; um arquivo órfão pode ficar público por até cerca de duas
+    // horas, sem estar referenciado por tela nenhuma.
+    // Cada etapa falha com a SUA identidade. Um `try` só em volta das três
+    // devolvia um erro indistinguível, e a tela dizia a mesma frase para
+    // estados opostos: "nada mudou" e "a capa que existia foi destruída".
+    try {
+      await _client.storage.from(coverPhotoBucket).uploadBinary(
+            path,
+            image.bytes,
+            fileOptions: FileOptions(contentType: image.mimeType),
+          );
+    } catch (_) {
+      throw const CoverPhotoUploadFailed(CoverPhotoUploadStage.sendingFile);
+    }
 
-    await _client
-        .from('fotos_capa')
-        .delete()
-        .eq('${ownerPrefix}_id', ownerId);
+    // O `.select()` não é enfeite: é como se sabe se havia capa antes. Sem
+    // ele, uma falha na etapa seguinte não teria como distinguir "o Grupo
+    // continua sem capa" de "o Grupo perdeu a capa que tinha" — e essas duas
+    // frases não podem ser a mesma.
+    final List<dynamic> removed;
+    try {
+      removed = await _client
+          .from('fotos_capa')
+          .delete()
+          .eq('${ownerPrefix}_id', ownerId)
+          .select() as List<dynamic>;
+    } catch (_) {
+      throw const CoverPhotoUploadFailed(
+        CoverPhotoUploadStage.removingPrevious,
+      );
+    }
 
-    await _client.from('fotos_capa').insert({
-      '${ownerPrefix}_id': ownerId,
-      'caminho': path,
-      'enviada_por': userId,
-    });
+    try {
+      await _client.from('fotos_capa').insert({
+        '${ownerPrefix}_id': ownerId,
+        'caminho': path,
+        'enviada_por': userId,
+      });
+    } catch (_) {
+      throw CoverPhotoUploadFailed(
+        CoverPhotoUploadStage.savingRecord,
+        previousPhotoLost: removed.isNotEmpty,
+      );
+    }
   }
 
   /// Remove a capa. Apaga só a linha — o arquivo sai pela fila.

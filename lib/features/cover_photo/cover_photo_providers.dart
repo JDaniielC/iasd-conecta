@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../core/image_upload.dart';
 import '../../core/providers.dart';
 import 'data/cover_photo_repository.dart';
 import 'domain/cover_photo.dart';
@@ -7,6 +8,15 @@ import 'domain/cover_photo.dart';
 final coverPhotoRepositoryProvider = Provider<CoverPhotoRepository>((ref) {
   return CoverPhotoRepository(ref.watch(supabaseClientProvider));
 });
+
+/// O seletor de imagem.
+///
+/// É provider por um motivo só: sem ele, **o caminho de falha do envio não tem
+/// como ser testado**. O widget construía `ImageUpload()` na mão, então
+/// nenhum teste conseguia chegar às etapas que vêm depois da escolha — que são
+/// justamente as que FR-031 governa, e que passaram seis rodadas de
+/// convergência sem um teste sequer.
+final imageUploadProvider = Provider<ImageUpload>((ref) => ImageUpload());
 
 /// A capa de um Grupo, ou `null` se ele não tem. **Grupo sem capa é estado
 /// normal**, não erro nem carregamento eterno (FR-002).

@@ -147,7 +147,7 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
 
     setState(() => _busy = true);
     try {
-      final image = await ImageUpload().pick(
+      final image = await ref.read(imageUploadProvider).pick(
         maxBytes: coverPhotoMaxBytes,
         allowedMimeTypes: coverPhotoAllowedMimeTypes,
       );
@@ -170,13 +170,49 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
       // A mensagem já vem em português e pronta para a tela — a tela não
       // traduz nada.
       _say(e.message);
+    } on CoverPhotoUploadFailed catch (e) {
+      // FR-031: a tela mostra o estado REAL, e é no erro que isso importa.
+      // Antes, o caminho de falha não invalidava nada, então a capa que
+      // acabara de ser destruída continuava na tela — a pessoa lia "tente de
+      // novo" com a prova visual de que nada tinha acontecido.
+      _invalidatePhoto();
+      if (e.previousPhotoLost) {
+        // O arquivo da capa anterior já entrou na fila quando a linha saiu.
+        // Drenar aqui não é conserto: é o caminho normal de remoção seguindo
+        // adiante. O que a spec proíbe é reparar sozinho o que a pessoa
+        // consegue refazer (FR-032) — e reenviar a capa é com ela.
+        await ref.read(coverPhotoRepositoryProvider).requestDrain();
+      }
+      _say(_uploadFailureMessage(e));
     } catch (_) {
-      // FR-010/SC-009: falha de envio não altera o Grupo/Ação e não derruba a
-      // tela. Nada foi gravado, e quem estava preenchendo algo continua com o
-      // que preencheu.
-      _say('Não deu pra enviar a imagem agora. Tente de novo.');
+      // Só sobra o que acontece ANTES de qualquer escrita. Nada mudou, e a
+      // frase pode dizer isso (FR-010/SC-009).
+      _say('Não deu pra enviar a imagem agora. Nada foi alterado.');
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  /// O que a pessoa lê quando o envio para no meio (FR-031).
+  ///
+  /// Uma frase por estado, porque os estados são diferentes. A regra que as
+  /// separa: **só diz "nada foi alterado" quando nada foi alterado.**
+  String _uploadFailureMessage(CoverPhotoUploadFailed failure) {
+    final owner = widget.groupId != null ? 'O Grupo' : 'A Ação';
+    switch (failure.stage) {
+      case CoverPhotoUploadStage.sendingFile:
+        return 'Não deu pra enviar a imagem. Nada foi alterado.';
+      case CoverPhotoUploadStage.removingPrevious:
+        // O arquivo novo subiu e ficou sem dono, mas isso não é assunto de
+        // quem está na tela: ninguém o vê e ninguém o refaz. A varredura
+        // recolhe em até 24 horas (FR-033, SC-010).
+        return 'Não deu pra trocar a capa. Nada foi alterado.';
+      case CoverPhotoUploadStage.savingRecord:
+        return failure.previousPhotoLost
+            ? 'A capa anterior saiu do ar e a nova não foi salva. '
+                '$owner está sem capa agora — envie a imagem de novo.'
+            : 'A imagem não foi salva. $owner continua sem capa — '
+                'envie de novo.';
     }
   }
 
@@ -190,7 +226,15 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
       // gratuito para junto com o banco pausado. Não lança.
       await repository.requestDrain();
     } catch (_) {
-      _say('Não deu pra remover a imagem agora. Tente de novo.');
+      // FR-031, segunda metade: a tela mostra o estado REAL. O erro aqui é
+      // quase sempre tempo esgotado de rede, e nesse caso o cliente **não
+      // sabe** se a remoção aconteceu — a resposta é que se perdeu, não
+      // necessariamente a operação. Sem reler, a imagem que talvez já tenha
+      // saído do ar continua na tela, e a frase antiga ("Tente de novo")
+      // afirmava que nada havia mudado.
+      _invalidatePhoto();
+      _say('Não deu pra confirmar a remoção. A tela está mostrando o que vale '
+          'agora — confira antes de tentar de novo.');
     } finally {
       if (mounted) setState(() => _busy = false);
     }

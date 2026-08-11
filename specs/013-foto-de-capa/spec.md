@@ -36,6 +36,29 @@ Terceiro: `CONTEXT.md`, na entrada Administrador do distrito, diz "cuida de mode
 excepcionais. Escopo exato de moderação ainda não detalhado". Esta feature é o primeiro
 detalhamento concreto desse escopo.
 
+## Clarifications
+
+### Session 2026-08-10
+
+- Q: Quando uma operação de imagem falha no meio (o arquivo subiu mas a linha não gravou, ou a
+  linha sumiu mas o arquivo não saiu), qual é o comportamento exigido? → A: Falha visível, sem
+  compensar — a operação para, diz com precisão o que ficou pela metade, e não tenta consertar
+  sozinha; a pessoa refaz.
+- Q: Um arquivo que ficou no armazenamento sem nenhum registro que o referencie — qual o prazo
+  máximo aceitável até ele ser removido? → A: 24 horas.
+
+**O princípio que as duas respostas formam, e que decide os casos futuros**: *a pessoa cuida do
+que ela vê e consegue refazer; a máquina cuida só do que a pessoa não tem como ver.* Capa
+perdida numa troca malsucedida a pessoa vê — então o app conta a verdade e ela reenvia, sem
+reparo automático no meio. Arquivo órfão ninguém enxerga nem consegue refazer — então a máquina
+recolhe, dentro de um prazo declarado. O que é proibido é esconder a falha atrás de uma
+mensagem que diz que nada aconteceu.
+
+**Por que isto entrou na spec depois de seis rodadas de convergência**: dos 20 defeitos que a
+convergência achou, 10 estavam no caminho de remoção, e não eram independentes — cada conserto
+abria o seguinte, porque o comportamento exigido em falha parcial nunca tinha sido escrito.
+Cada rodada inventava a resposta de novo. Está escrito agora.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Dar cara ao Grupo e à Ação, com orientação clara (Priority: P1)
@@ -274,6 +297,21 @@ alcançável por qualquer caminho.
 - **FR-030**: A Política DEVE declarar que o app **não** solicita nem verifica consentimento
   de responsável para imagem de menor, e que por isso imagem de menor não deve ser enviada.
 
+### Falha no meio do caminho (US1, US2)
+
+- **FR-031**: Quando uma operação de imagem falha **depois de já ter mudado alguma coisa**, o
+  app DEVE dizer **o que exatamente ficou pela metade**, e a tela DEVE passar a mostrar o
+  estado real. Uma mensagem genérica de "tente de novo" sobre um estado que mudou é proibida:
+  ela informa o contrário do que aconteceu.
+- **FR-032**: O app NÃO DEVE tentar reparar automaticamente o que a pessoa consegue refazer.
+  Numa troca de capa malsucedida, a capa anterior pode se perder — ela é o dado que estava
+  sendo trocado, e FR-010 fala dos **demais** dados —, desde que a pessoa seja informada disso
+  com essas palavras e possa reenviar.
+- **FR-033**: Arquivo que ficou no armazenamento **sem nenhum registro que o referencie** DEVE
+  ser removido automaticamente. Este é o caso oposto ao de FR-032: não há tela onde ele
+  apareça, não há pessoa que saiba que ele existe, e portanto não há quem o refaça. Prazo em
+  SC-010.
+
 ## Key Entities
 
 - **Foto de capa**: imagem única e opcional associada a um Grupo **ou** a uma Ação. Guarda quem
@@ -339,6 +377,10 @@ aberto na entrada do Administrador do distrito.
   Administrador do distrito em 100% dos casos.
 - **SC-009**: 0 dados de Grupo, Ação, presença ou Perfil alterados por qualquer operação de
   imagem — verificado antes e depois de enviar, trocar e remover.
+- **SC-010**: Um arquivo sem nenhum registro que o referencie deixa de existir em **no máximo
+  24 horas** — verificável por consulta, sem varrer o armazenamento à mão. Cobre o caso que
+  SC-005 não menciona: SC-005 lista quatro eventos de exclusão, e este arquivo não nasce de
+  nenhum deles, mas de um envio que falhou pela metade.
 
 ## Assumptions
 

@@ -92,9 +92,24 @@ class _ReportList extends ConsumerWidget {
       }
       ref.invalidate(pendingReportedImagesProvider);
     } catch (_) {
+      // FR-031: mesma razão do editor de capa. Num erro de rede o cliente não
+      // sabe se a remoção aconteceu, e uma imagem denunciada continuar na
+      // lista de pendências — ou sumir dela sem ter saído do ar — são os dois
+      // enganos que esta tela não pode cometer. Relê tudo e mostra o que vale.
+      ref.invalidate(pendingReportedImagesProvider);
+      if (image.groupId != null) {
+        ref.invalidate(groupCoverPhotoProvider(image.groupId!));
+        ref.invalidate(groupCoverPhotosProvider);
+      } else if (image.actionId != null) {
+        ref.invalidate(actionCoverPhotoProvider(image.actionId!));
+        ref.invalidate(actionCoverPhotosProvider);
+      }
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Não deu pra resolver agora. Tente de novo.')),
+        const SnackBar(
+          content: Text('Não deu pra confirmar. A lista está mostrando o que '
+              'vale agora — confira antes de tentar de novo.'),
+        ),
       );
     }
   }

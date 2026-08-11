@@ -62,3 +62,42 @@ const coverPhotoAllowedMimeTypes = <String>{
   'image/png',
   'image/webp',
 };
+
+/// Onde o envio parou.
+///
+/// Existe porque as três etapas do envio deixam estados **opostos** quando
+/// falham, e até a feature 013 as três recebiam a mesma frase: *"Não deu pra
+/// enviar a imagem agora. Tente de novo."* Numa delas essa frase é verdadeira;
+/// noutra, a capa que existia acabou de ser destruída e a pessoa está sendo
+/// informada de que nada aconteceu (FR-031).
+enum CoverPhotoUploadStage {
+  /// O arquivo não subiu. Nada mudou em lugar nenhum.
+  sendingFile,
+
+  /// O arquivo subiu, mas a linha antiga não saiu. A capa atual continua no
+  /// ar; o arquivo novo ficou sem dono e é recolhido pela varredura (FR-033).
+  removingPrevious,
+
+  /// O arquivo subiu, a linha antiga saiu, e a nova não entrou. Se havia capa
+  /// antes, ela **foi perdida** — e é isso que a pessoa precisa ouvir.
+  savingRecord,
+}
+
+/// Envio de capa que parou no meio.
+///
+/// Carrega a etapa e se havia capa antes, porque são esses dois dados que
+/// decidem o que a tela conta. A frase em si mora na camada de tela, junto do
+/// resto do que a pessoa lê.
+class CoverPhotoUploadFailed implements Exception {
+  const CoverPhotoUploadFailed(this.stage, {this.previousPhotoLost = false});
+
+  final CoverPhotoUploadStage stage;
+
+  /// Havia capa, e ela deixou de existir sem que a nova entrasse no lugar.
+  final bool previousPhotoLost;
+
+  @override
+  String toString() =>
+      'CoverPhotoUploadFailed(${stage.name}, previousPhotoLost: '
+      '$previousPhotoLost)';
+}

@@ -253,12 +253,21 @@ Não se passou a filtrar o que entra no arquivo: **passou a não existir arquivo
 Verificado depois do build: `build/web/assets/.env` não existe, e nenhum arquivo
 do bundle contém nome de chave nem token.
 
+## Contenção — 2026-08-11
+
+- **Senha do Administrador trocada.**
+- **O arquivo saiu do ar**, conferido na origem e não só na borda:
+  `https://storage.googleapis.com/conecta-iasd-site/assets/.env` → **404**, com
+  `index.html` do mesmo bucket → **200**. O objeto não existe mais no bucket; não
+  é o CDN escondendo.
+- **A causa foi removida do código**: `.env` não é mais asset, e tanto o workflow
+  quanto o `make deploy-web` recusam publicar se um `.env` reaparecer no bundle.
+
 ## O que continua em aberto — e só o dono do app resolve
 
 O conserto fecha o **caminho**. Ele não desfaz o que já foi publicado.
 
-1. **Trocar a senha do Administrador que foi ao ar.** Enquanto ela for a mesma,
-   o conserto não protege nada: quem baixou o arquivo continua com ela.
+1. ~~**Trocar a senha do Administrador que foi ao ar.**~~ **Feito em 2026-08-11.**
 2. **Conferir o que mais estava naquele `.env`.** O `.env.example` deste
    repositório lista `SUPABASE_SERVICE_ROLE_KEY` e variáveis `ADMIN_*` ao lado
    das chaves públicas. Se a chave de serviço estava no arquivo publicado, ela

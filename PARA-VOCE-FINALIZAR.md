@@ -2,37 +2,40 @@
 
 **Atualizado**: 2026-08-10 | **Base**: `main`
 
-Sobraram **18 itens**, e **nenhum é código**. Quatro são urgentes e vêm do vazamento do `.env`;
-os outros catorze são medição, aparelho ou tempo.
+Sobraram **17 itens**, e **nenhum é código**. Três vêm do vazamento do `.env`; os outros
+catorze são medição, aparelho ou tempo.
 
 O que eu já verifiquei saiu daqui: está em `PENDENCIAS.md` § 5, para ninguém refazer.
 
 ---
 
-## 0. Urgente — o `.env` que foi ao ar (itens 30 a 33)
+## 0. Urgente — o `.env` que foi ao ar (itens 31 a 33)
 
-O conserto está feito e mergeado: `.env` não é mais asset, as chaves entram por
-`--dart-define`, e o workflow e o `Makefile` recusam publicar se um `.env` aparecer no build.
-**Isso fecha o caminho. Não desfaz o que já foi publicado.**
+**Feito em 11/08**: a senha do Administrador foi trocada (era o item 30), e o arquivo saiu do
+ar — conferido direto no bucket, sem CDN na frente:
+`https://storage.googleapis.com/conecta-iasd-site/assets/.env` devolve **404**, enquanto
+`index.html` do mesmo bucket devolve **200**. Ou seja, o objeto não existe mais na origem; não
+é o CDN escondendo.
 
-**Item 30** — **trocar a senha do Administrador que foi ao ar.** Enquanto for a mesma, o
-conserto não protege nada: quem baixou o arquivo continua com ela.
+**Item 31** — descobrir **o que mais** estava naquele arquivo. O `.env` da máquina hoje tem só
+`SUPABASE_URL` e `SUPABASE_PUBLISHABLE_KEY`, mas isso é indício e não prova: ele pode ter sido
+enxugado depois. Quem viu o conteúdo real foi o **pentest**, que baixou o arquivo enquanto
+estava no ar — a resposta está no relatório dele.
 
-**Item 31** — conferir **o que mais** estava naquele `.env`. O `.env.example` lista
-`SUPABASE_SERVICE_ROLE_KEY` e variáveis `ADMIN_*` ao lado das chaves públicas. Se a chave de
-serviço estava lá, ela **ignora RLS** e precisa ser rotacionada no painel do Supabase — é a
-chave mais perigosa do projeto.
+**Na dúvida, rotacione a `SUPABASE_SERVICE_ROLE_KEY` mesmo assim.** Ela ignora RLS, e o custo de
+rotacionar aqui é baixo: quem a usa é o `scripts/bootstrap_admin.sh` (local) e a Edge Function,
+que a recebe injetada pelo próprio Supabase. O custo de não rotacionar, se ela vazou, é o banco
+inteiro.
 
 **Item 32** — estimar a **janela de exposição**: do build que publicou até o deploy que o
 substituiu. O CDN pode ter servido cópia por mais tempo que o bucket.
 
-**Item 33** — decidir se houve **incidente com dado pessoal**. Só credencial vazada, sem
-indício de acesso, não gera comunicação à ANPD; chave de serviço vazada muda o alcance para o
-banco inteiro, e muda a decisão. Registre a conclusão em `REVISAO-JURIDICA.md` com data,
-qualquer que seja ela.
+**Item 33** — decidir se houve **incidente com dado pessoal**. Só credencial vazada, sem indício
+de acesso, não gera comunicação à ANPD; chave de serviço vazada muda o alcance para o banco
+inteiro, e muda a decisão. Registre a conclusão em `REVISAO-JURIDICA.md` com data, qualquer que
+seja ela. **O item 31 decide este.**
 
-Os quatro dependem de informação que só quem publicou tem. O registro completo do incidente
-está em `SECURITY-AUDIT.md`, no fim.
+O registro completo do incidente está em `SECURITY-AUDIT.md`, no fim.
 
 ---
 

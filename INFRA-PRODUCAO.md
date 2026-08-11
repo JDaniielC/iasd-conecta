@@ -317,3 +317,83 @@ máquina que ninguém alcança, e o deploy não acusa nada.
 
 O comando de publicação está no `README.md`, seção Deploy, e não é repetido aqui
 de propósito: procedimento em dois lugares é procedimento que diverge.
+
+---
+
+## 6. Enviar migrations para produção
+
+O schema de produção é o mesmo `supabase/migrations/` do repositório, aplicado
+por `supabase db push`. O projeto já está vinculado (`supabase/.temp/project-ref`
+= `mbfcnebyxzoagwatjxuh`), então `link` não precisa ser refeito.
+
+> 🔴 **Não há backup.** Decisão registrada de 2026-08-10 (opção C, risco aceito):
+> não existe cópia de onde restaurar. `db push` aplica DDL direto no banco que
+> atende as pessoas, e uma migration que falhe no meio deixa o schema num estado
+> intermediário que **ninguém desfaz por comando**. Leia a seção 4 antes de rodar
+> a primeira vez.
+
+### Passo 1 — o que já está lá, e o que falta (só leitura)
+
+```bash
+supabase migration list
+```
+
+Cada linha traz `local` e `remote`. O que tem `remote` vazio ainda não foi
+aplicado. Em 2026-08-11: 17 aplicadas, 14 pendentes.
+
+### Passo 2 — o que seria aplicado, sem aplicar (só leitura)
+
+```bash
+supabase db push --dry-run
+```
+
+Imprime a lista exata de arquivos que subiriam, na ordem. **Confira que a lista
+bate com o passo 1.** Se aparecer arquivo que você não esperava, pare: ou a
+árvore de trabalho tem migration não commitada, ou alguém aplicou algo à mão no
+banco remoto e o histórico divergiu.
+
+### Passo 3 — aplicar
+
+```bash
+supabase db push
+```
+
+Sem `--dry-run` ele pede confirmação e então aplica, uma migration por vez, na
+ordem. Se uma falhar, **as anteriores já foram aplicadas e continuam aplicadas**:
+o comando não é transacional entre arquivos.
+
+### Onde isto costuma falhar, e o que fazer
+
+**`create extension pg_cron` / `pg_net`** (`20260810110000_drenagem_capas.sql`) é
+o ponto mais provável de recusa: no Supabase gerenciado, extensão costuma ser
+habilitada pelo painel (Database → Extensions), e nem todo papel pode criar por
+SQL. Se der `permission denied`, habilite as duas pelo painel e rode `db push` de
+novo — as migrations anteriores já aplicadas serão puladas, porque o CLI registra
+cada uma ao concluir.
+
+**Migration que aplica pela metade** não tem desfazer automático. O caminho é
+escrever uma migration nova que corrija, nunca editar a que já foi aplicada — o
+CLI compara pelo nome do arquivo, então editar uma já registrada faz o remoto
+ficar diferente do repositório em silêncio.
+
+### Passo 4 — o que o push NÃO faz, e produção precisa
+
+Duas coisas ficam faltando **de propósito**, e sem elas a remoção de imagem não
+acontece (feature 013):
+
+1. **Apontar a drenagem para a função de produção.** A migration
+   `20260810140000` apaga o endereço de desenvolvimento e não põe outro: a
+   configuração fica vazia, e a drenagem passa a **recusar em voz alta** até
+   alguém rodar o `insert` da seção 3 deste documento.
+2. **Publicar a Edge Function**: `supabase functions deploy drenar-capas`. Ela
+   recebe a chave de serviço do próprio ambiente do Supabase; nenhum segredo é
+   guardado no banco nem no repositório.
+
+### Passo 5 — conferir depois
+
+```bash
+supabase migration list                       # nenhuma linha com remote vazio
+```
+
+E, no SQL Editor do painel, as duas consultas da seção 3: a de fila parada e a
+das 24 horas. Ambas têm de devolver zero.

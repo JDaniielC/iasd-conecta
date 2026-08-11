@@ -77,6 +77,16 @@ Pra reaplicar o schema do zero (depois de mudar uma migration):
 supabase db reset
 ```
 
+`db reset` derruba e recria o banco **local**, aplica as migrations na ordem e
+roda `supabase/seed.sql`. É também o gate que prova que a cadeia de migrations
+aplica do zero — rode antes de mandar qualquer coisa para produção.
+
+**Para produção**, o procedimento é outro e está em `INFRA-PRODUCAO.md` § 6: dois
+comandos só de leitura (`supabase migration list` e `supabase db push --dry-run`)
+antes do `supabase db push`, mais os dois passos que o push **não** faz. Não
+repito aqui porque produção não tem backup, e procedimento duplicado é
+procedimento que diverge.
+
 ## Testando manualmente
 
 Além de `flutter run`, útil pra explorar o app com a mão:

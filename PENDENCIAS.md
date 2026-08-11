@@ -33,8 +33,16 @@ exigem produção no ar.
 
 ## 2. Especificar — achado real, sem spec
 
-Os três vieram de verificação durante a implementação, não de auditoria dedicada. Nenhum tem
-spec, e nenhum deve virar código antes de ter.
+Vieram de verificação durante a implementação, não de auditoria dedicada. Nenhum deve virar
+código antes de ter spec.
+
+> **Cinco destes viraram change OpenSpec em 2026-08-11** (`openspec/changes/`), com proposal,
+> spec-delta, design e tasks: `endurecer-grant-update-perfis` (§ 2.1),
+> `revogar-truncate-de-anon-e-authenticated` (§ 2.2), `destravar-cadastro-antigo-de-crianca`
+> (§ 2.3), `travar-deploy-com-teste-vermelho` (§ 2.4) e `estabilizar-suite-de-integracao`
+> (§ 2.6). As seções abaixo continuam sendo o registro do **achado**; a change é o plano.
+> O § 2.5 não virou change de propósito — é dívida com custo já avaliado e decisão de não
+> fazer, não trabalho pendente.
 
 ### 2.1 `grant update` em `perfis` sem recorte de coluna
 
@@ -175,10 +183,7 @@ esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 
 ### Exige produção no ar
 
-| Onde | O quê |
-|---|---|
-| 021 quickstart 3.2 | `curl` anônimo contra o ambiente publicado, provando que `votos` devolve `[]` lá também |
-| 018 | Mesma coisa para `liderancas` |
+Fechado em 2026-08-11, depois do deploy e do push das migrations de 018/021: `curl -s https://mbfcnebyxzoagwatjxuh.supabase.co/rest/v1/votos?select=* -H "apikey: <publishable-key>"` e o mesmo para `liderancas` — ambos `[]`, `HTTP 200`, anônimo. Nada pendente nesta seção.
 
 ---
 

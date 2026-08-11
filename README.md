@@ -213,6 +213,14 @@ com teste vermelho vira artifact do mesmo jeito.
   Categoria de Grupo ao criar Ação avulsa ou propor Ação candidata,
   mantido pelo Administrador do distrito (feature 008, código Dart em
   inglês) — ver [specs/008-acao-sugerida](./specs/008-acao-sugerida)
+- `openspec/changes/` — **onde trabalho novo nasce**. Uma change por assunto:
+  `proposal.md` (o quê e por quê), `specs/<capability>/spec.md` (delta, só o que
+  muda), `design.md` (decisões travadas), `tasks.md`. Fluxo: `/opsx:propose` →
+  `/opsx:apply` → convergência → `/opsx:archive`. Contexto e regras do projeto
+  em `openspec/config.yaml`.
+- `specs/` — as 22 features no formato Spec Kit, **arquivo histórico**. Não se
+  reescrevem: a research delas guarda decisão medida que ainda é consultada.
+  Feature nova não entra aqui.
 - `supabase/migrations/` — schema versionado (fonte de verdade em
   `specs/<feature>/contracts/schema.sql` de cada feature)
 

@@ -1,0 +1,60 @@
+schema: spec-driven
+
+context: |
+  Conecta IASD — app de um distrito da Igreja Adventista para organizar
+  Grupos/Ministérios e Ações (encontros). Flutter Web + Android/iOS, Riverpod,
+  go_router. Banco Postgres no Supabase, com RLS como fonte de verdade de quem
+  vê o quê — a tela nunca é a garantia.
+
+  IDIOMA: specs, proposals e tasks se escrevem em **português**, com DEVE /
+  NÃO DEVE / PODE no lugar de MUST / MUST NOT / MAY. É a Constituição do
+  projeto (Princípio I): identificador Dart em inglês, chave de banco e texto
+  de tela em português. Consequência prática: `openspec validate --strict`
+  emite WARNING de RFC 2119 e sai com exit 1 em toda change deste repo. O gate
+  aqui é `openspec validate` sem `--strict`.
+
+  Constituição em `.specify/memory/constitution.md`: I linguagem ubíqua,
+  II privacidade e LGPD (inegociável), III desenvolvimento guiado por spec,
+  IV regra de domínio testada (inegociável), V simplicidade.
+
+  Ledger do projeto, que não vive em spec e não deve ser duplicado numa change:
+  PENDENCIAS.md (o que está aberto e por quê), INFRA-PRODUCAO.md (o que
+  produção exige à mão), SECURITY-AUDIT.md (achados e incidentes),
+  MAPA-DE-DADOS.md (todo dado pessoal com evidência arquivo:linha),
+  REVISAO-JURIDICA.md (decisões com efeito legal), CONTEXT.md (glossário).
+
+  As features 001 a 022 estão em `specs/` no formato Spec Kit e são **arquivo
+  histórico** — não se reescrevem. Trabalho novo nasce aqui.
+
+rules:
+  proposal:
+    - Diga o problema com evidência concreta, não com adjetivo. Número medido,
+      arquivo:linha, ou o caso real que aconteceu.
+    - Se o achado já está num ledger (PENDENCIAS, SECURITY-AUDIT), aponte para
+      ele em vez de recontar.
+  specs:
+    - Escreva cenários sobre o que a pessoa observa, não sobre a implementação.
+    - Cubra o caminho de falha, não só o feliz. Numa sequência de escritas, diga
+      o que acontece quando a etapa do meio falha — é onde os defeitos deste
+      projeto moram.
+  design:
+    - Registre a alternativa recusada e o motivo. É o que impede a decisão de
+      ser refeita daqui a três meses.
+  tasks:
+    - Toda tarefa de verificação pede número real. "Os testes passaram" sem
+      contagem não é verificação.
+
+operations:
+  apply:
+    guidance:
+      - Rode os gates e cite os números: flutter analyze, flutter test
+        test/unit test/widget, dart test test/integration (exige supabase
+        start), flutter build web --release.
+      - Antes de fechar, rode a skill openspec-converge sobre a change. Ela
+        existe porque neste projeto 20 defeitos passaram por analyze limpo,
+        273 testes verdes e revisão de código.
+  archive:
+    guidance:
+      - Só arquive depois de uma passada de convergência sem achado.
+      - Atualize o ledger que a change tocar (PENDENCIAS, SECURITY-AUDIT,
+        INFRA-PRODUCAO), com data e números.

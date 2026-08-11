@@ -35,6 +35,7 @@
 # http://127.0.0.1:54321, e o deploy publicaria o site de produção falando com o
 # Docker de quem publicou — sem erro nenhum na publicação. Há uma guarda abaixo
 # para isso, mas a guarda é a segunda linha de defesa, não a primeira.
+PROJECT := iasd-505120
 BUCKET := gs://conecta-iasd-site
 URL_MAP := conecta-iasd-site-url-map
 ASSET_CACHE_CONTROL := public, max-age=3600
@@ -71,5 +72,5 @@ deploy-web:
 		build/web $(BUCKET)
 	gcloud storage objects update $(BUCKET)/index.html \
 		--cache-control="$(HTML_CACHE_CONTROL)"
-	gcloud compute url-maps invalidate-cdn-cache $(URL_MAP) --path "/*"
+	gcloud compute url-maps invalidate-cdn-cache $(URL_MAP) --project=$(PROJECT) --path "/*"
 	@echo "Publicado. Site: http://35.211.105.176"

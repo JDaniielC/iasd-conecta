@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/providers.dart';
 import '../group/group_providers.dart';
 import 'data/action_repository.dart';
+import 'data/actions_seen_repository.dart';
 import 'domain/action.dart';
 
 final actionRepositoryProvider = Provider<ActionRepository>((ref) {
@@ -56,3 +57,33 @@ final confirmationCountsProvider =
     FutureProvider.autoDispose<Map<String, ConfirmationCounts>>((ref) {
   return ref.watch(actionRepositoryProvider).fetchConfirmationCounts();
 });
+
+/// O marcador de "última vez que vi `/acoes`". Nunca fala com o servidor —
+/// ver `ActionsSeenRepository`.
+final actionsSeenRepositoryProvider = Provider<ActionsSeenRepository>((ref) {
+  return const ActionsSeenRepository();
+});
+
+/// Ids de Ação que quem está vendo fechou na faixa de destaque.
+///
+/// **Só em memória, de propósito.** Fechar vale para esta sessão do app: no
+/// próximo cold start o item volta se ainda for avulsa ou ainda for nova pelo
+/// marcador. É decisão explícita do dono do app, não efeito colateral —
+/// gravar isto em disco ou no banco criaria um estado por Ação e por pessoa
+/// que nenhuma tela precisa.
+///
+/// Sem `autoDispose`: sair de `/acoes` e voltar na mesma sessão não pode
+/// ressuscitar o que a pessoa acabou de fechar.
+///
+/// `NotifierProvider`, e não o `StateProvider` previsto no design: o Riverpod
+/// 3 tirou `StateProvider` do export principal (só sobrou em
+/// `flutter_riverpod/legacy.dart`). Mesmo comportamento, API atual.
+class DismissedHighlights extends Notifier<Set<String>> {
+  @override
+  Set<String> build() => const <String>{};
+
+  void dismiss(String actionId) => state = {...state, actionId};
+}
+
+final dismissedHighlightsProvider =
+    NotifierProvider<DismissedHighlights, Set<String>>(DismissedHighlights.new);

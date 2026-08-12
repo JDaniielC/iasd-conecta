@@ -148,6 +148,26 @@ class GroupRepository {
     return rows.map((r) => r['usuario_id'] as String).toList();
   }
 
+  /// Os Grupos de que a pessoa da sessão atual participa, numa consulta só.
+  ///
+  /// Uma consulta para a lista inteira, e não `fetchMemberIds` por card: o
+  /// mesmo N+1 que `ActionRepository.fetchConfirmationCounts` já evita de
+  /// propósito. Sem sessão (Visitante sem Conta) não há o que perguntar —
+  /// devolve vazio sem ir ao servidor.
+  ///
+  /// O filtro por `usuario_id` é explícito porque a RLS de
+  /// `participacoes_grupo` NÃO restringe o select às próprias linhas (é ela
+  /// que permite `fetchMemberIds` listar os membros de um Grupo alheio).
+  Future<Set<String>> fetchMyGroupIds() async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) return const <String>{};
+    final rows = await _client
+        .from('participacoes_grupo')
+        .select('grupo_id')
+        .eq('usuario_id', uid);
+    return rows.map((r) => r['grupo_id'] as String).toSet();
+  }
+
   Future<List<PublicProfile>> fetchMembers(String groupId) async {
     final ids = await fetchMemberIds(groupId);
     final profiles = await Future.wait(ids.map((id) => _fetchPublicProfile(id)));

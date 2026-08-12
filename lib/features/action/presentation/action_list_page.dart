@@ -11,6 +11,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../profile/domain/church.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../../profile/presentation/widgets/missing_profile_banner.dart';
+import '../../group/group_providers.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
 
@@ -50,12 +51,43 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   _ActionSortOrder _sortOrder = _ActionSortOrder.byDate;
   bool _sabbathOnly = false;
 
+  /// O marcador **como estava ao abrir a tela**, e não como está agora.
+  ///
+  /// Precisa ser uma cópia em memória porque [_loadAndMarkSeen] avança o
+  /// marcador na mesma abertura: ler do repositório a cada `build` devolveria
+  /// o valor já avançado, e nenhuma Ação de Grupo jamais apareceria como
+  /// nova.
+  DateTime? _lastSeen;
+
+  @override
+  void initState() {
+    super.initState();
+    // Abrir a tela é o que consome a novidade — mesmo ponto do ciclo de vida
+    // que `NewsPage` usa. Fora do `build`, e uma vez só.
+    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAndMarkSeen());
+  }
+
+  Future<void> _loadAndMarkSeen() async {
+    final repository = ref.read(actionsSeenRepositoryProvider);
+    // Ler ANTES de gravar. Invertido, o destaque de Grupo morreria em
+    // silêncio: o marcador novo já seria posterior a toda Ação existente.
+    final lastSeen = await repository.readLastSeenActionsDate();
+    await repository.writeLastSeenActionsDate(ref.read(clockProvider)());
+    if (!mounted) return;
+    setState(() => _lastSeen = lastSeen);
+  }
+
   @override
   Widget build(BuildContext context) {
     final actionsAsync = ref.watch(actionsWithChurchProvider);
     final countsAsync = ref.watch(confirmationCountsProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final now = ref.watch(clockProvider)();
+    // Uma consulta só para a lista inteira, como as capas e as contagens.
+    // Sem Perfil/Conta a consulta nem sai do aparelho — conjunto vazio, e a
+    // faixa fica só com as Ações avulsas.
+    final myGroupIds = ref.watch(myGroupIdsProvider).value ?? const <String>{};
+    final dismissed = ref.watch(dismissedHighlightsProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -126,8 +158,48 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                         ))
                         .value ??
                     const <String, CoverPhoto>{};
+                // A faixa vive DENTRO do `ListView`, e não numa fatia fixa
+                // acima dele: numa tela de celular com vários Grupos em
+                // destaque, uma fatia fixa comeria a altura toda e deixaria a
+                // lista por período inalcançável. Aqui ela rola junto, e
+                // quando está vazia ocupa zero — nunca sobra um espaço morto.
+                final highlights = [
+                  for (final item in sorted)
+                    if (!dismissed.contains(item.action.id))
+                      if (actionHighlight(
+                            item.action,
+                            myGroupIds: myGroupIds,
+                            lastSeen: _lastSeen,
+                          )
+                          case final highlight?)
+                        (item: item, highlight: highlight),
+                ];
                 return ListView(
                   children: [
+                    if (highlights.isNotEmpty) ...[
+                      const _SectionHeader(name: 'Em destaque'),
+                      for (final entry in highlights)
+                        _ActionCard(
+                          action: entry.item.action,
+                          highlight: entry.highlight,
+                          sabbathHighlight: actionPeriod(
+                                entry.item.action.dateTime,
+                                now,
+                              ) ==
+                              ActionPeriod.sabbath,
+                          happeningNow: actionTimeStatus(
+                                entry.item.action.dateTime,
+                                now,
+                              ) ==
+                              ActionTimeStatus.happeningNow,
+                          counts: countsAsync.value?[entry.item.action.id] ??
+                              const ConfirmationCounts(),
+                          cover: covers[entry.item.action.id],
+                          onDismiss: () => ref
+                              .read(dismissedHighlightsProvider.notifier)
+                              .dismiss(entry.item.action.id),
+                        ),
+                    ],
                     for (final period in _periodOrder)
                       if (byPeriod[period]?.isNotEmpty ?? false) ...[
                         _SectionHeader(name: _periodLabel[period]!, highlighted: period == ActionPeriod.sabbath),
@@ -282,9 +354,19 @@ class _ActionCard extends ConsumerWidget {
     this.happeningNow = false,
     this.counts = const ConfirmationCounts(),
     this.cover,
+    this.highlight,
+    this.onDismiss,
   });
 
   final Action action;
+
+  /// Por que esta Ação está na faixa de destaque — nulo na lista por período,
+  /// que é a mesma de sempre e não muda de aparência.
+  final ActionHighlight? highlight;
+
+  /// Fechar este item da faixa. Nulo fora da faixa: a lista por período não
+  /// tem o que dispensar.
+  final VoidCallback? onDismiss;
 
   /// Já resolvida pela lista, de propósito — o card não consulta nada.
   final CoverPhoto? cover;
@@ -325,20 +407,42 @@ class _ActionCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final tertiary = Theme.of(context).colorScheme.tertiary;
+    final scheme = Theme.of(context).colorScheme;
+    final tertiary = scheme.tertiary;
+    // Sábado fica com a borda quando as duas dimensões valem ao mesmo tempo,
+    // e a origem passa a ser dita pela tarja de cima. São três cores na mesma
+    // tela (tertiary/primary/secondaryContainer) e nenhuma pode virar a
+    // outra — pintar duas bordas concorrentes no mesmo cartão era o jeito
+    // certo de confundir as duas.
+    final borderColor = sabbathHighlight
+        ? tertiary
+        : switch (highlight) {
+            ActionHighlight.district => scheme.primary,
+            ActionHighlight.myGroup => scheme.secondary,
+            null => null,
+          };
+    final tint = sabbathHighlight
+        ? tertiary
+        : switch (highlight) {
+            ActionHighlight.district => scheme.primary,
+            ActionHighlight.myGroup => scheme.secondaryContainer,
+            null => null,
+          };
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-      shape: sabbathHighlight
-          ? RoundedRectangleBorder(
+      shape: borderColor == null
+          ? null
+          : RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: tertiary, width: 2),
-            )
-          : null,
-      color: sabbathHighlight ? tertiary.withValues(alpha: 0.08) : null,
+              side: BorderSide(color: borderColor, width: 2),
+            ),
+      color: tint?.withValues(alpha: 0.08),
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          if (highlight != null)
+            _HighlightBanner(highlight: highlight!, onDismiss: onDismiss),
           // Ação sem capa não deixa buraco: CoverPhotoView ocupa zero.
           CoverPhotoView(
             photo: cover,
@@ -364,6 +468,61 @@ class _ActionCard extends ConsumerWidget {
             isThreeLine: true,
             onTap: () => context.push('/acoes/${action.id}'),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Tarja no topo do cartão em destaque: diz de onde a Ação vem e oferece
+/// fechar.
+///
+/// A origem vira texto, e não só cor: quem não distingue as três cores da
+/// tela (ou usa o app no sol) continua sabendo por que aquele cartão está lá.
+class _HighlightBanner extends StatelessWidget {
+  const _HighlightBanner({required this.highlight, this.onDismiss});
+
+  final ActionHighlight highlight;
+  final VoidCallback? onDismiss;
+
+  @override
+  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
+    final (label, icon, color) = switch (highlight) {
+      ActionHighlight.district => (
+          'Aberta a todo o distrito',
+          Icons.campaign_outlined,
+          scheme.primary,
+        ),
+      ActionHighlight.myGroup => (
+          'Nova em um Grupo seu',
+          Icons.fiber_new_outlined,
+          scheme.secondary,
+        ),
+    };
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.xs, 0),
+      child: Row(
+        children: [
+          Icon(icon, size: 18, color: color),
+          const SizedBox(width: AppSpacing.xs),
+          Expanded(
+            child: Text(
+              label,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ),
+          if (onDismiss != null)
+            IconButton(
+              tooltip: 'Tirar do destaque',
+              icon: const Icon(Icons.close, size: 18),
+              color: color,
+              onPressed: onDismiss,
+            ),
         ],
       ),
     );

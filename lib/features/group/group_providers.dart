@@ -44,3 +44,13 @@ final membersProvider =
     FutureProvider.autoDispose.family<List<PublicProfile>, String>((ref, groupId) {
   return ref.watch(groupRepositoryProvider).fetchMembers(groupId);
 });
+
+/// Os Grupos de que eu participo — uma consulta, não uma por card.
+///
+/// Sem `autoDispose`: a faixa de destaque de `/acoes` consulta isto a cada
+/// abertura da tela, e o resultado muda só quando alguém entra ou sai de um
+/// Grupo. Ver `GroupRepository.fetchMyGroupIds`.
+final myGroupIdsProvider = FutureProvider<Set<String>>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(groupRepositoryProvider).fetchMyGroupIds();
+});

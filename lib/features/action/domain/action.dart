@@ -293,3 +293,43 @@ bool isCreatorOwnName(String actionName, String? creatorDisplayName) {
   return normalizeForNameComparison(actionName) ==
       normalizeForNameComparison(creatorDisplayName);
 }
+
+/// Por que uma Ação está na faixa de destaque de `/acoes`.
+///
+/// Dimensão independente do Sábado (`ActionPeriod.sabbath`): aquele diz
+/// **quando** a Ação acontece, este diz **de onde** ela vem. As duas valem ao
+/// mesmo tempo para a mesma Ação, e a tela precisa mostrar os dois sinais sem
+/// que virem a mesma cor.
+enum ActionHighlight {
+  /// Ação avulsa — sem Grupo. Alcança o distrito inteiro, então entra no
+  /// destaque para qualquer pessoa, com ou sem Perfil, e nunca deixa de
+  /// entrar (não tem "já vi").
+  district,
+
+  /// Ação de um Grupo de que quem está vendo participa, criada depois da
+  /// última vez que essa pessoa abriu `/acoes`. Some do destaque na abertura
+  /// seguinte.
+  myGroup,
+}
+
+/// Por que [action] entra na faixa de destaque — ou `null` se não entra.
+///
+/// [lastSeen] nulo é instalação nova, e a resposta é `null` de propósito, não
+/// por falta de dado: para quem chega agora o app inteiro é novo, e apontar
+/// uma parte dele como novidade não quer dizer nada. É o mesmo dos três
+/// comportamentos de `hasUnseenNewsProvider`.
+///
+/// Ação de Grupo ainda em votação (`isConfirmed == false`) nunca entra: a
+/// spec fala de Ação de Grupo **confirmada**, e uma candidata pode nem
+/// existir depois da apuração.
+ActionHighlight? actionHighlight(
+  Action action, {
+  required Set<String> myGroupIds,
+  required DateTime? lastSeen,
+}) {
+  if (action.groupId == null) return ActionHighlight.district;
+  if (!action.isConfirmed) return null;
+  if (!myGroupIds.contains(action.groupId)) return null;
+  if (lastSeen == null) return null;
+  return action.createdAt.isAfter(lastSeen) ? ActionHighlight.myGroup : null;
+}

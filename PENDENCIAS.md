@@ -114,20 +114,45 @@ aplicada (`grant update` em `perfis` por coluna) que não existe no histórico d
 desta worktree. Isso é característica do Supabase local ser compartilhado entre worktrees por
 porta fixa, não bug desta change.
 
-### 2.3 Cadastro antigo de criança ficou somente-leitura
+### 2.3 Cadastro antigo de criança ficou somente-leitura — **DECIDIDO em 2026-08-12**
 
 Consequência conhecida e aceita da feature 015: um cadastro de criança anterior a ela não tem
 os dados do responsável, e a check constraint recusa **qualquer** `update` naquela linha —
-inclusive de campo sem relação, como telefone. Localmente são **0** cadastros assim; em
-produção, desconhecido.
+inclusive de campo sem relação, como telefone. Localmente são **0** cadastros assim.
 
 A pessoa não fica presa: a tela traduz a recusa numa frase pedindo que escreva para o e-mail
 de contato, e a **exclusão de conta continua funcionando** (a anonimização zera `idade` e as
-constraints passam), então o art. 18 VI está a salvo.
+constraints passam), então o art. 18 VI está a salvo. Isso é **provado por teste**, não
+suposto: `test/integration/autorizacao_responsavel_test.dart`, grupo "cadastro antigo,
+anterior à feature", caso "LGPD art. 18 VI" — a linha é semeada com a constraint derrubada
+dentro de uma transação (é o equivalente de uma linha que já estava lá quando a migration
+entrou), e a exclusão conclui. **13/13** naquele arquivo em 2026-08-12.
 
-O que falta decidir: corrigir retroativamente esses cadastros, ou deixar como está. Se
-corrigir, é spec própria — envolve pedir a autorização a quem já está cadastrado, e a spec da
-015 excluiu isso de propósito.
+**Decisão de 2026-08-12 (change `destravar-cadastro-antigo-de-crianca`): saída A — não fazer
+nada, e registrar.** **Medido em produção**, não deduzido: a consulta abaixo rodou no SQL
+Editor do painel, projeto `mbfcnebyxzoagwatjxuh` (`iasd-conecta-vsa`, branch `main`,
+PRODUCTION), role `postgres`, em 2026-08-12 — **count = 0**.
+
+```sql
+select count(*) from public.perfis
+where idade is not null
+  and idade < public.limiar_crianca()
+  and (responsavel_nome is null
+    or responsavel_contato is null
+    or autorizacao_responsavel_em is null
+    or autorizacao_responsavel_versao is null);
+```
+
+O zero era o esperado pelas datas, e elas ficam registradas porque explicam **por que** zero:
+produção nasceu em 2026-08-07, a constraint da 015 entrou lá no push de 2026-08-11, e o
+lançamento ao distrito é 2026-10-06 — a única janela em que um cadastro assim poderia ter
+nascido eram esses quatro dias, com produção fechada ao público. Mas o que fecha este item é a
+medição, não o raciocínio.
+
+Se o número deixar de ser zero depois do lançamento, o caminho é o e-mail de contato (saída B)
+e, só se passar de um punhado, a spec própria de autorização retroativa (saída C) — que a 015
+excluiu de propósito. As três saídas, com custo, estão em
+`openspec/changes/.../destravar-cadastro-antigo-de-crianca/design.md`.
 
 ### 2.4 `deploy-web.yml` publica mesmo com teste vermelho
 

@@ -56,3 +56,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Worktrees locais (superpowers/using-git-worktrees)
+.worktrees/

@@ -64,6 +64,22 @@ uma Ação avulsa cancelada subiria ao topo da tela. Promover o que já foi
 desmarcado é convidar para o que não vai acontecer; ela continua na lista por
 período com a marcação de cancelada, como sempre esteve.
 
+**O cartão da faixa é dedicado e baixo, não o `_ActionCard` da lista.**
+Decidido medindo em largura de celular, que é como o app é usado. Com o cartão
+cheio (capa, contagem de confirmados, três linhas) a faixa custava ~148px por
+item: num iPhone 14 (390x844) três destaques mais a barra de filtro punham o
+primeiro cabeçalho de período fora da tela. O cartão da faixa ficou com o que
+decide se vale abrir — de onde vem, o quê, quando e onde — e mede 80px; o
+cabeçalho volta para y=800, dentro da dobra. Capa e contagem continuam a um
+toque, no cartão cheio logo abaixo. Registrado em teste que mede a posição em
+390x844, não no olho.
+
+**O botão de fechar é sobreposto, não um item da linha do título.** O alvo de
+toque de 48px que SC-004 exige esticava a linha da tarja para 48 e abria um vão
+fora da escala do resto do cartão. Em `Stack`, ele mantém os 48 tocáveis e a
+linha volta à altura do texto — 20px a menos por cartão, sem ceder
+acessibilidade.
+
 **Dois canais visuais distintos para as duas dimensões de destaque.**
 Sábado continua em `colorScheme.tertiary` (borda+fundo+ícone), sem mudar.
 A faixa nova usa:

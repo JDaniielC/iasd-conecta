@@ -92,8 +92,8 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-const _forte = 'Aberta a todo o distrito';
-const _neutro = 'Nova em um Grupo seu';
+const _forte = 'Todo o distrito';
+const _neutro = 'Novo no seu Grupo';
 
 void main() {
   group('Ação avulsa entra sempre no destaque forte (5.1)', () {
@@ -457,6 +457,35 @@ void main() {
       expect(find.text('Ação 4'), findsWidgets);
       expect(find.textContaining('Ver mais'), findsNothing);
     });
+  });
+
+  testWidgets('num celular a faixa cheia não empurra a lista para fora da dobra',
+      (tester) async {
+    // iPhone 14 em pixels lógicos. Esta é a tela que importa: o app é usado no
+    // celular, e a faixa foi desenhada num monitor largo onde o problema não
+    // aparecia. Com o cartão cheio da lista (~148px cada) três destaques mais
+    // a barra de filtro passavam de 844 e o primeiro cabeçalho de período
+    // nascia fora da tela.
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    await _pump(tester, actions: [
+      for (var i = 1; i <= 5; i++)
+        _action(
+          id: 'a$i',
+          name: 'Ação $i',
+          dateTime: _foraDoSabado.add(Duration(days: i)),
+        ),
+    ]);
+
+    expect(find.text(_forte), findsNWidgets(3));
+    // O cabeçalho do primeiro período precisa estar dentro dos 844 — não só
+    // construído pelo `ListView`, que constrói um tanto além da dobra.
+    final cabecalho = tester.getTopLeft(find.text('Outras datas')).dy;
+    expect(cabecalho, lessThan(844),
+        reason: 'a faixa empurrou a lista por período para fora da tela do celular');
   });
 
   testWidgets('lista sem nenhuma Ação em destaque não abre a faixa', (tester) async {

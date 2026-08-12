@@ -9,11 +9,13 @@ import 'package:iasd_conecta/features/profile/domain/church.dart';
 
 const _churches = [Church(id: 'igreja-1', name: 'Central')];
 
-/// **Por que tanto `findsNWidgets(2)` aqui.** Toda Ação deste arquivo é
+/// **Por que `findsNWidgets(2)` no nome da Ação.** Toda Ação deste arquivo é
 /// avulsa, e a faixa de destaque (feature `destaque-de-acoes`) põe Ação
 /// avulsa no topo *sem* tirá-la da lista por período — a spec exige as duas
-/// aparições. Então o mesmo texto é encontrado duas vezes: uma na faixa,
-/// outra na seção do período. `findsOneWidget` aqui voltaria a falhar.
+/// aparições, então o nome aparece duas vezes.
+///
+/// Contagem de confirmados e "Acontecendo agora" continuam uma vez só: o
+/// cartão da faixa é compacto e não mostra nenhum dos dois.
 
 /// Sempre cai numa sexta-feira 18h — dentro da janela do Sábado adventista
 /// (sexta 17:30 - sábado 17:30) independente de quando o teste roda.
@@ -184,7 +186,7 @@ void main() {
       ]);
 
       expect(find.text('Ensaio em andamento'), findsNWidgets(2));
-      expect(find.textContaining('Acontecendo agora'), findsNWidgets(2));
+      expect(find.textContaining('Acontecendo agora'), findsOneWidget);
     });
 
     testWidgets('Ação futura aparece sem a sinalização de acontecendo agora',
@@ -242,7 +244,7 @@ void main() {
         action: upcomingAction(),
         counts: const ConfirmationCounts(confirmed: 3),
       );
-      expect(find.textContaining('3 confirmados'), findsNWidgets(2));
+      expect(find.textContaining('3 confirmados'), findsOneWidget);
     });
 
     testWidgets('1 confirmado usa o singular (FR-010)', (tester) async {
@@ -251,7 +253,7 @@ void main() {
         action: upcomingAction(),
         counts: const ConfirmationCounts(confirmed: 1),
       );
-      expect(find.textContaining('1 confirmado'), findsNWidgets(2));
+      expect(find.textContaining('1 confirmado'), findsOneWidget);
       expect(find.textContaining('1 confirmados'), findsNothing);
     });
 
@@ -261,7 +263,7 @@ void main() {
         action: upcomingAction(),
         counts: const ConfirmationCounts(),
       );
-      expect(find.textContaining('Ninguém confirmou ainda'), findsNWidgets(2));
+      expect(find.textContaining('Ninguém confirmou ainda'), findsOneWidget);
       expect(find.textContaining('0 confirmado'), findsNothing);
     });
 
@@ -271,7 +273,7 @@ void main() {
         action: upcomingAction(capacity: 10),
         counts: const ConfirmationCounts(confirmed: 4),
       );
-      expect(find.textContaining('4 de 10 vagas'), findsNWidgets(2));
+      expect(find.textContaining('4 de 10 vagas'), findsOneWidget);
     });
 
     testWidgets('lotada com fila mostra a fila separada da contagem (FR-013)',

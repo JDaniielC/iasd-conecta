@@ -19,13 +19,27 @@ enum _ActionSortOrder { byDate, mostRecent, name }
 
 const _allChurches = '__todas__';
 
+/// Largura **útil** (já descontado o respiro lateral da tela) abaixo da qual
+/// a tela é tratada como celular.
+///
+/// É a largura onde "Todas as Igrejas" e "Mais recentes" ainda cabem lado a
+/// lado nos dois filtros — medida, não um tamanho de aparelho escolhido a
+/// dedo. Só a barra de filtro usa este limiar — a faixa de destaque não
+/// precisa mais de corte por largura.
+const _narrowContentWidth = 480.0;
+
 /// Quantos cartões a faixa de destaque mostra antes de "ver mais".
 ///
 /// Existe porque toda Ação avulsa entra na faixa **sem sair** da lista por
 /// período (a spec exige as duas aparições): num distrito onde a maioria das
 /// Ações é avulsa, uma faixa sem corte vira uma segunda cópia da lista e
-/// empurra o primeiro cabeçalho de período para fora da tela. Três é o que
-/// cabe acima da dobra num celular sem esconder que a lista continua abaixo.
+/// empurra o primeiro cabeçalho de período para fora da tela.
+///
+/// Três serve no celular porque o cartão da faixa é baixo (80px medidos): num
+/// iPhone 14 (390x844) o primeiro cabeçalho de período fica em y=800, dentro
+/// da dobra. Chegou a ser dois enquanto o botão de fechar esticava o cartão
+/// para 100px — tirado ele do fluxo, a conta voltou a fechar com três em
+/// qualquer largura, e um número só é menos coisa para errar depois.
 const _maxHighlightsCollapsed = 3;
 
 const _periodOrder = [
@@ -196,7 +210,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                     if (highlights.isNotEmpty) ...[
                       const _SectionHeader(name: 'Em destaque'),
                       for (final entry in visibleHighlights)
-                        _ActionCard(
+                        _HighlightCard(
                           action: entry.item.action,
                           highlight: entry.highlight,
                           sabbathHighlight: actionPeriod(
@@ -204,14 +218,6 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                                 now,
                               ) ==
                               ActionPeriod.sabbath,
-                          happeningNow: actionTimeStatus(
-                                entry.item.action.dateTime,
-                                now,
-                              ) ==
-                              ActionTimeStatus.happeningNow,
-                          counts: countsAsync.value?[entry.item.action.id] ??
-                              const ConfirmationCounts(),
-                          cover: covers[entry.item.action.id],
                           onDismiss: () => ref
                               .read(dismissedHighlightsProvider.notifier)
                               .dismiss(entry.item.action.id),
@@ -305,40 +311,54 @@ class _FilterBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final churches = churchesAsync.value ?? const [];
+    final church = DropdownButtonFormField<String>(
+      initialValue: churchFilterId,
+      isDense: true,
+      decoration: const InputDecoration(labelText: 'Igreja'),
+      items: [
+        const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
+        for (final c in churches) DropdownMenuItem(value: c.id, child: Text(c.name)),
+      ],
+      onChanged: (v) => v == null ? null : onChurchFilterChanged(v),
+    );
+    final sort = DropdownButtonFormField<_ActionSortOrder>(
+      initialValue: sortOrder,
+      isDense: true,
+      decoration: const InputDecoration(labelText: 'Ordenar por'),
+      items: const [
+        DropdownMenuItem(value: _ActionSortOrder.byDate, child: Text('Data')),
+        DropdownMenuItem(value: _ActionSortOrder.mostRecent, child: Text('Mais recentes')),
+        DropdownMenuItem(value: _ActionSortOrder.name, child: Text('Nome (A-Z)')),
+      ],
+      onChanged: (v) => v == null ? null : onSortOrderChanged(v),
+    );
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.sm, AppSpacing.lg, 0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            children: [
-              Expanded(
-                child: DropdownButtonFormField<String>(
-                  initialValue: churchFilterId,
-                  isDense: true,
-                  decoration: const InputDecoration(labelText: 'Igreja'),
-                  items: [
-                    const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
-                    for (final c in churches) DropdownMenuItem(value: c.id, child: Text(c.name)),
-                  ],
-                  onChanged: (v) => v == null ? null : onChurchFilterChanged(v),
-                ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: DropdownButtonFormField<_ActionSortOrder>(
-                  initialValue: sortOrder,
-                  isDense: true,
-                  decoration: const InputDecoration(labelText: 'Ordenar por'),
-                  items: const [
-                    DropdownMenuItem(value: _ActionSortOrder.byDate, child: Text('Data')),
-                    DropdownMenuItem(value: _ActionSortOrder.mostRecent, child: Text('Mais recentes')),
-                    DropdownMenuItem(value: _ActionSortOrder.name, child: Text('Nome (A-Z)')),
-                  ],
-                  onChanged: (v) => v == null ? null : onSortOrderChanged(v),
-                ),
-              ),
-            ],
+          // Lado a lado só quando há largura para isso. Num celular de 390px
+          // cada um ficava com ~170px e "Todas as Igrejas"/"Mais recentes"
+          // estouravam a Row em 119px — texto cortado e a listra amarela do
+          // Flutter em cima da tela de toda pessoa que abrisse /acoes no
+          // telefone. O limiar é a largura onde os dois textos ainda cabem,
+          // não um tamanho de aparelho.
+          LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth < _narrowContentWidth) {
+                return Column(
+                  children: [church, const SizedBox(height: AppSpacing.sm), sort],
+                );
+              }
+              return Row(
+                children: [
+                  Expanded(child: church),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(child: sort),
+                ],
+              );
+            },
           ),
           const SizedBox(height: AppSpacing.sm),
           FilterChip(
@@ -396,19 +416,9 @@ class _ActionCard extends ConsumerWidget {
     this.happeningNow = false,
     this.counts = const ConfirmationCounts(),
     this.cover,
-    this.highlight,
-    this.onDismiss,
   });
 
   final Action action;
-
-  /// Por que esta Ação está na faixa de destaque — nulo na lista por período,
-  /// que é a mesma de sempre e não muda de aparência.
-  final ActionHighlight? highlight;
-
-  /// Fechar este item da faixa. Nulo fora da faixa: a lista por período não
-  /// tem o que dispensar.
-  final VoidCallback? onDismiss;
 
   /// Já resolvida pela lista, de propósito — o card não consulta nada.
   final CoverPhoto? cover;
@@ -449,42 +459,20 @@ class _ActionCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final scheme = Theme.of(context).colorScheme;
-    final tertiary = scheme.tertiary;
-    // Sábado fica com a borda quando as duas dimensões valem ao mesmo tempo,
-    // e a origem passa a ser dita pela tarja de cima. São três cores na mesma
-    // tela (tertiary/primary/secondaryContainer) e nenhuma pode virar a
-    // outra — pintar duas bordas concorrentes no mesmo cartão era o jeito
-    // certo de confundir as duas.
-    final borderColor = sabbathHighlight
-        ? tertiary
-        : switch (highlight) {
-            ActionHighlight.district => scheme.primary,
-            ActionHighlight.myGroup => scheme.secondary,
-            null => null,
-          };
-    final tint = sabbathHighlight
-        ? tertiary
-        : switch (highlight) {
-            ActionHighlight.district => scheme.primary,
-            ActionHighlight.myGroup => scheme.secondaryContainer,
-            null => null,
-          };
+    final tertiary = Theme.of(context).colorScheme.tertiary;
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
-      shape: borderColor == null
-          ? null
-          : RoundedRectangleBorder(
+      shape: sabbathHighlight
+          ? RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
-              side: BorderSide(color: borderColor, width: 2),
-            ),
-      color: tint?.withValues(alpha: 0.08),
+              side: BorderSide(color: tertiary, width: 2),
+            )
+          : null,
+      color: sabbathHighlight ? tertiary.withValues(alpha: 0.08) : null,
       clipBehavior: Clip.antiAlias,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (highlight != null)
-            _HighlightBanner(highlight: highlight!, onDismiss: onDismiss),
           // Ação sem capa não deixa buraco: CoverPhotoView ocupa zero.
           CoverPhotoView(
             photo: cover,
@@ -516,15 +504,26 @@ class _ActionCard extends ConsumerWidget {
   }
 }
 
-/// Tarja no topo do cartão em destaque: diz de onde a Ação vem e oferece
-/// fechar.
+/// Cartão da faixa de destaque. Baixo de propósito.
 ///
-/// A origem vira texto, e não só cor: quem não distingue as três cores da
-/// tela (ou usa o app no sol) continua sabendo por que aquele cartão está lá.
-class _HighlightBanner extends StatelessWidget {
-  const _HighlightBanner({required this.highlight, this.onDismiss});
+/// **Por que não reusar `_ActionCard`.** A faixa não tira a Ação da lista por
+/// período — a mesma Ação aparece nos dois lugares. Com o cartão cheio (capa,
+/// contagem de confirmados, três linhas) medimos ~148px cada num celular:
+/// três deles mais a barra de filtro enchiam a dobra inteira e a lista por
+/// período nascia fora da tela. Aqui ficam só as três coisas que decidem se
+/// vale abrir — de onde vem, o quê, e quando/onde. Capa e contagem estão a um
+/// toque de distância, no cartão cheio logo abaixo.
+class _HighlightCard extends StatelessWidget {
+  const _HighlightCard({
+    required this.action,
+    required this.highlight,
+    this.sabbathHighlight = false,
+    this.onDismiss,
+  });
 
+  final Action action;
   final ActionHighlight highlight;
+  final bool sabbathHighlight;
   final VoidCallback? onDismiss;
 
   @override
@@ -532,40 +531,105 @@ class _HighlightBanner extends StatelessWidget {
     final scheme = Theme.of(context).colorScheme;
     final (label, icon, color) = switch (highlight) {
       ActionHighlight.district => (
-          'Aberta a todo o distrito',
+          'Todo o distrito',
           Icons.campaign_outlined,
           scheme.primary,
         ),
       ActionHighlight.myGroup => (
-          'Nova em um Grupo seu',
+          'Novo no seu Grupo',
           Icons.fiber_new_outlined,
           scheme.secondary,
         ),
     };
+    // Sábado fica com a borda quando as duas dimensões valem ao mesmo tempo, e
+    // a origem passa a ser dita pela tarja. São três cores na mesma tela
+    // (tertiary/primary/secondary) e nenhuma pode virar a outra — duas bordas
+    // concorrentes no mesmo cartão era o jeito certo de confundi-las.
+    final borderColor = sabbathHighlight ? scheme.tertiary : color;
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.xs, AppSpacing.xs, 0),
-      child: Row(
-        children: [
-          Icon(icon, size: 18, color: color),
-          const SizedBox(width: AppSpacing.xs),
-          Expanded(
-            child: Text(
-              label,
-              style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                    color: color,
-                    fontWeight: FontWeight.bold,
+    return Card(
+      margin: const EdgeInsets.symmetric(
+        horizontal: AppSpacing.lg,
+        vertical: AppSpacing.xs,
+      ),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: borderColor, width: 2),
+      ),
+      color: borderColor.withValues(alpha: 0.08),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: () => context.push('/acoes/${action.id}'),
+        // `Stack`, e não o botão dentro da `Row` do título: o alvo de toque de
+        // 48px que SC-004 exige esticava a linha da tarja para 48 e abria um
+        // vão entre ela e o nome da Ação, fora da escala do resto do cartão.
+        // Sobreposto, ele mantém os 48 tocáveis e a linha volta à altura do
+        // texto. O padding à direita é o que reserva o lugar dele.
+        child: Stack(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.md,
+                AppSpacing.sm,
+                AppSpacing.xl + AppSpacing.md,
+                AppSpacing.sm,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(icon, size: 16, color: color),
+                      const SizedBox(width: AppSpacing.xs),
+                      Flexible(
+                        child: Text(
+                          label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: color,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                        ),
+                      ),
+                      if (sabbathHighlight) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        Icon(Icons.nights_stay,
+                            size: 16, color: scheme.tertiary),
+                      ],
+                    ],
                   ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Text(
+                    action.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  Text(
+                    '${DateFormat('dd/MM HH:mm').format(action.dateTime)} · ${action.local}'
+                    '${action.isCancelled ? ' · Cancelada' : ''}',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
             ),
-          ),
-          if (onDismiss != null)
-            IconButton(
-              tooltip: 'Tirar do destaque',
-              icon: const Icon(Icons.close, size: 18),
-              color: color,
-              onPressed: onDismiss,
-            ),
-        ],
+            if (onDismiss != null)
+              Positioned(
+                top: 0,
+                right: 0,
+                child: IconButton(
+                  tooltip: 'Tirar do destaque',
+                  icon: const Icon(Icons.close, size: 18),
+                  color: color,
+                  onPressed: onDismiss,
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }

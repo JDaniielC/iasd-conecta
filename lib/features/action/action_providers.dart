@@ -64,6 +64,30 @@ final actionsSeenRepositoryProvider = Provider<ActionsSeenRepository>((ref) {
   return const ActionsSeenRepository();
 });
 
+/// O marcador **como estava ao entrar em `/acoes`** — e, de quebra, o ato de
+/// avançá-lo.
+///
+/// Ler e gravar no mesmo lugar parece esquisito e é de propósito: o valor que
+/// a faixa precisa é o anterior à visita, e a visita tem que consumi-lo. Fazer
+/// os dois aqui garante a ordem (ler antes de gravar); invertida, o marcador
+/// novo já seria posterior a toda Ação existente e o destaque de Grupo morria
+/// em silêncio.
+///
+/// **`autoDispose` é o que define "abertura", e é a correção de um bug real.**
+/// Antes isto vivia no `initState` da tela. `lib/app.dart` constrói
+/// `const ActionListPage()`, então o widget é idêntico entre navegações, o
+/// Flutter reusa o `State` e o `initState` só rodava no arranque frio: quem
+/// navegasse `/acoes` -> `/grupos` -> `/acoes` nunca avançava o marcador, e a
+/// mesma Ação de Grupo ficava "nova" para sempre naquela sessão. Medido no
+/// navegador em 2026-08-12. Um provider `autoDispose` morre ao sair da tela e
+/// renasce ao voltar — que é exatamente o evento que a spec chama de abrir.
+final lastSeenActionsProvider = FutureProvider.autoDispose<DateTime?>((ref) async {
+  final repository = ref.watch(actionsSeenRepositoryProvider);
+  final lastSeen = await repository.readLastSeenActionsDate();
+  await repository.writeLastSeenActionsDate(ref.read(clockProvider)());
+  return lastSeen;
+});
+
 /// Ids de Ação que quem está vendo fechou na faixa de destaque.
 ///
 /// **Só em memória, de propósito.** Fechar vale para esta sessão do app: no

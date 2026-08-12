@@ -74,34 +74,8 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   _ActionSortOrder _sortOrder = _ActionSortOrder.byDate;
   bool _sabbathOnly = false;
 
-  /// O marcador **como estava ao abrir a tela**, e não como está agora.
-  ///
-  /// Precisa ser uma cópia em memória porque [_loadAndMarkSeen] avança o
-  /// marcador na mesma abertura: ler do repositório a cada `build` devolveria
-  /// o valor já avançado, e nenhuma Ação de Grupo jamais apareceria como
-  /// nova.
-  DateTime? _lastSeen;
-
   /// A faixa está aberta além dos [_maxHighlightsCollapsed] primeiros?
   bool _showAllHighlights = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Abrir a tela é o que consome a novidade — mesmo ponto do ciclo de vida
-    // que `NewsPage` usa. Fora do `build`, e uma vez só.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _loadAndMarkSeen());
-  }
-
-  Future<void> _loadAndMarkSeen() async {
-    final repository = ref.read(actionsSeenRepositoryProvider);
-    // Ler ANTES de gravar. Invertido, o destaque de Grupo morreria em
-    // silêncio: o marcador novo já seria posterior a toda Ação existente.
-    final lastSeen = await repository.readLastSeenActionsDate();
-    await repository.writeLastSeenActionsDate(ref.read(clockProvider)());
-    if (!mounted) return;
-    setState(() => _lastSeen = lastSeen);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -114,6 +88,10 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
     // faixa fica só com as Ações avulsas.
     final myGroupIds = ref.watch(myGroupIdsProvider).value ?? const <String>{};
     final dismissed = ref.watch(dismissedHighlightsProvider);
+    // Entrar nesta tela é o que consome a novidade. Quem detecta isso é o
+    // provider `autoDispose`, não o ciclo de vida deste widget — ver
+    // `lastSeenActionsProvider`.
+    final lastSeen = ref.watch(lastSeenActionsProvider).value;
 
     return Scaffold(
       appBar: AppBar(
@@ -195,7 +173,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                       if (actionHighlight(
                             item.action,
                             myGroupIds: myGroupIds,
-                            lastSeen: _lastSeen,
+                            lastSeen: lastSeen,
                           )
                           case final highlight?)
                         (item: item, highlight: highlight),

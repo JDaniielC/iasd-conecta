@@ -459,6 +459,66 @@ void main() {
     });
   });
 
+  testWidgets('sair da tela e voltar também consome a novidade', (tester) async {
+    // O bug de 2026-08-12, achado no navegador e não em teste: enquanto isto
+    // vivia no `initState`, navegar /acoes -> /grupos -> /acoes NÃO avançava o
+    // marcador. `lib/app.dart` constrói `const ActionListPage()`, o widget é
+    // idêntico entre navegações, o Flutter reusa o `State` e o `initState` só
+    // roda no arranque frio — a mesma Ação de Grupo ficava "nova" para sempre
+    // naquela sessão do app.
+    //
+    // O `ProviderScope` é UM só nas duas visitas, de propósito: é o que
+    // reproduz continuar no mesmo app. Trocar de cena e voltar é o que faz o
+    // provider `autoDispose` morrer e renascer.
+    final seen = FakeActionsSeenRepository(stored: _marcador);
+    final acoes = [
+      _action(
+        id: 'a1',
+        name: 'Ensaio do Coral',
+        dateTime: _foraDoSabado,
+        groupId: 'g1',
+        createdAt: _depoisDoMarcador,
+      ),
+    ];
+    final mostrarAcoes = ValueNotifier<bool>(true);
+    addTearDown(mostrarAcoes.dispose);
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hasProfileProvider.overrideWith((ref) async => true),
+          actionsWithChurchProvider.overrideWith((ref) async => acoes),
+          churchesProvider.overrideWith((ref) async => _churches),
+          clockProvider.overrideWithValue(() => _now),
+          myGroupIdsProvider.overrideWith((ref) async => const {'g1'}),
+          actionsSeenRepositoryProvider.overrideWithValue(seen),
+        ],
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: mostrarAcoes,
+            builder: (context, mostrando, _) =>
+                mostrando ? const ActionListPage() : const Scaffold(body: Text('outra tela')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(_neutro), findsOneWidget);
+    expect(seen.writeCount, 1);
+
+    // Saiu para outra tela e voltou — sem reiniciar o app.
+    mostrarAcoes.value = false;
+    await tester.pumpAndSettle();
+    mostrarAcoes.value = true;
+    await tester.pumpAndSettle();
+
+    expect(seen.writeCount, 2, reason: 'voltar para a tela precisa avançar o marcador');
+    expect(find.text(_neutro), findsNothing,
+        reason: 'a Ação já foi vista na primeira visita, não é mais novidade');
+    expect(find.text('Ensaio do Coral'), findsOneWidget);
+  });
+
   testWidgets('num celular a faixa cheia não empurra a lista para fora da dobra',
       (tester) async {
     // iPhone 14 em pixels lógicos. Esta é a tela que importa: o app é usado no

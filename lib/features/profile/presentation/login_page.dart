@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../domain/login_error.dart';
 
 /// Login em outro aparelho (User Story 3): só funciona pra quem já fez
 /// upgrade pra Conta — Perfil sozinho não é recuperável entre aparelhos
@@ -41,9 +41,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             senha: _senhaController.text,
           );
       ref.invalidate(hasProfileProvider);
-    } on AuthException {
-      // FR-014: mensagem genérica, nunca revela qual campo errou.
-      setState(() => _error = 'Credenciais inválidas.');
+    } catch (error) {
+      // `catch` sem tipo de propósito: `on AuthException` deixava passar
+      // falha de rede e de servidor, que subiam sem ninguém capturar — o
+      // botão voltava ao normal e a tela não dizia nada. Qual frase cabe a
+      // cada falha é decidido por `loginErrorMessage`, que é onde FR-014
+      // está escrito e testado.
+      setState(() => _error = loginErrorMessage(error));
     } finally {
       if (mounted) setState(() => _submitting = false);
     }

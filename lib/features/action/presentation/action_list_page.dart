@@ -177,7 +177,19 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                           )
                           case final highlight?)
                         (item: item, highlight: highlight),
-                ];
+                ]
+                  // Novidade de Grupo primeiro. Herdando a ordem da lista (por
+                  // data), a única Ação nova de um Grupo meu caía em 6º e
+                  // sumia atrás do "ver mais" — justamente a que a pessoa não
+                  // sabe que existe, que é o motivo de a faixa existir. Ação
+                  // avulsa não some: ela está na faixa todo dia e continua
+                  // logo abaixo. `sort` é estável em Dart, então entre iguais
+                  // a ordem da lista se mantém.
+                  ..sort((a, b) => a.highlight == b.highlight
+                      ? 0
+                      : a.highlight == ActionHighlight.myGroup
+                          ? -1
+                          : 1);
                 final visibleHighlights = _showAllHighlights
                     ? highlights
                     : highlights.take(_maxHighlightsCollapsed).toList();

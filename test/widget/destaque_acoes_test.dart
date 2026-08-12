@@ -459,6 +459,40 @@ void main() {
     });
   });
 
+  testWidgets('novidade de Grupo vem antes das avulsas, mesmo sendo a mais distante',
+      (tester) async {
+    // Achado no navegador em 2026-08-12: a faixa herdava a ordenação por data
+    // da lista, e a única Ação nova de um Grupo caiu em 6º — escondida atrás
+    // do "ver mais". Era a única que a pessoa não tinha como saber que
+    // existia; as avulsas ela vê todo dia.
+    await _pump(
+      tester,
+      myGroupIds: const {'g1'},
+      actions: [
+        for (var i = 1; i <= 4; i++)
+          _action(
+            id: 'avulsa$i',
+            name: 'Avulsa $i',
+            dateTime: _foraDoSabado.add(Duration(days: i)),
+          ),
+        _action(
+          id: 'nova',
+          name: 'Cantata de Natal',
+          // A mais distante de todas: por data seria a última da faixa.
+          dateTime: _foraDoSabado.add(const Duration(days: 30)),
+          groupId: 'g1',
+          createdAt: _depoisDoMarcador,
+        ),
+      ],
+    );
+
+    expect(find.text(_neutro), findsOneWidget);
+    final novidade = tester.getTopLeft(find.text('Cantata de Natal')).dy;
+    final primeiraAvulsa = tester.getTopLeft(find.text('Avulsa 1').first).dy;
+    expect(novidade, lessThan(primeiraAvulsa),
+        reason: 'a novidade de Grupo tem que abrir a faixa, não fechá-la');
+  });
+
   testWidgets('sair da tela e voltar também consome a novidade', (tester) async {
     // O bug de 2026-08-12, achado no navegador e não em teste: enquanto isto
     // vivia no `initState`, navegar /acoes -> /grupos -> /acoes NÃO avançava o

@@ -30,6 +30,22 @@ lista por período, marcada como cancelada, como hoje.
 - **THEN** ela sai da faixa de destaque e continua aparecendo na lista por
   período com a marcação de cancelada
 
+### Requirement: A novidade de Grupo abre a faixa
+
+Quando há Ação de Grupo em destaque, ela DEVE vir antes das Ações avulsas na
+faixa, independentemente da data.
+
+Ação avulsa está na faixa todos os dias e continua logo abaixo; a Ação nova de
+um Grupo é a única que a pessoa não tem como saber que existe, e é ela que a
+faixa existe para mostrar. Herdando a ordem por data da lista, ela pode cair
+depois do corte e não aparecer.
+
+#### Scenario: Ação nova de Grupo mais distante ainda abre a faixa
+
+- **WHEN** há quatro Ações avulsas próximas e uma Ação nova de um Grupo do
+  Usuário marcada para muito depois de todas elas
+- **THEN** a Ação do Grupo aparece como primeiro item da faixa
+
 ### Requirement: A faixa mostra no máximo três Ações de cada vez
 
 A faixa de destaque DEVE mostrar no máximo três Ações. Havendo mais, ela

@@ -322,11 +322,17 @@ enum ActionHighlight {
 /// Ação de Grupo ainda em votação (`isConfirmed == false`) nunca entra: a
 /// spec fala de Ação de Grupo **confirmada**, e uma candidata pode nem
 /// existir depois da apuração.
+///
+/// Ação cancelada também não entra, nem sendo avulsa. Ela continua na lista
+/// por período marcada como "Cancelada" (FR-003 só tira a encerrada por
+/// tempo), mas promover ao topo da tela uma Ação que não vai acontecer é
+/// convidar para o que já foi desmarcado.
 ActionHighlight? actionHighlight(
   Action action, {
   required Set<String> myGroupIds,
   required DateTime? lastSeen,
 }) {
+  if (action.isCancelled) return null;
   if (action.groupId == null) return ActionHighlight.district;
   if (!action.isConfirmed) return null;
   if (!myGroupIds.contains(action.groupId)) return null;

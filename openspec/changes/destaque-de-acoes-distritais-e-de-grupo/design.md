@@ -58,6 +58,12 @@ Novidades.
 app — nunca grava em disco. Decisão do dono do app: reaparecer no próximo
 cold start é o comportamento querido, não um efeito colateral a evitar.
 
+**Ação cancelada fora da faixa.** A spec original só tirava a Ação
+*encerrada* (por tempo), e cancelada não é encerrada — pela leitura literal,
+uma Ação avulsa cancelada subiria ao topo da tela. Promover o que já foi
+desmarcado é convidar para o que não vai acontecer; ela continua na lista por
+período com a marcação de cancelada, como sempre esteve.
+
 **Dois canais visuais distintos para as duas dimensões de destaque.**
 Sábado continua em `colorScheme.tertiary` (borda+fundo+ícone), sem mudar.
 A faixa nova usa:
@@ -81,10 +87,14 @@ implementação, com uma verificação manual olhando as quatro combinações
 (a limitação que o marcador-por-Grupo evitaria). Aceito de propósito — ver
 Decisions.
 
-**Faixa de destaque pode crescer demais** se muitos Grupos-que-participo
-tiverem Ação nova ao mesmo tempo (ex.: alguém em 8 Grupos ativos). Sem corte
-de quantidade definido nesta change — se virar problema real, é ajuste de
-acabamento (limitar a N itens, "ver mais"), não mudança de requisito.
+**Faixa de destaque pode crescer demais** — e cresceu, já na implementação,
+por um motivo maior do que o previsto: não são só os Grupos, é que **toda**
+Ação avulsa entra na faixa sem sair da lista por período, então num distrito
+de Ações majoritariamente avulsas a faixa é uma segunda cópia da lista. Medido
+em teste de widget: com duas Ações avulsas o cabeçalho "Sábado" já sai da
+primeira tela. Resolvido com corte em três itens e "ver mais" — o ajuste de
+acabamento que este parágrafo previa, antecipado para esta change porque o
+problema não era hipotético. Ver a spec.
 
 **Dismiss por sessão pode parecer "quebrado"** pra quem espera que fechar
 seja permanente (comportamento comum em outros apps). É decisão explícita

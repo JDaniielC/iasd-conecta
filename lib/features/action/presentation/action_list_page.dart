@@ -19,6 +19,15 @@ enum _ActionSortOrder { byDate, mostRecent, name }
 
 const _allChurches = '__todas__';
 
+/// Quantos cartões a faixa de destaque mostra antes de "ver mais".
+///
+/// Existe porque toda Ação avulsa entra na faixa **sem sair** da lista por
+/// período (a spec exige as duas aparições): num distrito onde a maioria das
+/// Ações é avulsa, uma faixa sem corte vira uma segunda cópia da lista e
+/// empurra o primeiro cabeçalho de período para fora da tela. Três é o que
+/// cabe acima da dobra num celular sem esconder que a lista continua abaixo.
+const _maxHighlightsCollapsed = 3;
+
 const _periodOrder = [
   ActionPeriod.sabbath,
   ActionPeriod.today,
@@ -58,6 +67,9 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   /// o valor já avançado, e nenhuma Ação de Grupo jamais apareceria como
   /// nova.
   DateTime? _lastSeen;
+
+  /// A faixa está aberta além dos [_maxHighlightsCollapsed] primeiros?
+  bool _showAllHighlights = false;
 
   @override
   void initState() {
@@ -174,11 +186,16 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                           case final highlight?)
                         (item: item, highlight: highlight),
                 ];
+                final visibleHighlights = _showAllHighlights
+                    ? highlights
+                    : highlights.take(_maxHighlightsCollapsed).toList();
+                final hiddenHighlights =
+                    highlights.length - visibleHighlights.length;
                 return ListView(
                   children: [
                     if (highlights.isNotEmpty) ...[
                       const _SectionHeader(name: 'Em destaque'),
-                      for (final entry in highlights)
+                      for (final entry in visibleHighlights)
                         _ActionCard(
                           action: entry.item.action,
                           highlight: entry.highlight,
@@ -198,6 +215,31 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                           onDismiss: () => ref
                               .read(dismissedHighlightsProvider.notifier)
                               .dismiss(entry.item.action.id),
+                        ),
+                      // Condição na lista inteira, não no que sobrou
+                      // escondido: aberta e com os itens fechados um a um até
+                      // sobrarem três, `hiddenHighlights` zera e o botão
+                      // "Ver menos" ficaria sem nada a encolher.
+                      if (highlights.length > _maxHighlightsCollapsed)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: AppSpacing.md,
+                            ),
+                            child: TextButton(
+                              onPressed: () => setState(
+                                () => _showAllHighlights = !_showAllHighlights,
+                              ),
+                              child: Text(
+                                _showAllHighlights
+                                    ? 'Ver menos'
+                                    : hiddenHighlights == 1
+                                        ? 'Ver mais 1 em destaque'
+                                        : 'Ver mais $hiddenHighlights em destaque',
+                              ),
+                            ),
+                          ),
                         ),
                     ],
                     for (final period in _periodOrder)

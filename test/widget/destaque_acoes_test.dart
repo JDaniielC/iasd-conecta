@@ -50,6 +50,7 @@ ActionWithChurch _action({
   String? groupId,
   DateTime? createdAt,
   bool isConfirmed = true,
+  DateTime? cancelledAt,
 }) {
   return ActionWithChurch(
     churchId: 'igreja-1',
@@ -62,6 +63,7 @@ ActionWithChurch _action({
       createdAt: createdAt ?? _antesDoMarcador,
       groupId: groupId,
       isConfirmed: isConfirmed,
+      cancelledAt: cancelledAt,
     ),
   );
 }
@@ -336,6 +338,125 @@ void main() {
     await tester.scrollUntilVisible(find.text('Estudo Bíblico'), 200);
     expect(find.text('Estudo Bíblico'), findsOneWidget);
     expect(tester.takeException(), isNull);
+  });
+
+  group('Ação cancelada não sobe para o destaque', () {
+    testWidgets('nem sendo avulsa — mas continua na lista por período',
+        (tester) async {
+      await _pump(tester, actions: [
+        _action(
+          id: 'a1',
+          name: 'Visita Missionária',
+          dateTime: _foraDoSabado,
+          cancelledAt: _depoisDoMarcador,
+        ),
+      ]);
+
+      expect(find.text('Em destaque'), findsNothing);
+      expect(find.text('Visita Missionária'), findsOneWidget);
+      expect(find.textContaining('Cancelada'), findsOneWidget);
+    });
+
+    testWidgets('nem sendo Ação nova de um Grupo meu', (tester) async {
+      await _pump(
+        tester,
+        myGroupIds: const {'g1'},
+        actions: [
+          _action(
+            id: 'a1',
+            name: 'Ensaio do Coral',
+            dateTime: _foraDoSabado,
+            groupId: 'g1',
+            createdAt: _depoisDoMarcador,
+            cancelledAt: _depoisDoMarcador,
+          ),
+        ],
+      );
+
+      expect(find.text('Em destaque'), findsNothing);
+      expect(find.text('Ensaio do Coral'), findsOneWidget);
+    });
+  });
+
+  group('a faixa para em 3 cartões', () {
+    List<ActionWithChurch> avulsas(int quantas) => [
+          for (var i = 1; i <= quantas; i++)
+            _action(
+              id: 'a$i',
+              name: 'Ação $i',
+              dateTime: _foraDoSabado.add(Duration(days: i)),
+            ),
+        ];
+
+    testWidgets('com 5 avulsas mostra 3 e oferece ver o resto', (tester) async {
+      await _pump(tester, actions: avulsas(5));
+
+      expect(find.text(_forte), findsNWidgets(3));
+      // Três cartões já ocupam a altura da viewport do teste — o botão fica
+      // logo abaixo dela. É esse o ponto do corte: a lista por período passa
+      // a estar a uma rolada curta, e não vinte cartões abaixo.
+      await tester.scrollUntilVisible(find.text('Ver mais 2 em destaque'), 100);
+      expect(find.text('Ver mais 2 em destaque'), findsOneWidget);
+    });
+
+    testWidgets('"ver mais" abre a faixa inteira e volta atrás', (tester) async {
+      // Tela alta de propósito: este teste é sobre o que a faixa contém,
+      // não sobre o que cabe na dobra. Na viewport padrão cada `tap` empurra
+      // o botão para fora da tela e o teste vira uma sequência de rolagens
+      // que não prova nada sobre a regra.
+      tester.view.physicalSize = const Size(1000, 3000);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await _pump(tester, actions: avulsas(5));
+
+      // Fechada: 3 na faixa, e a 5ª só existe na lista por período.
+      expect(find.text(_forte), findsNWidgets(3));
+      expect(find.text('Ação 5'), findsOneWidget);
+
+      await tester.tap(find.text('Ver mais 2 em destaque'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_forte), findsNWidgets(5));
+      expect(find.text('Ação 5'), findsNWidgets(2));
+
+      await tester.tap(find.text('Ver menos'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(_forte), findsNWidgets(3));
+      expect(find.text('Ver mais 2 em destaque'), findsOneWidget);
+    });
+
+    testWidgets('com 4 avulsas o texto vai para o singular', (tester) async {
+      await _pump(tester, actions: avulsas(4));
+
+      await tester.scrollUntilVisible(find.text('Ver mais 1 em destaque'), 100);
+      expect(find.text('Ver mais 1 em destaque'), findsOneWidget);
+    });
+
+    testWidgets('com 3 avulsas não aparece botão nenhum', (tester) async {
+      await _pump(tester, actions: avulsas(3));
+
+      expect(find.text(_forte), findsNWidgets(3));
+      expect(find.textContaining('Ver mais'), findsNothing);
+      expect(find.text('Ver menos'), findsNothing);
+    });
+
+    testWidgets('fechar um dos 4 primeiros promove o que estava escondido',
+        (tester) async {
+      await _pump(tester, actions: avulsas(4));
+
+      expect(find.text('Ação 4'), findsNothing);
+
+      await tester.tap(find.byTooltip('Tirar do destaque').first);
+      await tester.pumpAndSettle();
+
+      // Sobraram 3: a quarta subiu para a faixa e o botão saiu de cena.
+      expect(find.text(_forte), findsNWidgets(3));
+      expect(find.text('Ação 4'), findsWidgets);
+      expect(find.textContaining('Ver mais'), findsNothing);
+    });
   });
 
   testWidgets('lista sem nenhuma Ação em destaque não abre a faixa', (tester) async {

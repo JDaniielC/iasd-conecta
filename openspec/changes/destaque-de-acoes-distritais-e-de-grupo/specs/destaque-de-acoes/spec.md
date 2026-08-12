@@ -18,6 +18,39 @@ pessoa que abra a tela, com ou sem Perfil.
 - **THEN** ela aparece na faixa de destaque, com a cor de destaque forte, e
   também continua na lista por período de sempre
 
+### Requirement: Ação cancelada não entra no destaque
+
+Uma Ação cancelada NÃO DEVE aparecer na faixa de destaque, nem sendo avulsa,
+nem sendo Ação nova de um Grupo de que a pessoa participa. Ela continua na
+lista por período, marcada como cancelada, como hoje.
+
+#### Scenario: Ação avulsa cancelada fica só na lista por período
+
+- **WHEN** uma Ação avulsa é cancelada
+- **THEN** ela sai da faixa de destaque e continua aparecendo na lista por
+  período com a marcação de cancelada
+
+### Requirement: A faixa mostra no máximo três Ações de cada vez
+
+A faixa de destaque DEVE mostrar no máximo três Ações. Havendo mais, ela
+oferece abrir o restante, e abrir também DEVE poder ser desfeito.
+
+O corte existe porque Ação avulsa entra na faixa **sem sair** da lista por
+período: sem ele, num distrito onde a maioria das Ações é avulsa a faixa vira
+uma segunda cópia da lista e empurra o primeiro cabeçalho de período para
+fora da tela.
+
+#### Scenario: Com mais de três, a faixa mostra três e oferece o resto
+
+- **WHEN** cinco Ações se qualificam para a faixa de destaque
+- **THEN** a faixa mostra três e oferece ver as outras duas; abrindo, todas
+  as cinco aparecem, e é possível fechar de volta para três
+
+#### Scenario: Fechar um item promove o que estava escondido
+
+- **WHEN** quatro Ações se qualificam e a pessoa fecha uma das três visíveis
+- **THEN** a quarta passa a aparecer na faixa, e a oferta de "ver mais" some
+
 ### Requirement: Ação de Grupo entra no destaque só para quem participa e só enquanto nova
 
 Uma Ação de Grupo confirmada DEVE aparecer na faixa de destaque, com a cor de

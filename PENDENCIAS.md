@@ -56,6 +56,17 @@ da exigência de Apelido de menor, mudar o `genero` forja composição de Dupla 
 O conserto está escrito no achado (`revoke update` + `grant update (colunas)`). Exige migration
 e conferir coluna a coluna quem mais escreve em `perfis`.
 
+**FECHADO em 2026-08-11** pela change `endurecer-grant-update-perfis`.
+`supabase/migrations/20260811160000_grant_update_perfis_por_coluna.sql` aplica exatamente o
+conserto do achado: `revoke update on public.perfis from authenticated`, seguido de `grant
+update (nome, apelido, igreja_id, telefone, consentimento_lgpd_igreja_aceito_em)` — as cinco
+colunas que `Profile.toUpdateMap()` já mandava, nenhuma outra. Levantamento em `lib/` e nas
+migrations não achou ponto de escrita fora da lista; `excluir_minha_conta` é `security definer`
+e não é afetada. Provado por `test/integration/perfil_edicao_rls_test.dart` (casos novos g/h:
+`idade` e `genero` recusam com `permission denied`, 42501) e pela suíte inteira — **212/212**
+testes de integração e **17/17** testes de widget das telas de Perfil, todos passando sem
+nenhuma tela quebrar.
+
 ### 2.2 `anon` tem `TRUNCATE` em todas as tabelas
 
 Descoberto ao verificar as premissas da 018. `anon` e `authenticated` têm `TRUNCATE`,

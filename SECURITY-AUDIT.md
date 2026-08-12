@@ -175,7 +175,7 @@ O aviso está dentro da migration, no ponto onde alguém quebraria.
 
 # Achado 5 — `grant update` em `perfis` é de tabela inteira, sem recorte de coluna
 
-**Data**: 2026-08-09 | **Status**: registrado, NÃO corrigido — precisa de spec própria
+**Data**: 2026-08-09 | **Status**: **FECHADO em 2026-08-11** pela change `endurecer-grant-update-perfis`
 
 `20260723191202_perfis_igrejas.sql:56` concede `update` na tabela `public.perfis`
 inteira a `authenticated`. A policy `perfis_update_own` protege a **linha** —
@@ -214,6 +214,21 @@ grant update (nome, apelido, igreja_id, telefone,
 Antes de aplicar, verificar quem mais escreve em `perfis`: `excluir_minha_conta`
 é `security definer` e não é afetada, mas o cadastro (`insert`) e qualquer
 caminho futuro precisam ser conferidos coluna a coluna.
+
+**Aplicado em 2026-08-11**, `supabase/migrations/20260811160000_grant_update_perfis_por_coluna.sql`
+— exatamente o SQL acima, com `apelido` e `telefone` no lugar de `nome` já
+incluídos (a lista final é `nome, apelido, igreja_id, telefone,
+consentimento_lgpd_igreja_aceito_em`, as mesmas cinco colunas que
+`Profile.toUpdateMap()` já mandava). Levantamento de quem mais escreve em
+`perfis` (`lib/` inteiro + migrations) não achou nenhum ponto fora da lista;
+`excluir_minha_conta` confirmado `security definer`, não afetado. Confirmado
+por consulta a `information_schema.column_privileges` no banco local: as
+únicas colunas com `UPDATE` para `authenticated` são as cinco da lista.
+`idade` e `genero` recusam com `permission denied` (SQLSTATE `42501`), provado
+por teste de integração novo em `test/integration/perfil_edicao_rls_test.dart`
+(casos g/h). Suíte de integração completa — **212/212 passaram**, 0 falhas —
+e os testes de widget das telas de cadastro e edição de Perfil — **17/17
+passaram**, 0 falhas — confirmam que nenhuma tela quebrou.
 
 ---
 

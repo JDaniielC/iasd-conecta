@@ -218,4 +218,51 @@ void main() {
       );
     },
   );
+
+  // (g)/(h) — change `endurecer-grant-update-perfis`, achado 5 de
+  // SECURITY-AUDIT.md / PENDENCIAS.md § 2.1. `perfis_update_own` (acima)
+  // protege a LINHA; estes dois casos provam que o `grant update` por coluna
+  // (`20260811160000_grant_update_perfis_por_coluna.sql`) protege a COLUNA —
+  // a garantia que a policy nunca deu. Erro `42501` é o SQLSTATE de
+  // `permission denied`, levantado pelo próprio Postgres antes de a policy
+  // rodar, não uma exceção genérica de aplicação.
+  test(
+    '(g) escrever a própria idade é recusado com permission denied (42501)',
+    () async {
+      final before = await readProfile(_uidA);
+
+      await expectLater(
+        asUser(conn, _uidA, () async {
+          await conn.execute(
+            Sql.named('update public.perfis set idade = 99 where id = @u'),
+            parameters: {'u': _uidA},
+          );
+        }),
+        throwsA(isA<ServerException>().having((e) => e.code, 'código', '42501')),
+      );
+
+      expect(await readProfile(_uidA), before);
+    },
+  );
+
+  test(
+    '(h) escrever o próprio genero é recusado com permission denied (42501)',
+    () async {
+      final before = await readProfile(_uidA);
+
+      await expectLater(
+        asUser(conn, _uidA, () async {
+          await conn.execute(
+            Sql.named(
+              "update public.perfis set genero = 'masculino' where id = @u",
+            ),
+            parameters: {'u': _uidA},
+          );
+        }),
+        throwsA(isA<ServerException>().having((e) => e.code, 'código', '42501')),
+      );
+
+      expect(await readProfile(_uidA), before);
+    },
+  );
 }

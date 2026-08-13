@@ -160,3 +160,32 @@
       dado velho — e a decisão registrada na spec continua valendo: a correção
       é invalidar o cache, não mexer na regra — per Requirement "Ação de Grupo
       entra no destaque só para quem participa e só enquanto nova", (partial)
+
+## Convergence 4
+
+- [x] ~~Corrigir a frase de `design.md:42-44`~~ — **avaliada e dispensada pelo
+      dono do app em 2026-08-13.** O risco descrito abaixo foi superestimado:
+      `design.md` vira registro histórico ao ser arquivado, `proposal.md` não
+      afirma nada sobre RLS, e o main spec — o documento vivo — nunca conteve a
+      afirmação. A verdade já está nos dois lugares que alguém lê ao mexer no
+      código: o comentário em `lib/features/group/data/group_repository.dart:158`
+      ("a RLS de `participacoes_grupo` NÃO restringe o select às próprias
+      linhas"), encostado na linha que ele protege, e o teste de integração da
+      Convergence 2, que fica vermelho se o filtro sumir. Reclassificada de
+      MEDIUM para LOW. O texto original do achado segue abaixo, para quem fizer
+      arqueologia:
+- [x] Corrigir a frase de `design.md:42-44` que atribui à RLS uma proteção que
+      ela não tem. O texto diz "Sem Perfil/Conta, a consulta não roda (RLS:
+      `auth.uid()` nulo) — resultado vazio". Medido em 2026-08-13: como `anon`,
+      `GET /rest/v1/participacoes_grupo?select=grupo_id,usuario_id` devolve
+      HTTP 200 com as linhas de TODOS os usuários. A RLS dessa tabela é aberta
+      de propósito — é ela que permite `fetchMemberIds` listar os membros de um
+      Grupo alheio. Quem garante o resultado vazio sem Conta é o
+      `if (uid == null) return const <String>{}` de
+      `GroupRepository.fetchMyGroupIds`, e a Convergence 2 já mediu que o
+      filtro no cliente é a única defesa também no caso `authenticated`.
+      O código está certo e testado; o perigo é o documento: quem ler o design
+      e acreditar que a RLS protege pode tirar o guard do cliente numa
+      refatoração, achando que há uma segunda linha de defesa que não existe —
+      per Requirement "Ação de Grupo entra no destaque só para quem participa e
+      só enquanto nova", (contradicts)

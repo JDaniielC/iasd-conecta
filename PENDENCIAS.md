@@ -283,6 +283,103 @@ qualquer conserto, pelo mesmo motivo que o § 2.6 exigiu.
 **Frequência medida**: 1 em 30 execuções completas, concorrência 12 — não dá pra saber se é
 alta ou baixa com uma amostra só.
 
+**Hipótese CONFIRMADA em 2026-08-13, por desligamento do culpado — sem querer.** Na sessão da
+change `destaque-de-acoes-distritais-e-de-grupo` foi criado um Administrador do distrito de
+demonstração (`teste@local.dev`, via `scripts/bootstrap_admin.sh`) para testar o app no
+navegador. Ele fez exatamente o papel que o parágrafo acima atribui ao "Administrador de outro
+arquivo", e com uma diferença que tornou o efeito visível: por ser permanente, não dependia de
+corrida de tempo nenhuma. Os sintomas passaram a ser determinísticos — os cenários 12 e 13 de
+`account_deletion_test` falhavam **até rodando o arquivo sozinho**. Depois vieram 6 Grupos
+chamados "Grupo da Única Admin" / "Grupo da Admin Mais Antiga" com `dono_id` apontando para o
+usuário de demonstração: a herança elegeu-o e transferiu a posse, e o `tearDownAll` do arquivo
+dono não os limpou porque o `id` não era dele. Um deles sobreviveu e quebrou o `tearDownAll` de
+`leadership_decide_test` com o mesmo `23503 grupos_dono_id_fkey`.
+
+Removendo só a linha de `administradores_distrito` do usuário de demonstração — sem tocar em
+mais nada — os cenários voltaram a passar. Isso fecha a dúvida do parágrafo anterior: o
+mecanismo é o descrito, e a contagem global de `administradores_distrito` é o ponto frágil.
+
+**Medida que separa o defeito do ambiente**, e que vale guardar para o próximo diagnóstico:
+`flutter test --concurrency=1` deu **535 de 535** com a mesma árvore em que a execução paralela
+falhava. Antes de investigar um vermelho de integração, rode em série: se passar, é isolamento
+entre arquivos, não código.
+
+**O que isso acrescenta ao conserto**: o escopo não é só `account_deletion_test`. Enquanto
+`createTestDistrictAdmin` escrever numa tabela cuja contagem é global, qualquer linha viva ali
+— de outro arquivo de teste **ou de dado de desenvolvimento no banco local** — quebra os
+cenários de "a única Administradora". O conserto precisa dar escopo à contagem ou ao dado, não
+só espaçar os testes no tempo.
+
+### 2.8 `anon` lê `participacoes_grupo` inteira — quem participa de qual Ministério é público
+
+Achado em 2026-08-13, medindo a fronteira do destaque de Ações. Com a chave **publicável** —
+que vai dentro do JavaScript publicado e é legível por qualquer pessoa que abra o site:
+
+```
+GET /rest/v1/participacoes_grupo?select=grupo_id,usuario_id   → HTTP 200
+[{"grupo_id":"1111…","usuario_id":"5d5e…"}, {"grupo_id":"2222…","usuario_id":"584b…"}]
+```
+
+Sem sessão, sem filtro, linhas de todos os Usuários. Cruzando `usuario_id` com a RPC
+`perfil_publico`, isso vira **nome da pessoa + Ministério de que ela participa**, para qualquer
+um. Num app de igreja, associação a Ministério somada a nome é dado de filiação religiosa.
+
+**Não é regressão desta change, e ela não piorou nada** — a RLS é aberta desde que
+`fetchMemberIds` precisou listar os membros de um Grupo alheio, que é uma tela legítima do
+produto (ver `GroupRepository.fetchMemberIds`). O que a change fez foi medir e escrever.
+
+**Por que é o Princípio II e não acabamento**: a constituição diz que nenhum dado pessoal é
+exibido além do que o glossário autoriza. O glossário autoriza mostrar os membros de um Grupo
+**dentro do app**; não autoriza a lista completa de participações do distrito para quem não tem
+Conta.
+
+**O que decidir antes de consertar**: quem legitimamente precisa ler `participacoes_grupo`, e
+com qual recorte. Fechar para `anon` e deixar `authenticated` é o corte óbvio, mas muda a tela
+de Grupo para Visitante — que hoje vê membros sem cadastro (FR-010 da feature de Grupos). É
+decisão de produto, não só de policy.
+
+### 2.9 `NewsPage` tem o bug de ciclo de vida que `/acoes` acabou de corrigir
+
+`lib/app.dart:171` constrói `const NewsPage()`. Sendo `const`, o widget é idêntico entre
+navegações: o Flutter reusa o `State` e o `initState` só roda no arranque frio. `NewsPage`
+grava o marcador de Novidades exatamente ali (`initState` → `_markAsSeen`).
+
+É a mesma forma do defeito medido em `/acoes` em 2026-08-12, onde o marcador ficou parado em
+`18:08:34` depois de duas idas e voltas pelo router. **Não foi medido em `NewsPage`** — a
+inferência é por leitura, e é o tipo de coisa que este repositório já viu parecer certa na
+página e estar errada.
+
+O conserto usado em `/acoes` está em `lib/features/action/action_providers.dart`
+(`lastSeenActionsProvider` + `markActionsSeenProvider`): o gatilho deixa de ser o ciclo de vida
+do widget e passa a ser um provider `autoDispose`, que morre ao sair da tela e renasce ao
+voltar. `NewsPage` também não tem a segunda metade da correção — só avançar o marcador quando a
+tela teve o que mostrar.
+
+### 2.10 Não existe recuperação de senha
+
+Nenhum `resetPasswordForEmail` em `lib/`. Quem faz upgrade de Perfil para Conta e depois esquece
+a senha perde o acesso, e não há caminho de volta pelo app: o Perfil só é recuperável entre
+aparelhos por meio da Conta (ver `contracts/auth-flow.md`).
+
+Achado em 2026-08-13 ao melhorar as mensagens de erro do login. Não foi posto link de "Esqueci
+minha senha" na tela justamente porque ele não levaria a lugar nenhum.
+
+### 2.11 Entrar num Grupo não mostra as Ações que ele já tinha — decisão, não defeito
+
+O marcador de "última vez que vi `/acoes`" é único e global (decisão registrada no design da
+change `destaque-de-acoes-distritais-e-de-grupo`). Consequência medida em 2026-08-13: quem entra
+num Grupo hoje não vê **nenhuma** Ação dele em destaque, porque o marcador já passou por todas
+enquanto essa pessoa ainda não participava. Só Ação criada depois da entrada aparece.
+
+O `design.md` arquivado registra a limitação do marcador único como aceita, mas o caso que ele
+descreve é "a pessoa não reparou". Este é diferente: **a pessoa não podia reparar**, não
+participava do Grupo. E é o caso de uso mais óbvio de "novidade no meu Grupo" — acabei de entrar
+no Coral, quero ver o que tem.
+
+**O que o conserto exigiria**: comparar contra a data de entrada no Grupo em vez do marcador
+global — ou seja, guardar quando cada participação começou. É o marcador por Grupo que o design
+considerou e descartou, por outro caminho.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

@@ -1,3 +1,5 @@
+# visibilidade-de-acao Specification
+
 ## Purpose
 
 Quem enxerga uma Ação. Hoje a resposta é "todo mundo, inclusive sem login";
@@ -5,7 +7,7 @@ esta capability introduz a Ação restrita ao Grupo e define até onde a restri�
 alcança — a Ação, a lista de quem vai, a contagem, o destaque e a Rodada de
 votação.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Ação é pública por padrão
 

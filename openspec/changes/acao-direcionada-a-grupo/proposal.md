@@ -23,6 +23,8 @@ visibilidade de ninguém e pode entrar antes ou depois desta, em qualquer ordem.
 - **Ação de Grupo passa a poder ser restrita ao Grupo.** Coluna nova em `acoes`
   marcando a restrição. Ação sem `grupo_id` (avulsa) **não pode** ser restrita —
   não há a quem restringir; o banco recusa a combinação por `check`.
+  Ação de Grupo aqui quer dizer candidata de Rodada e a Ação que vence a Rodada:
+  são a mesma linha de `acoes`, e é a única forma de uma Ação ter Grupo.
 - **A restrição vive na policy, não na tela.** `acoes_select_public` é
   substituída por uma policy que esconde a Ação restrita de quem não participa
   do Grupo. A tela filtrar não é garantia: o REST do Supabase é público e
@@ -37,11 +39,13 @@ visibilidade de ninguém e pode entrar antes ou depois desta, em qualquer ordem.
 - **Rodada de votação e Ação candidata** (`rodadas_votacao`, `acoes` com
   `rodada_id`) entram na conta: uma candidata restrita não pode reaparecer pela
   tela de rodada.
-- **Quem restringe**: o criador da Ação. Ser Líder confirmado
-  (`liderancas.confirmado_em`) **não** é exigido — a liderança é o caso de uso
-  que motivou o pedido, mas o mecanismo é do dono da Ação, e amarrar em
-  liderança quebraria o caso do participante comum que marca algo interno do
-  Grupo. Decisão registrada no design.
+- **Quem restringe**: quem já pode editar a Ação —
+  criador, Dono do Grupo, Administrador do distrito
+  (`acoes_update_criador_dono_grupo_ou_admin`). A restrição não ganha regra de
+  escrita própria. Ser Líder confirmado (`liderancas.confirmado_em`) **não** é
+  exigido — amarrar em liderança quebraria o caso do participante comum que
+  marca algo interno do Grupo. Decisão e a dívida que ela aceita estão no
+  design.
 - **Grupo arquivado**: efeito definido sobre Ação restrita, junto do que
   `20260809230000_arquivar_grupo.sql` já faz.
 
@@ -82,10 +86,14 @@ destaque de quem não participa. Como a policy filtra na origem, o destaque
 herda o filtro sem código novo — mas isso é afirmação a verificar em teste, não
 a assumir.
 
-**Código** — `create_action_page.dart` ganha o controle de restrição (só
-habilitado quando há Grupo), `action_detail_page.dart` mostra que a Ação é
-restrita, e o repositório de Ação não precisa filtrar nada: o banco já não
-devolve.
+**Código** — `create_candidate_page.dart` ganha o controle de restrição.
+`create_action_page.dart` **não** ganha: naquela tela toda Ação é avulsa, e
+Ação de Grupo neste app só nasce como candidata de Rodada
+(`acoes_candidata_checar_regras`). `action_detail_page.dart` mostra que a Ação
+é restrita e deixa mudar. O repositório de Ação não precisa filtrar nada: o
+banco já não devolve.
 
 **Ledger** — `MAPA-DE-DADOS.md` e `SECURITY-AUDIT.md` (mudança de policy de
-leitura em tabela com dado pessoal, com data e números do teste).
+leitura em tabela com dado pessoal, com data e números do teste; mais a dívida
+aceita de o Administrador do distrito conseguir reabrir toda Ação restrita numa
+escrita sem filtro).

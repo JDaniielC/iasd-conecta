@@ -1,3 +1,19 @@
+## 0. Dependência declarada por outra change
+
+- [ ] 0.1 `acao-direcionada-a-grupo` foi aplicada primeiro e criou
+      `acoes.restrita_ao_grupo`. Convidar para uma Ação restrita NÃO pode
+      alcançar quem não participa do Grupo dono dela: um convite para algo que
+      a pessoa não consegue abrir é convite morto, e ainda revela que a Ação
+      existe. Portanto `convidar_para_acao` e `contatos_para_convite` DEVEM
+      recusar/omitir esse caso, com teste de integração próprio. O requisito já
+      está escrito em
+      `openspec/changes/acao-direcionada-a-grupo/specs/visibilidade-de-acao/spec.md`,
+      requisito "Convidar para Ação restrita só alcança quem participa do Grupo"
+- [ ] 0.2 Ao escrever essas funções, lembrar que Ação de Grupo neste app é
+      candidata de Rodada e a vencedora dela — `acoes_candidata_checar_regras`
+      recusa `grupo_id` sem `rodada_id`. Não existe "Ação criada direto num
+      Grupo"
+
 ## 1. Banco — tabela, privilégios e RLS
 
 - [ ] 1.1 Migration nova com `public.convites_acao` (`acao_id`, `convidado_id`,

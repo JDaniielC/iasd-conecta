@@ -20,6 +20,28 @@ Ver `proposal.md - Why` para a motivação. O que restringe o desenho:
   e "não posso ver" é contável.
 - `acao_encerrada(uuid)` existe e é `data_hora + 4h`
   (`20260809174740_acao_encerrada_bloqueia_presenca.sql:33-50`).
+- A escrita em `acoes` **não** é só do criador. `acoes_update_criador` foi
+  substituída por `acoes_update_criador_dono_grupo_ou_admin`
+  (`20260724092132_district_admin.sql`), que aceita criador, Dono do Grupo da
+  Ação **ou** Administrador do distrito. Versões anteriores deste design
+  afirmavam o contrário; a afirmação era falsa e foi o que motivou a decisão
+  registrada abaixo.
+- `acoes_protege_campos_internos` (`before update`) já recusa mudança de
+  `confirmada/grupo_id/rodada_id/criador_id`, com escape por
+  `app.bypass_acoes_protecao`. É onde uma regra de escrita por coluna entraria,
+  se houvesse.
+- **Ação de Grupo só nasce como candidata de Rodada.**
+  `acoes_candidata_checar_regras` (`before insert`) recusa `grupo_id` sem
+  `rodada_id` — "Ação de Grupo só pode ser criada como candidata de uma Rodada
+  de votação" — e, quando há Rodada, deriva `new.grupo_id` dela e força
+  `new.confirmada := false`. `Action.toInsertMap`
+  (`lib/features/action/domain/action.dart:42-58`) não tem chave `grupo_id`, e
+  `voting_round_repository.dart:51` registra que ela nunca é enviada. Logo
+  **não existe "criar Ação e escolher Grupo"** neste app, e versões anteriores
+  desta change supunham que existia.
+- `rodadas_votacao_select_public` e `grupos_select_public` são `using (true)`.
+  A Rodada e o Grupo continuam públicos depois desta change; some a candidata,
+  não a existência da Rodada.
 
 ## Goals / Non-Goals
 
@@ -94,13 +116,52 @@ leitura de `/acoes` vira varredura de `participacoes_grupo`.
 Medir é tarefa, não suposição: `explain analyze` do feed antes e depois, com o
 número real nas tasks.
 
-### Mudar a restrição depois é permitido; encerrada trava
+### A restrição segue a permissão de escrita que já existe
 
-`acoes_update_criador` já limita `update` a `auth.uid() = criador_id`
-(`20260723230639_acoes.sql:126-129`), então quem restringe já é quem criou, sem
-policy nova. O que falta é impedir mudança depois de encerrada, e isso é
-gatilho `before update` usando `acao_encerrada` — mesma função que já bloqueia
-presença.
+Quem já pode editar a Ação pode mexer na restrição: criador, Dono do Grupo,
+Administrador do distrito — a lista de
+`acoes_update_criador_dono_grupo_ou_admin`. Nenhuma regra de escrita nova,
+nenhuma coluna protegida a mais.
+
+Decisão tomada com o custo na mesa: as três opções (só criador; criador ou
+Dono; a lista inteira) custavam o mesmo gatilho. Escolhida a lista inteira
+porque a restrição é configuração da Ação como qualquer outra, e partir a
+permissão de escrita em duas — uma para o resto da Ação, outra só para esta
+coluna — cria a segunda regra que diverge da primeira na próxima mudança.
+
+O que falta é impedir mudança depois de encerrada, e isso é gatilho
+`before update` usando `acao_encerrada` — mesma função que já bloqueia presença.
+
+**O que isso permite, medido, não suposto.** Três experimentos contra o
+Postgres local, com uma tabela de brinquedo cuja policy de `select` esconde a
+linha quando a coluna `oculta` é verdadeira:
+
+```
+update t set marca='x'    where id = <linha visível>    -> UPDATE 1
+update t set oculta=true  where id = <linha visível>    -> ERROR: new row
+                                                           violates row-level
+                                                           security policy
+update t set <coluna>='x'  -- sem filtro nenhum          -> alcança a linha oculta
+```
+
+O segundo é o que importa: **a policy de `select` vale também como `with check`
+implícito do `update`**. Ninguém consegue empurrar uma linha para fora da
+própria visibilidade. Logo o Administrador NÃO fecha uma Ação de Grupo do qual
+não participa — o banco recusa. Fechar é possível só para quem participa, e
+quem participa continua vendo. Este lado não precisou de código nenhum.
+
+O que sobra é o sentido inverso, o de **abrir**: desmarcar a restrição deixa a
+linha mais visível, então o `with check` implícito não barra. Pelo id o
+Administrador não alcança (o filtro traz a regra de leitura junto), mas sem
+filtro alcança — e a policy de `update` dele não recorta por linha. Com o Dono
+do Grupo o mesmo caminho existe e é inofensivo: a policy dele já recorta pelos
+Grupos dele.
+
+_Alternativa recusada:_ acrescentar `restrita_ao_grupo` à lista de
+`acoes_protege_campos_internos` com condição de criador. Fecharia o caminho
+sem filtro, ao preço de a restrição passar a ter dona diferente do resto da
+Ação — o Dono do Grupo editaria nome, data e local do que é dele, mas não a
+visibilidade. Fica registrado como o recuo pronto, se a dívida abaixo incomodar.
 
 Não há reversão de presença quando uma Ação pública vira restrita: quem
 confirmou continua confirmado e continua ocupando vaga. Tirar a vaga de alguém
@@ -120,6 +181,28 @@ não há caminho por ali para descobrir o nome de uma candidata restrita.
 Isto é afirmação a **verificar em teste**, não a assumir: a tarefa
 correspondente abre uma sessão de fora do Grupo contra uma Rodada com candidata
 restrita.
+
+### A restrição se marca na proposta da candidata
+
+A Ação de Grupo e a candidata de Rodada são **a mesma linha** de `acoes`: a que
+vence a Rodada continua com o `id` que tinha, ganha `confirmada = true` e fica.
+Então marcar a restrição na proposta cobre as duas janelas de uma vez — o
+período de votação, quando a pauta interna do Grupo está mais exposta, e a Ação
+que sobra depois — sem herança, sem cópia, sem segunda coluna.
+
+O controle vive em `create_candidate_page.dart`. `create_action_page.dart` não
+ganha nada: toda Ação criada por ali é avulsa, sempre foi, e o `check`
+`acoes_restrita_exige_grupo` já recusaria a combinação.
+
+_Alternativa recusada:_ marcar só na vencedora, depois da Rodada fechar.
+Menor, mas deixa toda a votação pública — que é exatamente quando o Grupo expõe
+o que está pensando em fazer.
+
+_Alternativa recusada:_ restringir a Rodada inteira, com coluna em
+`rodadas_votacao` e candidatas herdando. É o modelo mais fiel — a Rodada é que
+é do Grupo — e custa coluna em outra tabela, migration a mais e revisão da
+policy de `rodadas_votacao`. Se um dia a Rodada precisar sumir junto, é por
+aqui que se volta.
 
 ## Risks / Trade-offs
 
@@ -142,6 +225,16 @@ restrita.
   deliberado. Administrador não tem `bypass` de RLS em nenhuma leitura hoje, e
   criar o primeiro aqui abriria um caminho de acesso amplo sem que ninguém
   tenha pedido moderação de Ação de Grupo.
+- **DÍVIDA DE SEGURANÇA ACEITA — escrita sem filtro reabre tudo** → uma única
+  escrita de `restrita_ao_grupo` sem filtro, feita por Administrador do
+  distrito, torna pública toda Ação restrita do distrito, inclusive as que ele
+  nunca pôde ler. O sentido contrário (fechar o que não se enxerga) o próprio
+  Postgres barra, então a dívida é só de exposição, nunca de ocultação. É consequência direta de a policy de `update` dele não ter
+  recorte por linha, e não de nada que esta change introduza — mas é esta
+  change que cria dado que essa escrita pode expor. Não é defeito a corrigir
+  aqui: vai para `SECURITY-AUDIT.md` com o recuo já escrito acima. O que a
+  change **deve** fazer é ter o teste que prova o comportamento, para ninguém
+  descobrir isso em produção.
 
 ## Migration Plan
 

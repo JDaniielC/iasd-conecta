@@ -380,6 +380,27 @@ no Coral, quero ver o que tem.
 global — ou seja, guardar quando cada participação começou. É o marcador por Grupo que o design
 considerou e descartou, por outro caminho.
 
+### 2.8 Candidata perde a marca de Dupla Missionária no caminho
+
+Achado em 2026-08-13, pela passagem de convergência da change
+`acao-direcionada-a-grupo`. Não é dela: é anterior, e apareceu porque foi essa a linha que
+ganhou `restrictedToGroup`.
+
+`VotingRoundRepository.proposeCandidate` (`lib/features/action/data/voting_round_repository.dart:53-64`)
+remonta o `NewAction` campo a campo antes de mandar ao repositório de Ação, e **não copia
+`isMissionaryPair` nem `visitedGender`**. Quem propõe uma candidata marcada como Dupla
+Missionária tem a marca descartada antes do banco: a Ação nasce comum, sem as 2 vagas fixas nem
+a regra de composição por gênero da feature 007.
+
+O que ainda não foi verificado, e decide o tamanho: se `create_candidate_page.dart` chega a
+oferecer o controle de Dupla Missionária (ele oferece — o `SwitchListTile` está lá), então a
+tela promete uma coisa e o banco grava outra, calado. Se alguma candidata já foi proposta assim,
+há dado em produção com a marca faltando.
+
+**Não virar código antes de spec.** Duas leituras possíveis, e elas mudam o conserto: ou
+candidata pode ser Dupla Missionária e o repositório está errado, ou não pode e é a tela que
+está oferecendo o que não deveria.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

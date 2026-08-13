@@ -297,3 +297,120 @@ O conserto fecha o **caminho**. Ele não desfaz o que já foi publicado.
    registrar a conclusão em `REVISAO-JURIDICA.md` com data, qualquer que seja.
 
 Os quatro dependem de informação que só quem publicou tem. Nenhum deles é código.
+
+---
+
+# Mudança de policy de leitura — `acoes` e `confirmacoes_acao` (2026-08-13)
+
+Change `acao-direcionada-a-grupo`, migration
+`supabase/migrations/20260813120000_acao_restrita_ao_grupo.sql`.
+
+Não é achado nem incidente: é uma **mudança deliberada de quem vê o quê**, numa
+tabela com dado pessoal, e por isso é registrada aqui com o que passou a ser
+escondido, com o que **não** passou, e com a dívida que a decisão aceita.
+
+## O que mudou
+
+Duas policies de `select` que eram `using (true)` saíram, com o nome junto —
+mesmo motivo da feature 021: policy com nome que mente é pior que nome nenhum.
+
+- `acoes_select_public` → `acoes_select_visivel`: devolve a Ação quando
+  `restrita_ao_grupo = false` **ou** quem lê participa do Grupo dela.
+- `confirmacoes_acao_select_public` → `confirmacoes_acao_select_conforme_acao`:
+  devolve a confirmação só quando a Ação correspondente é legível. A condição
+  **não** repete a regra de participação — a subconsulta roda sob a RLS de
+  `acoes`, então a regra de visibilidade existe num lugar só.
+
+Esconder a Ação e deixar a lista de presença aberta seria vazamento por porta
+lateral: `confirmacoes_acao` é o par nominal `(acao_id, usuario_id)`, e revela
+de uma vez a existência da Ação e quem estará lá.
+
+## O que NÃO mudou, de propósito
+
+- **O padrão continua público.** A coluna nasceu `default false`. Nenhuma Ação
+  existente mudou de visibilidade no dia da migration.
+- **Os `grant select` de `anon` ficaram como estavam** nas duas tabelas.
+  Revogá-los faria a API responder erro de permissão em vez de lista vazia, e a
+  diferença entre "não existe" e "não posso ver" viraria canal lateral. Ação
+  escondida é **linha ausente**, nunca erro.
+- **`rodadas_votacao` e `grupos` continuam `using (true)`.** Some a candidata
+  restrita da Rodada; a existência da Rodada, não.
+- **O Administrador do distrito não ganhou `bypass` de leitura.** Ação restrita
+  é invisível para ele como para qualquer um de fora do Grupo. Não existe
+  `bypass` de RLS de leitura em lugar nenhum deste app, e criar o primeiro aqui
+  abriria acesso amplo sem que ninguém tenha pedido moderação de Ação de Grupo.
+
+## Dívida aceita — escrita sem filtro reabre a Ação restrita
+
+A escrita em `acoes` é de `acoes_update_criador_dono_grupo_ou_admin`
+(`20260724092132_district_admin.sql`): criador, Dono do Grupo **ou**
+Administrador do distrito. A change decidiu **não** dividir essa policy nem pôr
+`restrita_ao_grupo` na lista protegida de `acoes_protege_campos_internos` — a
+restrição é configuração da Ação como qualquer outra, e partir a permissão em
+duas cria a segunda regra que diverge da primeira.
+
+Medido contra o Postgres local, com tabela de brinquedo e com o banco real:
+
+```
+-- fechar o que se deixaria de enxergar: o próprio Postgres barra
+update acoes set restrita_ao_grupo = true  where id = <de Grupo alheio>
+  -> ERROR: new row violates row-level security policy for table "acoes"
+
+-- reabrir pelo id o que não se enxerga: não alcança
+update acoes set restrita_ao_grupo = false where id = <invisível>   -> 0 linhas
+
+-- reabrir SEM FILTRO: alcança
+update acoes set restrita_ao_grupo = false                          -> alcança
+```
+
+A policy de `select` vale também como `with check` implícito do `update`, então
+**ninguém consegue esconder uma Ação de si mesmo** — o lado de fechar está
+coberto sem código nenhum. O lado de **abrir** não: desmarcar deixa a linha mais
+visível, o `with check` implícito não tem o que barrar, e a policy de `update`
+do Administrador não recorta por linha.
+
+**Consequência:** um Administrador do distrito reabre ao público **toda** Ação
+restrita do distrito com uma única escrita sem filtro (`PATCH /rest/v1/acoes`
+sem parâmetro de filtro), inclusive as que nunca pôde ler. Com o Dono do Grupo o
+mesmo caminho existe e é inofensivo — a policy dele já recorta pelos Grupos
+dele.
+
+**Por que foi aceito:** o alcance é o de quem já é Administrador do distrito,
+um papel de confiança do app; o efeito é exposição de agenda interna, não de
+dado sensível novo (a lista nominal volta a ser legível, como era antes desta
+change para toda Ação); e o recuo é barato.
+
+**Recuo pronto, se um dia incomodar:** acrescentar `restrita_ao_grupo` à lista
+de `acoes_protege_campos_internos` com condição de criador. O preço é a
+restrição passar a ter dona diferente do resto da Ação — o Dono do Grupo
+editaria nome, data e local do que é dele, mas não a visibilidade.
+
+**Marcador:** `test/integration/acao_restrita_admin_assimetria_test.dart` afirma
+o comportamento **real**, não o desejado. Se o recuo for aplicado, é ele que
+fica vermelho — e aí a dívida foi paga, não quebrada.
+
+## Verificação
+
+Gates rodados em 2026-08-13, com os números:
+
+- `flutter analyze` — **No issues found**
+- `flutter test test/unit test/widget` — **335/335 passaram**, 0 falhas
+- `dart test test/integration` — **249/249 passaram**, 0 falhas, depois de
+  `supabase db reset` limpo
+- `flutter build web --release` — **✓ Built build/web**
+
+Oito arquivos de teste de integração cobrem os dois sentidos desta mudança —
+Ação pública continua pública para `anon` e para autenticado de fora
+(`acoes_select_publico_test.dart`), e Ação restrita não vaza por nenhuma das
+portas conhecidas: leitura direta, lista de presença, Rodada de votação, faixa
+de destaque, saída do Grupo e Grupo arquivado. Só o lado de esconder não prova
+nada: uma policy escrita errado esconde Ação pública de todo mundo, e é o outro
+lado que pega isso.
+
+**Custo medido**, com volume sintético de 5000 Ações / 500 Grupos, policy nova e
+antiga na mesma transação sobre a mesma base: para uma leitora realista
+(participa de 3 Grupos entre 500), o feed foi de **1.296 ms** para **0.971 ms** —
+mais rápido, porque a policy descarta metade das linhas antes do `Sort`. No pior
+caso (participar de todos os 500 Grupos, o que ninguém faz), 1.296 → 1.875 ms. O
+`exists` vira `hashed SubPlan`: `participacoes_grupo` é lida uma vez por
+consulta, não por linha.

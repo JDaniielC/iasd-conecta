@@ -99,19 +99,30 @@ Auth — e-mail e hash de senha ficam no schema `auth`, fora de `public.perfis`.
 As policies abaixo concedem `select` a `anon, authenticated` — ou seja,
 **visível até para quem nunca fez cadastro**, via API direta, independente do
 que a tela de fato renderiza. A maioria ainda é `using (true)`, sem filtro
-nenhum. Duas já não são, e ficam na tabela justamente para registrar que já
-foram: `votos` (feature 021) e `liderancas` (feature 018):
+nenhum. Quatro já não são, e ficam na tabela justamente para registrar que já
+foram: `votos` (feature 021), `liderancas` (feature 018), `acoes` e
+`confirmacoes_acao` (change `acao-direcionada-a-grupo`):
 
 | Tabela | Policy | Arquivo:linha |
 |---|---|---|
 | `perfis` (só via RPC `perfil_publico`, nunca `select` direto) | `perfil_publico(uuid)` retorna `id, nome_exibido, igreja_id` — nunca `idade`/`telefone`/`genero` | `20260723191202_perfis_igrejas.sql:41-53` |
 | `participacoes_grupo` | `participacoes_grupo_select_public` | `20260723220703_grupos.sql:121-124` |
-| `acoes` | `acoes_select_public` | `20260723230639_acoes.sql:121-124` |
-| `confirmacoes_acao` | `confirmacoes_acao_select_public` | `20260723230639_acoes.sql:136-139` |
+| `acoes` | **não é irrestrita desde a change `acao-direcionada-a-grupo`** — `acoes_select_visivel` devolve a Ação quando `restrita_ao_grupo = false` **ou** quem lê participa do Grupo dela. Ação restrita some para `anon` e para autenticado de fora, como linha ausente, nunca erro. O padrão continua público: a coluna nasceu `default false` e nenhuma Ação existente mudou de visibilidade | `20260813120000_acao_restrita_ao_grupo.sql:142-152` |
+| `confirmacoes_acao` | **não é irrestrita desde a mesma change** — `confirmacoes_acao_select_conforme_acao` devolve a confirmação só quando a Ação correspondente é legível para quem lê. A condição não repete a regra de participação: a subconsulta roda sob a RLS de `acoes`, então a regra vive num lugar só | `20260813120000_acao_restrita_ao_grupo.sql:165-173` |
 | `rodadas_votacao` | `rodadas_votacao_select_public` | `20260724084300_rodada_votacao.sql:197-200` |
 | `votos` | **não é público desde a feature 021** — `votos_select_own` devolve só a linha da própria pessoa (`auth.uid() = usuario_id`), e `anon` fica sem policy de `select`, portanto recebe lista vazia. A apuração conta todos os votos por fora da RLS, em `fechar_rodada_se_devido` (`security definer`) | `20260809200000_votos_visibilidade.sql:41-44` |
 | `administradores_distrito` | `administradores_distrito_select_public` | `20260724092132_district_admin.sql:52-55` |
 | `liderancas` | **não é irrestrita desde a feature 018** — `liderancas_select_confirmada_propria_ou_admin`, com três disjuntos: a declaração **confirmada** (e não rejeitada) é pública, que é a "identificação do Líder" que o glossário promete; a **própria pessoa** vê a sua em qualquer estado, porque precisa saber se foi confirmada, rejeitada ou se ainda espera; e o **Administrador do distrito** vê todas, porque é ele quem decide. Pendente e rejeitada de terceiro: negadas por default | `20260809210000_liderancas_visibilidade.sql:100-110` |
+
+`acoes.restrita_ao_grupo` (`20260813120000_acao_restrita_ao_grupo.sql:30`) não
+é dado pessoal — é um booleano de configuração da Ação. Está registrado aqui
+porque **decide o alcance de dado pessoal alheio**: com ele verdadeiro, a lista
+nominal de quem vai (`confirmacoes_acao`) deixa de ser legível fora do Grupo.
+A constraint `acoes_restrita_exige_grupo`
+(`20260813120000_acao_restrita_ao_grupo.sql:35-37`) garante que ele só existe
+onde há Grupo a que restringir. Quem escreve a coluna é quem edita a Ação
+(`acoes_update_criador_dono_grupo_ou_admin`), com a ressalva registrada em
+`SECURITY-AUDIT.md`.
 
 Até a feature 018, a UI de `detalhe_grupo_page.dart:118-119` só *renderiza*
 Líder/Diretor confirmado (via `currentLeadersProvider`), mas a RLS permitia ler

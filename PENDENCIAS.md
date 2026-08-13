@@ -401,6 +401,35 @@ há dado em produção com a marca faltando.
 candidata pode ser Dupla Missionária e o repositório está errado, ou não pode e é a tela que
 está oferecendo o que não deveria.
 
+### 2.9 Grafo do graphify desatualizado nos documentos
+
+Registrado em 2026-08-13, pela change `acao-direcionada-a-grupo` (task 7.8, ver o
+arquivo dela).
+
+`graphify-out/graph.json` está atualizado para o **código** (5640 nós) e parado em
+05/08 para os **documentos**. A rodada de 13/08 extraiu os 276 documentos alterados
+por 13 subagentes, a 1.868.352 tokens, e o resultado foi **descartado**: `build_merge`
+substitui os nós de todo arquivo re-extraído, a extração nova saiu muito mais magra
+que a antiga (`specs/` cairia de 1937 para 571 nós) e a mescla completa daria 3566
+nós contra os 5536 já existentes. O guarda anti-encolhimento do graphify recusaria a
+escrita.
+
+O cache semântico daquela rodada foi apagado e o manifesto **omite 311 arquivos de
+propósito**, para eles voltarem como pendentes no próximo `--update` em vez de
+contarem como processados sem terem sido.
+
+**O que fazer**: `/graphify . --update` numa sessão própria, com chunks de 8–10
+arquivos por agente (~30 agentes) em vez de 22, para bater ou passar a densidade de
+05/08 antes de mesclar. Enquanto isso, consulta ao grafo sobre documento responde com
+o estado de 05/08 — o que inclui não conhecer nenhuma das sete changes propostas em
+12–13/08.
+
+Enquanto está assim, vale saber de duas perdas do extrator, que não dependem desta
+pendência: 11 arquivos de manifesto/configuração produzem zero nós, e 13 nós Swift de
+iOS/macOS são descartados por colisão de id (`Package.swift`,
+`AppDelegate.swift`/`SceneDelegate.swift` repetem nome em diretórios diferentes). O
+graphify sugere `extract` por subpasta + `merge-graphs` para o segundo caso.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

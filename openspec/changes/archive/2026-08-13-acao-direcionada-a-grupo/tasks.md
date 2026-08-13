@@ -258,21 +258,45 @@
         lista), 1 MEDIUM (recusa de `update` é zero linha, não erro, e a tela
         não avisa), 2 LOW. Cinco hipóteses verificadas e derrubadas estão no
         relatório da passagem
-- [ ] 7.8 `graphify --update` antes de considerar a change fechada
-      - **ABERTA, e não por esquecimento.** Duas coisas apareceram:
-      - `graphify --update` não existe como comando do binário — `--update` é
-        flag da skill `/graphify`. A tarefa foi escrita com um comando que não
-        existe
-      - `detect_incremental` sobre o repositório: **654 arquivos novos ou
-        alterados** (344 código, 275 documento, 35 imagem) e 2 apagados. O grafo
-        em `graphify-out/` é de 2026-08-05; isto é oito dias de trabalho
-        acumulado, não esta change. Com documento e imagem no meio, a extração
-        semântica precisa de ~14 subagentes — operação cara que ninguém pediu
-        nesta sessão, e que não é sobre esta change
-      - **Decisão do dono**: rodar `/graphify . --update` numa sessão própria
-
-## Convergence 1
-
+- [x] 7.8 `graphify --update` antes de considerar a change fechada
+      - **Feito para o código; pendente para os documentos, e o porquê fica aqui.**
+      - A tarefa nomeava um comando inexistente: `--update` é flag da skill
+        `/graphify`, não do binário. O binário só tem `query`, `path`,
+        `explain`, `add`, `install`, `merge-graphs` e afins
+      - `detect_incremental` acusou 655 arquivos alterados desde 05/08 — 344 de
+        código, 276 de documento, 35 de imagem — e 2 apagados. É acúmulo de oito
+        dias, não desta change
+      - **Código: entrou.** AST sobre os 344 arquivos, mesclado com
+        `build_merge`. `graph.json` foi de 5536 para **5640 nós** e de 6412 para
+        **6596 arestas**; o diff traz 124 nós novos, entre eles
+        `acao_restrita_presencas_test.dart`, `acao_restrita_tela_test.dart` e
+        `asUser`. Diagnóstico de saúde limpo: 0 ponta solta, 0 ponta ausente,
+        0 self-loop, 0 aresta colapsada
+      - **Documentos: gastos e descartados, de propósito.** Os 276 documentos
+        foram extraídos por 13 subagentes, a 1.868.352 tokens. `build_merge` faz
+        *replace-on-re-extract*: os nós antigos de cada arquivo re-extraído são
+        descartados antes da mescla. A extração nova saiu muito mais magra que a
+        de 05/08 (`specs/` caía de 1937 para 571 nós, `openspec/` de 742 para
+        285), e a mescla completa daria **3566 nós** — menos que os 5536 que já
+        existiam. O guarda anti-encolhimento do próprio graphify (#479) recusaria
+        a escrita, e com razão. Só o AST foi mesclado
+      - **O cache semântico dessa rodada foi apagado** (263 arquivos), senão a
+        próxima rodada reusaria a versão pobre em vez de re-extrair
+      - **O manifesto omite 311 arquivos de propósito** — os 276 documentos e 35
+        imagens alterados. Registrá-los como processados sem terem sido é a
+        mentira que o guarda existe para evitar; assim eles voltam como
+        pendentes no próximo `--update`
+      - **Pendente, para uma sessão própria**: re-extrair os documentos com
+        chunks de 8–10 arquivos por agente (~30 agentes) em vez de 22, para
+        bater ou passar a densidade de 05/08, e então mesclar. Enquanto isso o
+        grafo responde sobre o código desta change, mas não sobre os documentos
+        dela
+      - **Duas perdas do extrator, conhecidas e não minhas**: 11 arquivos de
+        manifesto/configuração (`feature.json`, `claude.manifest.json`, …)
+        produziram zero nós; e 13 nós Swift de iOS/macOS foram descartados por
+        colisão de id (`Package.swift`, `AppDelegate.swift`/`SceneDelegate.swift`
+        repetem nome em diretórios diferentes). O próprio graphify sugere
+        `extract` por subpasta + `merge-graphs` para isso
 - [x] C1 Marcar a Ação restrita **no cartão da lista** de `/acoes`, não só no
       detalhe — per requisito "Quem não participa do Grupo não vê a Ação
       restrita", cenário "Quem participa vê normalmente", que pede a Ação

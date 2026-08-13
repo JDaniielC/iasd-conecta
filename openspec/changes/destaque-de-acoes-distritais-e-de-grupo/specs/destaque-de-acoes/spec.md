@@ -132,6 +132,27 @@ barato; perdê-lo, não.
 
 Lista vazia avança o marcador normalmente: não há novidade a perder.
 
+Ler o marcador e avançá-lo são dois passos independentes: falhar ao avançar
+NÃO DEVE tirar da tela o destaque que a leitura já tinha resolvido, e falhar ao
+ler NÃO DEVE gravar nada por cima.
+
+São as duas metades da mesma ideia — o marcador nunca piora por causa de um
+erro. Juntar os dois passos fazia a falha da gravação descartar a leitura boa e
+a faixa perdia o destaque de Grupo inteiro, calada; e gravar sem ter conseguido
+ler apagaria a fronteira do que já foi visto, deixando toda Ação existente de
+ser nova de uma vez.
+
+#### Scenario: Armazenamento recusa a gravação
+
+- **WHEN** o marcador é lido com sucesso mas o aparelho recusa gravá-lo
+- **THEN** a faixa continua mostrando o destaque de Grupo que a leitura
+  resolveu, e o marcador anterior é preservado
+
+#### Scenario: Armazenamento recusa a leitura
+
+- **WHEN** o aparelho recusa ler o marcador
+- **THEN** nada é gravado por cima dele
+
 #### Scenario: Lista que não carrega não consome a novidade
 
 - **WHEN** o Usuário abre `/acoes` e a lista de Ações falha ao carregar

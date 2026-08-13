@@ -106,3 +106,34 @@
       que é o equivalente a reiniciar o app), mas nenhum teste do repositório
       cobre, e a task 4.2 pedia justamente confirmar isso — per Scenario "Item
       fechado reaparece na próxima abertura do app", (missing)
+
+## Convergence 2
+
+- [x] Provar em teste de integração, como `authenticated`, que
+      `GroupRepository.fetchMyGroupIds` devolve só os Grupos de quem chamou.
+      Medido em 2026-08-13 contra o banco local, no papel real do app: um
+      `select grupo_id,usuario_id from participacoes_grupo` SEM o filtro
+      devolve 2 linhas, de 2 usuários diferentes — a RLS dessa tabela não
+      restringe às próprias linhas (é ela que permite `fetchMemberIds` listar
+      os membros de um Grupo alheio). O `.eq('usuario_id', uid)` no cliente é
+      a única linha de defesa da regra. E nada o exercita: os dois testes que
+      envolvem Grupos em `test/widget/destaque_acoes_test.dart` sobrepõem
+      `myGroupIdsProvider`, então tirar aquele `.eq` numa refatoração faria a
+      tarja "Novo no seu Grupo" aparecer para Ação de Grupo alheio com os 309
+      testes verdes — per Requirement "Ação de Grupo entra no destaque só para
+      quem participa e só enquanto nova", (missing)
+- [x] Cobrir `ActionsSeenRepository` com teste — hoje ele não tem nenhum.
+      Medido em 2026-08-13 e correto: grava na chave `acoes_ultima_vista`, um
+      instante local de 12:00 vira `2026-08-12T15:00:00.000Z`, volta como
+      `DateTime` UTC do mesmo instante, e a comparação que a regra faz acerta
+      nos dois sentidos (Ação criada 1 min depois é nova, 1 min antes não é).
+      Nada disso está preso: trocar a chave, tirar o `.toUtc()` ou mudar o
+      formato não quebra nenhum dos 309 testes, e o sintoma seria toda Ação de
+      Grupo deixando de ser nova de uma vez (ou nunca deixando) — per
+      Requirement "Marcador de 'nova' é único e por instalação", (missing)
+- [x] Decidir se o comportamento "falha ao gravar o marcador não derruba o
+      destaque já lido" entra na spec. Está implementado (leitura e gravação
+      são dois providers desde a Convergence 1) e tem teste, mas nenhum
+      requisito o pede — quem ler a spec não sabe que é obrigatório, e uma
+      refatoração que volte a juntar os dois passaria pela spec sem conflito.
+      Levantado para consciência, não é defeito — (unrequested)

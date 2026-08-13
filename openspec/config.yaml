@@ -47,9 +47,9 @@ rules:
 operations:
   apply:
     guidance:
-      - Rode os gates e cite os números: flutter analyze, flutter test
+      - "Rode os gates e cite os números: flutter analyze, flutter test
         test/unit test/widget, dart test test/integration (exige supabase
-        start), flutter build web --release.
+        start), flutter build web --release."
       - Antes de fechar, rode a skill openspec-converge sobre a change. Ela
         existe porque neste projeto 20 defeitos passaram por analyze limpo,
         273 testes verdes e revisão de código.

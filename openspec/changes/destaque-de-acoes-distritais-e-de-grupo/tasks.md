@@ -137,3 +137,26 @@
       requisito o pede — quem ler a spec não sabe que é obrigatório, e uma
       refatoração que volte a juntar os dois passaria pela spec sem conflito.
       Levantado para consciência, não é defeito — (unrequested)
+
+## Convergence 3
+
+- [x] Invalidar `myGroupIdsProvider` ao Participar e ao Sair de um Grupo.
+      Medido em 2026-08-13: participando de um Grupo e voltando para `/acoes`
+      na mesma sessão do app, a faixa segue sem a novidade — `neutro=0` e a
+      consulta de Grupos não foi refeita (`consultas=1`, o mesmo de antes de
+      participar). Só reiniciando o app: `neutro=1`, `consultas=2`. Causa:
+      `myGroupIdsProvider` (`lib/features/group/group_providers.dart`) não é
+      `autoDispose`, então cacheia pela vida do app, e `_join`
+      (`lib/features/group/presentation/group_detail_page.dart:28`) invalida
+      só `membersProvider(groupId)`; `_leave` tem o espelho do problema, e
+      continuaria mostrando novidade de Grupo do qual a pessoa saiu.
+      O dano não é só o atraso: o marcador avança nessa visita, porque a lista
+      e os Grupos "carregaram com sucesso" — só que respondendo a pergunta de
+      antes. Medido no encadeamento completo (abro /acoes sem participar,
+      participo, volto, reinicio): marcador `12:00` -> `12:10` e, mesmo depois
+      do reinício, `neutro=0`. A novidade do Grupo em que a pessoa acabou de
+      entrar é consumida sem nunca ter sido mostrada, e não volta.
+      É a mesma classe da Convergence 1 por outra porta — lá era erro, aqui é
+      dado velho — e a decisão registrada na spec continua valendo: a correção
+      é invalidar o cache, não mexer na regra — per Requirement "Ação de Grupo
+      entra no destaque só para quem participa e só enquanto nova", (partial)

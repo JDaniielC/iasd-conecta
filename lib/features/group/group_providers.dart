@@ -47,10 +47,22 @@ final membersProvider =
 
 /// Os Grupos de que eu participo — uma consulta, não uma por card.
 ///
-/// Sem `autoDispose`: a faixa de destaque de `/acoes` consulta isto a cada
-/// abertura da tela, e o resultado muda só quando alguém entra ou sai de um
-/// Grupo. Ver `GroupRepository.fetchMyGroupIds`.
-final myGroupIdsProvider = FutureProvider<Set<String>>((ref) {
+/// **`autoDispose`, e isso é a correção de um defeito medido.** Sem ele o
+/// resultado ficava cacheado pela vida do app: participar de um Grupo e voltar
+/// para `/acoes` na mesma sessão mostrava a faixa sem a novidade daquele
+/// Grupo — medido em 2026-08-13, `neutro=0` e a consulta nem refeita, só
+/// voltando ao normal depois de reiniciar o app. E o marcador avançava nessa
+/// visita, porque a lista e os Grupos "carregaram com sucesso" — só que
+/// respondendo a pergunta de antes de a pessoa entrar no Grupo. A novidade era
+/// consumida sem nunca ter sido mostrada.
+///
+/// A alternativa era invalidar em cada lugar que mexe em `participacoes_grupo`
+/// — Participar, Sair, e criar um Grupo (onde o trigger insere o Dono). Foi
+/// descartada porque o defeito É alguém ter esquecido um desses lugares, e a
+/// lista só cresce. `autoDispose` responde a pergunta uma vez por abertura de
+/// tela, que é a frequência que a faixa precisa, e não depende de ninguém
+/// lembrar.
+final myGroupIdsProvider = FutureProvider.autoDispose<Set<String>>((ref) {
   ref.watch(authStateChangesProvider);
   return ref.watch(groupRepositoryProvider).fetchMyGroupIds();
 });

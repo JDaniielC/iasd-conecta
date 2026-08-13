@@ -722,6 +722,73 @@ void main() {
     expect(find.text('Ensaio do Coral'), findsOneWidget);
   });
 
+  testWidgets('participar de um Grupo e voltar já mostra a novidade dele',
+      (tester) async {
+    // Medido em 2026-08-13, antes de `myGroupIdsProvider` virar `autoDispose`:
+    // participar e voltar para /acoes na mesma sessão dava `neutro=0` e nem
+    // refazia a consulta — e o marcador avançava assim mesmo, porque a lista e
+    // os Grupos "carregaram com sucesso" respondendo a pergunta de antes. A
+    // novidade era consumida sem nunca ter sido mostrada, e nem reiniciar o
+    // app a trazia de volta.
+    var meusGrupos = <String>{};
+    var consultas = 0;
+    final seen = FakeActionsSeenRepository(stored: _marcador);
+    final naTelaDeAcoes = ValueNotifier<bool>(true);
+    addTearDown(naTelaDeAcoes.dispose);
+    // Criada depois de `_now`, que é quando a primeira visita avança o
+    // marcador. Ação que já existia ANTES de a pessoa entrar no Grupo é outro
+    // caso, e continua sem aparecer — ver a limitação registrada em
+    // `design.md` sobre o marcador único.
+    final criadaEnquantoEuEntrava = _now.add(const Duration(minutes: 1));
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hasProfileProvider.overrideWith((ref) async => true),
+          actionsWithChurchProvider.overrideWith((ref) async => [
+                _action(
+                  id: 'g1a',
+                  name: 'Ensaio do Coral',
+                  dateTime: _foraDoSabado,
+                  groupId: 'g1',
+                  createdAt: criadaEnquantoEuEntrava,
+                ),
+              ]),
+          churchesProvider.overrideWith((ref) async => _churches),
+          clockProvider.overrideWithValue(() => _now),
+          myGroupIdsProvider.overrideWith((ref) async {
+            consultas++;
+            return meusGrupos;
+          }),
+          actionsSeenRepositoryProvider.overrideWithValue(seen),
+        ],
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: naTelaDeAcoes,
+            builder: (context, emAcoes, _) => emAcoes
+                ? const ActionListPage()
+                : const Scaffold(body: Text('tela do Grupo')),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(_neutro), findsNothing);
+    expect(consultas, 1);
+
+    // Foi à tela do Grupo, tocou em Participar, e voltou — mesma sessão do
+    // app, sem reiniciar nada.
+    naTelaDeAcoes.value = false;
+    await tester.pumpAndSettle();
+    meusGrupos = {'g1'};
+    naTelaDeAcoes.value = true;
+    await tester.pumpAndSettle();
+
+    expect(consultas, 2, reason: 'voltar para a tela tem que perguntar de novo');
+    expect(find.text(_neutro), findsOneWidget);
+  });
+
   testWidgets('item fechado reaparece depois de reiniciar o app', (tester) async {
     final acoes = [_action(id: 'a1', name: 'Mutirão', dateTime: _foraDoSabado)];
     await _pump(tester, actions: acoes);

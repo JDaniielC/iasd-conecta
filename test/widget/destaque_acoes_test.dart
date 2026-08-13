@@ -12,18 +12,32 @@ import 'package:iasd_conecta/features/profile/domain/church.dart';
 /// Marcador em memória: o teste não fala com o armazenamento do aparelho, e
 /// muito menos com o servidor.
 class FakeActionsSeenRepository implements ActionsSeenRepository {
-  FakeActionsSeenRepository({this.stored});
+  FakeActionsSeenRepository({
+    this.stored,
+    this.failWrite = false,
+    this.failRead = false,
+  });
 
   DateTime? stored;
   int writeCount = 0;
 
+  /// Armazenamento do aparelho recusando a gravação.
+  final bool failWrite;
+
+  /// Armazenamento do aparelho recusando a leitura.
+  final bool failRead;
+
   @override
-  Future<DateTime?> readLastSeenActionsDate() async => stored;
+  Future<DateTime?> readLastSeenActionsDate() async {
+    if (failRead) throw Exception('armazenamento indisponível');
+    return stored;
+  }
 
   @override
   Future<void> writeLastSeenActionsDate(DateTime date) async {
-    stored = date;
     writeCount++;
+    if (failWrite) throw Exception('armazenamento indisponível');
+    stored = date;
   }
 }
 
@@ -74,15 +88,23 @@ Future<void> _pump(
   Set<String> myGroupIds = const <String>{},
   FakeActionsSeenRepository? seen,
   bool hasProfile = true,
+  bool failList = false,
+  bool failGroups = false,
 }) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         hasProfileProvider.overrideWith((ref) async => hasProfile),
-        actionsWithChurchProvider.overrideWith((ref) async => actions),
+        actionsWithChurchProvider.overrideWith((ref) async {
+          if (failList) throw Exception('sem rede');
+          return actions;
+        }),
         churchesProvider.overrideWith((ref) async => _churches),
         clockProvider.overrideWithValue(() => _now),
-        myGroupIdsProvider.overrideWith((ref) async => myGroupIds),
+        myGroupIdsProvider.overrideWith((ref) async {
+          if (failGroups) throw Exception('sem rede');
+          return myGroupIds;
+        }),
         actionsSeenRepositoryProvider
             .overrideWithValue(seen ?? FakeActionsSeenRepository(stored: _marcador)),
       ],
@@ -580,6 +602,143 @@ void main() {
     final cabecalho = tester.getTopLeft(find.text('Outras datas')).dy;
     expect(cabecalho, lessThan(844),
         reason: 'a faixa empurrou a lista por período para fora da tela do celular');
+  });
+
+  group('o marcador só avança quando a tela teve o que mostrar', () {
+    testWidgets('lista que não carrega não consome a novidade', (tester) async {
+      final seen = FakeActionsSeenRepository(stored: _marcador);
+      await _pump(tester, actions: const [], seen: seen, failList: true);
+
+      expect(find.textContaining('Não deu pra carregar'), findsOneWidget);
+      // O defeito medido em 2026-08-12: aqui gravava, e uma falha de rede de
+      // um segundo apagava a novidade de todos os Grupos para sempre.
+      expect(seen.writeCount, 0);
+      expect(seen.stored, _marcador);
+    });
+
+    testWidgets('consulta de Grupos que não carrega não consome a novidade',
+        (tester) async {
+      final seen = FakeActionsSeenRepository(stored: _marcador);
+      await _pump(
+        tester,
+        seen: seen,
+        failGroups: true,
+        actions: [_action(id: 'a1', name: 'Mutirão', dateTime: _foraDoSabado)],
+      );
+
+      // A faixa não quebra: Ação avulsa não depende de saber os meus Grupos.
+      expect(find.text(_forte), findsOneWidget);
+      // Mas sem saber quais Grupos são os meus, não houve como mostrar a
+      // novidade deles — então ela não foi consumida.
+      expect(seen.writeCount, 0);
+      expect(seen.stored, _marcador);
+    });
+
+    testWidgets('lista vazia avança o marcador — não há novidade a perder',
+        (tester) async {
+      final seen = FakeActionsSeenRepository(stored: _marcador);
+      await _pump(tester, actions: const [], seen: seen);
+
+      expect(seen.writeCount, 1);
+      expect(seen.stored, _now);
+    });
+
+    testWidgets('falha ao ler o marcador não o sobrescreve', (tester) async {
+      final seen = FakeActionsSeenRepository(stored: _marcador, failRead: true);
+      await _pump(
+        tester,
+        myGroupIds: const {'g1'},
+        seen: seen,
+        actions: [_action(id: 'a1', name: 'Mutirão', dateTime: _foraDoSabado)],
+      );
+
+      // Sem saber até quando a pessoa já viu, gravar `agora` por cima
+      // apagaria a fronteira e toda Ação existente deixaria de ser nova de uma
+      // vez. Melhor não mexer e tentar de novo na próxima abertura.
+      expect(seen.writeCount, 0);
+      expect(seen.stored, _marcador);
+      // A faixa continua servindo o que não depende do marcador.
+      expect(find.text(_forte), findsOneWidget);
+    });
+
+    testWidgets('falha ao gravar não derruba o destaque já lido', (tester) async {
+      final seen = FakeActionsSeenRepository(stored: _marcador, failWrite: true);
+      await _pump(
+        tester,
+        myGroupIds: const {'g1'},
+        seen: seen,
+        actions: [
+          _action(
+            id: 'a1',
+            name: 'Ensaio do Coral',
+            dateTime: _foraDoSabado,
+            groupId: 'g1',
+            createdAt: _depoisDoMarcador,
+          ),
+        ],
+      );
+
+      // Ler e gravar viviam no mesmo Future: a falha da gravação descartava a
+      // leitura boa e a faixa perdia o destaque de Grupo inteiro, calada.
+      expect(find.text(_neutro), findsOneWidget);
+      expect(seen.stored, _marcador, reason: 'o marcador não pode se perder');
+    });
+  });
+
+  testWidgets('filtro de Igreja não esconde a novidade de um Grupo meu',
+      (tester) async {
+    await _pump(
+      tester,
+      myGroupIds: const {'g1'},
+      actions: [
+        _action(id: 'a1', name: 'Avulsa da Central', dateTime: _foraDoSabado),
+        ActionWithChurch(
+          churchId: 'igreja-2',
+          action: Action(
+            id: 'g1a',
+            name: 'Ensaio do Coral',
+            dateTime: _foraDoSabado,
+            local: 'Templo',
+            creatorId: 'dono-1',
+            createdAt: _depoisDoMarcador,
+            groupId: 'g1',
+          ),
+        ),
+      ],
+    );
+
+    expect(find.text(_neutro), findsOneWidget);
+
+    await tester.tap(find.byType(DropdownButtonFormField<String>).first);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Central').last);
+    await tester.pumpAndSettle();
+
+    // Participação não filtra por Igreja, e o que a faixa mostra também não:
+    // filtrando, a novidade do meu Grupo de outra Igreja continua na faixa...
+    expect(find.text(_neutro), findsOneWidget);
+    // ...e sai só da lista por período, que é o que o filtro existe para
+    // recortar.
+    expect(find.text('Ensaio do Coral'), findsOneWidget);
+  });
+
+  testWidgets('item fechado reaparece depois de reiniciar o app', (tester) async {
+    final acoes = [_action(id: 'a1', name: 'Mutirão', dateTime: _foraDoSabado)];
+    await _pump(tester, actions: acoes);
+    expect(find.text(_forte), findsOneWidget);
+
+    await tester.tap(find.byTooltip('Tirar do destaque'));
+    await tester.pumpAndSettle();
+    expect(find.text(_forte), findsNothing);
+
+    // `ProviderScope` novo é o processo novo do app: o dismiss vive só em
+    // memória, então tem que morrer aqui. Reaparecer é o comportamento
+    // querido, não um bug a consertar.
+    await tester.pumpWidget(const SizedBox());
+    await tester.pumpAndSettle();
+    await _pump(tester, actions: acoes);
+
+    expect(find.text(_forte), findsOneWidget);
   });
 
   testWidgets('lista sem nenhuma Ação em destaque não abre a faixa', (tester) async {

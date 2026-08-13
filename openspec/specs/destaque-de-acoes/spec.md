@@ -1,10 +1,12 @@
+# Destaque de Acoes Specification
+
 ## Purpose
 
 Quando uma Ação entra na faixa de destaque de `/acoes`, em qual cor aparece, e
 quando some dali — sem mudar o que entra na lista por período, que continua
 existindo do jeito que está hoje.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Ação avulsa sempre entra no destaque
 
@@ -77,24 +79,6 @@ por Igreja), e a Ação é **nova** para essa pessoa.
 Uma Ação de Grupo cujo Usuário não participa NÃO DEVE aparecer na faixa de
 destaque — continua só na lista por período, como hoje.
 
-O filtro de Igreja da tela NÃO DEVE tirar nada da faixa: "qualquer Igreja" vale
-para o que a faixa mostra, não só para a regra de participação. Quem deixa o
-filtro na própria Igreja — o mais provável — deixaria de ver a novidade de um
-Grupo seu sediado em outra, e ela seria consumida assim mesmo. O filtro
-continua valendo para a lista por período, que é o que ele existe para
-recortar.
-
-O filtro "Só Sábado" é diferente e continua valendo também na faixa: ele diz
-"quero ver só o que é do Sábado", e uma faixa cheia de Ação de outro dia
-contrariaria o que a pessoa acabou de pedir.
-
-#### Scenario: Filtro de Igreja não esconde a novidade de um Grupo meu
-
-- **WHEN** o Usuário filtra a lista por uma Igreja e tem Ação nova num Grupo
-  seu sediado em outra Igreja
-- **THEN** essa Ação continua na faixa de destaque, mesmo não aparecendo na
-  lista por período sob aquele filtro
-
 #### Scenario: Ação nova de um Grupo que participo entra em destaque neutro
 
 - **WHEN** um Grupo que o Usuário participa tem uma Ação confirmada criada
@@ -119,31 +103,6 @@ contrariaria o que a pessoa acabou de pedir.
 O que separa uma Ação de Grupo nova de uma já vista é um único marcador —
 a última vez que o Usuário abriu `/acoes` nesta instalação — não um marcador
 por Grupo.
-
-O marcador só avança quando a tela teve **o que mostrar**: a lista de Ações e
-a consulta de "Grupos que eu participo" precisam ter carregado com sucesso.
-Falhando qualquer uma das duas, o marcador NÃO DEVE avançar.
-
-Sem isso, uma falha de rede de um segundo consome em silêncio a novidade de
-todos os Grupos, para sempre — a pessoa vê "não deu pra carregar" e perde o
-aviso que nunca chegou a receber. O preço aceito é o oposto: com rede ruim a
-mesma Ação pode aparecer em destaque mais de uma vez. Repetir um aviso é
-barato; perdê-lo, não.
-
-Lista vazia avança o marcador normalmente: não há novidade a perder.
-
-#### Scenario: Lista que não carrega não consome a novidade
-
-- **WHEN** o Usuário abre `/acoes` e a lista de Ações falha ao carregar
-- **THEN** o marcador não avança, e na próxima abertura bem-sucedida as Ações
-  de Grupo ainda contam como novas
-
-#### Scenario: Consulta de Grupos que não carrega não consome a novidade
-
-- **WHEN** o Usuário abre `/acoes` e a consulta dos Grupos de que ele
-  participa falha
-- **THEN** o marcador não avança — sem saber quais são os Grupos, não há como
-  ter mostrado a novidade deles
 
 #### Scenario: Abrir a tela por causa de um Grupo consome a novidade de todos
 

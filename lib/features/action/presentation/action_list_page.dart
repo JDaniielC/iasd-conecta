@@ -92,6 +92,9 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
     // provider `autoDispose`, não o ciclo de vida deste widget — ver
     // `lastSeenActionsProvider`.
     final lastSeen = ref.watch(lastSeenActionsProvider).value;
+    // Observado pelo efeito, não pelo valor: é ele que avança o marcador, e só
+    // depois que a lista e os Grupos carregaram. Ver `markActionsSeenProvider`.
+    ref.watch(markActionsSeenProvider);
 
     return Scaffold(
       appBar: AppBar(
@@ -143,10 +146,29 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                         actionTimeStatus(i.action.dateTime, now) !=
                         ActionTimeStatus.ended)
                     .toList();
+                // A faixa NÃO herda o filtro de Igreja. Medido em 2026-08-12:
+                // filtrando por uma Igreja, a Ação nova de um Grupo meu
+                // sediado em outra sumia da faixa — e o marcador avançava
+                // assim mesmo, então ela não voltava. Quem deixa o filtro na
+                // própria Igreja, que é o provável, deixaria de ver
+                // exatamente a novidade que a faixa existe para mostrar.
+                //
+                // "Só Sábado" continua valendo aqui: ele diz "quero ver só o
+                // que é do Sábado", e uma faixa cheia de Ação de outro dia
+                // contrariaria o que a pessoa acabou de pedir.
+                var bandItems = _sabbathOnly
+                    ? items.where((i) => isOnSabbath(i.action.dateTime)).toList()
+                    : items;
+                bandItems = bandItems
+                    .where((i) =>
+                        actionTimeStatus(i.action.dateTime, now) !=
+                        ActionTimeStatus.ended)
+                    .toList();
                 if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhuma Ação ainda.'));
                 }
                 final sorted = [...filtered]..sort(_comparator(_sortOrder));
+                final sortedBand = [...bandItems]..sort(_comparator(_sortOrder));
                 final byPeriod = <ActionPeriod, List<ActionWithChurch>>{};
                 for (final item in sorted) {
                   final period = actionPeriod(item.action.dateTime, now);
@@ -168,7 +190,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                 // lista por período inalcançável. Aqui ela rola junto, e
                 // quando está vazia ocupa zero — nunca sobra um espaço morto.
                 final highlights = [
-                  for (final item in sorted)
+                  for (final item in sortedBand)
                     if (!dismissed.contains(item.action.id))
                       if (actionHighlight(
                             item.action,

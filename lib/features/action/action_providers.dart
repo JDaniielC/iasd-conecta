@@ -64,28 +64,50 @@ final actionsSeenRepositoryProvider = Provider<ActionsSeenRepository>((ref) {
   return const ActionsSeenRepository();
 });
 
-/// O marcador **como estava ao entrar em `/acoes`** — e, de quebra, o ato de
-/// avançá-lo.
+/// O marcador **como estava ao entrar em `/acoes`**. Só lê.
 ///
-/// Ler e gravar no mesmo lugar parece esquisito e é de propósito: o valor que
-/// a faixa precisa é o anterior à visita, e a visita tem que consumi-lo. Fazer
-/// os dois aqui garante a ordem (ler antes de gravar); invertida, o marcador
-/// novo já seria posterior a toda Ação existente e o destaque de Grupo morria
-/// em silêncio.
+/// Separado de [markActionsSeenProvider] de propósito. Enquanto ler e gravar
+/// viviam no mesmo `Future`, uma falha na gravação descartava a leitura que
+/// tinha dado certo e a faixa perdia o destaque de Grupo inteiro, calada —
+/// medido em 2026-08-12. Agora armazenamento com problema na hora de gravar
+/// não tira da tela o que já foi lido.
 ///
-/// **`autoDispose` é o que define "abertura", e é a correção de um bug real.**
-/// Antes isto vivia no `initState` da tela. `lib/app.dart` constrói
-/// `const ActionListPage()`, então o widget é idêntico entre navegações, o
-/// Flutter reusa o `State` e o `initState` só rodava no arranque frio: quem
-/// navegasse `/acoes` -> `/grupos` -> `/acoes` nunca avançava o marcador, e a
-/// mesma Ação de Grupo ficava "nova" para sempre naquela sessão. Medido no
-/// navegador em 2026-08-12. Um provider `autoDispose` morre ao sair da tela e
-/// renasce ao voltar — que é exatamente o evento que a spec chama de abrir.
-final lastSeenActionsProvider = FutureProvider.autoDispose<DateTime?>((ref) async {
-  final repository = ref.watch(actionsSeenRepositoryProvider);
-  final lastSeen = await repository.readLastSeenActionsDate();
-  await repository.writeLastSeenActionsDate(ref.read(clockProvider)());
-  return lastSeen;
+/// **`autoDispose` é o que define "abertura".** `lib/app.dart` constrói
+/// `const ActionListPage()`, então o widget é idêntico entre navegações e o
+/// Flutter reusa o `State`: qualquer coisa presa ao `initState` só rodaria no
+/// arranque frio, e quem navegasse `/acoes` -> `/grupos` -> `/acoes` nunca
+/// avançaria o marcador. Um provider `autoDispose` morre ao sair da tela e
+/// renasce ao voltar — que é o evento que a spec chama de abrir.
+final lastSeenActionsProvider = FutureProvider.autoDispose<DateTime?>((ref) {
+  return ref.watch(actionsSeenRepositoryProvider).readLastSeenActionsDate();
+});
+
+/// Avança o marcador — e só depois que a tela teve **o que mostrar**.
+///
+/// A tela precisa acioná-lo com `ref.watch`; o valor não interessa, o efeito
+/// sim.
+///
+/// As três esperas abaixo são a regra da spec, e cada uma custou um defeito
+/// medido em 2026-08-12:
+///
+///   * a leitura primeiro — gravar antes de ler apagaria o valor que a faixa
+///     usa, e nenhuma Ação de Grupo apareceria como nova;
+///   * a lista de Ações — sem ela a tela mostrou "não deu pra carregar" e mais
+///     nada; consumir a novidade ali apagava o aviso de todos os Grupos para
+///     sempre por causa de um segundo de rede ruim;
+///   * os Grupos de que a pessoa participa — sem saber quais são, não há como
+///     ter mostrado a novidade deles.
+///
+/// Qualquer uma falhando, o `await` relança e a gravação não acontece. O preço
+/// aceito é o inverso do defeito: com rede ruim a mesma Ação pode aparecer em
+/// destaque mais de uma vez. Repetir um aviso é barato; perdê-lo, não.
+final markActionsSeenProvider = FutureProvider.autoDispose<void>((ref) async {
+  await ref.watch(lastSeenActionsProvider.future);
+  await ref.watch(actionsWithChurchProvider.future);
+  await ref.watch(myGroupIdsProvider.future);
+  await ref
+      .watch(actionsSeenRepositoryProvider)
+      .writeLastSeenActionsDate(ref.read(clockProvider)());
 });
 
 /// Ids de Ação que quem está vendo fechou na faixa de destaque.

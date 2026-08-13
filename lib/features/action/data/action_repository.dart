@@ -62,6 +62,33 @@ class ActionRepository {
     await _client.from('acoes').insert(action.toInsertMap(creatorId: uid));
   }
 
+  /// Marca/desmarca a restrição ao Grupo (change `acao-direcionada-a-grupo`).
+  ///
+  /// Sem checagem de permissão aqui de propósito: quem pode é decidido por
+  /// `acoes_update_criador_dono_grupo_ou_admin`. O banco recusa a mudança
+  /// depois de a Ação encerrar, e recusa tornar restrita uma Ação que o próprio
+  /// autor da escrita deixaria de enxergar — as duas viram exceção sozinhas.
+  ///
+  /// **O `.select()` no fim não é enfeite.** Recusa por RLS de `update` não
+  /// levanta erro: devolve ZERO LINHA, calada. Sem ler o retorno, quem não tem
+  /// permissão veria o interruptor voltar sozinho e nenhuma explicação. Medido
+  /// em `test/integration/acao_restrita_quem_restringe_test.dart`.
+  ///
+  /// Ler o retorno é seguro nos dois sentidos: restringir só é possível para
+  /// quem continua enxergando a Ação (senão o banco já teria estourado), e
+  /// desmarcar deixa a linha mais visível. Ou seja, resposta vazia quer dizer
+  /// "não mudou nada", nunca "mudou e sumiu".
+  Future<void> setRestrictedToGroup(String id, bool restricted) async {
+    final rows = await _client
+        .from('acoes')
+        .update({'restrita_ao_grupo': restricted})
+        .eq('id', id)
+        .select('id');
+    if (rows.isEmpty) {
+      throw StateError('a restrição não foi alterada: escrita sem permissão');
+    }
+  }
+
   Future<void> cancelAction(String id) async {
     await _client.from('acoes').update({'cancelada_em': DateTime.now().toUtc().toIso8601String()}).eq(
       'id',

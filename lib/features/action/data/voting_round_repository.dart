@@ -60,6 +60,7 @@ class VotingRoundRepository {
         details: candidate.details,
         capacity: candidate.capacity,
         votingRoundId: votingRoundId,
+        restrictedToGroup: candidate.restrictedToGroup,
       ),
     );
   }

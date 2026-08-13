@@ -50,6 +50,36 @@ class ActionDetailPage extends ConsumerWidget {
     }
   }
 
+  /// Change `acao-direcionada-a-grupo`.
+  ///
+  /// Fechar uma Ação que a própria pessoa deixaria de enxergar é recusado pelo
+  /// banco (a policy de `select` vale como `with check` implícito do
+  /// `update`), e mudar depois de encerrada também. Nenhum dos dois é checado
+  /// aqui: a mensagem cobre os dois casos, e duplicar a regra na tela criaria
+  /// a segunda cópia que diverge da primeira.
+  Future<void> _setRestricted(
+    BuildContext context,
+    WidgetRef ref,
+    bool restricted,
+  ) async {
+    try {
+      await ref
+          .read(actionRepositoryProvider)
+          .setRestrictedToGroup(actionId, restricted);
+      ref.invalidate(actionProvider(actionId));
+      // O feed muda de tamanho para quem é de fora, então a listagem precisa
+      // ser relida junto.
+      ref.invalidate(actionsProvider);
+    } catch (_) {
+      if (!context.mounted) return;
+      _showError(
+        context,
+        'Não deu pra mudar quem vê esta Ação. '
+        'Ela já encerrou, ou você não participa do Grupo dela?',
+      );
+    }
+  }
+
   Future<void> _cancel(BuildContext context, WidgetRef ref) async {
     try {
       await ref.read(actionRepositoryProvider).cancelAction(actionId);
@@ -91,6 +121,13 @@ class ActionDetailPage extends ConsumerWidget {
             isGroupOwner: isGroupOwner,
             isDistrictAdmin: isDistrictAdmin,
           );
+          final canRestrict = action.canRestrict(
+                uid,
+                isGroupOwner: isGroupOwner,
+                isDistrictAdmin: isDistrictAdmin,
+              ) &&
+              !action.isCancelled &&
+              !isEnded;
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -134,6 +171,37 @@ class ActionDetailPage extends ConsumerWidget {
                       ),
                   ],
                 ),
+                // Marca de "restrita ao Grupo" — e o controle, para quem
+                // pode mudar. Isto é rótulo, nunca filtro: se esta Ação chegou
+                // à tela, `acoes_select_visivel` já decidiu que quem está
+                // lendo pode vê-la.
+                if (action.restrictedToGroup && !canRestrict) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  Row(
+                    children: [
+                      const Icon(Icons.lock_outline, size: 18),
+                      const SizedBox(width: AppSpacing.xs),
+                      Expanded(
+                        child: Text(
+                          'Só para quem participa do Grupo',
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+                if (canRestrict) ...[
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Só para quem participa do Grupo'),
+                    subtitle: const Text(
+                      'Some do feed de quem não participa, junto com a lista '
+                      'de quem vai.',
+                    ),
+                    value: action.restrictedToGroup,
+                    onChanged: (v) => _setRestricted(context, ref, v),
+                  ),
+                ],
                 if (!action.isCancelled && isEnded) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(

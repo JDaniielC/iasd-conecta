@@ -501,6 +501,11 @@ class _ActionCard extends ConsumerWidget {
           children: [
             Text(
               '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.local}'
+              // Change `acao-direcionada-a-grupo`: quem participa vê a Ação
+              // restrita junto das demais, e precisa saber que ela é restrita —
+              // senão combina no WhatsApp com quem não consegue nem abrir.
+              // Aqui cabe texto: esta linha quebra, não corta.
+              '${action.restrictedToGroup ? ' · Só do Grupo' : ''}'
               '${action.isCancelled ? ' · Cancelada' : ''}'
               '${!action.isCancelled && happeningNow ? ' · Acontecendo agora' : ''}',
             ),
@@ -609,6 +614,17 @@ class _HighlightCard extends StatelessWidget {
                         const SizedBox(width: AppSpacing.xs),
                         Icon(Icons.nights_stay,
                             size: 16, color: scheme.tertiary),
+                      ],
+                      // Ícone, e não texto: a linha de data logo abaixo é
+                      // `maxLines: 1` com reticências, e mais um pedaço ali
+                      // comeria o local. O `Tooltip` também é o rótulo que o
+                      // leitor de tela anuncia.
+                      if (action.restrictedToGroup) ...[
+                        const SizedBox(width: AppSpacing.xs),
+                        Tooltip(
+                          message: 'Só para quem participa do Grupo',
+                          child: Icon(Icons.lock_outline, size: 16, color: color),
+                        ),
                       ],
                     ],
                   ),

@@ -31,6 +31,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
   String? _error;
   bool _isMissionaryPair = false;
   VisitedGender? _visitedGender;
+  bool _restrictedToGroup = false;
 
   @override
   void dispose() {
@@ -67,6 +68,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
       capacity: int.tryParse(_capacityController.text),
       isMissionaryPair: _isMissionaryPair,
       visitedGender: _visitedGender,
+      restrictedToGroup: _restrictedToGroup,
     );
   }
 
@@ -189,6 +191,23 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
                   decoration: const InputDecoration(labelText: 'Limite de vagas (opcional)'),
                   keyboardType: TextInputType.number,
                 ),
+              // Change `acao-direcionada-a-grupo`. O controle vive AQUI, e não
+              // em `create_action_page.dart`: Ação de Grupo neste app só nasce
+              // como candidata de Rodada (`acoes_candidata_checar_regras`), e
+              // na tela de Ação avulsa não haveria Grupo a que se referir.
+              // A vencedora da Rodada herda de graça — é a mesma linha.
+              const SizedBox(height: AppSpacing.md),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Só para quem participa do Grupo'),
+                subtitle: const Text(
+                  'A Ação não aparece para quem não participa deste Grupo, '
+                  'nem para quem está sem login. A lista de quem vai também fica '
+                  'escondida.',
+                ),
+                value: _restrictedToGroup,
+                onChanged: (v) => setState(() => _restrictedToGroup = v),
+              ),
               if (_error != null) ...[
                 const SizedBox(height: AppSpacing.sm),
                 Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),

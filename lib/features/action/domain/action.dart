@@ -15,6 +15,7 @@ class NewAction {
     this.votingRoundId,
     this.isMissionaryPair = false,
     this.visitedGender,
+    this.restrictedToGroup = false,
   });
 
   final String name;
@@ -33,6 +34,12 @@ class NewAction {
   final bool isMissionaryPair;
   final VisitedGender? visitedGender;
 
+  /// Ação visível só para quem participa do Grupo (change
+  /// `acao-direcionada-a-grupo`). Só faz sentido com [votingRoundId]: Ação de
+  /// Grupo neste app é candidata de Rodada, e o `check`
+  /// `acoes_restrita_exige_grupo` recusa a combinação sem Grupo.
+  final bool restrictedToGroup;
+
   bool get isReadyToSubmit =>
       name.trim().isNotEmpty &&
       local.trim().isNotEmpty &&
@@ -48,6 +55,10 @@ class NewAction {
       'limite_vagas': isMissionaryPair ? 2 : capacity,
       'criador_id': creatorId,
       if (votingRoundId != null) 'rodada_id': votingRoundId,
+      // Só vai junto quando há Rodada. Numa Ação avulsa a chave nem é enviada:
+      // mandar `false` seria inofensivo, mas mandar `true` bateria no `check`
+      // do banco, e é melhor o formulário não ter como formar a combinação.
+      if (votingRoundId != null) 'restrita_ao_grupo': restrictedToGroup,
       'eh_dupla_missionaria': isMissionaryPair,
       'genero_visitado': switch (visitedGender) {
         VisitedGender.male => 'masculino',
@@ -74,6 +85,7 @@ class Action {
     this.isConfirmed = true,
     this.isMissionaryPair = false,
     this.visitedGender,
+    this.restrictedToGroup = false,
   });
 
   final String id;
@@ -101,7 +113,26 @@ class Action {
   final bool isMissionaryPair;
   final VisitedGender? visitedGender;
 
+  /// Ação visível só para quem participa do Grupo dela.
+  ///
+  /// Isto é marca de tela, NUNCA filtro: quando esta Ação chegou até aqui, o
+  /// banco já decidiu que quem está lendo pode vê-la (`acoes_select_visivel`).
+  /// Filtrar de novo no cliente seria uma segunda regra para divergir da
+  /// primeira.
+  final bool restrictedToGroup;
+
   bool get isCancelled => cancelledAt != null;
+
+  /// Quem pode marcar/desmarcar a restrição: a mesma gente que edita a Ação,
+  /// por `acoes_update_criador_dono_grupo_ou_admin`. Só faz sentido em Ação de
+  /// Grupo, e o banco recusa a mudança depois de encerrada.
+  bool canRestrict(
+    String? currentUserId, {
+    required bool isGroupOwner,
+    bool isDistrictAdmin = false,
+  }) =>
+      groupId != null &&
+      (isDistrictAdmin || isCreator(currentUserId) || isGroupOwner);
 
   bool get isCandidateInVoting => !isConfirmed;
 
@@ -137,6 +168,7 @@ class Action {
       groupId: map['grupo_id'] as String?,
       votingRoundId: map['rodada_id'] as String?,
       isConfirmed: map['confirmada'] as bool? ?? true,
+      restrictedToGroup: map['restrita_ao_grupo'] as bool? ?? false,
       isMissionaryPair: map['eh_dupla_missionaria'] as bool? ?? false,
       visitedGender: switch (map['genero_visitado'] as String?) {
         'masculino' => VisitedGender.male,

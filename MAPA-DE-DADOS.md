@@ -110,10 +110,29 @@ foram: `votos` (feature 021), `liderancas` (feature 018), `acoes` e
 | `acoes` | **não é irrestrita desde a change `acao-direcionada-a-grupo`** — `acoes_select_visivel` devolve a Ação quando `restrita_ao_grupo = false` **ou** quem lê participa do Grupo dela. Ação restrita some para `anon` e para autenticado de fora, como linha ausente, nunca erro. O padrão continua público: a coluna nasceu `default false` e nenhuma Ação existente mudou de visibilidade | `20260813120000_acao_restrita_ao_grupo.sql:142-152` |
 | `confirmacoes_acao` | **não é irrestrita desde a mesma change** — `confirmacoes_acao_select_conforme_acao` devolve a confirmação só quando a Ação correspondente é legível para quem lê. A condição não repete a regra de participação: a subconsulta roda sob a RLS de `acoes`, então a regra vive num lugar só | `20260813120000_acao_restrita_ao_grupo.sql:165-173` |
 | `rodadas_votacao` | `rodadas_votacao_select_public` | `20260724084300_rodada_votacao.sql:197-200` |
+| `mudancas` | **herda a visibilidade da origem** (change `log-de-mudancas-em-grupo-e-acao`) — `mudancas_select_conforme_origem` devolve a linha quando ela não é de Ação, ou quando a Ação correspondente é legível para quem lê. Não é `using (true)`: `confirmacao_confirmado` guarda o par nominal `(acao_id, autor_id)`, o mesmo formato que a feature 021 fechou em `votos`. Escrita: **nenhuma** — sem policy e sem grant de `insert/update/delete`, só os gatilhos escrevem | `20260813160000_log_de_mudancas.sql:20` (tabela), `:106` (policy) |
 | `convites_acao` | **nasceu fechada** (change `convite-para-acao`) — `convites_acao_select_partes` devolve a linha só para quem convidou e para quem foi convidado; `anon` não tem `grant` nenhum. Escrita: criar passa pela RPC `convidar_para_acao` (sem `grant insert`), e recusar é `grant update (recusado_em)` + `convites_acao_update_convidado`, recorte por coluna | `20260813140000_convite_para_acao.sql:25` (tabela), `:83` (grant de coluna), `:87` e `:95` (policies) |
 | `votos` | **não é público desde a feature 021** — `votos_select_own` devolve só a linha da própria pessoa (`auth.uid() = usuario_id`), e `anon` fica sem policy de `select`, portanto recebe lista vazia. A apuração conta todos os votos por fora da RLS, em `fechar_rodada_se_devido` (`security definer`) | `20260809200000_votos_visibilidade.sql:41-44` |
 | `administradores_distrito` | `administradores_distrito_select_public` | `20260724092132_district_admin.sql:52-55` |
 | `liderancas` | **não é irrestrita desde a feature 018** — `liderancas_select_confirmada_propria_ou_admin`, com três disjuntos: a declaração **confirmada** (e não rejeitada) é pública, que é a "identificação do Líder" que o glossário promete; a **própria pessoa** vê a sua em qualquer estado, porque precisa saber se foi confirmada, rejeitada ou se ainda espera; e o **Administrador do distrito** vê todas, porque é ele quem decide. Pendente e rejeitada de terceiro: negadas por default | `20260809210000_liderancas_visibilidade.sql:100-110` |
+
+A change `log-de-mudancas-em-grupo-e-acao` criou `public.mudancas`
+(`20260813160000_log_de_mudancas.sql:20`), um registro cronológico de dez tipos
+de evento. Ela **não cria exposição nova**: os fatos registrados já eram legíveis
+nas tabelas de origem, e o registro apenas lhes dá forma cronológica. O que ela
+cria é **concentração** — e é por isso que a policy herda a visibilidade de
+`acoes` em vez de copiá-la.
+
+`autor_id` é **referência a `perfis(id)`, nunca cópia do nome**, pelo mesmo
+motivo de `convites_acao`: nome desnormalizado sobreviveria à anonimização da
+exclusão de Conta. O nome de exibição é resolvido na leitura, por
+`perfil_publico`. `autor_id` é anulável porque nem todo evento tem autor no
+momento do gatilho — remoção em cascata não tem sessão —, e a tela escreve a
+frase sem sujeito nesse caso.
+
+A tabela **não guarda valor anterior nem valor novo**: diz que o horário mudou,
+não de que horário para qual. Isso é decisão de privacidade além de simplicidade
+— o par completo seria um histórico de onde e quando cada Grupo se encontrou.
 
 A change `convite-para-acao` acrescentou **dado pessoal novo**: quem chamou
 quem, quando, e por qual Grupo. `convites_acao`

@@ -430,6 +430,25 @@ iOS/macOS são descartados por colisão de id (`Package.swift`,
 `AppDelegate.swift`/`SceneDelegate.swift` repetem nome em diretórios diferentes). O
 graphify sugere `extract` por subpasta + `merge-graphs` para o segundo caso.
 
+### 2.10 `mudancas` cresce sem retenção
+
+Registrado em 2026-08-13 pela change `log-de-mudancas-em-grupo-e-acao`, que já a
+declarou como dívida no próprio design (Risks).
+
+`public.mudancas` é a única tabela do app que **só cresce**: nada nela é
+atualizado nem apagado, exceto por cascata quando o Grupo ou a Ação somem. Não há
+política de retenção, e nenhum job a limpa.
+
+**Por que foi aceito assim**: o volume por evento é pequeno — cinco colunas, sem
+texto livre — e os dois índices são parciais e já ordenados por `created_at
+desc`, então a leitura da tela não degrada com o total acumulado; só o
+armazenamento cresce.
+
+**O que decidir quando incomodar**: prazo de retenção e quem o executa. Vale
+lembrar que a decisão tem efeito legal — o registro é dado pessoal (`autor_id`),
+e a Política de Privacidade fala de prazos. Se um prazo for adotado, ele entra em
+`REVISAO-JURIDICA.md` junto.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

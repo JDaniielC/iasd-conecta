@@ -8,6 +8,7 @@ import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../leadership/leadership_providers.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../../district_admin/district_admin_providers.dart';
+import '../../change_log/presentation/change_log_section.dart';
 import '../group_providers.dart';
 import 'archive_group_sheet.dart';
 
@@ -179,10 +180,16 @@ class GroupDetailPage extends ConsumerWidget {
                 Text('Participantes', style: Theme.of(context).textTheme.titleLarge),
                 Expanded(
                   child: membersAsync.when(
+                    // A seção de mudanças rola JUNTO com os participantes, no
+                    // rodapé da mesma lista. Fora do `Expanded` ela não teria
+                    // espaço; numa fatia fixa acima, comeria a altura da lista
+                    // de participantes num celular.
                     data: (members) => ListView(
-                      children: members
-                          .map((p) => ListTile(title: Text(p.displayName)))
-                          .toList(),
+                      children: [
+                        ...members.map((p) => ListTile(title: Text(p.displayName))),
+                        const SizedBox(height: AppSpacing.lg),
+                        ChangeLogSection.forGroup(groupId: groupId),
+                      ],
                     ),
                     loading: () => const Center(child: CircularProgressIndicator()),
                     error: (_, _) => const Text('Não deu pra carregar os participantes.'),

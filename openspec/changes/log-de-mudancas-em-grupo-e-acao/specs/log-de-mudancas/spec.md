@@ -92,6 +92,13 @@ status pedido pelo cliente.
   foi atingido
 - **THEN** o registro criado é de entrada em fila, não de presença confirmada
 
+#### Scenario: Vaga liberada promove quem estava na fila
+
+- **WHEN** quem tinha vaga desiste e a próxima pessoa da fila é promovida
+- **THEN** o registro passa a dizer que essa pessoa tem presença confirmada, e
+  não fica parado em "entrou na fila" — um registro que afirma o contrário do
+  estado atual é pior que registro nenhum
+
 #### Scenario: Confirmação recusada
 - **WHEN** a gravação da confirmação falha (Ação cancelada, encerrada, ou
   regra de composição não atendida)

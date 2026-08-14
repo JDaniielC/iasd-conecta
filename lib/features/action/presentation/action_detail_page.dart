@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../cover_photo/presentation/cover_photo_widget.dart';
 import '../../../core/providers.dart';
+import '../../change_log/presentation/change_log_section.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../district_admin/district_admin_providers.dart';
 import '../../group/group_providers.dart';
@@ -295,8 +296,18 @@ class ActionDetailPage extends ConsumerWidget {
                           .toList();
                       // FR-023: lista vazia é mensagem, não lista numerada sem
                       // itens.
+                      // A seção de mudanças rola JUNTO com os confirmados, no
+                      // rodapé da mesma lista — inclusive quando não há
+                      // ninguém confirmado. Fora do `Expanded` ela não teria
+                      // espaço.
                       if (seated.isEmpty && waitlist.isEmpty) {
-                        return const Text('Ninguém confirmou presença ainda.');
+                        return ListView(
+                          children: [
+                            const Text('Ninguém confirmou presença ainda.'),
+                            const SizedBox(height: AppSpacing.lg),
+                            ChangeLogSection.forAction(actionId: actionId),
+                          ],
+                        );
                       }
                       return ListView(
                         children: [
@@ -323,6 +334,8 @@ class ActionDetailPage extends ConsumerWidget {
                               ),
                             ),
                           ],
+                          const SizedBox(height: AppSpacing.lg),
+                          ChangeLogSection.forAction(actionId: actionId),
                         ],
                       );
                     },

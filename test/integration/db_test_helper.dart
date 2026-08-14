@@ -82,6 +82,29 @@ Future<void> createTestProfile(
 /// gatilho enquanto o outro ainda precisa dele desligado). Dentro da transação
 /// o lock é segurado até o commit e os chamadores entram em fila.
 Future<void> createTestDistrictAdmin(Connection conn, String userId) async {
+  // SERIALIZAÇÃO DO ESTADO GLOBAL — ler antes de remover.
+  //
+  // `administradores_distrito` é global, e `excluir_minha_conta` decide pela
+  // CONTAGEM de administradores: quem é o único não sai. `account_deletion_test`
+  // prova isso criando um Administrador e esperando a recusa. Com um
+  // Administrador de OUTRO arquivo vivo ao mesmo tempo, aquele deixa de ser o
+  // único, a exclusão passa, e o teste falha sem ter feito nada de errado —
+  // medido de forma determinística em 2026-08-13, 5 falhas em toda execução.
+  //
+  // Dezessete arquivos tocam essa tabela. O lock consultivo faz o Postgres
+  // serializá-los entre si, e ele é de SESSÃO: some sozinho quando a conexão
+  // fecha no `tearDownAll`, então nenhum arquivo precisa lembrar de soltar — e
+  // um arquivo que morra no meio não trava a suíte.
+  //
+  // Por que não `concurrency: 1` no `dart_test.yaml`: aquilo é configuração do
+  // runner e não aceita recorte por tag, então serializaria a suíte inteira. O
+  // lock serializa só quem disputa o recurso.
+  //
+  // Isto NÃO é `skip` nem `retry` — a change `estabilizar-suite-de-integracao`
+  // proíbe os dois, e com razão: eles apagam o sinal. Aqui o sinal continua; o
+  // que muda é que o recurso disputado passou a ser declarado.
+  await conn.execute('select pg_advisory_lock(hashtext(\'administradores_distrito\'))');
+
   await conn.execute('begin');
   await conn.execute(
     'alter table public.administradores_distrito '

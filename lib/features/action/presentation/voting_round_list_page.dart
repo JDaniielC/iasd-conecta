@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 
 import '../../profile/domain/profile_guard.dart';
 import '../voting_round_providers.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// Lista de Rodadas de votação de um Grupo — visível a Visitante e Usuário
 /// igualmente (FR-017).
@@ -18,7 +19,13 @@ class VotingRoundListPage extends ConsumerWidget {
     final votingRoundsAsync = ref.watch(groupVotingRoundsProvider(groupId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rodadas de Votação')),
+      appBar: AppBar(
+        title: const Text('Rodadas de Votação'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           if (ProfileGuard.requireProfile(context, ref)) {

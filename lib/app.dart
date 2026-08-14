@@ -12,6 +12,7 @@ import 'features/action/presentation/create_voting_round_page.dart';
 import 'features/action/presentation/action_detail_page.dart';
 import 'features/invite/presentation/invite_to_action_page.dart';
 import 'features/invite/presentation/received_invites_page.dart';
+import 'features/notification/presentation/notifications_page.dart';
 import 'features/action/presentation/voting_round_detail_page.dart';
 import 'features/action/presentation/action_list_page.dart';
 import 'features/action/presentation/voting_round_list_page.dart';
@@ -137,6 +138,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/acoes/:id/convidar',
         builder: (context, state) =>
             InviteToActionPage(actionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/notificacoes',
+        builder: (context, state) => const NotificationsPage(),
       ),
       GoRoute(
         path: '/convites',

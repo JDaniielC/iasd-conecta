@@ -14,6 +14,7 @@ import '../../profile/domain/profile_guard.dart';
 import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 enum _GroupSortOrder { mostRecent, name, category }
 
@@ -52,6 +53,10 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
       appBar: AppBar(
         title: const Text('Grupos/Ministérios'),
         actions: [
+          // Change `notificacoes-in-app`. O app não tem barra global —
+          // cada tela monta a sua —, então o indicador vive nas duas telas
+          // de navegação principais, que é de onde se chega a tudo.
+          const NotificationBadge(),
           IconButton(
             tooltip: 'Ações',
             icon: const Icon(Icons.event_outlined),

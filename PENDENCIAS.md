@@ -449,6 +449,56 @@ lembrar que a decisão tem efeito legal — o registro é dado pessoal (`autor_i
 e a Política de Privacidade fala de prazos. Se um prazo for adotado, ele entra em
 `REVISAO-JURIDICA.md` junto.
 
+### 2.11 Quatro dívidas recusadas na limpeza de 2026-08-13
+
+Vieram da passagem de `/simplify` sobre `notificacoes-in-app`, com quatro
+revisores. Foram **recusadas com motivo**, não esquecidas — cada uma tem custo
+concreto e um conserto que passa do escopo de uma change de notificação.
+
+**(a) `perfil_publico` em lote.** `NotificationRepository` e
+`ChangeLogRepository` resolvem nome com um RPC por ator distinto. Hoje as
+chamadas vão concorrentes e a lista tem teto de 50, então a conta é limitada —
+mas o padrão é o mesmo que `contatos_para_convite` existiu para matar. O
+conserto é `perfil_publico(p_ids uuid[])` com `where p.id = any(p_ids)`: a
+função atual tem cinco linhas, e a versão em lote é a mesma com `= any`. Serve
+às duas leituras e a mais três cópias privadas em `group_repository.dart:177`,
+`action_repository.dart:136` e `profile_repository.dart`.
+
+**(b) A regra "tela de leitura tem indicador, formulário não" não tem casa no
+código — e já é falsa.** O indicador de avisos foi acrescentado a 8 `AppBar`
+uma a uma. Existem **30** telas com `AppBar` em `lib/features/*/presentation/`;
+o teste que "trava a decisão" classifica 16 e não diz nada sobre as outras 14 —
+e entre elas há telas de leitura pelo próprio critério da decisão
+(`archived_groups_page`, `pending_reports_page`, `pending_declarations_page`,
+`my_profile_page`). Além disso o teste lê o TEXTO do arquivo com `contains()`,
+então quebra num rename e cala numa tela nova.
+
+O conserto certo é o **`ShellRoute`** já registrado como change própria de
+navegação — que serviria também ao chat. Uma fábrica de `AppBar` agora seria uma
+terceira camada a desfazer depois. Enquanto isso, **quem criar tela de leitura
+nova precisa lembrar de três edições**: o import, o `actions:` e a lista do
+teste.
+
+**(c) `isOpen` de convite discorda da view de avisos.** `ActionInvite.isOpen`
+decide "Ação ainda vale" no Dart, com o relógio do aparelho (`clockProvider`);
+`notificacoes_ativas` decide o mesmo no servidor, com `now()`. As duas telas
+falam do mesmo convite. Com relógio adiantado, um convite some da tela de
+Convites enquanto o aviso correspondente continua contado no indicador — dois
+números sobre o mesmo fato, discordando pela camada em que cada um foi decidido.
+O conserto é um `convites_acao_ativos` no mesmo espírito. Dívida anterior a esta
+change; esta apenas criou o lugar canônico e passou ao lado dele.
+
+**(d) `notificacoes.acao_id` e `grupo_id` têm `on delete cascade` sem índice de
+apoio.** Apagar uma Ação ou um Grupo varre `notificacoes` inteira. Hoje é barato
+e a operação é rara — mas esta é a tabela declarada como a que **vai** crescer
+(chat e log entram como tipos novos). Vale o índice quando o segundo tipo entrar.
+
+**Também avaliada e mantida como está**: o índice parcial
+`notificacoes_nao_lidas` foi apontado como redundante por ser prefixo do
+completo. Fica: ele serve exatamente a consulta do contador, que roda na abertura
+de oito telas, e o custo de escrita numa tabela pequena não justifica remover sem
+medir.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

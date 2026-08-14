@@ -1,10 +1,12 @@
+# notificacoes Specification
+
 ## Purpose
 
 Avisos dirigidos a uma pessoa dentro do app: o que gera um aviso, quem
 consegue lê-lo, como o não lido é contado e zerado, o que acontece quando o
 assunto do aviso deixa de existir, e por quanto tempo o aviso fica guardado.
 
-## ADDED Requirements
+## Requirements
 
 ### Requirement: Ser convidado gera aviso para quem foi convidado
 
@@ -126,9 +128,14 @@ lido.
 
 ### Requirement: Contador de não lidas aparece e se atualiza sozinho
 
-O app DEVE mostrar quantos avisos não lidos a pessoa tem, em lugar visível de
-qualquer tela. Com o app aberto, o contador DEVE subir ao chegar um aviso novo
-**sem que a pessoa precise recarregar ou navegar**.
+O app DEVE mostrar quantos avisos não lidos a pessoa tem, em lugar visível das
+telas onde ela **lê conteúdo** — listas e detalhes de Ação e de Grupo,
+Novidades, Convites e Rodadas. Telas de **formulário** (criar, editar, entrar,
+cadastrar, excluir conta) NÃO DEVEM mostrar o contador: ali ele é distração no
+meio de um fluxo, e sair pela metade custa mais do que o aviso vale.
+
+Com o app aberto, o contador DEVE subir ao chegar um aviso novo **sem que a
+pessoa precise recarregar ou navegar**.
 
 O contador DEVE bater com o que a tela de avisos mostra.
 
@@ -142,6 +149,19 @@ O contador DEVE bater com o que a tela de avisos mostra.
 
 - **WHEN** a pessoa abre a tela de avisos
 - **THEN** a quantidade de avisos não lidos na tela é a mesma do contador
+
+#### Scenario: O contador acompanha quem está lendo
+
+- **WHEN** a pessoa navega entre a lista de Ações, o detalhe de uma Ação, um
+  Grupo e as Novidades
+- **THEN** o contador está visível nas quatro
+
+#### Scenario: Formulário não mostra contador
+
+- **WHEN** a pessoa está preenchendo um formulário — criar Ação, editar Grupo,
+  cadastrar-se
+- **THEN** o contador não aparece, para não disputar a atenção de quem está no
+  meio de uma tarefa
 
 #### Scenario: Sem aviso, sem contador
 

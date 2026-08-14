@@ -12,6 +12,7 @@ import '../../group/group_providers.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
 /// (FR-010). Confirmar/desistir exige Perfil (FR-003/FR-004/FR-011).
@@ -101,7 +102,13 @@ class ActionDetailPage extends ConsumerWidget {
     final myAttendance = myAttendances.isEmpty ? null : myAttendances.first;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Ação')),
+      appBar: AppBar(
+        title: const Text('Ação'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       body: actionAsync.when(
         data: (action) {
           final isGroupOwner = action.groupId == null

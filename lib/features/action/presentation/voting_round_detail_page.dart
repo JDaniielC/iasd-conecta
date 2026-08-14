@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../voting_round_providers.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// Detalhes de uma Rodada de votação: candidatas + votar (User Story 2) +
 /// encerrar antes do prazo, só Dono do Grupo (User Story 3).
@@ -48,7 +49,13 @@ class VotingRoundDetailPage extends ConsumerWidget {
     final myVoteAsync = ref.watch(myVoteProvider(votingRoundId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Rodada de Votação')),
+      appBar: AppBar(
+        title: const Text('Rodada de Votação'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       body: votingRoundAsync.when(
         data: (votingRound) {
           return Padding(

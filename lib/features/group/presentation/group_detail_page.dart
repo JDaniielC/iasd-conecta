@@ -11,6 +11,7 @@ import '../../district_admin/district_admin_providers.dart';
 import '../../change_log/presentation/change_log_section.dart';
 import '../group_providers.dart';
 import 'archive_group_sheet.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
 /// (FR-005). Participar/sair exige Perfil (FR-006/FR-007/FR-008/FR-009).
@@ -67,7 +68,13 @@ class GroupDetailPage extends ConsumerWidget {
     final participa = membersAsync.value?.any((p) => p.id == uid) ?? false;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Grupo/Ministério')),
+      appBar: AppBar(
+        title: const Text('Grupo/Ministério'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       body: groupAsync.when(
         data: (group) {
           final isOwner = group.isOwner(uid);

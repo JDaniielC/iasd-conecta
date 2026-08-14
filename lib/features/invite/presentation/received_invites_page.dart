@@ -8,6 +8,7 @@ import '../../../core/theme/app_theme.dart';
 import '../../group/group_providers.dart';
 import '../domain/action_invite.dart';
 import '../invite_providers.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// Convites recebidos (change `convite-para-acao`).
 ///
@@ -46,7 +47,13 @@ class _ReceivedInvitesPageState extends ConsumerState<ReceivedInvitesPage> {
     final agora = ref.watch(clockProvider)();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Convites')),
+      appBar: AppBar(
+        title: const Text('Convites'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       body: convitesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) =>

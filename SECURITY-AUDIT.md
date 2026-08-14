@@ -414,3 +414,74 @@ mais rápido, porque a policy descarta metade das linhas antes do `Sort`. No pio
 caso (participar de todos os 500 Grupos, o que ninguém faz), 1.296 → 1.875 ms. O
 `exists` vira `hashed SubPlan`: `participacoes_grupo` é lida uma vez por
 consulta, não por linha.
+
+---
+
+# Estreia do Realtime como superfície de leitura (2026-08-13)
+
+Change `notificacoes-in-app`, migration
+`supabase/migrations/20260813180000_notificacoes_in_app.sql:214`.
+
+Até esta change **nenhuma tabela estava na publicação `supabase_realtime`** —
+`select * from pg_publication_tables where pubname = 'supabase_realtime'`
+devolvia zero linhas, conferido antes de começar. `public.notificacoes` é a
+primeira.
+
+## Por que isso é registro de segurança e não nota de release
+
+Uma tabela publicada emite evento para quem estiver inscrito no canal. O canal é
+**um caminho de código diferente do da consulta**: quem filtra ali não é a mesma
+policy sendo avaliada pelo PostgREST, é o servidor de Realtime avaliando a RLS
+por assinante. Configurar errado transforma a inscrição num feed de eventos
+alheios — e falha **calada**, porque a tela de quem recebe demais não precisa
+mostrar nada para o dado ter saído.
+
+`notificacoes` carrega o par nominal `(destinatario_id, ator_id)`. É o mesmo
+formato de vazamento que a feature 021 fechou em `votos`, onde três requisições
+com a chave pública montavam "Clara Demo votou em Entrega de cestas".
+
+## O que foi medido
+
+O design afirmava que o `postgres_changes` do Supabase avalia as policies de
+`select` por assinante. **Isso deixou de ser confiança na documentação.**
+`test/integration/notificacao_realtime_isolamento_test.dart` abre duas sessões
+reais (WebSocket na 54321, não o Postgres na 54322), inscreve as duas no canal,
+gera um aviso para uma delas e verifica que a outra **não recebe evento nenhum**.
+
+Resultado: **o canal respeita a RLS.** A outra sessão não recebe. O recuo
+previsto no design — não publicar a tabela e atualizar o contador por consulta —
+não foi preciso.
+
+### Uma armadilha do próprio teste, que vale mais que o resultado
+
+A primeira versão do teste passava pelo motivo errado. Logo depois de
+`supabase db reset` o servidor de Realtime ainda não pegou a publicação nova, e
+**o cliente já reporta `SUBSCRIBED` mesmo assim**. Nessa condição "a outra sessão
+não recebeu nada" é verdade por o canal estar desligado, não por ele estar
+isolado — e o teste diria "seguro" sobre um sistema que não foi exercitado.
+
+O teste agora **aquece**: insere para a primeira sessão até ela receber, e só
+então a ausência na segunda vira evidência. Verde nas duas condições (logo após
+reset e com o banco quente).
+
+## Defesa em profundidade, registrada de propósito
+
+O app usa o canal como **sinal, nunca como fonte de dado**: ao receber qualquer
+evento ele reconsulta a lista e a contagem, e o payload não monta tela. Isso
+reduz o estrago se um dia a configuração do canal mudar — mas **não substitui** o
+teste acima, e não é o que garante a privacidade. O que garante é a RLS.
+
+## Verificação
+
+Gates de 2026-08-13, com os números:
+
+- `flutter analyze` — **No issues found**
+- `flutter test test/unit test/widget` — **382/382**, 0 falhas
+- `dart test test/integration` — **335/335**, 0 falhas
+- `flutter build web --release` — **✓ Built build/web**
+
+Suíte de integração conferida com o critério que o requisito
+"A suíte é determinística em paralelo" pede: **20 execuções seguidas, 335/335 nas
+20, zero falha** — depois do conserto do lock consultivo em
+`createTestDistrictAdmin`, que corrigiu uma violação daquele requisito
+encontrada por esta change.

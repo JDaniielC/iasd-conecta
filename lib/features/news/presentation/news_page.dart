@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import '../../../core/theme/app_theme.dart';
 import '../domain/news_item.dart';
 import '../news_providers.dart';
+import '../../notification/presentation/notification_badge.dart';
 
 /// O que mudou no app, contado para quem usa.
 ///
@@ -45,7 +46,13 @@ class _NewsPageState extends ConsumerState<NewsPage> {
     final news = ref.watch(visibleNewsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Novidades')),
+      appBar: AppBar(
+        title: const Text('Novidades'),
+        // Change `notificacoes-in-app`. O app não tem barra global, então o
+        // indicador entra nas telas onde a pessoa LÊ — nunca nos
+        // formulários, onde ele seria distração no meio de um fluxo.
+        actions: const [NotificationBadge()],
+      ),
       body: news.isEmpty
           ? const _EmptyNews()
           : ListView.separated(

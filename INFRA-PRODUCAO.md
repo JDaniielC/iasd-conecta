@@ -312,6 +312,45 @@ tentativa com erro.
 
 ---
 
+## 3b. Notificações — dois passos que a migration não faz sozinha
+
+A change `notificacoes-in-app` depende de duas coisas que **existem no banco
+local porque a migration as cria, mas que precisam ser conferidas em produção**,
+pelo mesmo motivo que a drenagem de capas precisa: elas dependem de estado do
+projeto, não só do schema.
+
+### A publicação `supabase_realtime`
+
+O contador de avisos sobe sozinho porque `public.notificacoes` está publicada.
+Conferir depois do deploy:
+
+```sql
+select schemaname, tablename from pg_publication_tables
+where pubname = 'supabase_realtime';
+```
+
+Esperado: uma linha, `public | notificacoes`. **Se vier vazio**, o Realtime está
+desligado no projeto ou a migration não subiu — o app não quebra, mas o contador
+para de subir sozinho e só se atualiza quando a pessoa reabre a tela.
+
+Vale lembrar de um limite do plano: há teto de conexões concorrentes de Realtime,
+e cada pessoa com o app aberto é uma. O número do plano contratado ainda **não
+foi conferido** — está em `PENDENCIAS.md`.
+
+### O job de `pg_cron` da retenção
+
+O prazo de 90 dias é executado por job diário:
+
+```sql
+select jobname, schedule from cron.job
+where jobname = 'expurgar-notificacoes-lidas';
+```
+
+Esperado: `17 4 * * *`. Herdando o aviso da drenagem: com o projeto pausado no
+plano Free o cron para junto. Aqui isso é **atraso de faxina, não defeito de
+correção** — nenhum requisito depende de o aviso ter sumido no dia certo, e por
+isso, diferente da drenagem de capas, esta não tem segundo gatilho no app.
+
 ## 4. Backup
 
 **A decisão sobre backup existe, está fechada e assinada, e não mora aqui.** Ela

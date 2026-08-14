@@ -47,6 +47,7 @@ void main() {
             hasProfileProvider.overrideWith((ref) async => false),
             currentUserIdProvider.overrideWithValue(null),
             actionRepositoryProvider.overrideWithValue(actionRepo),
+            isAnonymousProvider.overrideWithValue(false),
           ],
           child: MaterialApp.router(routerConfig: router),
         ),
@@ -77,6 +78,9 @@ void main() {
             hasProfileProvider.overrideWith((ref) async => true),
             currentUserIdProvider.overrideWithValue(null),
             isDistrictAdminProvider.overrideWith((ref) async => false),
+            // Change `convite-para-acao`: a tela pergunta se o Perfil é
+            // anônimo para decidir entre "Convidar" e o caminho de Conta.
+            isAnonymousProvider.overrideWithValue(false),
             actionRepositoryProvider.overrideWithValue(repo),
             clockProvider.overrideWithValue(() => now),
           ],
@@ -175,6 +179,9 @@ void main() {
             hasProfileProvider.overrideWith((ref) async => true),
             currentUserIdProvider.overrideWithValue(null),
             isDistrictAdminProvider.overrideWith((ref) async => false),
+            // Change `convite-para-acao`: a tela pergunta se o Perfil é
+            // anônimo para decidir entre "Convidar" e o caminho de Conta.
+            isAnonymousProvider.overrideWithValue(false),
             actionRepositoryProvider.overrideWithValue(repo),
             clockProvider.overrideWithValue(() => now),
           ],

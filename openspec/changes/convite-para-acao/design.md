@@ -66,8 +66,22 @@ Música" e obriga a escolher um Grupo arbitrário para o filtro do item 2.
 
 ### Escrever convite é RPC `security definer`, não `insert` com policy
 
-`authenticated` **não** recebe `grant insert` em `convites_acao`. A escrita
+`authenticated` **não** recebe `grant insert` em `convites_acao`. A criação
 passa por `convidar_para_acao(p_acao_id, p_grupo_id, p_convidados uuid[])`.
+
+**Recusar é o caso oposto e leva tratamento oposto.** Quem recusa é a própria
+pessoa convidada, sobre a própria linha, sem nenhuma regra que exija ler
+`auth.users` — é o caso que uma policy resolve inteira. Então `recusado_em` sai
+por `grant update (recusado_em)` mais `convites_acao_update_convidado`
+(`using`/`with check` em `auth.uid() = convidado_id`), com recorte por coluna
+pelo precedente de `20260811160000_grant_update_perfis_por_coluna.sql`: a linha
+protegida e a coluna não era, e foi assim que dava para forjar `idade`. Com o
+recorte, tentar escrever `convidante_id` ou `grupo_id` recusa por privilégio,
+sem depender de a policy lembrar de proibir.
+
+Quem convidou não retira o convite. Retirar em silêncio confundiria mais do que
+ajudaria — mesmo raciocínio que a spec usa para sair do Grupo não apagar
+convite.
 
 Motivo: uma das três regras é "quem convida tem Conta", que exige ler
 `auth.users.is_anonymous` — fora do alcance de qualquer policy. Se uma das
@@ -165,9 +179,10 @@ continua na lista sem filtro, mas some das opções.
 ## Migration Plan
 
 Uma migration, puramente aditiva: tabela, índices
-(`(convidado_id, created_at desc)` e `(acao_id, convidante_id)`), RLS ligada
-com a policy de `select` e sem policy de escrita, `grant select` para
-`authenticated` (não para `anon` — convite não é público), e as duas funções.
+(`(convidado_id, created_at desc)` e `(acao_id, convidante_id)`), RLS ligada com
+a policy de `select`, a policy de `update` só do convidado, `grant select` e
+`grant update (recusado_em)` para `authenticated` (nada para `anon` — convite
+não é público), e as duas funções.
 
 Nenhuma tabela existente muda; nenhum gatilho existente é tocado. Rollback é
 `drop` da tabela e das duas funções, sem efeito sobre Ação, Grupo ou presença.

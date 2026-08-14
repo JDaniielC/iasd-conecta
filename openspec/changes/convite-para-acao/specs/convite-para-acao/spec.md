@@ -49,16 +49,29 @@ Este requisito existe porque a listagem entrega **vários nomes de uma vez**. Um
 a um, o nome de exibição já é público hoje; em lote e sem checagem, viraria um
 despejo de nomes do distrito inteiro.
 
-#### Scenario: Chamada direta pedindo Grupo alheio não devolve nada
+A defesa DEVE ser a ausência do parâmetro: a listagem NÃO DEVE aceitar um id de
+Grupo vindo do cliente. Aceitá-lo numa função `security definer` seria entregar
+a lista de nomes de qualquer Grupo do distrito a qualquer sessão — é o buraco
+que esta capability existe para não abrir, e o jeito de não abri-lo é não ter
+por onde.
 
-- **WHEN** uma sessão autenticada pede a lista de contatos informando o id de
-  um Grupo em que ela não participa
-- **THEN** a resposta vem vazia, sem erro que revele quantas pessoas existem lá
+#### Scenario: Não há Grupo alheio a pedir
 
-#### Scenario: Sessão anônima não recebe lista
+- **WHEN** uma sessão autenticada pede a lista de contatos de uma Ação
+- **THEN** recebe apenas os Grupos de que ela própria participa, e não existe
+  parâmetro pelo qual pedir a lista de outro Grupo
 
-- **WHEN** uma sessão `anon` pede a lista de contatos
+#### Scenario: Autenticado sem Grupo em comum não recebe nome nenhum
+
+- **WHEN** uma sessão autenticada que não divide Grupo nenhum com as pessoas da
+  Ação pede a lista de contatos
 - **THEN** a resposta vem vazia
+
+#### Scenario: Sessão anônima não alcança a listagem
+
+- **WHEN** uma sessão `anon` tenta pedir a lista de contatos
+- **THEN** a chamada é recusada por falta de permissão de execução — quem não
+  tem cadastro não convida ninguém, e a listagem não é oferecida a ela
 
 ### Requirement: Convidar exige Conta
 

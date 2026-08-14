@@ -446,6 +446,35 @@ esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 | 021 T025 | Item 3.3: a tela da Rodada continua marcando sua candidata e não mostra contagem de votos |
 | 010 T019–T021 | Paisagem a ~375px, contraste dos pares texto/fundo, alvos de toque e leitor de tela |
 
+### Changes de 2026-08-13 — o que dá para automatizar com o navegador
+
+As duas changes de 13/08 (`acao-direcionada-a-grupo` e `convite-para-acao`) foram entregues
+com 359 testes de widget/unidade e 285 de integração, **e nenhuma execução do app**. A prova
+de banco fala com o Postgres direto na 54322; a de widget fala com repositório mockado.
+**O PostgREST nunca foi exercitado.** O que só aparece rodando o app de verdade:
+
+| Onde | O quê |
+|---|---|
+| convite T5.8 | Fluxo ponta a ponta com **duas contas**: criar Ação, convidar, o convite chegar na outra conta, recusar, e o contador da Home mexer. É o único caminho que executa `rpc('convidar_para_acao')` e `rpc('contatos_para_convite')` pelo cliente Supabase — nome dos parâmetros, serialização do `uuid[]` saindo do Dart e formato do retorno de uma função `returns table` nunca foram verificados fora do SQL |
+| convite T5.8 | Os *embeds* de `fetchReceivedInvites`: `select('*, grupos(nome), acoes(*)')`. Foram escritos de cabeça e o PostgREST os resolve por FK — se o nome do relacionamento não bater, a tela de convites quebra e nenhum teste atual percebe |
+| convite T5.8 | `decline`: o `.select('id')` depois do `update` é o que faz zero linha virar aviso em vez de sucesso calado. Só o PostgREST diz se o retorno vem como esperado |
+| restrita T5.5 | Ação restrita numa **aba anônima**: confirmar que ela não aparece em `/acoes` e que abrir a rota por id cai em "Ação não encontrada" |
+| restrita T5.5 | Abrir a tela de uma Ação e confirmar que **não há lista de convidados** em lugar nenhum — a spec proíbe para qualquer pessoa, inclusive quem convidou |
+| ambas | Renderização real em 375 px das três telas novas (propor candidata com o controle de restrição, convidar, convites recebidos) e captura de tela. **Teste de widget em 360 px não substitui isto** — é o aviso de método logo abaixo, e eu o repeti |
+
+### Changes de 2026-08-13 — o que exige gente de verdade
+
+Nada aqui é automatizável: são julgamentos de compreensão, não de layout.
+
+| Onde | O quê |
+|---|---|
+| restrita T5.5 | "Só para quem participa do Grupo" comunica que a Ação **some do feed dos outros**? Ou lê como "é sobre o Grupo"? O texto secundário explica, mas ninguém de fora leu |
+| restrita T5.5 | O cadeado no cartão da lista lê como "restrita" ou como "trancada/cancelada"? Ícone sem rótulo é adivinhação, e na faixa de destaque ele está sozinho |
+| convite T5.8 | "Ficaram de fora: Bruno." diz à pessoa **o que fazer em seguida**? O botão vira "Tentar de novo (1)" — isso é óbvio ou parece que o convite todo falhou? |
+| convite T5.8 | "Já convidado — sem resposta" vs "Confirmou presença": alguém que abriu a tela para chamar gente entende a diferença sem explicação? |
+| convite T5.8 | Alvo de toque de 48 px nas duas telas novas. Este projeto já mediu isso errado uma vez, em 10/08, e só a captura de tela mostrou |
+| ambas | Leitura por 2–3 pessoas do distrito, como foi feito na 022. É o que pega jargão que parece claro para quem escreveu |
+
 ### Exigem cronômetro ou tempo
 
 | Onde | O quê |

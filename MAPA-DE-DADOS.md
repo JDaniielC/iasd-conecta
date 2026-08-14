@@ -110,9 +110,31 @@ foram: `votos` (feature 021), `liderancas` (feature 018), `acoes` e
 | `acoes` | **não é irrestrita desde a change `acao-direcionada-a-grupo`** — `acoes_select_visivel` devolve a Ação quando `restrita_ao_grupo = false` **ou** quem lê participa do Grupo dela. Ação restrita some para `anon` e para autenticado de fora, como linha ausente, nunca erro. O padrão continua público: a coluna nasceu `default false` e nenhuma Ação existente mudou de visibilidade | `20260813120000_acao_restrita_ao_grupo.sql:142-152` |
 | `confirmacoes_acao` | **não é irrestrita desde a mesma change** — `confirmacoes_acao_select_conforme_acao` devolve a confirmação só quando a Ação correspondente é legível para quem lê. A condição não repete a regra de participação: a subconsulta roda sob a RLS de `acoes`, então a regra vive num lugar só | `20260813120000_acao_restrita_ao_grupo.sql:165-173` |
 | `rodadas_votacao` | `rodadas_votacao_select_public` | `20260724084300_rodada_votacao.sql:197-200` |
+| `convites_acao` | **nasceu fechada** (change `convite-para-acao`) — `convites_acao_select_partes` devolve a linha só para quem convidou e para quem foi convidado; `anon` não tem `grant` nenhum. Escrita: criar passa pela RPC `convidar_para_acao` (sem `grant insert`), e recusar é `grant update (recusado_em)` + `convites_acao_update_convidado`, recorte por coluna | `20260813140000_convite_para_acao.sql:25` (tabela), `:83` (grant de coluna), `:87` e `:95` (policies) |
 | `votos` | **não é público desde a feature 021** — `votos_select_own` devolve só a linha da própria pessoa (`auth.uid() = usuario_id`), e `anon` fica sem policy de `select`, portanto recebe lista vazia. A apuração conta todos os votos por fora da RLS, em `fechar_rodada_se_devido` (`security definer`) | `20260809200000_votos_visibilidade.sql:41-44` |
 | `administradores_distrito` | `administradores_distrito_select_public` | `20260724092132_district_admin.sql:52-55` |
 | `liderancas` | **não é irrestrita desde a feature 018** — `liderancas_select_confirmada_propria_ou_admin`, com três disjuntos: a declaração **confirmada** (e não rejeitada) é pública, que é a "identificação do Líder" que o glossário promete; a **própria pessoa** vê a sua em qualquer estado, porque precisa saber se foi confirmada, rejeitada ou se ainda espera; e o **Administrador do distrito** vê todas, porque é ele quem decide. Pendente e rejeitada de terceiro: negadas por default | `20260809210000_liderancas_visibilidade.sql:100-110` |
+
+A change `convite-para-acao` acrescentou **dado pessoal novo**: quem chamou
+quem, quando, e por qual Grupo. `convites_acao`
+(`20260813140000_convite_para_acao.sql:25`) referencia `perfis(id)` e **nunca
+copia o nome** — as duas FKs de Perfil são sem `on delete cascade` de propósito,
+porque o Perfil é anonimizado e não apagado, e um nome desnormalizado
+sobreviveria a isso. Um teste de integração trava a lista de colunas da tabela
+para essa otimização não voltar por descuido.
+
+`contatos_para_convite(uuid)` (`:118`) é a função mais sensível da change: ela é
+`security definer` sobre `perfis`, que é fechado, e entrega **vários nomes de
+exibição de uma vez**. Um a um esse nome já é público por `perfil_publico`; em
+lote e sem checagem, seria a lista de nomes do distrito inteiro. A defesa é não
+ter parâmetro de Grupo — o filtro é `auth.uid()` por dentro, e o `nome_exibido`
+usa a mesma expressão `coalesce(apelido, nome)` de `perfil_publico`, que é a que
+protege menor de idade. Ela toca: nome, apelido e participação em Grupo. Não
+toca idade, telefone, gênero nem Igreja.
+
+`convidar_para_acao(uuid, uuid, uuid[])` (`:177`) lê `auth.users.is_anonymous`
+para exigir Conta de quem convida — mesmo precedente de `declarar_lideranca`.
+Não devolve nome nenhum, só ids e a classificação do lote.
 
 `acoes.restrita_ao_grupo` (`20260813120000_acao_restrita_ao_grupo.sql:30`) não
 é dado pessoal — é um booleano de configuração da Ação. Está registrado aqui

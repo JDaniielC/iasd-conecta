@@ -184,9 +184,18 @@
       horizontal
 
 ## 6. Interação com o que está em voo
-      - `test/widget/propor_candidata_restrita_test.dart`, 2 testes verdes,
+      - **Feito, e é menos do que a task pede.**
+        `test/widget/propor_candidata_restrita_test.dart`, 3 testes verdes,
         renderizando em 360x800. O Flutter transforma estouro de layout em
-        falha, então renderizar nessa largura é a asserção
+        falha, então isso prova que nada escapa na horizontal
+      - **NÃO feito: julgar olhando.** Corrigido em 2026-08-13, depois de a
+        pergunta ser feita: marcar esta task como cumprida por teste de widget
+        foi repetir o erro que o próprio `PENDENCIAS.md` § 3 registra no aviso
+        de método. O que falta está lá, separado entre o que dá para automatizar
+        com navegador (render em 375 px, aba anônima não vendo Ação restrita,
+        tela da Ação sem lista de convidados) e o que exige gente (o cadeado lê
+        como "restrita" ou como "cancelada"? o texto do controle comunica que a
+        Ação some do feed dos outros?)
 - [x] 6.1 Se `destaque-de-acoes-distritais-e-de-grupo` já estiver aplicada:
       teste de que Ação restrita não aparece na faixa de destaque de quem não
       participa. Obrigatório, não opcional

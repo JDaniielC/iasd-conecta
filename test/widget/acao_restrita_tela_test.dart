@@ -51,6 +51,11 @@ Widget _app(MockActionRepository repo, {String? uid}) {
       currentUserIdProvider.overrideWithValue(uid),
       actionRepositoryProvider.overrideWithValue(repo),
       isDistrictAdminProvider.overrideWith((ref) async => false),
+      // `ActionDetailPage` passou a oferecer "Convidar" (change
+      // `convite-para-acao`), e o botão pergunta se o Perfil é anônimo. Sem
+      // este override o provider cai no cliente Supabase, que não existe em
+      // teste de widget.
+      isAnonymousProvider.overrideWithValue(false),
     ],
     child: MaterialApp.router(routerConfig: router),
   );

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
+import '../../invite/invite_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../news/news_providers.dart';
 
@@ -190,6 +191,8 @@ class _MainCallToAction extends ConsumerWidget {
         // desenho.
         if (hasProfile == true) ...[
           const SizedBox(height: AppSpacing.sm),
+          const _InvitesButton(),
+          const SizedBox(height: AppSpacing.sm),
           OutlinedButton.icon(
             onPressed: () => context.push('/perfil'),
             icon: const Icon(Icons.person_outline),
@@ -197,6 +200,28 @@ class _MainCallToAction extends ConsumerWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Caminho para os convites recebidos, com quantos estão em aberto.
+///
+/// O número é a mitigação registrada no design da change `convite-para-acao`
+/// para ela não ter notificação: sem push e sem e-mail, o convite só apareceria
+/// para quem lembrasse de abrir a tela. Como no aviso de Novidades, o contador
+/// **não** aparece enquanto carrega — um número que pisca a cada abertura é
+/// pior do que número nenhum.
+class _InvitesButton extends ConsumerWidget {
+  const _InvitesButton();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final abertos = ref.watch(openInvitesCountProvider).value ?? 0;
+
+    return OutlinedButton.icon(
+      onPressed: () => context.push('/convites'),
+      icon: const Icon(Icons.mail_outline),
+      label: Text(abertos > 0 ? 'Convites ($abertos)' : 'Convites'),
     );
   }
 }

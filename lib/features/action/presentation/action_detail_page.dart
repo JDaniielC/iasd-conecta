@@ -233,6 +233,28 @@ class ActionDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.md),
                 Text(DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)),
                 Text(action.local),
+                // Change `convite-para-acao`. Convidar exige Conta — a regra
+                // real está em `convidar_para_acao`, que lê
+                // `auth.users.is_anonymous`; aqui é só não oferecer o que o
+                // banco recusaria. Some em Ação cancelada ou encerrada: chamar
+                // gente para o que já passou não faz sentido, e o banco também
+                // recusa.
+                if (!action.isCancelled && !isEnded) ...[
+                  const SizedBox(height: AppSpacing.sm),
+                  if (ref.watch(isAnonymousProvider) == false)
+                    OutlinedButton.icon(
+                      onPressed: () =>
+                          context.push('/acoes/${action.id}/convidar'),
+                      icon: const Icon(Icons.person_add_alt_outlined),
+                      label: const Text('Convidar'),
+                    )
+                  else
+                    OutlinedButton.icon(
+                      onPressed: () => context.push('/upgrade-conta'),
+                      icon: const Icon(Icons.lock_outline),
+                      label: const Text('Criar Conta para convidar'),
+                    ),
+                ],
                 if (action.isMissionaryPair) ...[
                   const SizedBox(height: AppSpacing.sm),
                   Text(

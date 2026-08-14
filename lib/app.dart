@@ -10,6 +10,8 @@ import 'features/action/presentation/create_action_page.dart';
 import 'features/action/presentation/create_candidate_page.dart';
 import 'features/action/presentation/create_voting_round_page.dart';
 import 'features/action/presentation/action_detail_page.dart';
+import 'features/invite/presentation/invite_to_action_page.dart';
+import 'features/invite/presentation/received_invites_page.dart';
 import 'features/action/presentation/voting_round_detail_page.dart';
 import 'features/action/presentation/action_list_page.dart';
 import 'features/action/presentation/voting_round_list_page.dart';
@@ -128,6 +130,17 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/acoes/:id',
         builder: (context, state) => ActionDetailPage(actionId: state.pathParameters['id']!),
+      ),
+      // Change `convite-para-acao`. A rota de convidar é filha da Ação porque o
+      // convite não existe sem ela; `/convites` é da pessoa, não de uma Ação.
+      GoRoute(
+        path: '/acoes/:id/convidar',
+        builder: (context, state) =>
+            InviteToActionPage(actionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/convites',
+        builder: (context, state) => const ReceivedInvitesPage(),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas',

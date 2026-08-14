@@ -265,7 +265,7 @@
         `convidar_para_acao` (`:177`) não devolve nome nenhum
 - [x] 7.6 Rodar a skill `openspec-converge` sobre esta change e resolver o que
       ela apontar
-      - 9 requisitos e 30 cenários verificados. **Um achado, HIGH, resolvido
+      - 10 requisitos e 29 cenários verificados. **Um achado, HIGH, resolvido
         nesta entrega**: o cenário "Quem convidou acompanha os próprios
         convites" pede que ele veja "quem já convidou por ali **e quem daquela
         lista já confirmou presença**", e a segunda metade não existia —

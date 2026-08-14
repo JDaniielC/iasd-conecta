@@ -11,8 +11,12 @@ ficar focada: dá para olhar o diff de um ticket sem o ruído dos outros.
 /opsx:archive <change> →  git checkout main
                           git merge --squash change/<nome-da-change>
                           git commit
-                          git branch -d change/<nome-da-change>
+                          git branch -D change/<nome-da-change>
 ```
+
+`-D` e não `-d`: o squash não registra ancestralidade, então o `-d` recusa
+dizendo que a branch "não está totalmente mesclada". Conferir antes com
+`git diff change/<nome> main --stat` — vazio quer dizer que `main` já tem tudo.
 
 - **Uma branch por change**, nomeada `change/<nome-da-change>`.
 - **Squash no merge**: a change inteira vira um commit em `main`. O histórico

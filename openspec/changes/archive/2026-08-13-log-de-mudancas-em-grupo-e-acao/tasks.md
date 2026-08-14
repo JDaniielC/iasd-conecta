@@ -183,7 +183,9 @@
         que a coluna foi feita anulável para cobrir. Regressão fixada em teste
 - [x] 7.4 Rodar a skill `openspec-converge` sobre esta change e resolver o que
       ela achar antes de arquivar
-      - 13 requisitos e 31 cenários (32 depois do cenário novo). **Dois
+      - **14 requisitos e 31 cenários** contados no arquivo (30 antes do
+        cenário novo). O número que eu tinha citado na passagem — 13 e 31 —
+        estava errado nos dois lados. **Dois
         achados, os dois medidos e não deduzidos, os dois resolvidos aqui.**
       - **C1, HIGH** — o requisito "Falha ao registrar desfaz a operação que a
         originou" tinha cenário e nenhum teste; a task 2.5 só mandava conferir

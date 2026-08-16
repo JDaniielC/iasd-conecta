@@ -60,48 +60,83 @@ void main() {
     // alguém fundiu os papéis — e aí este arquivo fica vermelho antes de a
     // confusão se espalhar por 21 arquivos outra vez.
     //
-    // `notificacoes` é o alvo porque hoje ela já separa os dois: `anon` não tem
+    // `notificacoes` é o alvo porque ela sempre separou os dois: `anon` não tem
     // `grant`, e o Visitante tem — e a policy é que decide o que ele lê. É a
     // distinção que a spec chama de "recusa que acontece antes da regra".
     //
-    // NÃO se usa `grupos` aqui, e o motivo é honesto: hoje `anon` lê `grupos`
-    // exatamente como o Visitante, porque a policy ainda o endereça. Escrever a
-    // asserção contra `grupos` seria escrever o resultado da change SEGUINTE
-    // (`fechar-superficie-anon`) neste arquivo. Quando ela entrar, `grupos`
-    // vira o segundo caso aqui.
+    // `grupos` era o contraste ÓBVIO e não servia quando este arquivo nasceu:
+    // `anon` lia `grupos` exatamente como o Visitante, porque a policy ainda o
+    // endereçava. A asserção ficou registrada como devida à change seguinte, e
+    // ela entrou — `grupos` é o segundo caso, logo abaixo.
     expect(
       await asVisitor(conn, _uidVisitor, visibleNotifications),
       0,
       reason: 'o Visitante ALCANÇA a tabela; a policy é que devolve vazio',
     );
 
-    Object? semSessao;
+    Object? withoutSession;
     try {
       await asAnon(conn, visibleNotifications);
     } catch (e) {
-      semSessao = e;
+      withoutSession = e;
     }
     expect(
-      semSessao,
+      withoutSession,
       isA<ServerException>(),
       reason: 'sem sessão a barreira é o `grant`, uma camada antes da policy',
     );
   });
 
+  test('e em `grupos` também, desde `fechar-superficie-anon`', () async {
+    // O caso que este arquivo prometeu e não podia cumprir quando nasceu. A
+    // policy `grupos_select_public` endereçava `anon, authenticated`, então os
+    // dois liam igual e o contraste não existia.
+    //
+    // Agora ela endereça só `authenticated`, e o `grant select` saiu de `anon`:
+    // o Visitante lê, quem não tem sessão nem alcança a tabela.
+    expect(
+      await asVisitor(conn, _uidVisitor, () async {
+        final r = await conn.execute(
+          Sql.named('select count(*) from public.grupos where id = @g'),
+          parameters: {'g': groupId},
+        );
+        return r.first[0];
+      }),
+      1,
+    );
+
+    Object? erro;
+    try {
+      await asAnon(
+        conn,
+        () => conn.execute('select count(*) from public.grupos'),
+      );
+    } catch (e) {
+      erro = e;
+    }
+    expect(
+      erro,
+      isA<ServerException>(),
+      reason:
+          'sem sessão a tabela é inalcançável — se isto voltar a devolver '
+          'número, a superfície sem login reabriu',
+    );
+  });
+
   test('o Visitante tem auth.uid(); sem sessão não tem', () async {
     // A diferença mecânica por baixo de tudo, medida em vez de afirmada.
-    final doVisitante = await asVisitor(
+    final fromVisitor = await asVisitor(
       conn,
       _uidVisitor,
       () async => (await conn.execute('select auth.uid()')).first[0],
     );
-    expect(doVisitante.toString(), _uidVisitor);
+    expect(fromVisitor.toString(), _uidVisitor);
 
-    final semSessao = await asAnon(
+    final withoutSession = await asAnon(
       conn,
       () async => (await conn.execute('select auth.uid()')).first[0],
     );
-    expect(semSessao, isNull);
+    expect(withoutSession, isNull);
   });
 
   test('asAnon não herda a identidade de quem rodou antes', () async {
@@ -123,12 +158,12 @@ void main() {
     );
     await conn.execute('reset role');
 
-    final dentro = await asAnon(
+    final insideAnon = await asAnon(
       conn,
       () async => (await conn.execute('select auth.uid()')).first[0],
     );
     expect(
-      dentro,
+      insideAnon,
       isNull,
       reason:
           'sem sessão é sem identidade — herdar o `sub` anterior faz o '
@@ -136,10 +171,10 @@ void main() {
     );
 
     // E não deixa sujeira para quem vem depois.
-    final depois = await conn.execute(
+    final afterwards = await conn.execute(
       "select current_setting('request.jwt.claims', true)",
     );
-    expect(depois.first[0], anyOf(isNull, isEmpty));
+    expect(afterwards.first[0], anyOf(isNull, isEmpty));
   });
 
   test('o Visitante de teste é anônimo de verdade — is_anonymous', () async {

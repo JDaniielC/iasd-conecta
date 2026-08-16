@@ -717,3 +717,78 @@ não achou nada — corretamente. Estes quatro são o dado **já entregue a quem
 podia**, e continuando na tela depois de o direito acabar. É uma superfície que
 teste de RLS não alcança por construção, e a única forma que a pegou foi
 derrubar o canal de propósito e olhar o que a tela desenhava.
+
+---
+
+# `nome_valido` era um oráculo da lista secreta — 2026-08-16
+
+Change `fechar-superficie-anon`. Achado ao medir a superfície que a role `anon`
+alcança, e **não estava em ledger nenhum** — nem no pentest de 14/08, que
+procurou dado saindo do banco e não pergunta sendo respondida.
+
+## O achado
+
+`palavras_bloqueadas` tem RLS ligada e **nenhuma policy**. É de propósito: a
+lista de palavras que o cadastro recusa fica escondida de todo mundo, inclusive
+do Administrador do distrito. Leitura direta por `anon` devolve
+`42501 permission denied`.
+
+`nome_valido(text)` lê essa tabela, e é `security definer` justamente para
+conseguir — o mesmo desenho de `maior_de_idade()` no chat. O que ninguém
+decidiu foi **quem pode perguntar**: a função nasceu sem `grant` nenhum, e
+função sem ACL no Postgres é chamável por `PUBLIC`.
+
+Medido em 2026-08-16, como `anon`, sem sessão e sem `Authorization`:
+
+| pergunta | resposta |
+|---|---|
+| `nome_valido('idiota')` | `false` |
+| `nome_valido('burro')` | `false` |
+| `nome_valido('estupido')` | `false` |
+| `nome_valido('Maria Silva')` | `true` |
+
+Quatro chamadas sobre uma lista de cinco palavras. Sonda-se um termo por
+chamada e a lista sai inteira.
+
+## A lição, que é maior que esta função
+
+**A tabela recusar leitura direta não protege a lista enquanto a função aceitar
+a pergunta.** Um "sim/não" sobre o conteúdo de um conjunto escondido entrega o
+conjunto a quem tiver paciência — e paciência, aqui, é um `for` sobre um
+dicionário.
+
+Vale para qualquer `security definer` que responda sobre dado que a RLS esconde.
+Virou requirement em `openspec/specs/privilegios-de-banco`, "Função que lê dado
+escondido não vira oráculo dele", para não depender de alguém lembrar deste
+arquivo.
+
+## Por que o pentest de 14/08 não pegou
+
+Ele testou as barreiras de LEITURA — `select` em tabela, embed do PostgREST,
+canal de Realtime — e todas resistiram. O oráculo não é leitura: é uma função
+autorizada respondendo a quem não devia poder chamá-la. Barreira diferente,
+consulta diferente.
+
+## O conserto, e o que NÃO se fez
+
+`revoke execute ... from public` seguido de `grant execute ... to
+authenticated`.
+
+**Ela continua `security definer`**, e trocar para `invoker` seria o conserto
+errado: sem privilégio para ler a lista ela passaria a devolver "válido" para
+tudo, e a validação de nome sumiria em silêncio — o modo de falha que
+`20260806090000_nome_valido_security_definer.sql` foi escrita para eliminar. O
+defeito era quem podia perguntar, não a função.
+
+Também não se trocou o retorno booleano pela palavra casada. Não muda nada:
+quem sonda já sabe o termo que perguntou. O oráculo é a permissão de perguntar.
+
+## Verificação
+
+`superficie_sem_sessao_test.dart` exige RECUSA na sondagem sem sessão, e
+resposta normal para quem tem — se voltar a devolver `false` em vez de recusar,
+o oráculo reabriu, e é `false` que entrega que o termo está na lista.
+
+`inventario_superficie_anon_test.dart` impede a próxima: enumera toda função de
+`public` e falha se alguma alcançar `anon` fora de uma lista de exceções escrita
+à mão, com motivo por linha.

@@ -44,7 +44,7 @@ código antes de ter spec.
 > O § 2.5 não virou change de propósito — é dívida com custo já avaliado e decisão de não
 > fazer, não trabalho pendente.
 
-### 2.1 `grant update` em `perfis` sem recorte de coluna
+### 2.1 `grant update` em `perfis` sem recorte de coluna — **FECHADO em 2026-08-11**
 
 Registrado em `SECURITY-AUDIT.md`, achado 5. `perfis_update_own` protege a **linha**, não a
 **coluna**: por chamada direta à API, a pessoa consegue escrever a própria `idade` e o próprio
@@ -310,7 +310,25 @@ entre arquivos, não código.
 cenários de "a única Administradora". O conserto precisa dar escopo à contagem ou ao dado, não
 só espaçar os testes no tempo.
 
-### 2.8 `anon` lê `participacoes_grupo` inteira — quem participa de qual Ministério é público
+### 2.8 `anon` lê `participacoes_grupo` inteira — quem participa de qual Ministério é público — **FECHADO em 2026-08-16**
+
+**FECHADO** pela change `fechar-superficie-anon`.
+`20260816120100_fechar_leitura_sem_sessao.sql` leva
+`participacoes_grupo_select_public` de `to anon, authenticated` para
+`to authenticated`, com o `using` inalterado, e revoga o `grant select` de
+`anon` — nessa ordem, para nenhum passo intermediário trocar "zero linhas" por
+`42501`.
+
+**Nenhuma tela mudou**, e é a medição que explica por quê: o app faz
+`signInAnonymously` no arranque, então todo Visitante chega como
+`authenticated`. Provado por `superficie_sem_sessao_test.dart`, que exercita
+os dois lados — o Visitante continua vendo Grupo, Ação, participantes, Igrejas
+e categorias; sem sessão nenhuma das oito tabelas é alcançável.
+
+Junto com ela fecharam as outras 12 policies e o `grant select` de `votos`,
+que era resto da feature 004 e já não lia nada. A superfície de LEITURA sem
+sessão foi a zero: 0 policies, 0 grants.
+
 
 Achado em 2026-08-13, medindo a fronteira do destaque de Ações. Com a chave **publicável** —
 que vai dentro do JavaScript publicado e é legível por qualquer pessoa que abra o site:
@@ -643,7 +661,29 @@ grant existe porque o app É o segundo gatilho. Fica registrado porque é uma
 função de escrita global exposta na REST, e quem for endurecer isso precisa
 saber que o cliente depende dela.
 
-### 2.18 Seis funções `security definer` anteriores continuam chamáveis por `anon`
+### 2.18 Seis funções `security definer` anteriores continuam chamáveis por `anon` — **FECHADO em 2026-08-16**
+
+**FECHADO** pela change `fechar-superficie-anon`.
+`20260816120000_revogar_execute_de_public.sql` revoga `execute` de `PUBLIC` nas
+cinco que ninguém quis abrir, mais `versao_texto_legal_vigente()`, que é
+`invoker` e estava no mesmo caso. Funções alcançáveis por `anon`: **14 -> 8**, e
+as 8 são as declaradas — `perfil_publico`, as duas `acao_encerrada`,
+`limiar_crianca` e as quatro da extensão `unaccent`.
+
+**O achado que o ledger não tinha:** `nome_valido(text)` era um ORÁCULO da
+lista secreta. `palavras_bloqueadas` tem RLS sem policy — `anon` lendo direto
+leva `42501` —, mas a função é `security definer` e aceitava a pergunta.
+Medido como `anon`: `'idiota'` -> `false`, `'burro'` -> `false`,
+`'estupido'` -> `false`, `'Maria Silva'` -> `true`. Cinco palavras, quatro
+chamadas. Registrado em `SECURITY-AUDIT.md`.
+
+**A trava, que vale mais que o conserto:**
+`test/integration/inventario_superficie_anon_test.dart` enumera as TRÊS
+barreiras — privilégio de função, papel da policy, `grant` de tabela — e falha
+se algo alcançar `anon` fora de uma lista de exceções escrita à mão, cada linha
+com o motivo. Provado que discrimina, com rollback: cada mutação move
+exatamente um contador.
+
 
 Achado ao consertar o mesmo defeito dentro de `chat-de-grupo-e-acao`, em
 2026-08-14. **Não é da change do chat — as do chat foram corrigidas.** É o
@@ -769,6 +809,17 @@ não apaga as 48.
 
 ### 2.19 O canal de Realtime entrega envelope de atividade a `anon`
 
+**Continua aberta, e ficou de fora da change `fechar-superficie-anon` de
+propósito.** Aquela change fechou a superfície de LEITURA por REST: `revoke
+execute` em função, papel de policy, `grant select` em tabela. Nenhuma das três
+alcança isto — o envelope sai do servidor de Realtime, antes de a RLS decidir o
+conteúdo, e o conserto é configuração daquele serviço.
+
+Misturá-la lá traria uma frente com outra forma de prova: o inventário que a
+change deixou olha catálogo do Postgres, e isto exige assinar um canal e medir
+o que chega. Fica para change própria.
+
+
 Achado pelo `pentest-etico` em 2026-08-14. Severidade baixa, registrado porque
 é observável de fora e ninguém decidiu que fosse assim.
 
@@ -797,6 +848,16 @@ Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar
 esperar o tempo passar. Estão marcadas como abertas nos respectivos `tasks.md`.
 
 ### Exigem rodar o app e olhar
+
+**Devido pela change `fechar-superficie-anon`, 2026-08-16:** o caminho degradado
+foi exercitado — app com `signInAnonymously` recusado (422), `localStorage`
+limpo, chave publicável válida — e a Home apareceu, com `/grupos` mostrando
+"Não deu pra carregar os Grupos agora." em vez de lista vazia. **Só que em
+largura de DESKTOP**: `window.innerWidth` ficou em 1379 porque o controle de
+janela do navegador não redimensionou, apesar de reportar sucesso. Falta ver as
+duas telas em **largura de celular**, que é onde este app se julga.
+
+
 
 | Onde | O quê |
 |---|---|

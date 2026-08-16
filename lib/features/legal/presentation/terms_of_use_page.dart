@@ -77,6 +77,11 @@ class TermsOfUsePage extends StatelessWidget {
               'palavras ofensivas. Nome recusado precisa ser trocado antes '
               'do cadastro ser concluído.',
             ),
+            const LegalBullet(
+              'As conversas de Grupo e de Ação são só para quem tem 18 anos '
+              'ou mais. Todo o resto do app funciona igual para quem tem '
+              'menos — a regra vale só para a conversa.',
+            ),
 
             const LegalHeading('Conduta esperada'),
             const LegalParagraph(
@@ -131,6 +136,77 @@ class TermsOfUsePage extends StatelessWidget {
               'ofensivo bloqueado pela checagem automática.',
             ),
 
+            const LegalHeading('Conversas em Grupos e Ações'),
+            const LegalParagraph(
+              'Cada Grupo e cada Ação tem uma conversa, para combinar o que '
+              'precisa ser combinado. Só texto, até 2000 caracteres por '
+              'mensagem, e só para quem tem 18 anos ou mais. As regras '
+              'abaixo valem para toda mensagem que você escrever.',
+            ),
+            const LegalBullet(
+              'Você responde pelo que escreve. A mensagem é sua, sai com o '
+              'seu nome para as outras pessoas da conversa, e a '
+              'responsabilidade pelo conteúdo é de quem escreveu — não do '
+              'app, não do Dono do Grupo.',
+            ),
+            const LegalBullet(
+              'Não escreva dado pessoal de outra pessoa: telefone, endereço, '
+              'situação de saúde, nem informação sobre criança ou '
+              'adolescente. Escreva o necessário para combinar a atividade.',
+            ),
+            const LegalBullet(
+              'Não use a conversa para ofender, ameaçar, discriminar, '
+              'constranger, fazer propaganda ou vender. Além de a mensagem '
+              'ser removida, o Dono do Grupo pode remover você do Grupo.',
+            ),
+            // Non-goal declarado no design da change: `palavras_bloqueadas`
+            // barra NOME de cadastro por substring, e `like %...%` sem
+            // fronteira de palavra produz falso positivo em texto corrido.
+            // Dizer que não existe filtro é obrigação: sem esta frase, o
+            // aviso automático do cadastro deixaria subentendido um controle
+            // que a conversa não tem.
+            const LegalBullet(
+              'Nada do que você escreve é checado antes de aparecer. Não há '
+              'filtro automático de palavrão na conversa — diferente do que '
+              'acontece com o nome no cadastro. A moderação depende de '
+              'alguém denunciar.',
+            ),
+            const LegalBullet(
+              'Mensagem enviada não se edita. Errou, remove — não reescreve. '
+              'E remover é definitivo: o texto não fica guardado em lugar '
+              'nenhum, nem para quem removeu. Quem remove precisa ler antes, '
+              'porque depois não dá para reconsiderar.',
+            ),
+            const LegalBullet(
+              'Quem pode remover uma mensagem: quem a escreveu; o Dono do '
+              'Grupo, na conversa do Grupo dele; o criador da Ação e o Dono '
+              'do Grupo dela, na conversa da Ação; e o Administrador do '
+              'distrito, em qualquer conversa. Mais ninguém.',
+            ),
+            const LegalBullet(
+              'Qualquer pessoa que lê a conversa pode denunciar uma '
+              'mensagem, e o motivo é obrigatório. A denúncia é vista só por '
+              'quem pode resolvê-la, e não pela pessoa denunciada. O motivo '
+              'que você escrever fica registrado como a história do caso, '
+              'inclusive depois de a mensagem deixar de existir.',
+            ),
+            const LegalBullet(
+              'Em Grupo arquivado a conversa vira só leitura: o histórico '
+              'continua lá para quem participava, e ninguém escreve mais '
+              'nada.',
+            ),
+            const LegalParagraph(
+              'A conversa do Grupo fica guardada sem prazo; a da Ação é '
+              'apagada 30 dias depois da data e hora dela. Isso, e o que '
+              'acontece com as suas mensagens quando você exclui a conta, '
+              'está na Política de Privacidade.',
+            ),
+            const LegalParagraph(
+              'A conversa não é canal de emergência nem canal oficial da '
+              'igreja. Não conte com ela para avisar algo urgente: pode não '
+              'haver ninguém lendo do outro lado.',
+            ),
+
             const LegalHeading('Disponibilidade do app'),
             const LegalParagraph(
               'Este app é mantido de forma independente. Fazemos o '
@@ -146,7 +222,11 @@ class TermsOfUsePage extends StatelessWidget {
               'Administrador do distrito, para que ninguém perca o Grupo de '
               'que participa. A exclusão é definitiva, e o registro das Ações '
               'que já aconteceram permanece, com você identificado apenas '
-              'como "Membro removido". Os detalhes estão na Política de '
+              'como "Membro removido". O texto das mensagens que você '
+              'escreveu nas conversas é apagado junto, restando só a marca '
+              'de que houve uma mensagem ali. Mensagem escrita por outra '
+              'pessoa que cite você não é apagada por isso — para tirá-la do '
+              'ar, o caminho é a denúncia. Os detalhes estão na Política de '
               'Privacidade.',
             ),
             Padding(

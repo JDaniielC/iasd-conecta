@@ -485,3 +485,235 @@ Suíte de integração conferida com o critério que o requisito
 20, zero falha** — depois do conserto do lock consultivo em
 `createTestDistrictAdmin`, que corrigiu uma violação daquele requisito
 encontrada por esta change.
+
+---
+
+# Chat de Grupo e de Ação — 2026-08-14
+
+A primeira tabela de texto livre do projeto. O que segue é o que a construção
+dela ensinou, e o achado principal não veio da suíte.
+
+## O achado: policy que recusa em silêncio, e uma tela que diz que deu certo
+
+`pode_ver_chat_acao` não tinha o braço de `administradores_distrito`.
+`pode_ver_chat_grupo` tinha. O comentário da própria função e o `design.md`
+afirmavam, longamente, que o Administrador estava incluído — e explicavam
+corretamente **por que** ele precisa estar: no Postgres, remover uma linha
+exige alcançá-la, e alcançar é ler.
+
+O efeito não era erro. Era ausência:
+
+```
+ pode_ver_chat_acao  | false
+ mensagens_visiveis  | 0
+ UPDATE 0            <-- a remoção não afetou linha nenhuma
+```
+
+O Administrador do distrito **não conseguia moderar conversa de Ação**, e nada
+no caminho dizia isso. `ChatRepository.removeMessage` não olhava linhas
+afetadas, então a tela do moderador reportava sucesso sobre uma mensagem que
+continuava visível para todo mundo. A instância de recurso existia no papel e
+não existia no banco — que é o pior lugar para uma promessa de moderação
+falhar, porque quem depende dela é quem já está sendo prejudicado.
+
+**Por que a suíte não pegou.** 29 testes de chat, e todos os de moderação
+montavam cenário em chat de **Grupo**. A função que faltava era a de **Ação**.
+Cobertura alta sobre metade do domínio lê como cobertura alta.
+
+**Quem pegou.** A revisão do texto legal contra o código — o agente
+`advogado-digital` precisava afirmar na Política qual é o alcance do
+Administrador, foi conferir na função, e a função discordava do comentário
+dela mesma. Vale registrar o mecanismo: **escrever a promessa obriga a ler a
+execução**, e é por isso que a Política é conferida contra o código e não
+contra o design.
+
+**Consertado**: braço acrescentado em `20260813200000`, com dois testes novos
+em `chat_moderacao_test.dart` (Administrador remove em Ação; quem não tem nada
+com a Ação não remove). `ChatRepository.removeMessage` passou a usar
+`.select()` e a lançar quando a policy recusa — recusa de RLS em `update` é
+zero linha, não exceção, e um método que não olha isso mente.
+
+## Duas classes de defeito que esta change confirmou
+
+**Recusa silenciosa é o modo de falha padrão do RLS.** `update` recusado afeta
+zero linha e não levanta nada. Todo caminho de escrita do cliente precisa
+olhar o resultado, ou vai reportar sucesso sobre nada. Já era verdade em
+`acao-direcionada-a-grupo`; aqui custou uma instância de recurso.
+
+**Ordem de gatilho AFTER é alfabética, e as ações referenciais entram na
+fila.** O gatilho que marcava denúncia como `sem_mensagem` nunca rodava:
+`on delete set null` da chave estrangeira é um `RI_ConstraintTrigger_…`, e
+maiúscula ordena antes de minúscula. Quando o gatilho olhava, o vínculo já era
+nulo. Virou `before delete`. Denúncia pendente sobre mensagem expurgada ficava
+pendurada apontando para o nada, sem erro.
+
+## Poder amplo, declarado
+
+O Administrador do distrito lê o chat de **qualquer** Grupo e de **qualquer**
+Ação. É o preço de existir instância de recurso quando o abuso vem de quem
+manda no espaço, e está escrito na Política de Privacidade em vez de ficar só
+aqui. O corte de 18 anos vale para ele também — `maior_de_idade()` está fora
+do `or`, de propósito.
+
+## Verificação
+
+Números de fechamento da change, medidos em 2026-08-14:
+
+| Gate | Resultado |
+|---|---|
+| `flutter analyze` | 0 issues |
+| `dart test test/integration` | 380 testes, 0 falhas |
+| `flutter test test/unit test/widget` | 404 testes, 0 falhas |
+| `flutter build web --release` | sucesso (`✓ Built build/web`, 18,2 s) |
+
+O canal de Realtime foi provado com três sessões reais por WebSocket:
+participante adulta recebe, não participante e menor de 18 não recebem —
+janela de não entrega derivada do aquecimento cronometrado (entrega medida em
+407 ms, piso de 3 s aplicado). Prova de canal só vale usando o canal.
+
+## O pentest do fechamento — 2026-08-14
+
+Superfície nova atacada por REST e por WebSocket, com cinco credenciais criadas
+para isso: dono adulto, menor de 15 que **participa do Grupo e confirmou na
+Ação**, participante comum, não participante, e Visitante autenticado sem
+Perfil, mais `anon` puro.
+
+### O que caiu: `grant` sem `revoke` não restringe nada
+
+**Função nova no Postgres nasce com `execute` para `PUBLIC`.** O
+`grant execute ... to authenticated` que a migration escrevia ACRESCENTA um
+privilégio; não substitui o que já estava lá. `anon` — a role que o PostgREST
+usa em requisição sem `Authorization` — herdava o direito de chamar as seis
+funções da change, e a chave publicável está no bundle público do app.
+
+Medido: `anon` chamou `expurgar_mensagens_de_acao()` por `curl`, **sem login**,
+e apagou mensagem real. Ela é `security definer` e faz `delete` global.
+
+```
+antes: 1
+anon chama o expurgo => HTTP 200
+depois: 0
+```
+
+O dano de dado era limitado — só apaga o que já venceu, e o cron faria igual —
+mas escrita destrutiva alcançável sem autenticação não era o que aquelas linhas
+diziam oferecer. Consertado com `revoke execute ... from public` nas seis, e
+provado por `chat_privilegio_funcao_test.dart`, que olha o **privilégio** e não
+o resultado: um teste que conferisse só "anon não lê mensagem" continuaria
+verde com a RPC aberta, porque são barreiras diferentes.
+
+**O precedente existe e ficou aberto**: seis funções `security definer` de
+features anteriores continuam chamáveis por `anon`, três delas de escrita. Está
+em `PENDENCIAS.md` 2.18, com a pior nomeada — `fechar_rodada_se_devido` só
+checa `auth.uid()` no caminho forçado.
+
+Sinal genérico para procurar em qualquer migration: `proacl` com uma entrada
+que começa em `=` (nada antes do sinal) é o grant a `PUBLIC`.
+
+### O que resistiu, e vale tanto quanto
+
+Cada item abaixo foi tentado com comando real e devolveu bloqueio:
+
+- **Corte etário no REST.** A menor de 15 participava do Grupo **e** estava
+  confirmada na Ação — o cenário mais favorável possível ao atacante. `select`
+  devolveu `[]` nos dois espaços; `insert` devolveu `42501` HTTP 403.
+- **Corte etário no canal.** Menor e não participante assinaram e receberam
+  **zero** payload enquanto o autorizado recebia o texto. O canal não entrega o
+  TEXTO a quem a RLS nega.
+- **Embeds do PostgREST como caminho lateral** — `grupos?select=*,mensagens(*)`
+  e as três variantes. A RLS do recurso embutido é aplicada; não dá para ler
+  mensagem "por dentro" de outra tabela.
+- **Spoof de autor**, **edição de texto** (o gatilho, não a policy),
+  **`delete` de mensagem** por qualquer papel, **denúncia por quem não lê o
+  chat**, e **o denunciante resolvendo o próprio caso** — todos recusados.
+- **Oráculo por forma de resposta**: "conversa inexistente" e "conversa que
+  você não pode ver" dão o mesmo `[]` HTTP 200. Não dá para inferir existência.
+
+Sobrou uma dívida de observação em `PENDENCIAS.md` 2.19: o canal entrega ao
+`anon` um envelope vazio com tipo e horário da operação — volume de atividade,
+nunca conteúdo.
+
+---
+
+# O texto removido continuava na tela de quem o removeu — 2026-08-16
+
+Change `chat-de-grupo-e-acao`, convergências 5 e 6, **depois** do pentest de
+14/08. Nada aqui é falha de RLS: o banco fez a coisa certa em todos os casos.
+O que falhava era a tela continuar desenhando o que o banco já tinha apagado.
+
+Entra neste ledger e não em nota de release porque a spec de moderação é
+categórica — *"NÃO DEVE devolver o texto removido a ninguém"* — e "ninguém"
+inclui quem escreveu e quem removeu. Um texto que a pessoa pediu para tirar e
+continua legível na tela dela é o dado ainda circulando, mesmo com a linha do
+banco já nula.
+
+## O que foi medido
+
+Todos em 2026-08-16, com o canal de tempo real derrubado de propósito — que é a
+condição em que os três aparecem, e a razão de nenhum ter sido visto antes: com
+o canal de pé, o eco do próprio `update` redesenhava a tela e escondia o
+defeito.
+
+| Caminho | Medida |
+|---|---|
+| Remover pela conversa | `chamou_o_banco=1`, `texto_ainda_na_tela=true`, `lapide_na_tela=false` |
+| Reconectar após remoção ocorrida na queda | `texto_na_tela='o texto que a moderação tirou'`, `removida_em=null`, `lapide=visible` |
+| Remover pela tela de denúncias, conversa montada atrás | `texto_ainda_na_conversa=true`, `lapide=false` |
+| Expurgo de 30 dias com página anterior carregada | `antiga_na_tela=true`, `recente_na_tela=false` |
+
+O quarto não devolve texto removido — devolve texto **expurgado**, que a
+Política de Privacidade declara ter deixado de existir. Mesma classe.
+
+## A causa, e por que ela é uma só
+
+A regra estava escrita no `design.md` desde a convergência 4: *"sobreposição
+local existe para o que o servidor ainda não disse, e é descartada assim que ele
+diz"*. Ela foi **implementada em um lugar** — a ordem dos argumentos num
+`mergeMessages` — e a lista se compunha em **quatro**. Escrever a regra não a
+aplica.
+
+Havia um segundo erro por baixo, e este é o que vale guardar: a precedência era
+**"quem chega depois vence"**, que é ordem de rede. Ela mente nos dois sentidos.
+A consulta ainda em voo responde com a linha anterior à remoção que o canal já
+entregou; a cópia de antes da queda ganha da consulta que a reconexão refez. Não
+existe ordem de argumentos que acerte os dois casos.
+
+## O conserto
+
+Uma costura só (`ChatNotifier` — três fontes, uma composição), e uma regra de
+precedência que não depende de tempo:
+
+> **A lápide é absorvente.** Entre duas versões da mesma linha vence a que
+> avançou mais — visível, depois conta excluída, depois removida por moderação.
+
+É o banco que a torna sempre correta, e não uma heurística: o gatilho
+`mensagens_so_remove` recusa qualquer `update` que deixe `texto` não nulo e
+preserva `removida_em` uma vez gravado. **Texto não ressuscita**, logo a versão
+com menos texto é sempre a mais nova — sem relógio, sem número de versão, sem
+depender de quem chegou primeiro.
+
+## Verificação
+
+Um teste por caminho, todos provados carregadores por mutação — inverter a
+comparação de `_tombstoneRank` deixa três testes vermelhos em três arquivos, e
+desfazer qualquer um dos dois consertos da convergência 6 deixa o seu vermelho.
+
+`flutter analyze` 0 issues; `flutter test test/unit test/widget` 424 passed;
+`dart test test/integration` 417 passed.
+
+## O que fica em aberto, declarado
+
+A reconsulta da reconexão cobre **a página mais recente**, não as páginas
+anteriores já carregadas. Remoção ocorrida durante a queda sobre linha de página
+antiga não é aprendida, e o texto fica na tela daquela pessoa até ela sair da
+conversa (`consultas_recentes=2`, `texto_antigo_na_tela=true`). Aceito por
+custo: refazer todas as páginas carregadas é uma ida ao servidor por página em
+cada reconexão. Escrito no `design.md` para não ser "consertado" por simetria.
+
+## A lição que não é sobre chat
+
+O pentest de 14/08 procurou o dado saindo do banco para quem não podia lê-lo, e
+não achou nada — corretamente. Estes quatro são o dado **já entregue a quem
+podia**, e continuando na tela depois de o direito acabar. É uma superfície que
+teste de RLS não alcança por construção, e a única forma que a pegou foi
+derrubar o canal de propósito e olhar o que a tela desenhava.

@@ -73,6 +73,85 @@ para e-mail+senha via `AuthRepository.upgradeParaConta`
 (`lib/features/perfil/data/auth_repository.dart:15-22`), gerido pelo Supabase
 Auth — e-mail e hash de senha ficam no schema `auth`, fora de `public.perfis`.
 
+## Conversa (change `chat-de-grupo-e-acao`)
+
+> **Por que esta seção cita SÍMBOLO e não `arquivo:linha`, ao contrário do
+> resto do documento.** A migration do chat foi editada seis vezes depois de
+> escrita — corte de idade na denúncia, `revoke from public`, braço do
+> Administrador, `denuncias_do_espaco` —, e a cada edição os números de linha
+> daqui apodreceram em bloco. Foram corrigidos duas vezes e quebraram de novo
+> na terceira. Um documento que se apresenta como evidência e aponta para a
+> linha errada é pior do que um sem ponteiro: ele parece verificável.
+>
+> Enquanto uma migration está viva, o ponteiro estável é o NOME — `create
+> policy mensagens_insert_autor` se acha com um `grep` e sobrevive a qualquer
+> edição acima dele. `arquivo:linha` continua certo para migration arquivada,
+> que não muda mais, e é por isso que o resto deste documento o usa.
+
+
+**Esta é a única entrada deste documento que NÃO descreve o dado que guarda.**
+Todas as outras conseguem: `idade` é um número, `igreja_id` é uma das quinze
+igrejas, `caminho` é um endereço no bucket. `mensagens.texto` é **o que uma
+pessoa escreveu para outra**, e o conteúdo é indeterminado por natureza.
+
+Fingir que descrevemos seria pior do que declarar que não descrevemos: uma
+frase como "texto sobre a organização das atividades" viraria uma promessa de
+escopo que nada no sistema garante, e a primeira mensagem sobre saúde, fé ou
+vida pessoal de terceiro a desmentiria. O que dá para declarar com honestidade
+é o que o app **faz** com esse texto — e é o resto desta seção.
+
+| Onde | O quê |
+|---|---|
+| Tabela | `public.mensagens` (`20260813200000_chat_de_grupo_e_acao.sql`, `create table public.mensagens`) — `grupo_id` **ou** `acao_id` por constraint, `autor_id`, `texto` (máx. 2000), `removida_em`, `removida_por`, `created_at` |
+| Conteúdo | **Indeterminado.** Texto livre, sem estrutura, sem validação de conteúdo. Só o tamanho é limitado |
+| Quem escreve | Quem lê aquela conversa e tem 18 anos ou mais, em Grupo não arquivado — policy `mensagens_insert_autor` |
+| Quem lê (Grupo) | Quem participa, mais o Administrador do distrito — `pode_ver_chat_grupo` |
+| Quem lê (Ação) | Confirmação em qualquer status, criador da Ação, Dono do Grupo dela, mais o Administrador do distrito — `pode_ver_chat_acao` |
+| Corte de idade | **18 anos**, no banco e não na tela — `maior_de_idade()`, `security definer` de propósito |
+| Sensível? | **Pode conter qualquer categoria do art. 5º, II**, inclusive de terceiro que nem usa o app. Não há como classificar de antemão nem detectar depois. **[EM ABERTO — precisa de advogado]**: se o consentimento genérico do cadastro cobre isto. Ver `PENDENCIAS.md` 2.16 |
+
+**Denúncia**: `public.denuncias_mensagem` — `mensagem_id` com
+`on delete set null` (**não** cascade), `motivo` obrigatório, `denunciante_id`
+não nulo, `estado` em `pendente`/`mensagem_removida`/`improcedente`/
+`sem_mensagem`. O `motivo` **também é texto livre do titular**, e sobre ele
+pesam duas dívidas registradas em `PENDENCIAS.md` 2.14: não é alcançado por
+`excluir_minha_conta`, e não tem prazo nenhum.
+
+**Retenção**: mensagem de **Ação** é apagada 30 dias após `acoes.data_hora` —
+depois do encontro, não da escrita — por `expurgar_mensagens_de_acao()`
+(`expurgar_mensagens_de_acao`), com dois executores: `pg_cron` e uma chamada do app ao abrir a
+conversa (`ChatRepository.fetchHistory`). Mensagem de
+**Grupo não expira**, nem em Grupo arquivado — o histórico é justamente o que
+sobra de um Grupo arquivado. Isso significa que a conversa de Grupo é o
+primeiro dado do app **sem prazo e com conteúdo indeterminado**, e é o que
+reabre a decisão de backup (`PENDENCIAS.md` 2.15).
+
+**Remoção**: `texto = null`, e ponto. O texto removido **não é guardado em
+lugar nenhum** — nem tabela de auditoria, nem coluna original, nem cópia para
+o Administrador (`comment on column public.mensagens.texto`). Conservá-lo recriaria dentro do
+banco justamente o dado que a remoção existe para eliminar, e num lugar com
+menos gente olhando. Consequência aceita: quem remove precisa ler antes.
+
+**Exclusão de conta**: o texto das mensagens do titular vira nulo, por gatilho
+em `perfis` (`perfis_mensagens_perdem_texto`), na mesma transação. Fica a lápide — `removida_em`
+continua nulo, então a tela escreve "mensagem de conta excluída" e não
+"mensagem removida", que são fatos diferentes. **Limite declarado, e ele está
+na Política**: mensagem de **terceiro** que cite a pessoa **não** é apagada
+por aqui. Aquilo é texto de outra pessoa, e sai por denúncia.
+
+**Moderação é humana e reativa.** Não há filtro de palavrão, análise de
+conteúdo nem varredura. `palavras_bloqueadas` e `nome_valido()` existem e
+seriam reuso de uma linha, mas foram desenhados para barrar um nome de
+cadastro por substring — `like '%...%'` sem fronteira de palavra produz falso
+positivo em texto corrido e nenhum caminho para a pessoa entender a recusa.
+Omitir isto deixaria subentendido um controle que não existe.
+
+**Tempo real**: `public.mensagens` está na publicação `supabase_realtime`, com RLS ligada. É a segunda tabela publicada do projeto, e a
+diferença em relação à primeira importa: em `notificacoes` o canal carrega um
+sinal, aqui ele carrega o **texto**. A RLS no canal é a única barreira, e está
+provada com sessões reais em `test/integration/chat_realtime_test.dart` — não
+por revisão.
+
 ## Classificação de sensibilidade (LGPD art. 5º, II)
 
 - **`igreja_id` — provavelmente dado sensível.** Art. 5º, II lista

@@ -30,22 +30,22 @@ final notificationRepositoryProvider = Provider<NotificationRepository>((ref) {
 /// É `Stream` e não invalidação direta para não fechar ciclo de dependência
 /// entre este provider e a lista.
 ///
-/// O contador `eventos` NÃO é adorno: é ele que torna cada emissão distinta.
+/// O contador `events` NÃO é adorno: é ele que torna cada emissão distinta.
 /// `AsyncData(0) == AsyncData(0)`, então com valor constante o Riverpod não
 /// notificaria quem observa, e a lista pararia de recarregar EM SILÊNCIO. Quem
 /// vier simplificar este arquivo vai mirar nele primeiro.
 final notificationSignalProvider = StreamProvider.autoDispose<int>((ref) {
   final client = ref.watch(supabaseClientProvider);
-  var eventos = 0;
+  var events = 0;
 
   // Sem sessão não há canal a abrir, e não há por que montar controlador para
   // emitir um valor.
   if (client.auth.currentUser == null) return Stream.value(0);
 
   final controller = StreamController<int>();
-  controller.add(eventos);
+  controller.add(events);
 
-  final canal = client
+  final channel = client
       .channel('notificacoes-da-pessoa')
       .onPostgresChanges(
         // `insert` e NÃO `all`. Com `all`, marcar como lida — que é um `update`
@@ -57,7 +57,7 @@ final notificationSignalProvider = StreamProvider.autoDispose<int>((ref) {
         event: PostgresChangeEvent.insert,
         schema: 'public',
         table: 'notificacoes',
-        callback: (_) => controller.add(++eventos),
+        callback: (_) => controller.add(++events),
       )
       .subscribe();
 
@@ -66,7 +66,7 @@ final notificationSignalProvider = StreamProvider.autoDispose<int>((ref) {
   // Canal ANTES do controlador: fechar o controlador primeiro deixaria uma
   // janela em que um evento ainda em trânsito tentaria emitir num fluxo fechado.
   ref.onDispose(() async {
-    await client.removeChannel(canal);
+    await client.removeChannel(channel);
     await controller.close();
   });
 

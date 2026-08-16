@@ -12,6 +12,7 @@ import '../../group/group_providers.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
+import '../../chat/chat_providers.dart';
 import '../../notification/presentation/notification_badge.dart';
 
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
@@ -107,7 +108,25 @@ class ActionDetailPage extends ConsumerWidget {
         // Change `notificacoes-in-app`. O app não tem barra global, então o
         // indicador entra nas telas onde a pessoa LÊ — nunca nos
         // formulários, onde ele seria distração no meio de um fluxo.
-        actions: const [NotificationBadge()],
+        actions: [
+          // Change `chat-de-grupo-e-acao`. Só aparece para quem PODE ver, e
+          // quem responde isso é o banco: `pode_ver_chat_acao`, a mesma
+          // função que a policy usa. Reimplementar o predicado aqui criaria
+          // uma segunda cópia da regra, e a primeira divergência entre as duas
+          // é uma tela que oferece o que a policy nega.
+          //
+          // Conversa de Ação continua aberta DEPOIS do encontro: os 30 dias de
+          // retenção existem justamente para o "manda as fotos" da semana
+          // seguinte. Por isso não há guarda de `isEnded` aqui.
+          if (ref.watch(canSeeChatProvider(ChatSpace.action(actionId))).value ??
+              false)
+            IconButton(
+              icon: const Icon(Icons.forum_outlined),
+              tooltip: 'Conversa',
+              onPressed: () => context.push('/acoes/$actionId/conversa'),
+            ),
+          const NotificationBadge(),
+        ],
       ),
       body: actionAsync.when(
         data: (action) {
@@ -240,7 +259,7 @@ class ActionDetailPage extends ConsumerWidget {
                 ],
                 const SizedBox(height: AppSpacing.md),
                 Text(DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)),
-                Text(action.local),
+                Text(action.location),
                 // Change `convite-para-acao`. Convidar exige Conta — a regra
                 // real está em `convidar_para_acao`, que lê
                 // `auth.users.is_anonymous`; aqui é só não oferecer o que o

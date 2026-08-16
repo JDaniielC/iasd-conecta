@@ -136,6 +136,11 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'seu gênero.',
             ),
             const LegalParagraph(
+              'O que você escreve nas conversas de Grupo e de Ação também '
+              'não é público. Quem lê cada uma delas está na seção '
+              '"Conversas em Grupos e Ações", logo abaixo.',
+            ),
+            const LegalParagraph(
               'Em qual candidata você votou também não fica público. Só você '
               'enxerga o seu voto — nem outros participantes do Grupo, nem '
               'quem abriu a Rodada de votação, nem o Dono do Grupo. Quando a '
@@ -193,6 +198,147 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'removemos.',
             ),
 
+            const LegalHeading('Conversas em Grupos e Ações'),
+            const LegalParagraph(
+              'Cada Grupo tem uma conversa, e cada Ação também. É onde as '
+              'pessoas combinam quem leva o quê, onde é o ponto de encontro '
+              'e o que mudou de última hora. Só texto: o app não aceita '
+              'foto, áudio nem arquivo na conversa.',
+            ),
+            const LegalNote(
+              'Esta é a única parte do app em que o dado é o que você '
+              'escreve, e não um campo com forma conhecida. Nome, data e '
+              'local a gente sabe de antemão o que são; uma mensagem, não. '
+              'Por isso esta seção é mais detalhada que as outras — e por '
+              'isso o que você escreve sobre outras pessoas importa tanto '
+              'quanto o que você escreve sobre você.',
+            ),
+            const LegalBullet(
+              'Quem lê a conversa de um Grupo: só quem participa daquele '
+              'Grupo. Ela não é pública — Visitante não vê, não aparece em '
+              'busca na internet, e quem não participa não alcança nem por '
+              'fora do app. A regra vale no banco de dados, não só na tela.',
+            ),
+            const LegalBullet(
+              'Quem lê a conversa de uma Ação: quem confirmou presença, quem '
+              'está na fila de espera, quem criou a Ação e o Dono do Grupo '
+              'dela, quando a Ação é de um Grupo. Quem desiste da Ação deixa '
+              'de ler a conversa dela.',
+            ),
+            const LegalBullet(
+              'Quem sai de um Grupo deixa de ler a conversa dele, inclusive '
+              'as mensagens antigas. O que essa pessoa escreveu continua '
+              'aparecendo para quem ficou — a conversa é de todo mundo que '
+              'estava lá.',
+            ),
+            // Esta frase já foi escrita uma vez dizendo MENOS do que diz
+            // agora, e a diferença é a razão de o texto legal ser conferido
+            // contra o código: `pode_ver_chat_acao` não tinha o braço de
+            // Administrador, embora o comentário e o spec daquela migration
+            // declarassem que tinha. A conferência achou; a suíte não, porque
+            // só provava moderação em chat de Grupo. Corrigido em
+            // 20260813200000, com teste em chat_moderacao_test.dart.
+            const LegalBullet(
+              'O Administrador do distrito consegue ler e remover mensagem '
+              'na conversa de qualquer Grupo e de qualquer Ação, mesmo sem '
+              'participar. É poder amplo, e está escrito aqui de propósito: '
+              'sem ele não haveria a quem recorrer quando o problema vem '
+              'justamente de quem manda no espaço. O corte de 18 anos vale '
+              'para ele também.',
+            ),
+            const LegalBullet(
+              'Só quem tem 18 anos ou mais lê ou escreve. Quem tem menos, e '
+              'quem está sem cadastro, não vê a conversa e não alcança as '
+              'mensagens nem por fora do app. O corte usa a idade que você '
+              'informou no cadastro — o app não tem como conferir se ela é '
+              'verdadeira.',
+            ),
+            const LegalBullet(
+              'Onde a conversa fica: no mesmo banco de dados do resto do '
+              'app, no Supabase, em servidor no Brasil. Ela não passa por '
+              'nenhum outro serviço e não sai do país.',
+            ),
+            const LegalParagraph(
+              'Não existe leitura automática do que você escreve: não há '
+              'filtro de palavrão, não há inteligência artificial, não há '
+              'análise de conteúdo de nenhum tipo, e o app não varre as '
+              'conversas atrás de nada. Quem lê é quem está na conversa, '
+              'mais o Administrador do distrito nos casos acima. A '
+              'moderação é humana e só começa quando alguém denuncia — e a '
+              'consequência disso é honesta de dizer: uma mensagem ofensiva '
+              'fica no ar até alguém denunciar e alguém com autoridade no '
+              'espaço abrir o app.',
+            ),
+            const LegalParagraph(
+              'Quando uma mensagem é removida — por quem a escreveu, por '
+              'quem manda no espaço ou pelo Administrador do distrito — o '
+              'texto deixa de existir. Não guardamos cópia em lugar nenhum: '
+              'nem num registro interno, nem para o Administrador consultar '
+              'depois. Fica a marca de que houve uma mensagem ali, para a '
+              'conversa continuar fazendo sentido, e o motivo que a pessoa '
+              'escreveu ao denunciar.',
+            ),
+            const LegalParagraph('Por quanto tempo a conversa fica guardada:'),
+            const LegalBullet(
+              'Conversa de Ação: apagamos as mensagens 30 dias depois da '
+              'data e hora da Ação. A conta corre a partir do encontro, e '
+              'não de quando você escreveu. Depois disso elas deixam de '
+              'existir.',
+            ),
+            const LegalBullet(
+              'Conversa de Grupo: não tem prazo. As mensagens ficam '
+              'enquanto o Grupo existir, inclusive depois de ele ser '
+              'arquivado — nesse caso a conversa vira só leitura, e o '
+              'histórico é justamente o que sobra dele.',
+            ),
+            // O prazo é promessa, e promessa de prazo exige executor. São
+            // dois, de propósito: `cron.schedule('expurgar-mensagens-de-acao')`
+            // (20260813200000:565-569) e a chamada do app em
+            // `ChatRepository.fetchHistory` (chat_repository.dart:57). "Algumas
+            // horas a mais" não é hedge: o cron roda 03:43 e o segundo gatilho
+            // depende de alguém abrir uma conversa.
+            const LegalBullet(
+              'Quem apaga, na prática: uma rotina que roda todo dia no banco '
+              'de dados, e mais uma segunda passagem que o próprio app '
+              'dispara sempre que alguém abre uma conversa. São duas porque '
+              'a primeira, sozinha, pode deixar de rodar — e prazo sem quem '
+              'o cumpra não é prazo. Por isso uma mensagem pode sobreviver '
+              'algumas horas além da marca exata dos 30 dias, até a '
+              'passagem seguinte.',
+            ),
+            const LegalParagraph(
+              'Quando alguém exclui a conta, o texto de todas as mensagens '
+              'dessa pessoa é apagado, e no lugar fica a marca de mensagem '
+              'de conta excluída. Existe um limite aqui, e ele precisa estar '
+              'escrito com todas as letras: mensagem escrita por OUTRA '
+              'pessoa que cite você não é apagada quando você exclui sua '
+              'conta. Aquele texto é de outra pessoa, e a sua exclusão não '
+              'alcança o que ela escreveu. Para tirar do ar uma mensagem '
+              'assim, o caminho é denunciar — pelo próprio app ou '
+              'escrevendo para ${LegalMetadata.contactEmail}.',
+            ),
+            const LegalParagraph(
+              'Ao denunciar, o motivo que você escrever fica guardado como '
+              'registro do caso, junto com a informação de que foi você quem '
+              'denunciou. Ele não expira com o tempo, e continua existindo '
+              'mesmo depois de as mensagens da Ação serem apagadas — uma '
+              'denúncia que some sem desfecho é o pior resultado para quem '
+              'denunciou. A denúncia é vista só por quem pode resolvê-la: o '
+              'Dono do Grupo, o criador da Ação, o Dono do Grupo a que a Ação '
+              'pertence, e o Administrador do distrito. Se você excluir sua '
+              'conta, esse motivo continua '
+              'registrado, ligado apenas ao seu Perfil anonimizado — '
+              '"Membro removido".',
+            ),
+            const LegalParagraph(
+              'Uma última coisa, e ela é um pedido: não escreva na conversa '
+              'dado pessoal de outra pessoa — telefone, endereço, situação '
+              'de saúde — nem informação sobre criança ou adolescente. '
+              'Escreva o necessário para combinar a atividade. Como o app '
+              'não analisa o que você escreve, esse cuidado é seu, e a '
+              'regra está nos Termos de Uso.',
+            ),
+
             const LegalHeading('Com quem compartilhamos'),
             const LegalBullet(
               'Supabase — provedor que guarda o banco de dados e cuida do '
@@ -220,6 +366,11 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'Imagens de capa seguem o Grupo ou a Ação que ilustram — o '
               'prazo delas está na seção "Imagens de capa de Grupo e de '
               'Ação", acima.',
+            ),
+            const LegalParagraph(
+              'As conversas têm prazos próprios: 30 dias depois da Ação, e '
+              'sem prazo no Grupo. Estão detalhados na seção "Conversas em '
+              'Grupos e Ações", acima.',
             ),
 
             const LegalHeading('Seus direitos e como usar cada um'),
@@ -249,6 +400,14 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'antes. A única situação em que o app recusa é quando você é o '
               'único Administrador do distrito: aí é preciso promover outro '
               'antes, senão o distrito fica sem quem o administre.',
+            ),
+            const LegalBullet(
+              'O que você escreveu nas conversas: ao excluir a conta, o '
+              'texto de todas as suas mensagens é apagado. No lugar fica '
+              'apenas a marca de que houve uma mensagem ali, para a conversa '
+              'continuar legível para quem ficou. Mensagem escrita por outra '
+              'pessoa que cite você não sai por aí — o caminho é a denúncia, '
+              'como explica a seção "Conversas em Grupos e Ações".',
             ),
             const LegalBullet(
               'O que continua existindo depois disso: o registro das Ações que '
@@ -286,7 +445,12 @@ class PrivacyPolicyPage extends ConsumerWidget {
             const LegalBullet('a idade nunca é mostrada a mais ninguém;'),
             const LegalBullet(
               'o cadastro pergunta a idade logo no início, e aplica essas '
-              'proteções automaticamente a partir dela.',
+              'proteções automaticamente a partir dela;',
+            ),
+            const LegalBullet(
+              'as conversas de Grupo e de Ação são só para quem tem 18 anos '
+              'ou mais. Quem tem menos não lê e não escreve, e isso é '
+              'conferido no banco de dados, não só na tela.',
             ),
             const LegalParagraph(
               'Para criança com menos de 13 anos, o cadastro só é concluído '

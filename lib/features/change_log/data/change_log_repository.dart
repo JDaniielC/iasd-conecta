@@ -24,19 +24,19 @@ class ChangeLogRepository {
   Future<List<ChangeLogEntry>> _fetch(PostgrestFilterBuilder<dynamic> query) async {
     final rows = await query.order('created_at', ascending: false).limit(_fetchLimit)
         as List;
-    final linhas = rows.cast<Map<String, dynamic>>();
+    final typedRows = rows.cast<Map<String, dynamic>>();
 
     // Um RPC `perfil_publico` por AUTOR DISTINTO, não por linha: numa lista de
     // 21 eventos as mesmas duas ou três pessoas se repetem.
-    final autores = linhas
+    final authors = typedRows
         .map((r) => r['autor_id'] as String?)
         .whereType<String>()
         .toSet();
-    final nomes = <String, String>{};
-    for (final uid in autores) {
+    final names = <String, String>{};
+    for (final uid in authors) {
       final r = await _client.rpc('perfil_publico', params: {'p_id': uid}) as List;
       if (r.isNotEmpty) {
-        nomes[uid] = (r.first as Map<String, dynamic>)['nome_exibido'] as String;
+        names[uid] = (r.first as Map<String, dynamic>)['nome_exibido'] as String;
       }
     }
 
@@ -45,9 +45,9 @@ class ChangeLogRepository {
     // minutos o banco pode ter um tipo que o app ainda não desenha, e sumir com
     // a tela inteira por causa disso seria pior.
     return [
-      for (final row in linhas)
+      for (final row in typedRows)
         ?ChangeLogEntry.fromMap(row,
-            authorName: nomes[row['autor_id'] as String?]),
+            authorName: names[row['autor_id'] as String?]),
     ];
   }
 }

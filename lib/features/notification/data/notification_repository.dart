@@ -38,13 +38,13 @@ class NotificationRepository {
         .order('created_at', ascending: false)
         .limit(pageSize);
 
-    final atores = rows
+    final actors = rows
         .map((r) => r['ator_id'] as String?)
         .whereType<String>()
         .toSet()
         .toList();
-    final resolvidos = await Future.wait(
-      atores.map((uid) async {
+    final resolved = await Future.wait(
+      actors.map((uid) async {
         final r =
             await _client.rpc('perfil_publico', params: {'p_id': uid}) as List;
         return r.isEmpty
@@ -53,13 +53,13 @@ class NotificationRepository {
                 uid, (r.first as Map<String, dynamic>)['nome_exibido'] as String);
       }),
     );
-    final nomes = Map.fromEntries(resolvidos.whereType<MapEntry<String, String>>());
+    final names = Map.fromEntries(resolved.whereType<MapEntry<String, String>>());
 
     return [
       for (final row in rows)
         ?AppNotification.fromMap(
           row,
-          actorName: nomes[row['ator_id'] as String?],
+          actorName: names[row['ator_id'] as String?],
           groupName: (row['grupos'] as Map<String, dynamic>?)?['nome'] as String?,
         ),
     ];

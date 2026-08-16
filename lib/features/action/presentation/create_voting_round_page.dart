@@ -25,21 +25,21 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
 
   Future<void> _pickDeadline() async {
     final now = DateTime.now();
-    final data = await showDatePicker(
+    final date = await showDatePicker(
       context: context,
       initialDate: now.add(const Duration(days: 1)),
       firstDate: now,
       lastDate: now.add(const Duration(days: 365)),
     );
-    if (data == null || !mounted) return;
-    final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (hora == null) return;
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (time == null) return;
     setState(() {
-      _deadline = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _deadline = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
-  Future<void> _abrir() async {
+  Future<void> _open() async {
     final deadline = _deadline;
     if (deadline == null) {
       setState(() => _error = 'Escolha um prazo.');
@@ -90,7 +90,7 @@ class _CreateVotingRoundPageState extends ConsumerState<CreateVotingRoundPage> {
             ],
             const SizedBox(height: AppSpacing.lg),
             ElevatedButton(
-              onPressed: _submitting ? null : _abrir,
+              onPressed: _submitting ? null : _open,
               child: _submitting
                   ? const SizedBox(
                       height: 20,

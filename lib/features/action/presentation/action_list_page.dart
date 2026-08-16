@@ -505,7 +505,7 @@ class _ActionCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.local}'
+              '${DateFormat('dd/MM/yyyy HH:mm').format(action.dateTime)} · ${action.location}'
               // Change `acao-direcionada-a-grupo`: quem participa vê a Ação
               // restrita junto das demais, e precisa saber que ela é restrita —
               // senão combina no WhatsApp com quem não consegue nem abrir.
@@ -641,7 +641,7 @@ class _HighlightCard extends StatelessWidget {
                     style: Theme.of(context).textTheme.titleSmall,
                   ),
                   Text(
-                    '${DateFormat('dd/MM HH:mm').format(action.dateTime)} · ${action.local}'
+                    '${DateFormat('dd/MM HH:mm').format(action.dateTime)} · ${action.location}'
                     '${action.isCancelled ? ' · Cancelada' : ''}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

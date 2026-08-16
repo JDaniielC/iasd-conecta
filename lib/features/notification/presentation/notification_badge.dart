@@ -15,15 +15,15 @@ class NotificationBadge extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final naoLidas = ref.watch(unreadNotificationCountProvider).value ?? 0;
+    final unread = ref.watch(unreadNotificationCountProvider).value ?? 0;
 
     return IconButton(
-      tooltip: naoLidas > 0 ? 'Avisos ($naoLidas não lidos)' : 'Avisos',
+      tooltip: unread > 0 ? 'Avisos ($unread não lidos)' : 'Avisos',
       onPressed: () => context.push('/notificacoes'),
-      icon: naoLidas == 0
+      icon: unread == 0
           ? const Icon(Icons.notifications_none)
           : Badge(
-              label: Text('$naoLidas'),
+              label: Text('$unread'),
               child: const Icon(Icons.notifications),
             ),
     );

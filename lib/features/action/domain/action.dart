@@ -9,7 +9,7 @@ class NewAction {
   const NewAction({
     required this.name,
     required this.dateTime,
-    required this.local,
+    required this.location,
     this.details,
     this.capacity,
     this.votingRoundId,
@@ -20,7 +20,7 @@ class NewAction {
 
   final String name;
   final DateTime dateTime;
-  final String local;
+  final String location;
   final String? details;
   final int? capacity;
 
@@ -30,7 +30,7 @@ class NewAction {
   final String? votingRoundId;
 
   /// Dupla Missionária (feature 007): quando `true`, exige [visitedGender]
-  /// e o limite de vagas é sempre 2, ignorando [limiteVagas] informado.
+  /// e o limite de vagas é sempre 2, ignorando [capacity] informado.
   final bool isMissionaryPair;
   final VisitedGender? visitedGender;
 
@@ -42,7 +42,7 @@ class NewAction {
 
   bool get isReadyToSubmit =>
       name.trim().isNotEmpty &&
-      local.trim().isNotEmpty &&
+      location.trim().isNotEmpty &&
       (capacity == null || capacity! > 0) &&
       (!isMissionaryPair || visitedGender != null);
 
@@ -50,7 +50,7 @@ class NewAction {
     return {
       'nome': name.trim(),
       'data_hora': dateTime.toUtc().toIso8601String(),
-      'local': local.trim(),
+      'local': location.trim(),
       'detalhes': (details?.trim().isEmpty ?? true) ? null : details!.trim(),
       'limite_vagas': isMissionaryPair ? 2 : capacity,
       'criador_id': creatorId,
@@ -74,7 +74,7 @@ class Action {
     required this.id,
     required this.name,
     required this.dateTime,
-    required this.local,
+    required this.location,
     required this.creatorId,
     required this.createdAt,
     this.details,
@@ -91,7 +91,7 @@ class Action {
   final String id;
   final String name;
   final DateTime dateTime;
-  final String local;
+  final String location;
   final String? details;
   final int? capacity;
   final String creatorId;
@@ -158,7 +158,7 @@ class Action {
       id: map['id'] as String,
       name: map['nome'] as String,
       dateTime: DateTime.parse(map['data_hora'] as String),
-      local: map['local'] as String,
+      location: map['local'] as String,
       details: map['detalhes'] as String?,
       capacity: map['limite_vagas'] as int?,
       creatorId: map['criador_id'] as String,
@@ -242,21 +242,21 @@ bool isOnSabbath(DateTime dateTime) {
   return false;
 }
 
-DateTime _startOfWeek(DateTime data) {
-  final dia = DateTime(data.year, data.month, data.day);
+DateTime _startOfWeek(DateTime date) {
+  final day = DateTime(date.year, date.month, date.day);
   // Semana começa domingo (weekday: seg=1 ... dom=7 -> dom vira 0).
-  return dia.subtract(Duration(days: dia.weekday % 7));
+  return day.subtract(Duration(days: day.weekday % 7));
 }
 
-/// Classifica [dataHora] em relação a [agora] pra agrupar `ListaAcoesPage`
+/// Classifica [dateTime] em relação a [now] pra agrupar `ActionListPage`
 /// por período. Sábado tem prioridade sobre Hoje/Essa semana — é o destaque
 /// que a comunidade adventista mais procura, mesmo caindo também "hoje".
 ActionPeriod actionPeriod(DateTime dateTime, DateTime now) {
   if (isOnSabbath(dateTime)) return ActionPeriod.sabbath;
 
   final today = DateTime(now.year, now.month, now.day);
-  final dia = DateTime(dateTime.year, dateTime.month, dateTime.day);
-  if (dia == today) return ActionPeriod.today;
+  final day = DateTime(dateTime.year, dateTime.month, dateTime.day);
+  if (day == today) return ActionPeriod.today;
 
   final weekStart = _startOfWeek(now);
   final weekEnd = weekStart.add(const Duration(days: 7));

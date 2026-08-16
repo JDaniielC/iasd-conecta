@@ -143,7 +143,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                 if (filtered.isEmpty) {
                   return const Center(child: Text('Nenhum Grupo ainda.'));
                 }
-                final sorted = [...filtered]..sort(_comparador(_sortOrder));
+                final sorted = [...filtered]..sort(_comparator(_sortOrder));
                 final sections = groupByChurch(sorted, (g) => g.churchId, nameByChurchId);
                 // As capas vêm numa consulta só, e a lista só pinta quando
                 // elas chegam. É o que impede o card de crescer depois de
@@ -176,7 +176,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
     );
   }
 
-  int Function(Group, Group) _comparador(_GroupSortOrder sortOrder) {
+  int Function(Group, Group) _comparator(_GroupSortOrder sortOrder) {
     switch (sortOrder) {
       case _GroupSortOrder.mostRecent:
         return (a, b) => b.createdAt.compareTo(a.createdAt);

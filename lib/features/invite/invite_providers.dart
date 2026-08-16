@@ -28,7 +28,7 @@ final receivedInvitesProvider =
 /// push e sem e-mail, o convite só aparece quando a pessoa abre a tela, e o
 /// contador é o que reduz o problema sem construir infraestrutura.
 final openInvitesCountProvider = FutureProvider.autoDispose<int>((ref) async {
-  final convites = await ref.watch(receivedInvitesProvider.future);
-  final agora = ref.watch(clockProvider)();
-  return convites.where((c) => c.isOpen(agora)).length;
+  final invites = await ref.watch(receivedInvitesProvider.future);
+  final now = ref.watch(clockProvider)();
+  return invites.where((c) => c.isOpen(now)).length;
 });

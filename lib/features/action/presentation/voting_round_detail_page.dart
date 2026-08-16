@@ -31,9 +31,9 @@ class VotingRoundDetailPage extends ConsumerWidget {
     }
   }
 
-  Future<void> _encerrar(BuildContext context, WidgetRef ref) async {
+  Future<void> _close(BuildContext context, WidgetRef ref) async {
     try {
-      await ref.read(votingRoundRepositoryProvider).closeIfDue(votingRoundId, forcar: true);
+      await ref.read(votingRoundRepositoryProvider).closeIfDue(votingRoundId, force: true);
       ref.invalidate(votingRoundProvider(votingRoundId));
       ref.invalidate(candidatesProvider(votingRoundId));
     } catch (_) {
@@ -82,7 +82,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       OutlinedButton(
-                        onPressed: () => _encerrar(context, ref),
+                        onPressed: () => _close(context, ref),
                         child: const Text('Encerrar Rodada'),
                       ),
                     ],
@@ -101,20 +101,20 @@ class VotingRoundDetailPage extends ConsumerWidget {
                         itemCount: candidates.length,
                         itemBuilder: (context, index) {
                           final candidate = candidates[index];
-                          final votadaPorMim = myVote?.candidateId == candidate.id;
+                          final votedByMe = myVote?.candidateId == candidate.id;
                           return Card(
                             child: ListTile(
                               title: Text(candidate.name),
                               subtitle: Text(
-                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidate.dateTime)} · ${candidate.local}',
+                                '${DateFormat('dd/MM/yyyy HH:mm').format(candidate.dateTime)} · ${candidate.location}',
                               ),
                               onTap: () => context.push('/acoes/${candidate.id}'),
                               trailing: votingRound.isOpen
                                   ? OutlinedButton(
-                                      onPressed: votadaPorMim
+                                      onPressed: votedByMe
                                           ? null
                                           : () => _vote(context, ref, candidate.id),
-                                      child: Text(votadaPorMim ? 'Seu voto' : 'Votar'),
+                                      child: Text(votedByMe ? 'Seu voto' : 'Votar'),
                                     )
                                   : null,
                             ),

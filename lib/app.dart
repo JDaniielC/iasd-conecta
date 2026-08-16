@@ -20,6 +20,9 @@ import 'features/suggested_action/presentation/manage_suggested_actions_page.dar
 import 'features/district_admin/presentation/manage_churches_page.dart';
 import 'features/district_admin/presentation/promote_admin_page.dart';
 import 'features/group/presentation/create_group_page.dart';
+import 'features/chat/chat_providers.dart';
+import 'features/chat/presentation/chat_gate_page.dart';
+import 'features/chat/presentation/message_reports_page.dart';
 import 'features/group/presentation/group_detail_page.dart';
 import 'features/group/presentation/edit_group_page.dart';
 import 'features/group/presentation/group_list_page.dart';
@@ -86,10 +89,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/cadastro',
         builder: (context, state) => const ProfileSignupPage(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const HomePage(),
-      ),
+      GoRoute(path: '/home', builder: (context, state) => const HomePage()),
       GoRoute(
         path: '/upgrade-conta',
         builder: (context, state) => const UpgradeAccountPage(),
@@ -98,10 +98,7 @@ final goRouterProvider = Provider<GoRouter>((ref) {
         path: '/delete-account',
         builder: (context, state) => const DeleteAccountPage(),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       // `/grupos` vem antes de `/grupos/:id`: go_router casa na ordem de
       // declaração, e a listagem não pode competir com o parâmetro de id.
       GoRoute(
@@ -114,11 +111,29 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/grupos/:id',
-        builder: (context, state) => GroupDetailPage(groupId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            GroupDetailPage(groupId: state.pathParameters['id']!),
+      ),
+      // Change `chat-de-grupo-e-acao`. A conversa é ROTA PRÓPRIA e não aba da
+      // página de detalhe: as duas páginas de detalhe são coluna única sem
+      // abas, e na largura de celular uma conversa dentro de aba disputa
+      // espaço com o teclado e com a rolagem da página que a contém. A
+      // entrada condicional continua no detalhe.
+      GoRoute(
+        path: '/grupos/:id/conversa',
+        builder: (context, state) =>
+            ChatGatePage(space: ChatSpace.group(state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/grupos/:id/denuncias',
+        builder: (context, state) => MessageReportsPage(
+          space: ChatSpace.group(state.pathParameters['id']!),
+        ),
       ),
       GoRoute(
         path: '/grupos/:id/editar',
-        builder: (context, state) => EditGroupPage(groupId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            EditGroupPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/acoes',
@@ -130,7 +145,19 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/acoes/:id',
-        builder: (context, state) => ActionDetailPage(actionId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            ActionDetailPage(actionId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: '/acoes/:id/conversa',
+        builder: (context, state) =>
+            ChatGatePage(space: ChatSpace.action(state.pathParameters['id']!)),
+      ),
+      GoRoute(
+        path: '/acoes/:id/denuncias',
+        builder: (context, state) => MessageReportsPage(
+          space: ChatSpace.action(state.pathParameters['id']!),
+        ),
       ),
       // Change `convite-para-acao`. A rota de convidar é filha da Ação porque o
       // convite não existe sem ela; `/convites` é da pessoa, não de uma Ação.
@@ -149,19 +176,23 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/grupos/:id/rodadas',
-        builder: (context, state) => VotingRoundListPage(groupId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            VotingRoundListPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/grupos/:id/rodadas/novo',
-        builder: (context, state) => CreateVotingRoundPage(groupId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            CreateVotingRoundPage(groupId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/rodadas/:id/candidatas/novo',
-        builder: (context, state) => CreateCandidatePage(votingRoundId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            CreateCandidatePage(votingRoundId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/rodadas/:id',
-        builder: (context, state) => VotingRoundDetailPage(votingRoundId: state.pathParameters['id']!),
+        builder: (context, state) =>
+            VotingRoundDetailPage(votingRoundId: state.pathParameters['id']!),
       ),
       GoRoute(
         path: '/district-admin/promote',

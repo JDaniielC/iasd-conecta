@@ -27,12 +27,12 @@ class InviteRepository {
     final rows = await _client
         .rpc('contatos_para_convite', params: {'p_acao_id': actionId}) as List;
 
-    final porGrupo = <String, List<InviteContact>>{};
-    final nomes = <String, String>{};
+    final byGroup = <String, List<InviteContact>>{};
+    final names = <String, String>{};
     for (final row in rows.cast<Map<String, dynamic>>()) {
       final groupId = row['grupo_id'] as String;
-      nomes[groupId] = row['grupo_nome'] as String;
-      (porGrupo[groupId] ??= []).add(
+      names[groupId] = row['grupo_nome'] as String;
+      (byGroup[groupId] ??= []).add(
         InviteContact(
           userId: row['usuario_id'] as String,
           displayName: row['nome_exibido'] as String,
@@ -44,10 +44,10 @@ class InviteRepository {
     // A ordem vem do `order by` da função (Grupo, depois nome de exibição);
     // reordenar aqui inventaria uma segunda ordenação para divergir da primeira.
     return [
-      for (final entry in porGrupo.entries)
+      for (final entry in byGroup.entries)
         InviteContactGroup(
           groupId: entry.key,
-          groupName: nomes[entry.key]!,
+          groupName: names[entry.key]!,
           contacts: entry.value,
         ),
     ];
@@ -95,13 +95,13 @@ class InviteRepository {
         .map((r) => r['acao_id'] as String)
         .toSet()
         .toList();
-    final minhas = await _client
+    final mine = await _client
         .from('confirmacoes_acao')
         .select('acao_id')
         .eq('usuario_id', uid)
         .inFilter('acao_id', actionIds);
-    final confirmadas =
-        minhas.map((r) => r['acao_id'] as String).toSet();
+    final confirmed =
+        mine.map((r) => r['acao_id'] as String).toSet();
 
     return [
       for (final row in rows)
@@ -115,7 +115,7 @@ class InviteRepository {
           action: row['acoes'] == null
               ? null
               : Action.fromMap(row['acoes'] as Map<String, dynamic>),
-          alreadyConfirmed: confirmadas.contains(row['acao_id'] as String),
+          alreadyConfirmed: confirmed.contains(row['acao_id'] as String),
         ),
     ];
   }

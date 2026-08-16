@@ -7,14 +7,14 @@ class NewGroup {
     required this.name,
     required this.category,
     this.schedule,
-    this.local,
+    this.location,
     this.details,
   });
 
   final String name;
   final String category;
   final String? schedule;
-  final String? local;
+  final String? location;
   final String? details;
 
   bool get isReadyToSubmit => name.trim().isNotEmpty && category.trim().isNotEmpty;
@@ -27,7 +27,7 @@ class NewGroup {
       'nome': name.trim(),
       'categoria': category.trim(),
       'horario': (schedule?.trim().isEmpty ?? true) ? null : schedule!.trim(),
-      'local': (local?.trim().isEmpty ?? true) ? null : local!.trim(),
+      'local': (location?.trim().isEmpty ?? true) ? null : location!.trim(),
       'detalhes': (details?.trim().isEmpty ?? true) ? null : details!.trim(),
       'dono_id': ownerId,
       'igreja_id': churchId,
@@ -43,7 +43,7 @@ class Group {
     required this.ownerId,
     required this.createdAt,
     this.schedule,
-    this.local,
+    this.location,
     this.details,
     this.churchId,
     this.archivedAt,
@@ -54,7 +54,7 @@ class Group {
   final String name;
   final String category;
   final String? schedule;
-  final String? local;
+  final String? location;
   final String? details;
   final String? churchId;
   final String ownerId;
@@ -77,7 +77,7 @@ class Group {
       name: map['nome'] as String,
       category: map['categoria'] as String,
       schedule: map['horario'] as String?,
-      local: map['local'] as String?,
+      location: map['local'] as String?,
       details: map['detalhes'] as String?,
       churchId: map['igreja_id'] as String?,
       ownerId: map['dono_id'] as String,

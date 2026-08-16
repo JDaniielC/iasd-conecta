@@ -80,12 +80,12 @@ class AppNotification {
   /// Sem autor a frase sai sem sujeito — "Alguém aceitou" —, e não com o nome
   /// removido, que não seria frase.
   String get sentence {
-    final quem = actorName ?? 'Alguém';
-    final onde = groupName == null ? '' : ' — pelo Grupo $groupName';
+    final who = actorName ?? 'Alguém';
+    final where = groupName == null ? '' : ' — pelo Grupo $groupName';
     return switch (type) {
-      NotificationType.inviteReceived => '$quem convidou você$onde',
-      NotificationType.inviteAccepted => '$quem aceitou seu convite$onde',
-      NotificationType.inviteDeclined => '$quem recusou seu convite$onde',
+      NotificationType.inviteReceived => '$who convidou você$where',
+      NotificationType.inviteAccepted => '$who aceitou seu convite$where',
+      NotificationType.inviteDeclined => '$who recusou seu convite$where',
     };
   }
 }

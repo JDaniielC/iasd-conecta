@@ -18,14 +18,14 @@ class LoginPage extends ConsumerStatefulWidget {
 class _LoginPageState extends ConsumerState<LoginPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _submitting = false;
   String? _error;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _senhaController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -38,7 +38,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
     try {
       await ref.read(authRepositoryProvider).login(
             email: _emailController.text.trim(),
-            senha: _senhaController.text,
+            password: _passwordController.text,
           );
       ref.invalidate(hasProfileProvider);
     } catch (error) {
@@ -71,7 +71,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _senhaController,
+                controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Senha'),
                 obscureText: true,
               ),

@@ -20,14 +20,14 @@ class UpgradeAccountPage extends ConsumerStatefulWidget {
 class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
-  final _senhaController = TextEditingController();
+  final _passwordController = TextEditingController();
   bool _submitting = false;
   String? _error;
 
   @override
   void dispose() {
     _emailController.dispose();
-    _senhaController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -40,7 +40,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
     try {
       await ref.read(authRepositoryProvider).upgradeToAccount(
             email: _emailController.text.trim(),
-            senha: _senhaController.text,
+            password: _passwordController.text,
           );
       if (mounted) Navigator.of(context).pop(true);
     } on AuthException catch (_) {
@@ -78,7 +78,7 @@ class _UpgradeAccountPageState extends ConsumerState<UpgradeAccountPage> {
               ),
               const SizedBox(height: AppSpacing.md),
               TextFormField(
-                controller: _senhaController,
+                controller: _passwordController,
                 decoration: const InputDecoration(labelText: 'Senha'),
                 obscureText: true,
                 validator: (v) => (v == null || v.length < 6)

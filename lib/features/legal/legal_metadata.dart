@@ -40,8 +40,18 @@ abstract final class LegalMetadata {
   /// autorização de responsável para imagem de menor. Sobe porque a mudança
   /// ADICIONA um tratamento: quem se cadastrar agora aceita algo diferente de
   /// quem se cadastrou antes.
-  static const version = '1.4';
-  static const effectiveDate = '10 de agosto de 2026';
+  /// 1.5 (change `chat-de-grupo-e-acao`): o app passou a guardar TEXTO LIVRE
+  /// escrito por uma pessoa para outras. É a categoria de dado mais diferente
+  /// que já entrou aqui — o único dado do app cujo conteúdo não dá para
+  /// declarar de antemão, e por isso o único que precisa de moderação humana,
+  /// corte por idade e prazo de descarte. A Política ganhou finalidade, quem
+  /// lê, o corte de 18 anos, os 30 dias de retenção da conversa de Ação, o
+  /// alcance do Administrador do distrito, e o limite de que mensagem de
+  /// TERCEIRO que cite a pessoa não sai pela exclusão de conta. Sobe porque
+  /// ADICIONA tratamento: quem se cadastrar agora aceita algo diferente de
+  /// quem se cadastrou antes.
+  static const version = '1.5';
+  static const effectiveDate = '14 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

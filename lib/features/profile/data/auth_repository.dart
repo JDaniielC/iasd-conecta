@@ -14,14 +14,14 @@ class AuthRepository {
 
   Future<void> upgradeToAccount({
     required String email,
-    required String senha,
+    required String password,
   }) {
     return _client.auth.updateUser(
-      UserAttributes(email: email, password: senha),
+      UserAttributes(email: email, password: password),
     );
   }
 
-  Future<void> login({required String email, required String senha}) {
-    return _client.auth.signInWithPassword(email: email, password: senha);
+  Future<void> login({required String email, required String password}) {
+    return _client.auth.signInWithPassword(email: email, password: password);
   }
 }

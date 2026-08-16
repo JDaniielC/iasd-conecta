@@ -56,7 +56,7 @@ class VotingRoundRepository {
       NewAction(
         name: candidate.name,
         dateTime: candidate.dateTime,
-        local: candidate.local,
+        location: candidate.location,
         details: candidate.details,
         capacity: candidate.capacity,
         votingRoundId: votingRoundId,
@@ -88,12 +88,12 @@ class VotingRoundRepository {
   }
 
   /// FR-008/FR-009/FR-010: não-operação se já fechada ou se o prazo ainda
-  /// não venceu e ninguém forçou; `forcar` só funciona pro Dono do Grupo
+  /// não venceu e ninguém forçou; `force` só funciona pro Dono do Grupo
   /// (checado dentro da função no banco).
-  Future<void> closeIfDue(String votingRoundId, {bool forcar = false}) async {
+  Future<void> closeIfDue(String votingRoundId, {bool force = false}) async {
     await _client.rpc(
       'fechar_rodada_se_devido',
-      params: {'p_rodada_id': votingRoundId, 'p_forcar': forcar},
+      params: {'p_rodada_id': votingRoundId, 'p_forcar': force},
     );
   }
 }

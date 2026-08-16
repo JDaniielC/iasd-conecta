@@ -16,10 +16,10 @@ class ArchivedGroupsPage extends ConsumerWidget {
 
   static String _formatDate(DateTime? date) {
     if (date == null) return '';
-    final local = date.toLocal();
-    final day = local.day.toString().padLeft(2, '0');
-    final month = local.month.toString().padLeft(2, '0');
-    return '$day/$month/${local.year}';
+    final localDate = date.toLocal();
+    final day = localDate.day.toString().padLeft(2, '0');
+    final month = localDate.month.toString().padLeft(2, '0');
+    return '$day/$month/${localDate.year}';
   }
 
   Future<void> _unarchive(

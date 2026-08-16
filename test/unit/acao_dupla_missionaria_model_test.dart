@@ -9,7 +9,7 @@ void main() {
       final action = NewAction(
         name: 'Visita',
         dateTime: dataFutura,
-        local: 'Casa',
+        location: 'Casa',
         isMissionaryPair: true,
       );
       expect(action.isReadyToSubmit, isFalse);
@@ -19,7 +19,7 @@ void main() {
       final action = NewAction(
         name: 'Visita',
         dateTime: dataFutura,
-        local: 'Casa',
+        location: 'Casa',
         isMissionaryPair: true,
         visitedGender: VisitedGender.male,
       );
@@ -32,7 +32,7 @@ void main() {
       final action = NewAction(
         name: 'Visita',
         dateTime: dataFutura,
-        local: 'Casa',
+        location: 'Casa',
         capacity: 50,
         isMissionaryPair: true,
         visitedGender: VisitedGender.female,
@@ -44,7 +44,7 @@ void main() {
     });
 
     test('não marca eh_dupla_missionaria quando isMissionaryPair é falso (default)', () {
-      final action = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede', capacity: 10);
+      final action = NewAction(name: 'Retiro', dateTime: dataFutura, location: 'Sede', capacity: 10);
       final map = action.toInsertMap(creatorId: 'c1');
       expect(map['limite_vagas'], 10);
       expect(map['eh_dupla_missionaria'], isFalse);

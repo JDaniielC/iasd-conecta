@@ -21,7 +21,7 @@ class EditGroupPage extends ConsumerStatefulWidget {
 class _EditGroupPageState extends ConsumerState<EditGroupPage> {
   final _nameController = TextEditingController();
   final _detailsController = TextEditingController();
-  bool _carregouCampos = false;
+  bool _fieldsLoaded = false;
   String? _error;
 
   @override
@@ -78,10 +78,10 @@ class _EditGroupPageState extends ConsumerState<EditGroupPage> {
           if (!group.isOwner(uid)) {
             return const Center(child: Text('Você não é o Dono deste Grupo.'));
           }
-          if (!_carregouCampos) {
+          if (!_fieldsLoaded) {
             _nameController.text = group.name;
             _detailsController.text = group.details ?? '';
-            _carregouCampos = true;
+            _fieldsLoaded = true;
           }
           return SingleChildScrollView(
             padding: const EdgeInsets.all(AppSpacing.lg),

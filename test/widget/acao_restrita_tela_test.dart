@@ -27,7 +27,7 @@ Action _action({bool restricted = false, String? groupId = 'g1'}) => Action(
       id: 'a1',
       name: 'Reunião de liderança',
       dateTime: DateTime(2027, 3, 10, 8, 0),
-      local: 'Sala 2',
+      location: 'Sala 2',
       creatorId: 'criador-1',
       createdAt: DateTime(2026, 1, 1),
       groupId: groupId,

@@ -19,7 +19,7 @@ final _group = Group(
   name: 'Ministério de Louvor',
   category: 'Ministério',
   schedule: 'sábados 9h',
-  local: 'Templo',
+  location: 'Templo',
   ownerId: 'dono-1',
   createdAt: DateTime(2026, 1, 1),
 );

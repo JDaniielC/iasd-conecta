@@ -108,7 +108,7 @@ class InviteResult {
         'criado' => InviteOutcome.created,
         'ja_convidado' => InviteOutcome.alreadyInvited,
         'nao_participa' => InviteOutcome.notInGroup,
-        final outro => throw ArgumentError('resultado desconhecido: $outro'),
+        final other => throw ArgumentError('resultado desconhecido: $other'),
       },
     );
   }

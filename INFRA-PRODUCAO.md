@@ -351,6 +351,39 @@ plano Free o cron para junto. Aqui isso é **atraso de faxina, não defeito de
 correção** — nenhum requisito depende de o aviso ter sumido no dia certo, e por
 isso, diferente da drenagem de capas, esta não tem segundo gatilho no app.
 
+### O job de `pg_cron` do expurgo de mensagens
+
+Change `chat-de-grupo-e-acao`. O prazo de **30 dias após `acoes.data_hora`** é
+executado por job diário:
+
+```sql
+select jobname, schedule from cron.job
+where jobname = 'expurgar-mensagens-de-acao';
+```
+
+Esperado: `43 3 * * *`.
+
+**Este NÃO herda o "atraso de faxina, não defeito" do job de cima.** O prazo de
+30 dias é promessa escrita na Política de Privacidade, e mensagem é o único dado
+do app cujo conteúdo é indeterminado — atraso aqui é conversa de gente guardada
+além do que se prometeu guardar. Por isso ele tem **segundo gatilho no app**: o
+cliente chama `public.expurgar_mensagens_de_acao()` ao abrir um chat. Com o
+projeto pausado no plano Free quem acorda o banco é o app, então é o app que
+precisa cumprir o prazo. Mesma lição da drenagem de capas.
+
+**A migration cria o agendamento, e em produção isso pode não bastar.** Se o
+`cron.schedule` não tiver rodado no projeto hospedado, a consulta acima devolve
+zero linhas — e não há erro em lugar nenhum, porque o segundo gatilho continua
+funcionando e escondendo a ausência do primeiro. Criar à mão:
+
+```sql
+select cron.schedule(
+  'expurgar-mensagens-de-acao',
+  '43 3 * * *',
+  $$select public.expurgar_mensagens_de_acao()$$
+);
+```
+
 ## 4. Backup
 
 **A decisão sobre backup existe, está fechada e assinada, e não mora aqui.** Ela

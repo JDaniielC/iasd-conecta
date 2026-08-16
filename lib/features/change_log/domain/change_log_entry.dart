@@ -82,31 +82,31 @@ class ChangeLogEntry {
   /// mesma frase com o nome removido — "entrou no Grupo" sozinho não é frase;
   /// "alguém entrou no Grupo" é.
   String get sentence {
-    final quem = authorName;
+    final who = authorName;
     return switch (type) {
-      ChangeLogType.actionCreated => quem == null
+      ChangeLogType.actionCreated => who == null
           ? 'Uma Ação foi criada neste Grupo'
-          : '$quem criou uma Ação neste Grupo',
+          : '$who criou uma Ação neste Grupo',
       ChangeLogType.actionTimeChanged =>
-        quem == null ? 'O horário da Ação mudou' : '$quem mudou o horário da Ação',
+        who == null ? 'O horário da Ação mudou' : '$who mudou o horário da Ação',
       ChangeLogType.actionPlaceChanged =>
-        quem == null ? 'O local da Ação mudou' : '$quem mudou o local da Ação',
+        who == null ? 'O local da Ação mudou' : '$who mudou o local da Ação',
       ChangeLogType.actionCancelled =>
-        quem == null ? 'A Ação foi cancelada' : '$quem cancelou a Ação',
+        who == null ? 'A Ação foi cancelada' : '$who cancelou a Ação',
       ChangeLogType.memberJoined =>
-        quem == null ? 'Alguém entrou no Grupo' : '$quem entrou no Grupo',
+        who == null ? 'Alguém entrou no Grupo' : '$who entrou no Grupo',
       ChangeLogType.memberLeft =>
-        quem == null ? 'Alguém saiu do Grupo' : '$quem saiu do Grupo',
-      ChangeLogType.attendanceConfirmed => quem == null
+        who == null ? 'Alguém saiu do Grupo' : '$who saiu do Grupo',
+      ChangeLogType.attendanceConfirmed => who == null
           ? 'Alguém confirmou presença'
-          : '$quem confirmou presença',
+          : '$who confirmou presença',
       ChangeLogType.attendanceQueued =>
-        quem == null ? 'Alguém entrou na fila' : '$quem entrou na fila',
-      ChangeLogType.attendanceWithdrawn => quem == null
+        who == null ? 'Alguém entrou na fila' : '$who entrou na fila',
+      ChangeLogType.attendanceWithdrawn => who == null
           ? 'Alguém não vem mais'
-          : '$quem não vem mais',
+          : '$who não vem mais',
       ChangeLogType.groupArchived =>
-        quem == null ? 'O Grupo foi arquivado' : '$quem arquivou o Grupo',
+        who == null ? 'O Grupo foi arquivado' : '$who arquivou o Grupo',
     };
   }
 }

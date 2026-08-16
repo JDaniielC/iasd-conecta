@@ -43,17 +43,17 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final data = await showDatePicker(
+    final date = await showDatePicker(
       context: context,
       initialDate: now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),
     );
-    if (data == null || !mounted) return;
-    final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (hora == null) return;
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (time == null) return;
     setState(() {
-      _dateTime = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _dateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
@@ -62,7 +62,7 @@ class _CreateActionPageState extends ConsumerState<CreateActionPage> {
     return NewAction(
       name: _nameController.text,
       dateTime: _dateTime!,
-      local: _locationController.text,
+      location: _locationController.text,
       details: _detailsController.text,
       capacity: int.tryParse(_capacityController.text),
       isMissionaryPair: _isMissionaryPair,

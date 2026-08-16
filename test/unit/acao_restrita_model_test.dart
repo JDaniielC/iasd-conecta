@@ -15,7 +15,7 @@ void main() {
       final map = NewAction(
         name: 'Culto',
         dateTime: DateTime(2027, 1, 1),
-        local: 'Sede',
+        location: 'Sede',
       ).toInsertMap(creatorId: 'u1');
 
       expect(map.containsKey('restrita_ao_grupo'), isFalse);
@@ -26,7 +26,7 @@ void main() {
       final map = NewAction(
         name: 'Ensaio',
         dateTime: DateTime(2027, 1, 1),
-        local: 'Sede',
+        location: 'Sede',
         votingRoundId: 'r1',
         restrictedToGroup: true,
       ).toInsertMap(creatorId: 'u1');
@@ -39,7 +39,7 @@ void main() {
       final map = NewAction(
         name: 'Ensaio',
         dateTime: DateTime(2027, 1, 1),
-        local: 'Sede',
+        location: 'Sede',
         votingRoundId: 'r1',
       ).toInsertMap(creatorId: 'u1');
 
@@ -52,7 +52,7 @@ void main() {
           id: 'a1',
           name: 'Reunião',
           dateTime: DateTime(2027, 1, 1),
-          local: 'Sede',
+          location: 'Sede',
           creatorId: 'criador',
           createdAt: DateTime(2026, 1, 1),
           groupId: groupId,

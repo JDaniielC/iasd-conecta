@@ -24,49 +24,49 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   /// que CHEGA com a tela aberta também foi exibido, e o requisito diz que o
   /// exibido passa a contar como lido. Com um booleano, ele apareceria na lista
   /// e o contador continuaria em 1 com o aviso à vista.
-  final _jaMarcados = <String>{};
+  final _alreadyMarked = <String>{};
 
-  Future<void> _marcarComoLidas(List<AppNotification> avisos) async {
-    final naoLidas = avisos
-        .where((a) => a.isUnread && !_jaMarcados.contains(a.id))
+  Future<void> _markAsRead(List<AppNotification> notices) async {
+    final unread = notices
+        .where((a) => a.isUnread && !_alreadyMarked.contains(a.id))
         .map((a) => a.id)
         .toList();
-    if (naoLidas.isEmpty) return;
+    if (unread.isEmpty) return;
 
     // O `addAll` acontece ANTES do `await`, então uma segunda passagem já
-    // calcula `naoLidas` vazia e sai acima — não é preciso um sinalizador de
+    // calcula `unread` vazia e sai acima — não é preciso um sinalizador de
     // "estou marcando", que atrasaria justamente o aviso que chega no meio.
-    _jaMarcados.addAll(naoLidas);
+    _alreadyMarked.addAll(unread);
     try {
-      await ref.read(notificationRepositoryProvider).markRead(naoLidas);
+      await ref.read(notificationRepositoryProvider).markRead(unread);
       ref.invalidate(unreadNotificationCountProvider);
       ref.invalidate(notificationsProvider);
     } catch (_) {
       // Não avisar a pessoa: ela veio ler os avisos, não administrar o estado de
       // leitura deles. Tirar da lista de marcados faz a próxima passagem tentar
       // de novo.
-      _jaMarcados.removeAll(naoLidas);
+      _alreadyMarked.removeAll(unread);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final avisosAsync = ref.watch(notificationsProvider);
+    final noticesAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
       appBar: AppBar(title: const Text('Avisos')),
-      body: avisosAsync.when(
+      body: noticesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) =>
             const Center(child: Text('Não deu pra carregar seus avisos.')),
-        data: (avisos) {
-          if (avisos.isEmpty) return const _SemAvisos();
+        data: (notices) {
+          if (notices.isEmpty) return const _EmptyNotices();
           // Depois do frame: marcar durante o build reentraria no provider.
           WidgetsBinding.instance
-              .addPostFrameCallback((_) => _marcarComoLidas(avisos));
+              .addPostFrameCallback((_) => _markAsRead(notices));
           return ListView(
             padding: const EdgeInsets.all(AppSpacing.md),
-            children: [for (final a in avisos) _Cartao(aviso: a)],
+            children: [for (final a in notices) _Card(notice: a)],
           );
         },
       ),
@@ -74,45 +74,45 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
   }
 }
 
-class _Cartao extends StatelessWidget {
-  const _Cartao({required this.aviso});
+class _Card extends StatelessWidget {
+  const _Card({required this.notice});
 
-  final AppNotification aviso;
+  final AppNotification notice;
 
   @override
   Widget build(BuildContext context) {
-    final tema = Theme.of(context);
+    final theme = Theme.of(context);
     return Card(
       // Não lida se destaca pela cor de fundo, não por um ponto solto: o
       // destaque precisa sobreviver a quem não distingue bem cores pequenas.
-      color: aviso.isUnread ? tema.colorScheme.secondaryContainer : null,
+      color: notice.isUnread ? theme.colorScheme.secondaryContainer : null,
       child: ListTile(
-        title: Text(aviso.sentence),
+        title: Text(notice.sentence),
         // Junção e não interpolação com `?? ''`: sem nome de Ação, a
         // interpolação produzia " · 13/08 10:00" — o separador com o lado
         // esquerdo vazio, que é o mesmo traço solto que o teste da frase
         // proíbe em `sentence`.
         subtitle: Text([
-          ?aviso.actionName,
-          DateFormat('dd/MM HH:mm').format(aviso.createdAt),
+          ?notice.actionName,
+          DateFormat('dd/MM HH:mm').format(notice.createdAt),
         ].join(' · ')),
-        trailing: aviso.isUnread
-            ? Icon(Icons.circle, size: 10, color: tema.colorScheme.primary)
+        trailing: notice.isUnread
+            ? Icon(Icons.circle, size: 10, color: theme.colorScheme.primary)
             : null,
         // Aviso de Ação cancelada, encerrada ou invisível já não chega aqui —
         // `notificacoes_ativas` o filtra na origem. Se a Ação sumir DEPOIS da
         // lista carregar, o toque cai na tela de detalhe, que já sabe dizer
         // "Ação não encontrada" e "Cancelada" sem quebrar.
-        onTap: aviso.actionId == null
+        onTap: notice.actionId == null
             ? null
-            : () => context.push('/acoes/${aviso.actionId}'),
+            : () => context.push('/acoes/${notice.actionId}'),
       ),
     );
   }
 }
 
-class _SemAvisos extends StatelessWidget {
-  const _SemAvisos();
+class _EmptyNotices extends StatelessWidget {
+  const _EmptyNotices();
 
   @override
   Widget build(BuildContext context) {

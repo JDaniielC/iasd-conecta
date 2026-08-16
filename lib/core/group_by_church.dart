@@ -48,6 +48,6 @@ final _adventistChurchPrefix = RegExp(
 /// seção só interessa o que distingue uma Igreja da outra dentro do
 /// distrito (ex.: "Igreja Adventista de Pombos" -> "Pombos").
 String _shortenChurchName(String name) {
-  final curto = name.replaceFirst(_adventistChurchPrefix, '').trim();
-  return curto.isEmpty ? name : curto;
+  final shortened = name.replaceFirst(_adventistChurchPrefix, '').trim();
+  return shortened.isEmpty ? name : shortened;
 }

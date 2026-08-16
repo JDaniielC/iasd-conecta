@@ -37,6 +37,33 @@ Visitante — login anônimo, sem Perfil — NÃO DEVE ler nem escrever.
 - **THEN** ele não passa no corte de idade, como qualquer outro caso sem idade
   conhecida
 
+### Requirement: O Administrador do distrito alcança qualquer chat
+
+O Administrador do distrito DEVE conseguir ler e remover mensagem de qualquer
+chat, de qualquer Grupo e de qualquer Ação. O corte de 18 anos continua valendo
+para ele.
+
+Isto é poder amplo e é declarado de propósito, não efeito colateral. A primeira
+versão deste desenho dava a ele autoridade para remover **sem** acesso de
+leitura — "moderar não é ler" —, e essa separação não sobrevive ao banco:
+remover é alterar uma linha filtrada por id, e uma alteração filtrada aplica
+também a regra de leitura. Sem leitura, a remoção não alcança a linha e falha
+sem erro.
+
+O preço de não ter isso seria não haver instância de recurso quando o abuso vem
+de quem manda no espaço — o dono do Grupo denunciado por quem ele mesmo
+modera.
+
+#### Scenario: Administrador remove mensagem de Grupo do qual não participa
+- **WHEN** um Administrador do distrito remove uma mensagem denunciada de um
+  Grupo em que não participa
+- **THEN** a remoção acontece, e o texto some para todo mundo
+
+#### Scenario: Administrador menor de idade
+- **WHEN** um Administrador do distrito tem menos de 18 anos
+- **THEN** ele não lê nem remove mensagem, como qualquer outra pessoa — a
+  autoridade não levanta o corte de idade
+
 ### Requirement: O chat do Grupo é de quem participa do Grupo
 
 O sistema DEVE permitir ler e escrever no chat de um Grupo apenas a quem tem

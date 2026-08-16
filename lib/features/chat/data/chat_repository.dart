@@ -1,0 +1,328 @@
+import 'dart:async';
+
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../domain/message.dart';
+import '../domain/message_report.dart';
+
+/// Único ponto de acesso a `mensagens` e `denuncias_mensagem`.
+///
+/// Não há checagem de permissão aqui, e isso é desenho: quem pode ler, escrever,
+/// remover e denunciar está nas policies do banco, provado por 29 testes de
+/// integração. Repetir a regra no cliente criaria uma segunda cópia dela, e a
+/// primeira divergência entre as duas é um bug de privacidade que o teste de
+/// banco não pega.
+class ChatRepository {
+  ChatRepository(this._client);
+
+  final SupabaseClient _client;
+
+  static const _table = 'mensagens';
+
+  /// Quantas mensagens uma página traz.
+  static const pageSize = 50;
+
+  /// O histórico de um espaço, mais recente primeiro.
+  ///
+  /// **Dispara o expurgo de retenção e NÃO espera por ele** (tarefa 7.5). O
+  /// prazo de 30 dias tem dois gatilhos: o `pg_cron` e esta chamada. O cron
+  /// sozinho não cumpre — no plano gratuito o projeto pausa por inatividade e o
+  /// cron para junto, e quem acorda o banco é o app. Logo é o app que precisa
+  /// cumprir o prazo.
+  ///
+  /// `unawaited` de propósito: a pessoa abriu uma conversa para ler, não para
+  /// esperar faxina. Se o expurgo falhar ou demorar, o histórico aparece do
+  /// mesmo jeito — e a mensagem vencida que escapou desta vez sai na próxima
+  /// abertura ou no cron. O erro é engolido pelo mesmo motivo: não há nada que
+  /// a pessoa possa fazer a respeito, e um aviso na tela só transformaria uma
+  /// faxina atrasada em susto.
+  ///
+  /// Ordem importa: o expurgo vai ANTES do `await` da consulta, para as duas
+  /// idas ao servidor correrem juntas em vez de somar latência.
+  Future<List<Message>> fetchHistory({
+    String? groupId,
+    String? actionId,
+    DateTime? before,
+  }) async {
+    assert(
+      (groupId == null) != (actionId == null),
+      'exatamente um espaço, como o check mensagens_um_espaco_so',
+    );
+
+    unawaited(purgeExpiredActionMessages());
+
+    var query = _client
+        .from(_table)
+        .select()
+        .eq(groupId != null ? 'grupo_id' : 'acao_id', groupId ?? actionId!);
+    if (before != null) {
+      query = query.lt('created_at', before.toIso8601String());
+    }
+    final rows = await query
+        .order('created_at', ascending: false)
+        .limit(pageSize);
+
+    return _withAuthorNames(rows);
+  }
+
+  /// Resolve nome de quem escreveu, uma chamada por AUTOR DISTINTO e não por
+  /// linha, concorrentes. Mesmo desenho de `NotificationRepository.fetch` — em
+  /// série cada uma esperava a anterior e a latência somava em rede de celular.
+  Future<List<Message>> _withAuthorNames(
+    List<Map<String, dynamic>> rows,
+  ) async {
+    final authorIds = rows.map((r) => r['autor_id'] as String).toSet().toList();
+    final resolved = await Future.wait(
+      authorIds.map((uid) async {
+        final r =
+            await _client.rpc('perfil_publico', params: {'p_id': uid}) as List;
+        return r.isEmpty
+            ? null
+            : MapEntry(
+                uid,
+                (r.first as Map<String, dynamic>)['nome_exibido'] as String,
+              );
+      }),
+    );
+    final names = Map.fromEntries(
+      resolved.whereType<MapEntry<String, String>>(),
+    );
+
+    return [
+      for (final row in rows)
+        Message.fromMap(row, authorName: names[row['autor_id']]),
+    ];
+  }
+
+  /// A pessoa pode ver ESTA conversa? Pergunta ao banco, pela mesma função que
+  /// a policy usa.
+  ///
+  /// Reimplementar o predicado em Dart criaria uma segunda cópia da regra, e a
+  /// primeira divergência entre as duas é uma tela que promete o que a policy
+  /// nega — ou pior, esconde o que ela permitiria.
+  Future<bool> canSeeChat({String? groupId, String? actionId}) async {
+    final r = await _client.rpc(
+      groupId != null ? 'pode_ver_chat_grupo' : 'pode_ver_chat_acao',
+      params: {
+        groupId != null ? 'p_grupo_id' : 'p_acao_id': groupId ?? actionId,
+      },
+    );
+    return r as bool? ?? false;
+  }
+
+  /// Tem 18 anos ou mais? Separado de [canSeeChat] de propósito: as duas
+  /// respostas são `false` do mesmo jeito, e a tela precisa saber QUAL delas
+  /// para poder explicar em vez de sumir sem dizer nada.
+  Future<bool> isOfAge() async {
+    final r = await _client.rpc('maior_de_idade');
+    return r as bool? ?? false;
+  }
+
+  /// Uma linha crua do canal de tempo real, com o nome de quem escreveu.
+  ///
+  /// O payload do Realtime traz a linha inteira menos o nome — ele não existe
+  /// em `mensagens`, é resolvido por `perfil_publico`. Uma chamada por mensagem
+  /// nova, que é o custo certo: mensagem nova chega uma de cada vez.
+  Future<Message> withAuthorName(Map<String, dynamic> row) async {
+    final uid = row['autor_id'] as String;
+    try {
+      final r =
+          await _client.rpc('perfil_publico', params: {'p_id': uid}) as List;
+      return Message.fromMap(
+        row,
+        authorName: r.isEmpty
+            ? null
+            : (r.first as Map<String, dynamic>)['nome_exibido'] as String,
+      );
+    } catch (_) {
+      // Sem o nome a mensagem ainda é legível; sem a mensagem, não. Sumir com
+      // a frase porque a resolução do nome falhou seria perder o que importa
+      // para preservar o enfeite.
+      return Message.fromMap(row);
+    }
+  }
+
+  /// Escreve. O autor é a sessão corrente — mandar `autor_id` daqui seria
+  /// escrever um valor que a policy `mensagens_insert_autor` confere de novo.
+  /// Devolve a linha inserida, e é isso que faz a mensagem própria aparecer
+  /// sem depender do canal. A alternativa — esperar o evento voltar — some com
+  /// a frase de quem escreveu quando o tempo real está caído: o campo limpa, o
+  /// `insert` dá certo, e nada é desenhado. Ver a decisão "Quem manda na lista
+  /// da conversa" no design.
+  Future<Message> send({
+    String? groupId,
+    String? actionId,
+    required String text,
+  }) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('é preciso ter sessão para escrever');
+
+    final rows = await _client.from(_table).insert({
+      'grupo_id': groupId,
+      'acao_id': actionId,
+      'autor_id': uid,
+      'texto': text,
+    }).select();
+
+    return _withAuthorNames(rows).then((list) => list.single);
+  }
+
+  /// Remove. É `update`, não `delete` — não existe policy de `delete` em
+  /// `mensagens` para papel nenhum, e apagar de verdade é só do expurgo.
+  ///
+  /// O texto removido não é guardado em lugar nenhum. Quem remove precisa ler
+  /// antes, porque depois não dá para reconsiderar.
+  /// `.select()` no fim NÃO é adorno: recusa de RLS num `update` é ZERO LINHA,
+  /// não erro. Sem ele, quem não pode remover recebia sucesso e a tela dizia
+  /// que a mensagem saiu — enquanto ela continuava lá para todo mundo. Foi
+  /// exatamente assim que o Administrador do distrito "removia" mensagem de
+  /// Ação por semanas sem remover nada. A policy é a autoridade; este método
+  /// só precisa parar de mentir quando ela recusa.
+  Future<void> removeMessage(String messageId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('é preciso ter sessão para remover');
+
+    final affected = await _client
+        .from(_table)
+        .update({
+          'texto': null,
+          'removida_em': DateTime.now().toUtc().toIso8601String(),
+          'removida_por': uid,
+        })
+        .eq('id', messageId)
+        .select();
+
+    if (affected.isEmpty) {
+      throw StateError('esta mensagem não pôde ser removida por você');
+    }
+  }
+
+  /// Denuncia. O `motivo` escrito aqui é o que fica como registro do caso —
+  /// o texto denunciado não é conservado.
+  Future<void> reportMessage(String messageId, String reason) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('é preciso ter sessão para denunciar');
+
+    await _client.from('denuncias_mensagem').insert({
+      'mensagem_id': messageId,
+      'motivo': reason,
+      'denunciante_id': uid,
+    });
+  }
+
+  /// Manda no espaço? `pode_moderar_espaco`, a mesma função das policies de
+  /// denúncia — e ela NÃO inclui o autor da mensagem, de propósito: o
+  /// denunciado é parte, não instância.
+  Future<bool> canModerateSpace({String? groupId, String? actionId}) async {
+    final r = await _client.rpc(
+      'pode_moderar_espaco',
+      params: {'p_grupo_id': groupId, 'p_acao_id': actionId},
+    );
+    return r as bool? ?? false;
+  }
+
+  /// As denúncias daquele espaço, pela função do banco.
+  ///
+  /// Chama `denuncias_do_espaco` em vez de montar o filtro aqui, e a diferença
+  /// não é estilo: quando o espaço é um Grupo, pertencem a ele também as
+  /// denúncias dos chats das **Ações daquele Grupo**. A versão anterior
+  /// filtrava `mensagens.grupo_id` por embed `!inner`, e denúncia de chat de
+  /// Ação tem esse campo nulo — sumia da tela do Dono sem nada indicar que
+  /// faltava. Medido na convergência 1.
+  ///
+  /// A RLS continua decidindo QUEM vê; a função decide O QUE pertence ao espaço.
+  ///
+  /// LIMITE CONHECIDO, consequência do `on delete set null`: depois do expurgo a
+  /// denúncia perde o vínculo com a mensagem, e sem vínculo não há como saber de
+  /// que espaço ela era. Denúncia `sem_mensagem` não aparece aqui — sai por
+  /// [fetchOrphanReports].
+  Future<List<MessageReport>> fetchReports({
+    String? groupId,
+    String? actionId,
+  }) async {
+    final rows =
+        await _client.rpc(
+              'denuncias_do_espaco',
+              params: {'p_grupo_id': groupId, 'p_acao_id': actionId},
+            )
+            as List;
+
+    return [
+      for (final row in rows)
+        ?MessageReport.fromMap(row as Map<String, dynamic>),
+    ];
+  }
+
+  /// As denúncias que PERDERAM a mensagem — expurgo dos 30 dias.
+  ///
+  /// Existem separadas porque não têm espaço: `on delete set null` levou o
+  /// vínculo, e sem vínculo não dá para dizer de que Grupo ou Ação eram. A
+  /// função `denuncias_do_espaco` junta com `mensagens` e por isso não as
+  /// alcança.
+  ///
+  /// Sem este caminho, a linha sobrevivia no banco e NINGUÉM a lia — a
+  /// migration e a Política afirmavam que a denúncia não some sem desfecho, e
+  /// o desfecho `sem_mensagem` era um ramo morto na tela. Achado pelo agente
+  /// `promessa-vs-execucao` no fechamento da change.
+  ///
+  /// A RLS decide quem vê: o braço de Administrador do distrito em
+  /// `denuncias_mensagem_select_autoridade` não depende da junção com
+  /// `mensagens`, então é ele — e só ele — quem alcança estas.
+  Future<List<MessageReport>> fetchOrphanReports() async {
+    // Colunas NOMEADAS, e `denunciante_id` fica de fora. `select()` sem lista
+    // trazia a linha inteira, e a spec diz que a denúncia não revela a quem a
+    // lê quem denunciou. O modelo não expunha o campo, mas ele saía do banco
+    // assim mesmo. `denuncias_do_espaco` já fazia o certo; agora as duas
+    // concordam.
+    final rows = await _client
+        .from('denuncias_mensagem')
+        .select('id, motivo, estado, created_at, resolvida_em, mensagem_id')
+        .isFilter('mensagem_id', null)
+        .order('created_at', ascending: false);
+
+    return [for (final row in rows) ?MessageReport.fromMap(row)];
+  }
+
+  /// Dá desfecho. `mensagem_removida` ou `improcedente` — `sem_mensagem` é do
+  /// gatilho do expurgo, não de gente.
+  Future<void> resolveReport(String reportId, MessageReportState state) async {
+    assert(
+      state == MessageReportState.messageRemoved ||
+          state == MessageReportState.dismissed,
+      'só há dois desfechos que uma pessoa decide',
+    );
+    // `.select()` no fim pela MESMA razão de `removeMessage`, e esta é a
+    // terceira vez que a razão aparece nesta feature: no Postgres, recusa de
+    // RLS num `update` é AUSÊNCIA de linha, não exceção. Sem olhar o
+    // resultado, este método devolvia sucesso, a lista recarregava, e o caso
+    // voltava `pendente` sem uma palavra de explicação.
+    final affected = await _client
+        .from('denuncias_mensagem')
+        .update({
+          'estado': state.key,
+          'resolvida_em': DateTime.now().toUtc().toIso8601String(),
+        })
+        .eq('id', reportId)
+        .select();
+
+    if (affected.isEmpty) {
+      throw StateError('esta denúncia não pôde ser resolvida por você');
+    }
+  }
+
+  /// O segundo gatilho do prazo de 30 dias. Ver [fetchHistory].
+  ///
+  /// Devolve quantas linhas foram apagadas — número GLOBAL, de todas as Ações
+  /// vencidas, não só a que a pessoa abriu. Ninguém precisa dele hoje; existe
+  /// porque uma função de faxina que não diz quanto fez é impossível de
+  /// diagnosticar quando o prazo parecer não estar sendo cumprido.
+  Future<int> purgeExpiredActionMessages() async {
+    try {
+      final r = await _client.rpc('expurgar_mensagens_de_acao');
+      return r as int? ?? 0;
+    } catch (_) {
+      // Faxina que falha não estraga a leitura. Ver [fetchHistory].
+      return 0;
+    }
+  }
+}

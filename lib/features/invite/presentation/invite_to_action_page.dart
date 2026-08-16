@@ -22,99 +22,99 @@ class InviteToActionPage extends ConsumerStatefulWidget {
 
 class _InviteToActionPageState extends ConsumerState<InviteToActionPage> {
   /// Seleção por Grupo — a mesma pessoa pode estar marcada em dois.
-  final _selecionados = <String, Set<String>>{};
-  bool _enviando = false;
+  final _selected = <String, Set<String>>{};
+  bool _sending = false;
 
   /// Quem ficou de fora da última tentativa, por Grupo, com o nome para dizer
   /// nominalmente. Nunca afirmamos sucesso quando a chamada falhou.
-  Map<String, Set<String>> _falharam = const {};
-  String? _resumo;
-  bool _resumoEhFalha = false;
+  Map<String, Set<String>> _failed = const {};
+  String? _summary;
+  bool _summaryIsFailure = false;
 
-  int get _totalSelecionado =>
-      _selecionados.values.fold(0, (soma, s) => soma + s.length);
+  int get _totalSelected =>
+      _selected.values.fold(0, (sum, s) => sum + s.length);
 
-  void _alternar(String groupId, String userId, bool marcado) {
+  void _toggle(String groupId, String userId, bool checked) {
     setState(() {
-      final s = _selecionados[groupId] ??= <String>{};
-      marcado ? s.add(userId) : s.remove(userId);
+      final s = _selected[groupId] ??= <String>{};
+      checked ? s.add(userId) : s.remove(userId);
     });
   }
 
-  Future<void> _convidar(List<InviteContactGroup> grupos) async {
+  Future<void> _invite(List<InviteContactGroup> groups) async {
     setState(() {
-      _enviando = true;
-      _resumo = null;
-      _falharam = const {};
+      _sending = true;
+      _summary = null;
+      _failed = const {};
     });
 
     final repo = ref.read(inviteRepositoryProvider);
-    final nomePorId = {
-      for (final g in grupos)
+    final nameById = {
+      for (final g in groups)
         for (final c in g.contacts) c.userId: c.displayName,
     };
 
-    var feitos = 0;
-    final falhas = <String, Set<String>>{};
+    var sent = 0;
+    final failures = <String, Set<String>>{};
 
-    for (final entry in _selecionados.entries) {
+    for (final entry in _selected.entries) {
       if (entry.value.isEmpty) continue;
       try {
-        final resultados =
+        final results =
             await repo.invite(widget.actionId, entry.key, entry.value.toList());
-        for (final r in resultados) {
+        for (final r in results) {
           if (r.succeeded) {
-            feitos++;
+            sent++;
           } else {
-            (falhas[entry.key] ??= <String>{}).add(r.userId);
+            (failures[entry.key] ??= <String>{}).add(r.userId);
           }
         }
       } catch (_) {
         // A rede caiu ou o banco recusou este Grupo inteiro. Os Grupos já
         // enviados PERMANECEM — não desfazemos nada, e a tela não pode dizer
         // que deu certo.
-        falhas[entry.key] = {...entry.value};
+        failures[entry.key] = {...entry.value};
       }
     }
 
     if (!mounted) return;
-    final nomesFalha = [
-      for (final e in falhas.entries)
-        for (final uid in e.value) nomePorId[uid] ?? 'alguém'
+    final failedNames = [
+      for (final e in failures.entries)
+        for (final uid in e.value) nameById[uid] ?? 'alguém'
     ];
     setState(() {
-      _enviando = false;
-      _falharam = falhas;
-      _selecionados
+      _sending = false;
+      _failed = failures;
+      _selected
         ..clear()
-        ..addAll(falhas);
-      _resumoEhFalha = nomesFalha.isNotEmpty;
-      _resumo = nomesFalha.isEmpty
-          ? '$feitos convite(s) enviado(s).'
-          : '$feitos enviado(s). Ficaram de fora: ${nomesFalha.join(', ')}.';
+        ..addAll(failures);
+      _summaryIsFailure = failedNames.isNotEmpty;
+      _summary = failedNames.isEmpty
+          ? '$sent convite(s) enviado(s).'
+          : '$sent enviado(s). Ficaram de fora: ${failedNames.join(', ')}.';
     });
     ref.invalidate(inviteContactsProvider(widget.actionId));
   }
 
   @override
   Widget build(BuildContext context) {
-    final contatosAsync = ref.watch(inviteContactsProvider(widget.actionId));
+    final contactsAsync = ref.watch(inviteContactsProvider(widget.actionId));
 
     return Scaffold(
       appBar: AppBar(title: const Text('Convidar')),
-      body: contatosAsync.when(
+      body: contactsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) =>
             const Center(child: Text('Não deu pra carregar seus contatos.')),
-        data: (grupos) {
-          if (grupos.isEmpty) return const _SemGrupos();
+        data: (groups) {
+          if (groups.isEmpty) return const _EmptyGroups();
           return Column(
             children: [
               Expanded(
                 child: ListView(
                   padding: const EdgeInsets.all(AppSpacing.md),
                   children: [
-                    for (final g in grupos) ...[
+                    for (final g in groups) ...[
                       Padding(
                         padding: const EdgeInsets.symmetric(
                             vertical: AppSpacing.sm),
@@ -131,33 +131,33 @@ class _InviteToActionPageState extends ConsumerState<InviteToActionPage> {
                               ? const Text('Confirmou presença')
                               : c.alreadyInvited
                               ? const Text('Já convidado — sem resposta')
-                              : (_falharam[g.groupId]?.contains(c.userId) ??
+                              : (_failed[g.groupId]?.contains(c.userId) ??
                                       false)
                                   ? const Text('Não deu certo — dá pra tentar '
                                       'de novo')
                                   : null,
                           value: c.alreadyInvited ||
-                              (_selecionados[g.groupId]?.contains(c.userId) ??
+                              (_selected[g.groupId]?.contains(c.userId) ??
                                   false),
                           // Quem já foi convidado por este Grupo não é
                           // selecionável: convidar de novo não é erro, mas
                           // oferecer o botão sugere que faltava algo.
                           onChanged: c.alreadyInvited
                               ? null
-                              : (v) => _alternar(g.groupId, c.userId, v ?? false),
+                              : (v) => _toggle(g.groupId, c.userId, v ?? false),
                         ),
                     ],
                   ],
                 ),
               ),
-              if (_resumo != null)
+              if (_summary != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md, vertical: AppSpacing.sm),
                   child: Text(
-                    _resumo!,
+                    _summary!,
                     style: TextStyle(
-                      color: _resumoEhFalha
+                      color: _summaryIsFailure
                           ? Theme.of(context).colorScheme.error
                           : null,
                     ),
@@ -168,15 +168,15 @@ class _InviteToActionPageState extends ConsumerState<InviteToActionPage> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton(
-                    onPressed: _enviando || _totalSelecionado == 0
+                    onPressed: _sending || _totalSelected == 0
                         ? null
-                        : () => _convidar(grupos),
+                        : () => _invite(groups),
                     child: Text(
-                      _enviando
+                      _sending
                           ? 'Enviando...'
-                          : _falharam.isNotEmpty
-                              ? 'Tentar de novo ($_totalSelecionado)'
-                              : 'Convidar ($_totalSelecionado)',
+                          : _failed.isNotEmpty
+                              ? 'Tentar de novo ($_totalSelected)'
+                              : 'Convidar ($_totalSelected)',
                     ),
                   ),
                 ),
@@ -189,8 +189,8 @@ class _InviteToActionPageState extends ConsumerState<InviteToActionPage> {
   }
 }
 
-class _SemGrupos extends StatelessWidget {
-  const _SemGrupos();
+class _EmptyGroups extends StatelessWidget {
+  const _EmptyGroups();
 
   @override
   Widget build(BuildContext context) {

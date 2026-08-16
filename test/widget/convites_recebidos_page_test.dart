@@ -20,7 +20,7 @@ Action _acao(String id, String nome) => Action(
       id: id,
       name: nome,
       dateTime: DateTime(2027, 1, 1, 10),
-      local: 'Sede',
+      location: 'Sede',
       creatorId: 'u9',
       createdAt: DateTime(2026, 1, 1),
     );
@@ -137,7 +137,7 @@ void main() {
           id: 'a1',
           name: 'Cancelada',
           dateTime: DateTime(2027, 1, 1),
-          local: 'Sede',
+          location: 'Sede',
           creatorId: 'u9',
           createdAt: DateTime(2026, 1, 1),
           cancelledAt: DateTime(2026, 8, 12),
@@ -172,7 +172,7 @@ extension on Action {
         id: id,
         name: name,
         dateTime: d,
-        local: local,
+        location: location,
         creatorId: creatorId,
         createdAt: createdAt,
       );

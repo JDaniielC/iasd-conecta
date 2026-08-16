@@ -120,7 +120,22 @@ participantes, nem revelar a eles quem denunciou.
 
 Toda denúncia DEVE terminar em um de dois estados — mensagem removida ou
 improcedente — com o instante da resolução. Estado inicial é pendente. Só quem
-tem autoridade de remoção naquele espaço PODE resolvê-la.
+tem **autoridade sobre o espaço** PODE resolvê-la: o dono do Grupo, o criador
+da Ação, o dono do Grupo dela, e o Administrador do distrito.
+
+**O autor da mensagem denunciada NÃO resolve a denúncia contra si, ainda que
+possa remover a própria mensagem.** As duas coisas são autoridades diferentes e
+esta requirement precisou dizê-lo: "quem pode remover" inclui o autor, e lido
+junto com este parágrafo sem a ressalva, o denunciado arquivava como
+improcedente o caso sobre o próprio texto. Foi defeito real, medido e corrigido
+durante esta change — o banco separa `pode_moderar_espaco` (sem o autor), que
+governa a denúncia, de `pode_moderar_mensagem` (com o autor), que governa a
+remoção. Quem simplificar as duas numa só reabre o defeito.
+
+Remover a própria mensagem continua valendo e não depende de idade: apagar o
+que você mesmo escreveu é minimização de dado. **Ler e resolver denúncia, sim**
+— o corte de 18 anos alcança `denuncias_mensagem` como alcança as mensagens,
+porque o motivo escrito por quem denunciou é texto livre da mesma natureza.
 
 #### Scenario: Denúncia acolhida
 - **WHEN** quem tem autoridade remove a mensagem denunciada
@@ -135,6 +150,18 @@ tem autoridade de remoção naquele espaço PODE resolvê-la.
 - **WHEN** um participante sem autoridade tenta alterar o estado de uma
   denúncia
 - **THEN** a operação é recusada
+
+#### Scenario: O autor da mensagem denunciada tenta resolver
+- **WHEN** o autor da mensagem denunciada tenta ler ou alterar o estado da
+  denúncia contra ela
+- **THEN** a operação é recusada — remover a própria mensagem é dele, julgar a
+  denúncia não
+
+#### Scenario: Administrador do distrito menor de idade
+- **WHEN** um Administrador do distrito com menos de 18 anos consulta ou tenta
+  resolver uma denúncia
+- **THEN** a operação é recusada, como para qualquer mensagem — o motivo
+  escrito por quem denunciou é texto livre da mesma natureza
 
 ### Requirement: A denúncia sobrevive à expiração da conversa
 

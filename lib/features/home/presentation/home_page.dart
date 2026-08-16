@@ -216,12 +216,12 @@ class _InvitesButton extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final abertos = ref.watch(openInvitesCountProvider).value ?? 0;
+    final open = ref.watch(openInvitesCountProvider).value ?? 0;
 
     return OutlinedButton.icon(
       onPressed: () => context.push('/convites'),
       icon: const Icon(Icons.mail_outline),
-      label: Text(abertos > 0 ? 'Convites ($abertos)' : 'Convites'),
+      label: Text(open > 0 ? 'Convites ($open)' : 'Convites'),
     );
   }
 }

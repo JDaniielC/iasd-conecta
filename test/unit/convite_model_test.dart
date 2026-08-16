@@ -22,7 +22,7 @@ Action _acao({DateTime? dateTime, DateTime? cancelledAt}) => Action(
       id: 'a1',
       name: 'Encontro',
       dateTime: dateTime ?? DateTime(2027, 1, 1, 10),
-      local: 'Sede',
+      location: 'Sede',
       creatorId: 'u1',
       createdAt: DateTime(2026, 1, 1),
       cancelledAt: cancelledAt,

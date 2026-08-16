@@ -17,7 +17,7 @@ final _group = Group(
   name: 'SevenBikers',
   category: 'Ministério Jovem',
   schedule: 'sábados 6h',
-  local: 'Praça Central',
+  location: 'Praça Central',
   ownerId: 'dono-1',
   createdAt: DateTime(2026, 1, 1),
 );

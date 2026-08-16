@@ -41,17 +41,17 @@ class ChangeLogSection extends ConsumerWidget {
             child: LinearProgressIndicator(),
           ),
           error: (_, _) => const Text('Não deu pra carregar as mudanças.'),
-          data: (todas) {
-            if (todas.isEmpty) return const _RegistroVazio();
+          data: (all) {
+            if (all.isEmpty) return const _EmptyLog();
             // Veio o item extra? Então há mais do que cabe aqui.
-            final haMais = todas.length > ChangeLogRepository.pageSize;
-            final visiveis =
-                todas.take(ChangeLogRepository.pageSize).toList();
+            final hasMore = all.length > ChangeLogRepository.pageSize;
+            final visible =
+                all.take(ChangeLogRepository.pageSize).toList();
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                for (final e in visiveis) _Linha(entrada: e),
-                if (haMais) ...[
+                for (final e in visible) _Line(entry: e),
+                if (hasMore) ...[
                   const SizedBox(height: AppSpacing.xs),
                   Text(
                     'Há mudanças mais antigas que não aparecem aqui.',
@@ -67,10 +67,10 @@ class ChangeLogSection extends ConsumerWidget {
   }
 }
 
-class _Linha extends StatelessWidget {
-  const _Linha({required this.entrada});
+class _Line extends StatelessWidget {
+  const _Line({required this.entry});
 
-  final ChangeLogEntry entrada;
+  final ChangeLogEntry entry;
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +79,10 @@ class _Linha extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(child: Text(entrada.sentence)),
+          Expanded(child: Text(entry.sentence)),
           const SizedBox(width: AppSpacing.sm),
           Text(
-            DateFormat('dd/MM HH:mm').format(entrada.createdAt),
+            DateFormat('dd/MM HH:mm').format(entry.createdAt),
             style: Theme.of(context).textTheme.bodySmall,
           ),
         ],
@@ -94,8 +94,8 @@ class _Linha extends StatelessWidget {
 /// Registro vazio não é erro nem carregamento — é o estado normal de tudo que
 /// existia antes desta funcionalidade. Sem este texto, a seção vazia lê como
 /// bug.
-class _RegistroVazio extends StatelessWidget {
-  const _RegistroVazio();
+class _EmptyLog extends StatelessWidget {
+  const _EmptyLog();
 
   @override
   Widget build(BuildContext context) {

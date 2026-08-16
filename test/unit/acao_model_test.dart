@@ -6,12 +6,12 @@ void main() {
 
   group('NovaAcao.prontoParaEnviar', () {
     test('falso sem nome', () {
-      final action = NewAction(name: '  ', dateTime: dataFutura, local: 'Sede');
+      final action = NewAction(name: '  ', dateTime: dataFutura, location: 'Sede');
       expect(action.isReadyToSubmit, isFalse);
     });
 
     test('falso sem local', () {
-      final action = NewAction(name: 'Retiro', dateTime: dataFutura, local: '');
+      final action = NewAction(name: 'Retiro', dateTime: dataFutura, location: '');
       expect(action.isReadyToSubmit, isFalse);
     });
 
@@ -19,14 +19,14 @@ void main() {
       final action = NewAction(
         name: 'Retiro',
         dateTime: dataFutura,
-        local: 'Sede',
+        location: 'Sede',
         capacity: 0,
       );
       expect(action.isReadyToSubmit, isFalse);
     });
 
     test('verdadeiro com campos obrigatórios preenchidos, sem limite', () {
-      final action = NewAction(name: 'Retiro', dateTime: dataFutura, local: 'Sede');
+      final action = NewAction(name: 'Retiro', dateTime: dataFutura, location: 'Sede');
       expect(action.isReadyToSubmit, isTrue);
     });
 
@@ -34,7 +34,7 @@ void main() {
       final action = NewAction(
         name: 'Retiro',
         dateTime: dataFutura,
-        local: 'Sede',
+        location: 'Sede',
         capacity: 20,
       );
       expect(action.isReadyToSubmit, isTrue);
@@ -46,7 +46,7 @@ void main() {
       final action = NewAction(
         name: ' Retiro ',
         dateTime: dataFutura,
-        local: 'Sede',
+        location: 'Sede',
         details: '   ',
       );
       final map = action.toInsertMap(creatorId: 'abc');
@@ -62,7 +62,7 @@ void main() {
       id: 'a1',
       name: 'Retiro',
       dateTime: dataFutura,
-      local: 'Sede',
+      location: 'Sede',
       creatorId: 'criador-1',
       createdAt: dataFutura,
     );
@@ -86,7 +86,7 @@ void main() {
         id: 'a1',
         name: 'Retiro',
         dateTime: dataFutura,
-        local: 'Sede',
+        location: 'Sede',
         creatorId: 'c1',
         createdAt: dataFutura,
       );
@@ -98,7 +98,7 @@ void main() {
         id: 'a1',
         name: 'Retiro',
         dateTime: dataFutura,
-        local: 'Sede',
+        location: 'Sede',
         creatorId: 'c1',
         createdAt: dataFutura,
         cancelledAt: DateTime.now(),

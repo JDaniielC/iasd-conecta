@@ -499,6 +499,214 @@ completo. Fica: ele serve exatamente a consulta do contador, que roda na abertur
 de oito telas, e o custo de escrita numa tabela pequena não justifica remover sem
 medir.
 
+### 2.12 `denuncias_imagem.motivo` aceita motivo feito só de quebras de linha
+
+Achado em 2026-08-14, escrevendo a denúncia de mensagem da change
+`chat-de-grupo-e-acao`. A constraint de `denuncias_imagem`
+(`20260810120000_denuncia_de_imagem.sql:23`) é:
+
+```sql
+motivo text not null check (length(trim(motivo)) > 0)
+```
+
+O `trim` padrão do Postgres remove **apenas espaços**. Medido:
+`length(trim(E'\n\t'))` é `2`, então um motivo de quebras de linha e tabulações
+passa como se dissesse alguma coisa — e o campo existe justamente para ser o
+registro do caso quando a imagem denunciada já não estiver lá.
+
+`denuncias_mensagem` nasceu com a versão correta,
+`length(btrim(motivo, E' \t\n\r')) > 0`, e `mensagens.texto` também. Ficaram
+**duas constraints com regras diferentes para a mesma ideia**, e a de imagem é a
+frouxa.
+
+Não consertado aqui por escopo: mexer em `denuncias_imagem` é migration de outra
+feature, e a change do chat não deve carregar o conserto de uma vizinha. O
+conserto é de uma linha (`alter table ... drop constraint ... add constraint`) e
+não tem risco de dado existente — nenhum motivo em produção é feito só de
+espaço em branco, porque não há produção com denúncia ainda.
+
+### 2.13 ~~As duas funções de acesso do chat não têm teste de unidade próprio~~ — FECHADO em 2026-08-16
+
+Estava registrado como **dispensado por decisão em 2026-08-14**: as duas funções
+de acesso só eram exercitadas através das policies, e o custo era de
+diagnóstico — quando um teste de acesso ficasse vermelho, ele não diria se quem
+errou foi a função ou a policy que a chama.
+
+**Reaberto e feito ao fechar a change**, porque a dispensa não sobreviveu ao
+próprio motivo: durante a change, três achados diferentes tiveram o mesmo
+sintoma (a operação afeta zero linha e a tela diz que deu certo), e distinguir
+função de policy deixou de ser conforto de diagnóstico.
+
+`test/integration/chat_funcoes_de_acesso_test.dart`, medido em 2026-08-16:
+**7 papéis × 3 idades = 21 credenciais × 3 funções = 63 casos**, mais 1
+asserção de montagem. As funções são chamadas direto
+(`select public.pode_ver_chat_grupo(@g)`), sem uma linha em `mensagens` — que é
+o ponto: `count(*)` em `mensagens` devolve o mesmo zero quando a função disse
+"não" e quando a policy nem chegou a chamá-la.
+
+Os papéis cobrem os braços um a um: estranho (controle negativo), participante,
+dono do Grupo da Ação, criador, confirmado, fila, e Administrador do distrito. A
+idade multiplica tudo porque `maior_de_idade()` está do lado de FORA do `or` das
+outras duas — é a asserção que pega quem uniformizar as funções e mover o corte
+para dentro de um braço só.
+
+Provado que discrimina por mutação: trocar o esperado de `na fila da Ação` para
+`false` deixa vermelho (`Expected: <false> Actual: <true>`).
+
+### 2.14 `denuncias_mensagem.motivo` é texto livre do titular, sem prazo e fora da exclusão de conta
+
+Achado em 2026-08-14 pelo `advogado-digital`, conferindo a Política contra o
+código. Não consertado.
+
+O `motivo` é escrito por quem denuncia, em campo aberto, e a Política agora
+declara que ele é o registro do caso — é ele que sobrevive ao expurgo da
+mensagem, de propósito, para denúncia pendente não sumir sem desfecho.
+
+Duas consequências que ninguém decidiu:
+
+- **`excluir_minha_conta` não toca nele** (`20260810130000:17-147`). Quem
+  denunciou e depois excluiu a conta continua com um texto seu no banco,
+  ligado a `denunciante_id`, enquanto as mensagens dele perderam o texto. As
+  duas metades da exclusão discordam.
+- **Não tem prazo nenhum.** `mensagens` de Ação some em 30 dias; a denúncia
+  sobre ela fica para sempre.
+
+Declarar na Política que o motivo fica não é o mesmo que minimizar o dado.
+O conserto provável é prazo após `resolvida_em` e apagar o motivo na
+anonimização do denunciante — mas isso é decisão, não conserto óbvio: apagar o
+motivo de uma denúncia julgada apaga o registro de por que uma mensagem foi
+removida.
+
+### 2.15 A decisão de não ter backup foi tomada antes de existir texto livre
+
+`REVISAO-JURIDICA.md` §4-B fechou "backup: nada, risco aceito" e listou um
+gatilho explícito para reabrir: **o app passar a guardar dado que a pessoa não
+saiba de cor**. A conversa de Grupo satisfaz o gatilho — não expira, e o que
+foi combinado ali não está em lugar nenhum além do banco.
+
+Não é defeito e não bloqueia a change. É uma decisão cuja premissa mudou, e
+quem a tomou precisa saber disso antes de ela virar padrão por inércia.
+
+### 2.16 Base legal do texto livre — o que ainda bloqueia publicar o texto 1.5
+
+**A parte da tela FECHOU em 2026-08-14** e este item foi reescrito por isso. O
+caminho da denúncia está completo e provado ponta a ponta: botão
+(`chat_page.dart`), diálogo com motivo obrigatório, `insert`, leitura por
+autoridade (`message_reports_page.dart`, rotas em `lib/app.dart`) e desfecho.
+A redação anterior dizia que a tela não existia e, do jeito que estava escrita,
+bloqueava publicar a versão 1.5 por um motivo que já não existe — foi o próprio
+agente `promessa-vs-execucao` quem apontou que o ledger estava mentindo para a
+equipe.
+
+**O que continua aberto, e este sim bloqueia:** a conversa pode conter dado
+sensível do art. 5º, II — saúde, religião, opinião — de **terceiro que nem usa
+o app**. Não há como detectar nem impedir. A Política do projeto não tem seção
+de base legal, e ninguém disse se o consentimento genérico do cadastro cobre
+isto. Precisa de advogado inscrito, não de código.
+
+Também aberto no mesmo texto: **base legal do texto livre**. A conversa pode
+conter dado sensível de terceiro — saúde, religião — que o app não impede nem
+detecta. A Política do projeto não tem seção de base legal, e um advogado
+inscrito precisa dizer se o consentimento do cadastro cobre isso.
+
+### 2.17 O prazo de 30 dias tem dois executores e nenhum observador
+
+Achado pelo agente `promessa-vs-execucao` no fechamento de
+`chat-de-grupo-e-acao`, em 2026-08-14. **Não é promessa quebrada** — o expurgo
+funciona e está provado nos dois lados da fronteira
+(`chat_expurgo_test.dart`). É que ninguém no sistema sabe dizer se ele rodou.
+
+Os dois executores falham calados, cada um do seu jeito:
+
+- `ChatRepository.purgeExpiredActionMessages` engole toda exceção e devolve
+  `0`, e é chamada com `unawaited`. Isso é deliberado e continua certo: faxina
+  que falha não pode estragar a leitura da conversa. Mas a função devolve a
+  contagem de linhas apagadas e o app a joga fora.
+- O `pg_cron` em produção pode simplesmente não existir — `INFRA-PRODUCAO.md`
+  já declara que, se o `cron.schedule` não tiver rodado no projeto hospedado,
+  a consulta devolve zero linhas e **não há erro em lugar nenhum**, porque o
+  segundo gatilho continua funcionando e escondendo a ausência do primeiro.
+
+Somando: não há tabela de última execução, nem `/health`, nem alerta. A
+Política promete 30 dias, e a única forma de conferir se a promessa foi
+cumprida ontem é ir ao banco à mão.
+
+O conserto barato é uma linha por execução (`quando`, `quantas`), lida por uma
+tela de Administrador — mas isso é change própria, com retenção própria, e não
+entra no fechamento desta.
+
+**Também aceito nesta rodada, e menor:** `expurgar_mensagens_de_acao()` tem
+`grant execute ... to authenticated`, então qualquer sessão autenticada —
+inclusive Visitante anônimo sem Perfil — invoca uma varredura global que roda
+`security definer`. Não viola promessa nenhuma (só apaga o que já venceu) e o
+grant existe porque o app É o segundo gatilho. Fica registrado porque é uma
+função de escrita global exposta na REST, e quem for endurecer isso precisa
+saber que o cliente depende dela.
+
+### 2.18 Seis funções `security definer` anteriores continuam chamáveis por `anon`
+
+Achado ao consertar o mesmo defeito dentro de `chat-de-grupo-e-acao`, em
+2026-08-14. **Não é da change do chat — as do chat foram corrigidas.** É o
+precedente que o agente `pentest-etico` mandou procurar, e ele existe.
+
+A armadilha: **função nova no Postgres nasce com `execute` para `PUBLIC`**.
+`grant execute ... to authenticated` acrescenta um privilégio, não substitui o
+que já estava lá. Sem `revoke ... from public`, a role `anon` — que o PostgREST
+usa em requisição sem `Authorization` — herda o direito de chamar. E a chave
+publicável está no bundle público do app.
+
+Consultadas no banco local, estas seis são `security definer`, não são função
+de gatilho, e `has_function_privilege('anon', ..., 'execute')` devolve `true`:
+
+| Função | O que faz | Tem checagem de `auth.uid()`? |
+|---|---|---|
+| `fechar_rodada_se_devido` | **escreve** — fecha Rodada de votação | **Só no caminho `p_forcar`.** Fechar Rodada vencida não checa nada |
+| `declarar_lideranca` | **escreve** | Sim |
+| `decidir_lideranca` | **escreve** | Sim |
+| `autor_de_mudanca` | lê | — |
+| `nome_valido` | lê/valida | — |
+| `perfil_publico` | lê | — (é pública por desenho) |
+
+A pior é `fechar_rodada_se_devido`: qualquer pessoa com `curl` e a chave
+publicável fecha Rodada vencida de qualquer Grupo, sem login. O efeito é o
+mesmo que o segundo gatilho do app produziria de qualquer jeito — como no
+expurgo do chat, o dano de dado é limitado —, mas é escrita disparável por não
+autenticado, e o padrão se repete a cada função nova.
+
+**Não consertado aqui por escopo**: são migrations de três features diferentes,
+cada uma com a sua suíte. O conserto é mecânico (`revoke execute on function
+... from public;` antes de cada `grant`) e o teste já existe como modelo em
+`test/integration/chat_privilegio_funcao_test.dart`, que olha o PRIVILÉGIO e
+não o resultado — um teste que só conferisse "anon não lê" continuaria verde
+com a RPC aberta.
+
+Para procurar em qualquer migration: `proacl` com uma entrada que começa em `=`
+(nada antes do sinal) é o grant a `PUBLIC`.
+
+### 2.19 O canal de Realtime entrega envelope de atividade a `anon`
+
+Achado pelo `pentest-etico` em 2026-08-14. Severidade baixa, registrado porque
+é observável de fora e ninguém decidiu que fosse assim.
+
+Assinando `postgres_changes` em `public.mensagens` **sem `access_token`**, o
+`anon` recebe um evento por escrita:
+
+```json
+{"table":"mensagens","type":"INSERT","record":{},"columns":[],
+ "errors":["Error 401: Unauthorized"],"commit_timestamp":null}
+```
+
+Sem `texto`, sem `id` de linha, sem `grupo_id`/`acao_id`/`autor_id`. O conteúdo
+**não vaza** — assinantes autenticados-mas-negados (menor de 18, não
+participante) recebem **zero** eventos, e isso está provado em
+`chat_realtime_test.dart`. O que vaza é volume e horário de atividade do app
+inteiro, e a distinção entre criação e remoção.
+
+É comportamento padrão do Realtime do Supabase (envelope 401 quando a RLS nega
+ao `anon`), não algo que a migration controle além de publicar a tabela. A
+mitigação a investigar é canal privado; **[NÃO VERIFICADO]** se elimina o
+envelope.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

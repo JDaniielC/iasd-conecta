@@ -60,6 +60,14 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Marcador de leitura | `lastSeenNewsDate` |
 | Enviar foto de capa | `uploadCoverPhoto` |
 | Denunciar imagem | `reportImage` |
+| Mensagem | `Message` |
+| Conversa / chat de um espaço | `chat` |
+| Remover mensagem | `removeMessage` |
+| Denunciar mensagem | `reportMessage` |
+| Denúncia de mensagem | `MessageReport` |
+| Lápide (mensagem sem texto) | `MessageTombstone` |
+| Expurgo de mensagens de Ação | `purgeExpiredActionMessages` |
+| Maior de 18 (corte do chat) | `isOfAge` |
 
 ### Colisões conhecidas, com decisão já tomada
 

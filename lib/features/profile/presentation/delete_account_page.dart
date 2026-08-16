@@ -18,7 +18,7 @@ class DeleteAccountPage extends ConsumerStatefulWidget {
 }
 
 class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
-  bool _entendi = false;
+  bool _understood = false;
   bool _submitting = false;
   String? _error;
 
@@ -93,10 +93,10 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             ),
             const SizedBox(height: AppSpacing.lg),
             CheckboxListTile(
-              value: _entendi,
+              value: _understood,
               onChanged: _submitting
                   ? null
-                  : (v) => setState(() => _entendi = v ?? false),
+                  : (v) => setState(() => _understood = v ?? false),
               controlAffinity: ListTileControlAffinity.leading,
               contentPadding: EdgeInsets.zero,
               title: const Text('Entendi que a exclusão é definitiva'),
@@ -107,7 +107,7 @@ class _DeleteAccountPageState extends ConsumerState<DeleteAccountPage> {
             ],
             const SizedBox(height: AppSpacing.lg),
             FilledButton(
-              onPressed: (_entendi && !_submitting) ? _delete : null,
+              onPressed: (_understood && !_submitting) ? _delete : null,
               style: FilledButton.styleFrom(backgroundColor: Colors.red),
               child: Text(_submitting ? 'Excluindo…' : 'Excluir minha conta'),
             ),

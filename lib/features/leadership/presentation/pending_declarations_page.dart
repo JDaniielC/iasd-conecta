@@ -54,8 +54,8 @@ class PendingDeclarationsPage extends ConsumerWidget {
         body: Center(child: CircularProgressIndicator()),
       ),
       error: (_, _) => const _NotForYou(),
-      data: (ehAdmin) =>
-          ehAdmin ? _buildList(context, ref) : const _NotForYou(),
+      data: (isAdmin) =>
+          isAdmin ? _buildList(context, ref) : const _NotForYou(),
     );
   }
 
@@ -104,7 +104,7 @@ class _PendingCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final groupAsync = ref.watch(groupProvider(declaration.groupId));
-    final declaranteAsync = ref.watch(publicProfileProvider(declaration.userId));
+    final declarantAsync = ref.watch(publicProfileProvider(declaration.userId));
 
     return Card(
       child: Padding(
@@ -116,7 +116,7 @@ class _PendingCard extends ConsumerWidget {
               groupAsync.value?.name ?? 'Grupo',
               style: Theme.of(context).textTheme.titleMedium,
             ),
-            Text('Declarante: ${declaranteAsync.value?.displayName ?? '...'}'),
+            Text('Declarante: ${declarantAsync.value?.displayName ?? '...'}'),
             Text('Ano: ${declaration.year}'),
             const SizedBox(height: AppSpacing.sm),
             Row(

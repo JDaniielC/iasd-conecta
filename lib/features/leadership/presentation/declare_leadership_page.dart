@@ -97,11 +97,11 @@ class _StatusView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (declaration == null) return const Text('Você ainda não se autodeclarou esse ano.');
-    final texto = switch (declaration!.status) {
+    final text = switch (declaration!.status) {
       LeadershipStatus.pending => 'Sua declaração está pendente de confirmação.',
       LeadershipStatus.confirmed => 'Sua declaração já foi confirmada.',
       LeadershipStatus.rejected => 'Sua declaração foi rejeitada. Autodeclarar de novo reabre a análise.',
     };
-    return Text(texto);
+    return Text(text);
   }
 }

@@ -131,13 +131,13 @@ class GroupRepository {
     String? category,
     String? details,
   }) async {
-    final valores = <String, dynamic>{
+    final values = <String, dynamic>{
       if (name != null) 'nome': name.trim(),
       if (category != null) 'categoria': category.trim(),
       if (details != null) 'detalhes': details.trim().isEmpty ? null : details.trim(),
     };
-    if (valores.isEmpty) return;
-    await _client.from('grupos').update(valores).eq('id', id);
+    if (values.isEmpty) return;
+    await _client.from('grupos').update(values).eq('id', id);
   }
 
   Future<List<String>> fetchMemberIds(String groupId) async {

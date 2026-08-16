@@ -44,17 +44,17 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
 
   Future<void> _pickDateTime() async {
     final now = DateTime.now();
-    final data = await showDatePicker(
+    final date = await showDatePicker(
       context: context,
       initialDate: now,
       firstDate: now,
       lastDate: now.add(const Duration(days: 365 * 2)),
     );
-    if (data == null || !mounted) return;
-    final hora = await showTimePicker(context: context, initialTime: TimeOfDay.now());
-    if (hora == null) return;
+    if (date == null || !mounted) return;
+    final time = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (time == null) return;
     setState(() {
-      _dateTime = DateTime(data.year, data.month, data.day, hora.hour, hora.minute);
+      _dateTime = DateTime(date.year, date.month, date.day, time.hour, time.minute);
     });
   }
 
@@ -63,7 +63,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
     return NewAction(
       name: _nameController.text,
       dateTime: _dateTime!,
-      local: _locationController.text,
+      location: _locationController.text,
       details: _detailsController.text,
       capacity: int.tryParse(_capacityController.text),
       isMissionaryPair: _isMissionaryPair,
@@ -72,7 +72,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
     );
   }
 
-  Future<void> _propor() async {
+  Future<void> _propose() async {
     final candidate = _currentCandidate;
     if (_formKey.currentState?.validate() != true ||
         candidate == null ||
@@ -214,7 +214,7 @@ class _CreateCandidatePageState extends ConsumerState<CreateCandidatePage> {
               ],
               const SizedBox(height: AppSpacing.lg),
               ElevatedButton(
-                onPressed: _submitting ? null : _propor,
+                onPressed: _submitting ? null : _propose,
                 child: _submitting
                     ? const SizedBox(
                         height: 20,

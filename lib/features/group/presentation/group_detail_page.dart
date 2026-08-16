@@ -11,6 +11,7 @@ import '../../district_admin/district_admin_providers.dart';
 import '../../change_log/presentation/change_log_section.dart';
 import '../group_providers.dart';
 import 'archive_group_sheet.dart';
+import '../../chat/chat_providers.dart';
 import '../../notification/presentation/notification_badge.dart';
 
 /// Detalhes de um Grupo: visível a Visitante e Usuário igualmente
@@ -65,7 +66,7 @@ class GroupDetailPage extends ConsumerWidget {
     final groupAsync = ref.watch(groupProvider(groupId));
     final membersAsync = ref.watch(membersProvider(groupId));
     final uid = ref.watch(currentUserIdProvider);
-    final participa = membersAsync.value?.any((p) => p.id == uid) ?? false;
+    final isParticipant = membersAsync.value?.any((p) => p.id == uid) ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -108,6 +109,22 @@ class GroupDetailPage extends ConsumerWidget {
                     Expanded(
                       child: Text(group.name, style: Theme.of(context).textTheme.headlineMedium),
                     ),
+                    // Change `chat-de-grupo-e-acao`. FORA do
+                    // `if (!group.isArchived)` de propósito: Grupo arquivado
+                    // mantém o histórico legível — é justamente o que sobra
+                    // dele — e a tela da conversa é quem esconde o campo de
+                    // envio. Esconder a entrada aqui trancaria o histórico
+                    // junto com a escrita.
+                    if (ref
+                            .watch(canSeeChatProvider(ChatSpace.group(groupId)))
+                            .value ??
+                        false)
+                      IconButton(
+                        icon: const Icon(Icons.forum_outlined),
+                        tooltip: 'Conversa',
+                        onPressed: () =>
+                            context.push('/grupos/$groupId/conversa'),
+                      ),
                     if (!group.isArchived) ...[
                       IconButton(
                         icon: const Icon(Icons.how_to_vote_outlined),
@@ -162,10 +179,10 @@ class GroupDetailPage extends ConsumerWidget {
                   const SizedBox(height: AppSpacing.md),
                 ],
                 Text(group.category),
-                if (group.schedule != null || group.local != null) ...[
+                if (group.schedule != null || group.location != null) ...[
                   const SizedBox(height: AppSpacing.md),
                   if (group.schedule != null) Text('Horário: ${group.schedule}'),
-                  if (group.local != null) Text('Local: ${group.local}'),
+                  if (group.location != null) Text('Local: ${group.location}'),
                 ],
                 if (group.details != null) ...[
                   const SizedBox(height: AppSpacing.md),
@@ -176,11 +193,11 @@ class GroupDetailPage extends ConsumerWidget {
                 const SizedBox(height: AppSpacing.lg),
                 if (!group.isArchived)
                   ElevatedButton(
-                    onPressed: participa
+                    onPressed: isParticipant
                         ? () => _leave(context, ref)
                         : () => _join(context, ref),
                     child: Text(
-                      participa ? 'Sair do Grupo/Ministério' : 'Participar',
+                      isParticipant ? 'Sair do Grupo/Ministério' : 'Participar',
                     ),
                   ),
                 const SizedBox(height: AppSpacing.lg),

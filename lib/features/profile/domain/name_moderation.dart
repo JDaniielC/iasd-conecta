@@ -21,11 +21,11 @@ class NameModeration {
   final List<String> _blockedWords;
 
   bool isValid(String name) {
-    final normalizado = _normalize(name);
+    final normalized = _normalize(name);
     return !_blockedWords
         .map(_normalize)
-        .any(normalizado.contains);
+        .any(normalized.contains);
   }
 
-  static String _normalize(String texto) => texto.toLowerCase();
+  static String _normalize(String text) => text.toLowerCase();
 }

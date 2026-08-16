@@ -50,6 +50,26 @@ ela. Ver o terceiro exemplo abaixo.
 | "Implementado `arquivar_grupo` com `security definer`" | "O Dono de um Grupo pode arquivá-lo. As Ações já marcadas são canceladas, e quem tinha confirmado presença é avisado na própria Ação." |
 | "Bump de `LegalMetadata.version` para 1.3" | *(não vira Novidade — a mudança do texto legal já tem o próprio aviso)* |
 
+## Quando se escreve
+
+**Ao fechar a change, junto com o último commit dela — não depois.** A regra existe porque o
+modo de falha já aconteceu: entre 11 e 13 de agosto de 2026, cinco changes com efeito visível
+foram arquivadas em `main` e **nenhuma** escreveu Novidade. Nenhuma delas tinha uma tarefa
+para isso, e ninguém sentiu falta: a tela continuava funcionando, os testes continuavam
+verdes, e o `openspec validate` não olha para cá. O buraco só apareceu porque alguém
+perguntou se a tela estava em dia — três dias e cinco changes depois.
+
+Na prática, para quem está aplicando uma change:
+
+- Se ela muda algo que **a pessoa percebe** pelos critérios acima, ela tem uma tarefa de
+  Novidade na seção de fechamento do `tasks.md`, ao lado dos gates.
+- Se ela **não** muda, escreva isso em uma linha na tarefa de fechamento. "Não vira Novidade
+  porque nenhuma tela muda" é uma decisão registrada; silêncio não é.
+
+O que **não** funciona, e por isso não está escrito como alternativa: escrever as Novidades
+em lote depois, olhando o histórico do git. Cada item precisa do que a pessoa passou a
+perceber, e isso está na cabeça de quem fez a mudança — não na commit message.
+
 ## Sobre o marco
 
 Só entra na tela o que tem data a partir de **6 de outubro de 2026**, o lançamento para o

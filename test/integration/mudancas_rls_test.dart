@@ -22,6 +22,10 @@ const _uidForasteiro = 'd4000000-0000-0000-0000-000000000003';
 const _uidAdmin = 'd4000000-0000-0000-0000-000000000004';
 const _allUids = [_uidDona, _uidMembro, _uidForasteiro, _uidAdmin];
 
+/// Visitante: sem cadastro, e por isso FORA de `_allUids` — aquela lista cria
+/// Perfil para cada uid, e Visitante é justamente quem não tem.
+const _uidVisitor = 'd4000000-0000-0000-0000-0000000000f0';
+
 void main() {
   late Connection conn;
   late String groupId, roundId;
@@ -29,22 +33,37 @@ void main() {
 
   setUpAll(() async {
     conn = await openTestConnection();
+    await createTestVisitor(conn, _uidVisitor);
     for (final uid in _allUids) {
-      await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(0, 10)}');
+      await createTestProfile(
+        conn,
+        uid,
+        name: 'Pessoa ${uid.substring(0, 10)}',
+      );
     }
     await createTestDistrictAdmin(conn, _uidAdmin);
 
     groupId = await createGroup(conn, ownerId: _uidDona, name: 'Grupo D4');
     await joinGroup(conn, groupId, _uidMembro);
-    roundId = await createVotingRound(conn, groupId: groupId, openedBy: _uidDona);
+    roundId = await createVotingRound(
+      conn,
+      groupId: groupId,
+      openedBy: _uidDona,
+    );
 
-    publica = await createGroupAction(conn,
-        creatorId: _uidDona, roundId: roundId, name: 'D4 pública');
-    restrita = await createGroupAction(conn,
-        creatorId: _uidDona,
-        roundId: roundId,
-        restricted: true,
-        name: 'D4 restrita');
+    publica = await createGroupAction(
+      conn,
+      creatorId: _uidDona,
+      roundId: roundId,
+      name: 'D4 pública',
+    );
+    restrita = await createGroupAction(
+      conn,
+      creatorId: _uidDona,
+      roundId: roundId,
+      restricted: true,
+      name: 'D4 restrita',
+    );
     await conn.execute(
       Sql.named("update public.acoes set local = 'Outro' where id = @a"),
       parameters: {'a': restrita},
@@ -54,7 +73,9 @@ void main() {
   tearDownAll(() async {
     await limparMudancasDoGrupo(conn, groupId);
     await conn.execute(
-      Sql.named('update public.rodadas_votacao set vencedora_id = null where grupo_id = @g'),
+      Sql.named(
+        'update public.rodadas_votacao set vencedora_id = null where grupo_id = @g',
+      ),
       parameters: {'g': groupId},
     );
     await conn.execute(
@@ -72,9 +93,12 @@ void main() {
       parameters: {'us': _allUids},
     );
     await conn.execute(
-      Sql.named('delete from public.administradores_distrito where usuario_id = @u'),
+      Sql.named(
+        'delete from public.administradores_distrito where usuario_id = @u',
+      ),
       parameters: {'u': _uidAdmin},
     );
+    await cleanUpTestUser(conn, _uidVisitor);
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
@@ -109,13 +133,25 @@ void main() {
     }
   });
 
-  test('Ação pública: anônimo e autenticado veem as mesmas linhas', () async {
-    final comoAnon = await asVisitor(conn, () => visiveisDaAcao(conn, publica));
-    final comoAuth =
-        await asUser(conn, _uidForasteiro, () => visiveisDaAcao(conn, publica));
-    expect(comoAnon, greaterThan(0));
-    expect(comoAnon, comoAuth,
-        reason: 'é o lado que impede a policy de esconder o que não devia');
+  test('Ação pública: Visitante e cadastrado veem as mesmas linhas', () async {
+    // Visitante é quem NÃO tem cadastro, e ele tem sessão — até 2026-08-16
+    // este teste rodava como `anon`, e media o `grant` em vez da policy.
+    final comoVisitante = await asVisitor(
+      conn,
+      _uidVisitor,
+      () => visiveisDaAcao(conn, publica),
+    );
+    final comoAuth = await asUser(
+      conn,
+      _uidForasteiro,
+      () => visiveisDaAcao(conn, publica),
+    );
+    expect(comoVisitante, greaterThan(0));
+    expect(
+      comoVisitante,
+      comoAuth,
+      reason: 'é o lado que impede a policy de esconder o que não devia',
+    );
   });
 
   test('Ação restrita: os registros dela não vêm para quem é de fora, e a '
@@ -125,50 +161,71 @@ void main() {
     expect((await tiposDaAcao(conn, restrita))['acao_local_alterado'], 1);
     expect((await tiposDaAcao(conn, restrita))['confirmacao_confirmado'], 1);
 
-    expect(await asVisitor(conn, () => visiveisDaAcao(conn, restrita)), 0);
+    expect(
+      await asVisitor(conn, _uidVisitor, () => visiveisDaAcao(conn, restrita)),
+      0,
+    );
     expect(
       await asUser(conn, _uidForasteiro, () => visiveisDaAcao(conn, restrita)),
       0,
     );
-    expect(await asUser(conn, _uidMembro, () => visiveisDaAcao(conn, restrita)),
-        greaterThan(0),
-        reason: 'quem participa continua vendo');
+    expect(
+      await asUser(conn, _uidMembro, () => visiveisDaAcao(conn, restrita)),
+      greaterThan(0),
+      reason: 'quem participa continua vendo',
+    );
   });
 
   test('no mesmo Grupo, os eventos sem Ação continuam públicos', () async {
     // A policy filtra por `acao_id`, não por Grupo. Apertar participação sem
     // apertar `participacoes_grupo` seria teatro: o fato segue legível lá.
-    final semAcao =
-        await asVisitor(conn, () => visiveisDoGrupoSemAcao(conn, groupId));
+    final semAcao = await asVisitor(
+      conn,
+      _uidVisitor,
+      () => visiveisDoGrupoSemAcao(conn, groupId),
+    );
     expect(semAcao, greaterThan(0));
   });
 
   test('remoção física do Grupo não deixa órfão nem erro de FK', () async {
-    final gid = await createGroup(conn, ownerId: _uidForasteiro, name: 'Grupo D4 efêmero');
+    final gid = await createGroup(
+      conn,
+      ownerId: _uidForasteiro,
+      name: 'Grupo D4 efêmero',
+    );
     expect((await tiposDoGrupo(conn, gid))['participacao_entrou'], 1);
 
     await conn.execute(
       Sql.named('delete from public.grupos where id = @g'),
       parameters: {'g': gid},
     );
-    expect(await tiposDoGrupo(conn, gid), isEmpty,
-        reason: 'o registro some junto com o Grupo, por cascata');
+    expect(
+      await tiposDoGrupo(conn, gid),
+      isEmpty,
+      reason: 'o registro some junto com o Grupo, por cascata',
+    );
   });
 
   test('depois de excluir a Conta, os registros ficam e o autor aparece '
       'anonimizado', () async {
-    final gid = await createGroup(conn, ownerId: _uidDona, name: 'Grupo D4 saida');
+    final gid = await createGroup(
+      conn,
+      ownerId: _uidDona,
+      name: 'Grupo D4 saida',
+    );
     await asUser(conn, _uidMembro, () async {
       await conn.execute(
         Sql.named(
-            'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@g, @u)'),
+          'insert into public.participacoes_grupo (grupo_id, usuario_id) values (@g, @u)',
+        ),
         parameters: {'g': gid, 'u': _uidMembro},
       );
     });
 
     final r = await conn.execute(
       Sql.named(
-          'select count(*) from public.mudancas where grupo_id = @g and autor_id = @u'),
+        'select count(*) from public.mudancas where grupo_id = @g and autor_id = @u',
+      ),
       parameters: {'g': gid, 'u': _uidMembro},
     );
     expect(r.first[0], 1);
@@ -183,17 +240,19 @@ void main() {
     // requisito.
     final depois = await conn.execute(
       Sql.named(
-          'select tipo from public.mudancas where grupo_id = @g and autor_id = @u order by tipo'),
+        'select tipo from public.mudancas where grupo_id = @g and autor_id = @u order by tipo',
+      ),
       parameters: {'g': gid, 'u': _uidMembro},
     );
-    expect(depois.map((r) => r.toColumnMap()['tipo']),
-        containsAll(['participacao_entrou', 'participacao_saiu']));
+    expect(
+      depois.map((r) => r.toColumnMap()['tipo']),
+      containsAll(['participacao_entrou', 'participacao_saiu']),
+    );
 
     final nome = await conn.execute(
       Sql.named('select nome_exibido from public.perfil_publico(@u)'),
       parameters: {'u': _uidMembro},
     );
     expect(nome.single.toColumnMap()['nome_exibido'], 'Membro removido');
-
   });
 }

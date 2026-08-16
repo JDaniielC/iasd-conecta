@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 021 — visibilidade do voto.
@@ -29,6 +30,10 @@ const _uidVoterMajorityB = '81000000-0000-0000-0000-000000000002';
 const _uidVoterMinority = '81000000-0000-0000-0000-000000000003';
 const _uidOutsider = '81000000-0000-0000-0000-000000000004';
 
+/// Visitante: pessoa sem cadastro, e por isso FORA de `_allUids` — aquela lista
+/// cria Perfil para cada uid, e Visitante é justamente quem não tem.
+const _uidVisitor = '81000000-0000-0000-0000-0000000000f0';
+
 const _allUids = [
   _uidVoterMajorityA,
   _uidVoterMajorityB,
@@ -47,7 +52,8 @@ Future<void> _asUser(
 ) async {
   await conn.execute('set role authenticated');
   await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
+    "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
+  );
   try {
     await action();
   } finally {
@@ -56,15 +62,14 @@ Future<void> _asUser(
   }
 }
 
-/// Executa [action] como Visitante sem cadastro nenhum.
-Future<void> _asVisitor(Connection conn, Future<void> Function() action) async {
-  await conn.execute('set role anon');
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-  }
-}
+/// Executa [action] como Visitante: pessoa sem cadastro, COM sessão.
+///
+/// Era uma cópia local que fazia `set role anon`, e estava errada de duas
+/// formas — o papel (o app coloca todo Visitante em sessão anônima, logo
+/// `authenticated`) e o fato de ser a terceira cópia da mesma ideia. Delega ao
+/// helper compartilhado, que é o único lugar onde cada papel se define.
+Future<void> _asVisitor(Connection conn, Future<void> Function() action) =>
+    asVisitor(conn, _uidVisitor, action);
 
 /// Quantos votos a identidade corrente enxerga.
 Future<int> _visibleVoteCount(Connection conn) async {
@@ -134,12 +139,7 @@ Future<String> _addCandidate(
         "values (@n, now() + interval '10 days', 'Centro', @c, false, @g, @r) "
         'returning id',
       ),
-      parameters: {
-        'n': name,
-        'c': creatorId,
-        'g': groupId,
-        'r': roundId,
-      },
+      parameters: {'n': name, 'c': creatorId, 'g': groupId, 'r': roundId},
     );
     candidateId = r.first[0] as String;
   });
@@ -247,6 +247,7 @@ void main() {
       await createTestUser(conn, uid);
       await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(31)}');
     }
+    await createTestVisitor(conn, _uidVisitor);
   });
 
   setUp(() async {
@@ -258,12 +259,13 @@ void main() {
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
+    await cleanUpTestUser(conn, _uidVisitor);
     await conn.close();
   });
 
   /// Monta uma Rodada com maioria em X e minoria em Y.
   Future<({String roundId, String candidateX, String candidateY})>
-      buildContestedRound() async {
+  buildContestedRound() async {
     final groupId = await _createGroup(conn, ownerId: _uidVoterMajorityA);
     final roundId = await _openRound(
       conn,
@@ -284,12 +286,24 @@ void main() {
       creatorId: _uidVoterMinority,
       name: 'Entrega de cestas',
     );
-    await _vote(conn,
-        uid: _uidVoterMajorityA, roundId: roundId, candidateId: candidateX);
-    await _vote(conn,
-        uid: _uidVoterMajorityB, roundId: roundId, candidateId: candidateX);
-    await _vote(conn,
-        uid: _uidVoterMinority, roundId: roundId, candidateId: candidateY);
+    await _vote(
+      conn,
+      uid: _uidVoterMajorityA,
+      roundId: roundId,
+      candidateId: candidateX,
+    );
+    await _vote(
+      conn,
+      uid: _uidVoterMajorityB,
+      roundId: roundId,
+      candidateId: candidateX,
+    );
+    await _vote(
+      conn,
+      uid: _uidVoterMinority,
+      roundId: roundId,
+      candidateId: candidateY,
+    );
     return (roundId: roundId, candidateX: candidateX, candidateY: candidateY);
   }
 
@@ -318,27 +332,27 @@ void main() {
     expect(seen, 0, reason: 'quem não participa do Grupo não lê os votos dele');
   });
 
-  test(
-    '(c) participante lê o próprio voto e só ele, mesmo com 3 votos na '
-    'Rodada (FR-003, FR-004)',
-    () async {
-      final round = await buildContestedRound();
+  test('(c) participante lê o próprio voto e só ele, mesmo com 3 votos na '
+      'Rodada (FR-003, FR-004)', () async {
+    final round = await buildContestedRound();
 
-      late List<List<dynamic>> rows;
-      await _asUser(conn, _uidVoterMinority, () async {
-        final r = await conn.execute(
-          'select usuario_id, candidata_id from public.votos',
-        );
-        rows = r.map((row) => row.toList()).toList();
-      });
+    late List<List<dynamic>> rows;
+    await _asUser(conn, _uidVoterMinority, () async {
+      final r = await conn.execute(
+        'select usuario_id, candidata_id from public.votos',
+      );
+      rows = r.map((row) => row.toList()).toList();
+    });
 
-      // O ponto do caso: o filtro não é "tudo ou nada". Ela vê 1 de 3.
-      expect(rows.length, 1, reason: 'só a própria linha');
-      expect(rows.first[0], _uidVoterMinority);
-      expect(rows.first[1], round.candidateY,
-          reason: 'e com a candidata certa, não uma linha qualquer');
-    },
-  );
+    // O ponto do caso: o filtro não é "tudo ou nada". Ela vê 1 de 3.
+    expect(rows.length, 1, reason: 'só a própria linha');
+    expect(rows.first[0], _uidVoterMinority);
+    expect(
+      rows.first[1],
+      round.candidateY,
+      reason: 'e com a candidata certa, não uma linha qualquer',
+    );
+  });
 
   test(
     '(d) a restrição continua valendo depois que a Rodada fecha (FR-006)',
@@ -397,58 +411,51 @@ void main() {
     expect(r.first[0], 1);
   });
 
-  test(
-    '(f) a apuração conta TODOS os votos, não só os de quem fecha a '
-    'Rodada (FR-009)',
-    () async {
-      // A montagem é o teste. Quem chama fechar_rodada_se_devido é
-      // _uidVoterMinority, que votou na PERDEDORA. Se a apuração passar a
-      // enxergar só os votos de quem chamou, a vencedora vira a candidata Y —
-      // e este expect pega. Montar ao contrário não pegaria nada.
-      final round = await buildContestedRound();
-      await _expireRound(conn, round.roundId);
-      await _closeRound(
-        conn,
-        roundId: round.roundId,
-        calledBy: _uidVoterMinority,
-      );
+  test('(f) a apuração conta TODOS os votos, não só os de quem fecha a '
+      'Rodada (FR-009)', () async {
+    // A montagem é o teste. Quem chama fechar_rodada_se_devido é
+    // _uidVoterMinority, que votou na PERDEDORA. Se a apuração passar a
+    // enxergar só os votos de quem chamou, a vencedora vira a candidata Y —
+    // e este expect pega. Montar ao contrário não pegaria nada.
+    final round = await buildContestedRound();
+    await _expireRound(conn, round.roundId);
+    await _closeRound(
+      conn,
+      roundId: round.roundId,
+      calledBy: _uidVoterMinority,
+    );
 
-      expect(
-        await _winnerOf(conn, round.roundId),
-        round.candidateX,
-        reason: 'a candidata com 2 votos vence, mesmo quem fechou a Rodada '
-            'tendo votado na outra — se falhou aqui, fechar_rodada_se_devido '
-            'deixou de rodar fora da RLS e está contando só o voto de quem a '
-            'chamou',
-      );
-    },
-  );
+    expect(
+      await _winnerOf(conn, round.roundId),
+      round.candidateX,
+      reason:
+          'a candidata com 2 votos vence, mesmo quem fechou a Rodada '
+          'tendo votado na outra — se falhou aqui, fechar_rodada_se_devido '
+          'deixou de rodar fora da RLS e está contando só o voto de quem a '
+          'chamou',
+    );
+  });
 
-  test(
-    '(g) trocar de voto substitui o anterior; só a última escolha conta '
-    '(FR-008)',
-    () async {
-      final round = await buildContestedRound();
+  test('(g) trocar de voto substitui o anterior; só a última escolha conta '
+      '(FR-008)', () async {
+    final round = await buildContestedRound();
 
-      // A pessoa muda de ideia, pelo mesmo upsert que o app usa — agora com a
-      // leitura fechada. Este era o risco que a spec apontava como principal.
-      await _vote(
-        conn,
-        uid: _uidVoterMinority,
-        roundId: round.roundId,
-        candidateId: round.candidateX,
-      );
+    // A pessoa muda de ideia, pelo mesmo upsert que o app usa — agora com a
+    // leitura fechada. Este era o risco que a spec apontava como principal.
+    await _vote(
+      conn,
+      uid: _uidVoterMinority,
+      roundId: round.roundId,
+      candidateId: round.candidateX,
+    );
 
-      final r = await conn.execute(
-        Sql.named(
-          'select candidata_id from public.votos where usuario_id = @u',
-        ),
-        parameters: {'u': _uidVoterMinority},
-      );
-      expect(r.length, 1, reason: 'uma linha por pessoa por Rodada, não duas');
-      expect(r.first[0], round.candidateX, reason: 'só a última escolha conta');
-    },
-  );
+    final r = await conn.execute(
+      Sql.named('select candidata_id from public.votos where usuario_id = @u'),
+      parameters: {'u': _uidVoterMinority},
+    );
+    expect(r.length, 1, reason: 'uma linha por pessoa por Rodada, não duas');
+    expect(r.first[0], round.candidateX, reason: 'só a última escolha conta');
+  });
 
   test(
     '(h) ninguém sobrescreve o voto de outra pessoa (FR-004, escrita)',
@@ -507,10 +514,18 @@ void main() {
       creatorId: _uidVoterMinority,
       name: 'Entrega de cestas',
     );
-    await _vote(conn,
-        uid: _uidVoterMajorityA, roundId: roundId, candidateId: candidateX);
-    await _vote(conn,
-        uid: _uidVoterMinority, roundId: roundId, candidateId: candidateY);
+    await _vote(
+      conn,
+      uid: _uidVoterMajorityA,
+      roundId: roundId,
+      candidateId: candidateX,
+    );
+    await _vote(
+      conn,
+      uid: _uidVoterMinority,
+      roundId: roundId,
+      candidateId: candidateY,
+    );
 
     await _expireRound(conn, roundId);
     await _closeRound(conn, roundId: roundId, calledBy: _uidVoterMajorityA);
@@ -522,9 +537,7 @@ void main() {
     expect(winner, anyOf(candidateX, candidateY));
 
     final remaining = await conn.execute(
-      Sql.named(
-        'select count(*) from public.acoes where rodada_id = @r',
-      ),
+      Sql.named('select count(*) from public.acoes where rodada_id = @r'),
       parameters: {'r': roundId},
     );
     expect(remaining.first[0], 1, reason: 'a perdedora é descartada');

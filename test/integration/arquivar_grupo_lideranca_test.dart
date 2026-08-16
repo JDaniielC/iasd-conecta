@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 014, FR-016 — a identificação pública do Líder/Diretor sai do ar
@@ -20,6 +21,12 @@ import 'db_test_helper.dart';
 const _uidOwner = '90000000-0000-0000-0000-000000000001';
 const _uidLeader = '90000000-0000-0000-0000-000000000002';
 
+/// Visitante: pessoa sem cadastro, e por isso sem linha em `perfis`. TEM
+/// sessão — `signInAnonymously` no arranque do app. Até 2026-08-16 este arquivo
+/// o representava como `anon`, que é a requisição sem credencial nenhuma e não
+/// é o que o app produz.
+const _uidVisitor = '90000000-0000-0000-0000-0000000000f2';
+
 const _allUids = [_uidOwner, _uidLeader];
 
 void main() {
@@ -30,6 +37,7 @@ void main() {
     conn = await openTestConnection();
     for (final uid in _allUids) {
       await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(31)}');
+      await createTestVisitor(conn, _uidVisitor);
     }
     final g = await conn.execute(
       Sql.named(
@@ -69,8 +77,10 @@ void main() {
     'arquivar NÃO apaga a declaração de liderança — ela é histórico',
     () async {
       await conn.execute(
-        Sql.named('update public.grupos set arquivado_em = now(), '
-            'arquivado_por = @o where id = @g'),
+        Sql.named(
+          'update public.grupos set arquivado_em = now(), '
+          'arquivado_por = @o where id = @g',
+        ),
         parameters: {'g': groupId, 'o': _uidOwner},
       );
 
@@ -78,43 +88,40 @@ void main() {
         Sql.named('select count(*) from public.liderancas where grupo_id = @g'),
         parameters: {'g': groupId},
       );
-      expect((r.first[0] as num).toInt(), 1,
-          reason: 'quem foi responsável continua tendo sido');
+      expect(
+        (r.first[0] as num).toInt(),
+        1,
+        reason: 'quem foi responsável continua tendo sido',
+      );
     },
   );
 
-  test(
-    'a declaração continua LEGÍVEL no banco — o filtro é do cliente, e é a '
-    'única barreira',
-    () async {
-      // Isto não é o comportamento desejado da tela; é o retrato honesto de
-      // onde a barreira está. A consulta que a tela usa filtra
-      // `grupos.arquivado_em is null` com um join `!inner`; se esse filtro
-      // sair de `leadership_repository.dart`, o nome do Líder de um Ministério
-      // arquivado volta a aparecer para Visitante sem cadastro, e nada aqui
-      // no banco vai reclamar.
-      await conn.execute('set role anon');
-      try {
-        final r = await conn.execute(
-          Sql.named('select count(*) from public.liderancas where grupo_id = @g'),
-          parameters: {'g': groupId},
-        );
-        expect((r.first[0] as num).toInt(), 1);
-      } finally {
-        await conn.execute('reset role');
-      }
-
-      // E a consulta COM o filtro do cliente devolve zero — é ela que a tela
-      // faz.
-      final filtered = await conn.execute(
-        Sql.named(
-          'select count(*) from public.liderancas l '
-          'join public.grupos g on g.id = l.grupo_id '
-          'where l.grupo_id = @g and g.arquivado_em is null',
-        ),
+  test('a declaração continua LEGÍVEL no banco — o filtro é do cliente, e é a '
+      'única barreira', () async {
+    // Isto não é o comportamento desejado da tela; é o retrato honesto de
+    // onde a barreira está. A consulta que a tela usa filtra
+    // `grupos.arquivado_em is null` com um join `!inner`; se esse filtro
+    // sair de `leadership_repository.dart`, o nome do Líder de um Ministério
+    // arquivado volta a aparecer para Visitante sem cadastro, e nada aqui
+    // no banco vai reclamar.
+    await asVisitor(conn, _uidVisitor, () async {
+      final r = await conn.execute(
+        Sql.named('select count(*) from public.liderancas where grupo_id = @g'),
         parameters: {'g': groupId},
       );
-      expect((filtered.first[0] as num).toInt(), 0);
-    },
-  );
+      expect((r.first[0] as num).toInt(), 1);
+    });
+
+    // E a consulta COM o filtro do cliente devolve zero — é ela que a tela
+    // faz.
+    final filtered = await conn.execute(
+      Sql.named(
+        'select count(*) from public.liderancas l '
+        'join public.grupos g on g.id = l.grupo_id '
+        'where l.grupo_id = @g and g.arquivado_em is null',
+      ),
+      parameters: {'g': groupId},
+    );
+    expect((filtered.first[0] as num).toInt(), 0);
+  });
 }

@@ -683,6 +683,90 @@ com a RPC aberta.
 Para procurar em qualquer migration: `proacl` com uma entrada que começa em `=`
 (nada antes do sinal) é o grant a `PUBLIC`.
 
+### 2.21 Dezessete uids repetidos entre arquivos da suíte
+
+Achado em 2026-08-16, pela convergência da change `separar-visitante-de-anon`.
+Não consertado: cada par precisa de alguém decidindo qual dos dois arquivos
+muda, e a change que os achou é sobre outro assunto.
+
+A suíte declara **283 uids** e **17 deles aparecem em dois arquivos**. Os
+arquivos rodam em PARALELO contra o mesmo banco — a capability
+`suite-de-integracao` cobra determinismo justamente por isso —, e uid repetido
+faz o `cleanUpTestUser` de um apagar o Perfil que o outro está usando no meio
+do teste.
+
+**Não está mordendo hoje**, e vale dizer por quê: os inserts de Perfil são
+`on conflict (id) do nothing`, e as limpezas moram em `tearDownAll`. A janela
+existe mesmo assim — dois `tearDownAll` concorrentes, ou um arquivo que passe a
+limpar em `tearDown` —, e é do tipo que aparece uma vez em trinta execuções e é
+descartada como "flaky". Foi assim com o § 2.6 e com o § 2.7.
+
+| uid | arquivo A | arquivo B |
+|---|---|---|
+| `90000000…0020` | `church_manage_authorization:_uidNaoAdmin` | `leadership_requires_account:_uidSemConta` |
+| `90000000…0021` | `church_archive_visibility:_uidAdmin` | `leadership_declare_idempotent:_uidLider` |
+| `90000000…0030` | `district_admin_cancel_any_action:_uidAdmin` | `leadership_decide_authorization:_uidOwner` |
+| `90000000…0031` | `district_admin_cancel_any_action:_uidCreator` | `leadership_decide_authorization:_uidComum` |
+| `90000000…0032` | `district_admin_cancel_any_action:_uidGroupOwner` | `leadership_decide_authorization:_uidLider` |
+| `95000000…0001` | `consentimentos_por_versao:_adminUid` | `security_signup_grant:_uid` |
+| `95000000…0002` | `consentimentos_por_versao:_plainUserUid` | `security_nome_valido_rls:_uid` |
+| `96000000…0001` | `consentimento_versao_carimbada:_uidPlain` | `meus_grupos_so_os_meus:_eu` |
+| `96000000…0002` | `consentimento_versao_carimbada:_uidForged` | `meus_grupos_so_os_meus:_outra` |
+| `c3000000…0001` | `chat_admin_menor:_uidOwner` | `convidar_exige_conta:_uidComConta` |
+| `c3000000…0002` | `chat_admin_menor:_uidMember` | `convidar_exige_conta:_uidAnonimo` |
+| `c4000000…0001` | `chat_denuncias_do_grupo:_uidOwner` | `convite_nao_reserva_vaga:_uidCriadora` |
+| `c4000000…0002` | `chat_denuncias_do_grupo:_uidMember` | `convite_nao_reserva_vaga:_uidRapida` |
+| `c4000000…0003` | `chat_denuncias_do_grupo:_uidOtherOwner` | `convite_nao_reserva_vaga:_uidConvidada` |
+| `c5000000…0001` | `chat_acao_cancelada:_uidCreator` | `convite_leitura_restrita:_uidConvidante` |
+| `c5000000…0002` | `chat_acao_cancelada:_uidConfirmed` | `convite_leitura_restrita:_uidConvidada` |
+| `d2000000…0001` | `chat_denuncia_desfecho:_uidOwner` | `mudancas_gatilhos_acao:_uidDona` |
+
+A consulta que os encontra, para a varredura não redescobrir:
+
+```
+grep -h "const _\w* = '[0-9a-f]\{8}-" test/integration/*.dart
+```
+lendo o valor e o arquivo, e agrupando por valor. Havia 60 prefixos de oito
+dígitos em uso quando isto foi medido; escolher um uid novo de olho é como as
+colisões nasceram.
+
+### 2.20 Dezesseis cópias locais de `asUser` não devolvem o `jwt.claims`
+
+Achado em 2026-08-16, pela convergência da change `separar-visitante-de-anon`.
+Não consertado: é varredura de risco próprio, e a change que o achou é sobre
+outro papel.
+
+A suíte tem **48 definições locais de "usuário autenticado"**, uma por arquivo,
+além da compartilhada em `acao_restrita_helper.dart`. Elas já divergiram:
+**32 fazem `reset request.jwt.claims` no `finally`, 16 não fazem.**
+
+Os 16: `account_deletion`, `apenas_criador_cancela`, `apenas_dono_administra`,
+`apuracao_empate`, `apuracao_presenca`, `apuracao_sem_candidata`,
+`apuracao_vencedora`, `cancelar_acao_grupo`, `candidata_confirmar_presenca`,
+`candidata_propor`, `fechamento_preguicoso`, `forcar_fechamento_dono`,
+`foto_capa_orfao`, `rodada_abrir_participante`, `votar_participante`,
+`voto_revogavel`.
+
+**Por que isso morde.** `reset role` NÃO limpa GUC customizado. Sem o segundo
+reset, o `sub` da identidade anterior sobrevive, e o próximo `set role` no
+mesmo arquivo — ou o próximo teste, na mesma conexão — roda enxergando alguém
+que não é ele. O achado é antigo e está documentado dentro de UMA das 32:
+`church_archive_visibility_test.dart:27-29`, "achado durante a validação manual
+desta feature". As outras 47 não leem aquele comentário.
+
+**Por que não explodiu ainda.** Quase todos os 16 usam uma identidade só, ou
+terminam o arquivo logo depois. O risco é o teste que alguém acrescentar
+amanhã, num desses arquivos, esperando papel limpo.
+
+**Não é canal lateral nem defeito de produção** — é defeito de prova. O banco
+está certo; o que fica errado é o que a suíte afirma estar medindo.
+
+O conserto é trocar as 48 pela compartilhada, arquivo por arquivo, e cada um
+tem `tearDown` próprio para conferir. A requirement "cada papel de teste tem
+uma definição só" entra em `specs/suite-de-integracao` pela change
+`separar-visitante-de-anon`, com este débito declarado: ela proíbe a 49ª cópia,
+não apaga as 48.
+
 ### 2.19 O canal de Realtime entrega envelope de atividade a `anon`
 
 Achado pelo `pentest-etico` em 2026-08-14. Severidade baixa, registrado porque

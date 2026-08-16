@@ -30,6 +30,34 @@ Future<String> createTestUser(Connection conn, String id) async {
   return id;
 }
 
+/// Cria um **Visitante**: `auth.users` anônimo e **nenhuma** linha em `perfis`.
+///
+/// É o que `signInAnonymously` produz no arranque do app — pessoa sem cadastro,
+/// mas com sessão. Use com `asVisitor` de `acao_restrita_helper.dart`.
+///
+/// NÃO confundir com [createTestProfileWithoutAccount], que é **Perfil sem
+/// Conta**: tem linha em `perfis`, já se cadastrou, e só não fez upgrade para
+/// Conta. São duas pessoas diferentes, e a única diferença no banco é a linha
+/// em `perfis` — por isso os dois helpers ficam vizinhos, com este aviso.
+///
+/// `is_anonymous = true` não é enfeite: três funções leem essa coluna para
+/// decidir — `declarar_lideranca` (`20260724100000:27`), o gatilho de
+/// Administrador (`20260724092132:31`) e o convite (`20260813140000:66`). Um
+/// Visitante de teste com `false` seria um Usuário com Conta sem Perfil, que o
+/// app não produz, e passaria em regra que o Visitante real não passa.
+Future<String> createTestVisitor(Connection conn, String id) async {
+  await conn.execute(
+    Sql.named(
+      "insert into auth.users (id, aud, role, instance_id, is_anonymous) "
+      "values (@id, 'authenticated', 'authenticated', "
+      "'00000000-0000-0000-0000-000000000000', true) "
+      "on conflict (id) do nothing",
+    ),
+    parameters: {'id': id},
+  );
+  return id;
+}
+
 /// Apaga o Usuário de teste — `perfis` primeiro, `auth.users` depois.
 ///
 /// A ordem e a primeira linha existem desde a feature 009: a FK
@@ -103,7 +131,9 @@ Future<void> createTestDistrictAdmin(Connection conn, String userId) async {
   // Isto NÃO é `skip` nem `retry` — a change `estabilizar-suite-de-integracao`
   // proíbe os dois, e com razão: eles apagam o sinal. Aqui o sinal continua; o
   // que muda é que o recurso disputado passou a ser declarado.
-  await conn.execute('select pg_advisory_lock(hashtext(\'administradores_distrito\'))');
+  await conn.execute(
+    'select pg_advisory_lock(hashtext(\'administradores_distrito\'))',
+  );
 
   await conn.execute('begin');
   await conn.execute(

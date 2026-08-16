@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// SC-005 — **nenhum caminho de exclusão deixa arquivo para trás.**
@@ -27,6 +28,12 @@ import 'db_test_helper.dart';
 /// exclusão de conta — está em `foto_capa_exclusao_conta_test.dart`.
 const _uidOwner = '7c000000-0000-0000-0000-000000000001';
 const _uidVoter = '7c000000-0000-0000-0000-000000000002';
+
+/// Visitante: pessoa sem cadastro, e por isso sem linha em `perfis`. TEM
+/// sessão — `signInAnonymously` no arranque do app. Até 2026-08-16 este arquivo
+/// o representava como `anon`, que é a requisição sem credencial nenhuma e não
+/// é o que o app produz.
+const _uidVisitor = '7c000000-0000-0000-0000-0000000000f0';
 
 void main() {
   late Connection conn;
@@ -70,6 +77,7 @@ void main() {
     conn = await openTestConnection();
     await createTestProfile(conn, _uidOwner, name: 'Dono FotoCapaOrfao');
     await createTestProfile(conn, _uidVoter, name: 'Votante FotoCapaOrfao');
+    await createTestVisitor(conn, _uidVisitor);
 
     final groupRows = await conn.execute(
       Sql.named(
@@ -440,8 +448,10 @@ void main() {
 
     // Denúncia de Visitante SEM Perfil — o caso que a feature existe para
     // atender (FR-015).
-    await conn.execute('set role anon');
-    try {
+    // É o Visitante que a FR-015 atende: tem sessão, não tem Perfil, e por
+    // isso `denunciante_id` fica nulo. `image_report_repository.dart:15-22`
+    // documenta o defeito que veio de confundir "tem sessão" com "tem Perfil".
+    await asVisitor(conn, _uidVisitor, () async {
       await conn.execute(
         Sql.named(
           'insert into public.denuncias_imagem (foto_id, motivo) '
@@ -449,9 +459,7 @@ void main() {
         ),
         parameters: {'foto': photoId},
       );
-    } finally {
-      await conn.execute('reset role');
-    }
+    });
 
     final before = await conn.execute(
       Sql.named(

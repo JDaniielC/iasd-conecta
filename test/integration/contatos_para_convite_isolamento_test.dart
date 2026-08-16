@@ -22,6 +22,10 @@ const _uidMembro = 'c1000000-0000-0000-0000-000000000002';
 const _uidForasteiro = 'c1000000-0000-0000-0000-000000000003';
 const _allUids = [_uidDono, _uidMembro, _uidForasteiro];
 
+/// Visitante: pessoa sem cadastro, e por isso FORA de `_allUids`. TEM sessão —
+/// `signInAnonymously` no arranque do app.
+const _uidVisitor = 'c1000000-0000-0000-0000-0000000000f0';
+
 void main() {
   late Connection conn;
   late String groupId;
@@ -32,10 +36,15 @@ void main() {
     await createTestProfile(conn, _uidDono, name: 'Dona C1');
     await createTestProfile(conn, _uidMembro, name: 'Participante C1');
     await createTestProfile(conn, _uidForasteiro, name: 'De Fora C1');
+    await createTestVisitor(conn, _uidVisitor);
 
     groupId = await createGroup(conn, ownerId: _uidDono, name: 'Grupo C1');
     await joinGroup(conn, groupId, _uidMembro);
-    actionId = await createLooseAction(conn, creatorId: _uidDono, name: 'Ação C1');
+    actionId = await createLooseAction(
+      conn,
+      creatorId: _uidDono,
+      name: 'Ação C1',
+    );
   });
 
   tearDownAll(() async {
@@ -51,38 +60,55 @@ void main() {
       Sql.named('delete from public.grupos where id = @g'),
       parameters: {'g': groupId},
     );
+    await cleanUpTestUser(conn, _uidVisitor);
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
     await conn.close();
   });
 
-  test('sessão anônima nem alcança a listagem', () async {
-    // `anon` não tem `grant execute` na função. Recusa por permissão, não lista
-    // vazia — e aqui isso NÃO é canal lateral: anon não participa de Grupo
-    // nenhum, então não há quantidade escondida que o erro deixasse contar. É
-    // diferente do caso de `acoes`/`votos`, onde o grant fica de propósito
-    // justamente para a linha escondida virar ausência em vez de erro.
+  test('Visitante sem cadastro recebe lista VAZIA, não erro', () async {
+    // A REGRA, e ela não tinha prova até 2026-08-16 — o teste abaixo provava
+    // só o privilégio. Medido: o Visitante ALCANÇA a função e recebe 0 linhas,
+    // porque não participa de Grupo nenhum. Ausência, não erro.
+    final linhas = await asVisitor(
+      conn,
+      _uidVisitor,
+      () => contatosParaConvite(conn, actionId),
+    );
+    expect(linhas, isEmpty);
+  });
+
+  test('sem sessão nenhuma, nem alcança a listagem', () async {
+    // Barreira DIFERENTE da de cima: `anon` não tem `grant execute` na função.
+    // Recusa por permissão, não lista vazia — e aqui isso NÃO é canal lateral,
+    // porque quem chega sem sessão não participa de Grupo nenhum e não há
+    // quantidade escondida que o erro deixasse contar. É diferente do caso de
+    // `acoes`/`votos`, onde o grant fica de propósito justamente para a linha
+    // escondida virar ausência em vez de erro.
     await expectLater(
-      asVisitor(conn, () => contatosParaConvite(conn, actionId)),
+      asAnon(conn, () => contatosParaConvite(conn, actionId)),
       throwsA(isA<ServerException>()),
     );
   });
 
   test('autenticado sem Grupo em comum recebe lista vazia', () async {
     final linhas = await asUser(
-        conn, _uidForasteiro, () => contatosParaConvite(conn, actionId));
+      conn,
+      _uidForasteiro,
+      () => contatosParaConvite(conn, actionId),
+    );
     expect(linhas, isEmpty);
   });
 
   test('quem participa recebe a lista do próprio Grupo', () async {
-    final linhas =
-        await asUser(conn, _uidDono, () => contatosParaConvite(conn, actionId));
-    expect(linhas, isNotEmpty);
-    expect(
-      linhas.map((l) => l['nome_exibido']),
-      contains('Participante C1'),
+    final linhas = await asUser(
+      conn,
+      _uidDono,
+      () => contatosParaConvite(conn, actionId),
     );
+    expect(linhas, isNotEmpty);
+    expect(linhas.map((l) => l['nome_exibido']), contains('Participante C1'));
   });
 
   test('não existe parâmetro pelo qual pedir a lista de outro Grupo', () async {
@@ -97,8 +123,11 @@ void main() {
   });
 
   test('o nome de quem é de fora não vaza para dentro da lista', () async {
-    final linhas =
-        await asUser(conn, _uidDono, () => contatosParaConvite(conn, actionId));
+    final linhas = await asUser(
+      conn,
+      _uidDono,
+      () => contatosParaConvite(conn, actionId),
+    );
     expect(linhas.map((l) => l['nome_exibido']), isNot(contains('De Fora C1')));
   });
 }

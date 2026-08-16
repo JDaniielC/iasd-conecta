@@ -5,8 +5,8 @@ import 'package:postgres/postgres.dart';
 /// Todos eles provam a mesma coisa por ângulos diferentes: a restrição vive na
 /// policy do banco, não no filtro da tela. Por isso nenhum deles pode rodar
 /// como `postgres` — que é dono das tabelas e ignora RLS, provando exatamente
-/// nada. Daí [asUser] e [asVisitor] existirem aqui em vez de copiados em oito
-/// arquivos.
+/// nada. Daí [asUser], [asVisitor] e [asAnon] existirem aqui em vez de copiados
+/// em oito arquivos.
 
 /// Executa [action] com a identidade de [uid], como o PostgREST faria.
 Future<T> asUser<T>(
@@ -16,7 +16,8 @@ Future<T> asUser<T>(
 ) async {
   await conn.execute('set role authenticated');
   await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
+    "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
+  );
   try {
     return await action();
   } finally {
@@ -25,13 +26,65 @@ Future<T> asUser<T>(
   }
 }
 
-/// Executa [action] como Visitante sem cadastro nenhum.
-Future<T> asVisitor<T>(Connection conn, Future<T> Function() action) async {
+/// Executa [action] como **Visitante**: pessoa sem cadastro, com sessão.
+///
+/// ESTA FUNÇÃO MUDOU DE SIGNIFICADO na change `separar-visitante-de-anon`.
+/// Até 2026-08-16 ela fazia `set role anon`, e isso estava errado desde o
+/// primeiro dia: `lib/core/supabase_client.dart` faz `signInAnonymously` no
+/// arranque, antes de `runApp`, então **todo Visitante chega ao banco como
+/// `authenticated`** — inclusive quem nunca criou Perfil.
+///
+/// A confusão custou caro em dois sentidos, medidos ao fechar `anon`: 21
+/// asserções provavam o papel errado, e as que esperavam recusa paravam na
+/// porta do `grant` em vez de na policy que existiam para exercer — verde que
+/// não protege nada. `image_report_repository.dart:15-22` documenta o defeito
+/// de produção que veio da mesma confusão.
+///
+/// Para a superfície SEM credencial nenhuma — `curl` com a chave publicável —
+/// use [asAnon]. Ela não é uma categoria de pessoa.
+///
+/// [uid] precisa ser de um Visitante de verdade: `auth.users` anônimo e sem
+/// linha em `perfis`. Ver `createTestVisitor` em `db_test_helper.dart`.
+Future<T> asVisitor<T>(
+  Connection conn,
+  String uid,
+  Future<T> Function() action,
+) => asUser(conn, uid, action);
+
+/// Executa [action] **sem sessão nenhuma** — a role que o PostgREST usa quando
+/// a requisição chega sem `Authorization`.
+///
+/// Isto NÃO é o Visitante do app (ver [asVisitor]). No app, `anon` só aparece
+/// em duas situações: `curl` com a chave publicável, e o arranque em que
+/// `signInAnonymously` falhou — onde a Home é estática e não consulta o banco.
+///
+/// Use quando o que se quer provar é a superfície sem credencial: privilégio de
+/// função, papel de policy, `grant` de tabela.
+Future<T> asAnon<T>(Connection conn, Future<T> Function() action) async {
+  // OS CLAIMS SAEM ANTES DE ENTRAR, e não é simetria — é o defeito.
+  //
+  // `reset role` NÃO limpa GUC customizado. Se a sessão anterior deixou
+  // `request.jwt.claims` para trás — e 16 das 48 cópias locais de `asUser`
+  // deixam, medido na convergência 1 —, `set role anon` herda o `sub` daquela
+  // pessoa. Medido em 2026-08-16: dentro daqui, `auth.uid()` devolvia
+  // `fd000000-...-0001` em vez de nulo.
+  //
+  // O efeito é o pior possível para um teste: ele diz provar "sem sessão" e
+  // prova "papel anon com a identidade de outra pessoa". Toda policy que usa
+  // `auth.uid()` responde como se ela estivesse ali, e o "não" observado pode
+  // ser o "não" dado a outrem — ou um "sim".
+  //
+  // A proteção existia dentro de UM arquivo
+  // (`church_archive_visibility_test.dart`, antes de 2026-08-16) e se perdeu
+  // ao converter aquele arquivo. Mora aqui agora, que é o único lugar onde
+  // cada papel se define.
+  await conn.execute('reset request.jwt.claims');
   await conn.execute('set role anon');
   try {
     return await action();
   } finally {
     await conn.execute('reset role');
+    await conn.execute('reset request.jwt.claims');
   }
 }
 
@@ -139,7 +192,11 @@ Future<String> createGroupAction(
 
 /// Marca a Ação como vencedora da Rodada, que é o que a torna a Ação de Grupo
 /// que fica no feed (`confirmada = true`).
-Future<void> makeWinner(Connection conn, String roundId, String actionId) async {
+Future<void> makeWinner(
+  Connection conn,
+  String roundId,
+  String actionId,
+) async {
   await conn.execute("set app.bypass_acoes_protecao to 'true'");
   await conn.execute(
     Sql.named('update public.acoes set confirmada = true where id = @a'),

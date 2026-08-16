@@ -79,7 +79,7 @@ void main() {
     () async {
       Object? error;
       try {
-        await asVisitor(
+        await asAnon(
           conn,
           () => conn.execute('select public.expurgar_mensagens_de_acao()'),
         );

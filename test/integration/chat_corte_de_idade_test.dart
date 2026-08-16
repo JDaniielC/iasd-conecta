@@ -21,6 +21,9 @@ const _uidOwner = 'ab000000-0000-0000-0000-000000000001';
 const _uid17 = 'ab000000-0000-0000-0000-000000000002';
 const _uid18 = 'ab000000-0000-0000-0000-000000000003';
 const _uidAnonymized = 'ab000000-0000-0000-0000-000000000004';
+
+/// Visitante: sem cadastro, e por isso sem linha em `perfis`. Tem sessão.
+const _uidVisitor = 'ab000000-0000-0000-0000-0000000000f0';
 const _allUids = [_uidOwner, _uid17, _uid18, _uidAnonymized];
 
 void main() {
@@ -39,6 +42,8 @@ void main() {
       age: 30,
     );
 
+    await createTestVisitor(conn, _uidVisitor);
+
     groupId = await createGroup(conn, ownerId: _uidOwner, name: 'Grupo AB');
     for (final uid in [_uid17, _uid18, _uidAnonymized]) {
       await joinGroup(conn, groupId, uid);
@@ -52,6 +57,10 @@ void main() {
       Sql.named('delete from public.grupos where id = @g'),
       parameters: {'g': groupId},
     );
+    // FORA de `_allUids` de propósito: em outros arquivos uma lista com esse
+    // nome ALIMENTA `createTestProfile`, e Visitante é justamente quem não tem
+    // Perfil. Mesmo nome, dois contratos — a limpeza dele vem à parte.
+    await cleanUpTestUser(conn, _uidVisitor);
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
@@ -99,29 +108,58 @@ void main() {
     expect(id, isNotEmpty);
   });
 
-  test('Visitante — sessão anônima sem Perfil — nem chama, nem lê', () async {
+  test('Visitante sem cadastro não passa no corte, e lê 0', () async {
+    // ESTE é o Visitante do app: sem cadastro, mas COM sessão —
+    // `signInAnonymously` no arranque. Até 2026-08-16 este arquivo o
+    // representava como `anon`, que é a requisição sem credencial nenhuma, e
+    // com isso o cenário "Visitante abre um Grupo" nunca teve prova: o que se
+    // media era o `grant`, não a regra.
+    //
+    // Ele chega à função e à policy, e as duas respondem NÃO — sem linha em
+    // `perfis` não há idade, e `maior_de_idade()` é falso. É "consultei e você
+    // não tem idade", que é diferente de "você não pergunta" (ver o teste
+    // seguinte).
+    expect(
+      await asVisitor(conn, _uidVisitor, () => isOfAge(conn)),
+      isFalse,
+      reason: 'sem Perfil não há idade, e o corte falha fechado',
+    );
+    expect(
+      await asVisitor(
+        conn,
+        _uidVisitor,
+        () => visibleMessageCount(conn, groupId: groupId),
+      ),
+      0,
+      reason: 'a policy filtra, e a resposta é lista vazia — não erro',
+    );
+  });
+
+  test('sem sessão nenhuma — nem chama, nem lê', () async {
     // Este teste esperava `false` de `maior_de_idade()` até 2026-08-14. Agora
     // espera RECUSA, e a mudança é a correção do achado do `pentest-etico`: as
     // funções da change tinham `execute` para `PUBLIC` — o padrão do Postgres
     // para função nova —, então `anon` chamava todas. O `revoke ... from
-    // public` fechou isso, e a resposta certa a Visitante deixou de ser "não" e
-    // passou a ser "você não pergunta".
+    // public` fechou isso, e a resposta deixou de ser "não" e passou a ser
+    // "você não pergunta".
     //
-    // A distinção importa: `false` significa "consultei e você não tem idade";
-    // a exceção significa que a barreira está uma camada antes. Quem afrouxar o
-    // revoke por engano faz este teste voltar a ver `false`, que é o sinal.
+    // A distinção importa, e é a razão de este teste ser IRMÃO do de cima em
+    // vez de o mesmo: `false` significa "consultei e você não tem idade"; a
+    // exceção significa que a barreira está uma camada antes. Quem afrouxar o
+    // revoke por engano faz este teste voltar a ver `false`, que é o sinal —
+    // e o de cima continua verde, porque ele mede outra coisa.
     Object? ageError;
     try {
-      await asVisitor(conn, () => isOfAge(conn));
+      await asAnon(conn, () => isOfAge(conn));
     } catch (e) {
       ageError = e;
     }
     expect(ageError, isA<ServerException>());
 
-    // `anon` também não tem grant em `mensagens`, então nem chega à policy.
+    // Sem sessão também não há grant em `mensagens`, então nem chega à policy.
     Object? error;
     try {
-      await asVisitor(conn, () => visibleMessageCount(conn, groupId: groupId));
+      await asAnon(conn, () => visibleMessageCount(conn, groupId: groupId));
     } catch (e) {
       error = e;
     }

@@ -16,6 +16,10 @@ import 'db_test_helper.dart';
 const _uidConvidante = 'c5000000-0000-0000-0000-000000000001';
 const _uidConvidada = 'c5000000-0000-0000-0000-000000000002';
 const _uidTerceiro = 'c5000000-0000-0000-0000-000000000003';
+
+/// Visitante: pessoa sem cadastro, e por isso sem linha em `perfis`. TEM
+/// sessão — `signInAnonymously` no arranque do app.
+const _uidVisitor = 'c5000000-0000-0000-0000-0000000000f0';
 const _allUids = [_uidConvidante, _uidConvidada, _uidTerceiro];
 
 void main() {
@@ -34,23 +38,40 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final uid in _allUids) {
-      await createTestProfile(conn, uid, name: 'Pessoa ${uid.substring(0, 10)}');
+      await createTestProfile(
+        conn,
+        uid,
+        name: 'Pessoa ${uid.substring(0, 10)}',
+      );
     }
-    groupId = await createGroup(conn, ownerId: _uidConvidante, name: 'Grupo C5');
+    await createTestVisitor(conn, _uidVisitor);
+    groupId = await createGroup(
+      conn,
+      ownerId: _uidConvidante,
+      name: 'Grupo C5',
+    );
     await joinGroup(conn, groupId, _uidConvidada);
     await joinGroup(conn, groupId, _uidTerceiro);
-    actionId =
-        await createLooseAction(conn, creatorId: _uidConvidante, name: 'Ação C5');
+    actionId = await createLooseAction(
+      conn,
+      creatorId: _uidConvidante,
+      name: 'Ação C5',
+    );
 
     await asUser(
       conn,
       _uidConvidante,
-      () => convidarParaAcao(conn,
-          actionId: actionId, groupId: groupId, invitees: [_uidConvidada]),
+      () => convidarParaAcao(
+        conn,
+        actionId: actionId,
+        groupId: groupId,
+        invitees: [_uidConvidada],
+      ),
     );
   });
 
   tearDownAll(() async {
+    await cleanUpTestUser(conn, _uidVisitor);
     await conn.execute(
       Sql.named('delete from public.convites_acao where acao_id = @a'),
       parameters: {'a': actionId},
@@ -81,10 +102,23 @@ void main() {
     expect(await asUser(conn, _uidConvidada, convitesVisiveis), 1);
   });
 
-  test('sessão anônima não lê convite nenhum', () async {
-    // `anon` não tem nem `grant select` na tabela — convite não é público.
+  test('Visitante sem cadastro lê ZERO convites — a policy filtra', () async {
+    // A REGRA, e ela não tinha prova nenhuma até 2026-08-16. O teste abaixo
+    // provava só o privilégio: sob `anon` a consulta para no `grant`, uma
+    // camada antes da policy que decide quem vê convite.
+    //
+    // Medido: o Visitante ALCANÇA `convites_acao` e recebe 0 linhas. Ausência,
+    // não erro — que é a forma certa de esconder, porque erro é contável.
+    expect(await asVisitor(conn, _uidVisitor, convitesVisiveis), 0);
+  });
+
+  test('sem sessão nenhuma, a consulta nem alcança a tabela', () async {
+    // Barreira DIFERENTE da de cima, e por isso teste separado: `anon` não tem
+    // nem `grant select`. Não é a policy dizendo não — é o privilégio.
+    // Afrouxar o grant faz este teste virar "0 linhas" em vez de exceção, e é
+    // esse o sinal.
     await expectLater(
-      asVisitor(conn, convitesVisiveis),
+      asAnon(conn, convitesVisiveis),
       throwsA(isA<ServerException>()),
     );
   });

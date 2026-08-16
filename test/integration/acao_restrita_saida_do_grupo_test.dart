@@ -21,6 +21,13 @@ import 'db_test_helper.dart';
 const _uidOwner = 'a6000000-0000-0000-0000-000000000001';
 const _uidLeaver = 'a6000000-0000-0000-0000-000000000002';
 const _uidRemoved = 'a6000000-0000-0000-0000-000000000003';
+
+/// O Visitante: pessoa sem cadastro, e por isso SEM linha em `perfis`. Tem
+/// sessão — `signInAnonymously` no arranque do app —, então chega ao banco
+/// como `authenticated`. Até 2026-08-16 este teste rodava como `anon`, que é a
+/// requisição sem credencial nenhuma e não é o que o app produz.
+const _uidVisitor = 'a6000000-0000-0000-0000-0000000000f0';
+
 const _allUids = [_uidOwner, _uidLeaver, _uidRemoved];
 
 void main() {
@@ -34,11 +41,16 @@ void main() {
     await createTestProfile(conn, _uidOwner, name: 'Dona A6');
     await createTestProfile(conn, _uidLeaver, name: 'Quem Sai A6');
     await createTestProfile(conn, _uidRemoved, name: 'Quem E Removido A6');
+    await createTestVisitor(conn, _uidVisitor);
 
     groupId = await createGroup(conn, ownerId: _uidOwner, name: 'Grupo A6');
     await joinGroup(conn, groupId, _uidLeaver);
     await joinGroup(conn, groupId, _uidRemoved);
-    roundId = await createVotingRound(conn, groupId: groupId, openedBy: _uidOwner);
+    roundId = await createVotingRound(
+      conn,
+      groupId: groupId,
+      openedBy: _uidOwner,
+    );
 
     restrictedId = await createGroupAction(
       conn,
@@ -55,7 +67,8 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named(
-          'update public.rodadas_votacao set vencedora_id = null where grupo_id = @g'),
+        'update public.rodadas_votacao set vencedora_id = null where grupo_id = @g',
+      ),
       parameters: {'g': groupId},
     );
     await conn.execute(
@@ -74,6 +87,10 @@ void main() {
       Sql.named('delete from public.grupos where id = @g'),
       parameters: {'g': groupId},
     );
+    // FORA de `_allUids` de propósito: em outros arquivos uma lista com esse
+    // nome ALIMENTA `createTestProfile`, e Visitante é justamente quem não tem
+    // Perfil. Mesmo nome, dois contratos — a limpeza dele vem à parte.
+    await cleanUpTestUser(conn, _uidVisitor);
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
@@ -82,7 +99,11 @@ void main() {
 
   test('sair do Grupo esconde a Ação restrita na leitura seguinte', () async {
     expect(
-      await asUser(conn, _uidLeaver, () => visibleActionCount(conn, restrictedId)),
+      await asUser(
+        conn,
+        _uidLeaver,
+        () => visibleActionCount(conn, restrictedId),
+      ),
       1,
       reason: 'enquanto participa, enxerga',
     );
@@ -90,33 +111,47 @@ void main() {
     await asUser(conn, _uidLeaver, () async {
       await conn.execute(
         Sql.named(
-            'delete from public.participacoes_grupo where grupo_id = @g and usuario_id = @u'),
+          'delete from public.participacoes_grupo where grupo_id = @g and usuario_id = @u',
+        ),
         parameters: {'g': groupId, 'u': _uidLeaver},
       );
     });
 
     expect(
-      await asUser(conn, _uidLeaver, () => visibleActionCount(conn, restrictedId)),
+      await asUser(
+        conn,
+        _uidLeaver,
+        () => visibleActionCount(conn, restrictedId),
+      ),
       0,
     );
   });
 
   test('ser removido pelo Dono esconde a Ação restrita', () async {
     expect(
-      await asUser(conn, _uidRemoved, () => visibleActionCount(conn, restrictedId)),
+      await asUser(
+        conn,
+        _uidRemoved,
+        () => visibleActionCount(conn, restrictedId),
+      ),
       1,
     );
 
     await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
-            'delete from public.participacoes_grupo where grupo_id = @g and usuario_id = @u'),
+          'delete from public.participacoes_grupo where grupo_id = @g and usuario_id = @u',
+        ),
         parameters: {'g': groupId, 'u': _uidRemoved},
       );
     });
 
     expect(
-      await asUser(conn, _uidRemoved, () => visibleActionCount(conn, restrictedId)),
+      await asUser(
+        conn,
+        _uidRemoved,
+        () => visibleActionCount(conn, restrictedId),
+      ),
       0,
     );
   });
@@ -131,19 +166,34 @@ void main() {
 
     final r = await conn.execute(
       Sql.named(
-          'select restrita_ao_grupo, cancelada_em from public.acoes where id = @a'),
+        'select restrita_ao_grupo, cancelada_em from public.acoes where id = @a',
+      ),
       parameters: {'a': restrictedId},
     );
     final row = r.single.toColumnMap();
-    expect(row['restrita_ao_grupo'], isTrue,
-        reason: 'arquivar cancela, não reabre');
+    expect(
+      row['restrita_ao_grupo'],
+      isTrue,
+      reason: 'arquivar cancela, não reabre',
+    );
     expect(row['cancelada_em'], isNotNull);
 
     // Quem participava continua enxergando; quem nunca participou, não.
     expect(
-      await asUser(conn, _uidOwner, () => visibleActionCount(conn, restrictedId)),
+      await asUser(
+        conn,
+        _uidOwner,
+        () => visibleActionCount(conn, restrictedId),
+      ),
       1,
     );
-    expect(await asVisitor(conn, () => visibleActionCount(conn, restrictedId)), 0);
+    expect(
+      await asVisitor(
+        conn,
+        _uidVisitor,
+        () => visibleActionCount(conn, restrictedId),
+      ),
+      0,
+    );
   });
 }

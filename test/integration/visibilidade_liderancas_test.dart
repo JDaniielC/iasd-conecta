@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart' as shared;
 import 'db_test_helper.dart';
 
 /// Feature 018 — declaração de Líder/Diretor pendente ou rejeitada deixa de
@@ -38,24 +39,21 @@ const _allUserIds = [
 
 const _groupId = '98000000-0000-0000-0000-0000000000aa';
 
+/// Visitante: pessoa sem cadastro, e por isso FORA de `_allUserIds` — aquela
+/// lista cria Perfil para cada uid, e Visitante é justamente quem não tem.
+const _visitorUserId = '98000000-0000-0000-0000-0000000000f0';
+
 void main() {
   late Connection conn;
 
-  /// Um Visitante sem cadastro nenhum — o role que o PostgREST usa quando não
-  /// há token.
-  Future<void> asVisitor(Future<void> Function() action) async {
-    await conn.execute('set role anon');
-    try {
-      await action();
-    } finally {
-      // Os dois resets. `reset role` não limpa GUC customizado, então sem o
-      // segundo um `set role anon` posterior ainda enxergaria o `sub` antigo e
-      // o teste mentiria — achado registrado em
-      // church_archive_visibility_test.dart:18-22.
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
+  /// Um Visitante: pessoa sem cadastro, COM sessão.
+  ///
+  /// Era uma cópia local que fazia `set role anon`, e estava errada de duas
+  /// formas ao mesmo tempo — o papel (o app coloca todo Visitante em sessão
+  /// anônima, logo `authenticated`) e o fato de ser cópia. Agora delega ao
+  /// helper compartilhado, que é o único lugar onde cada papel se define.
+  Future<void> asVisitor(Future<void> Function() action) =>
+      shared.asVisitor(conn, _visitorUserId, action);
 
   Future<void> asUser(String userId, Future<void> Function() action) async {
     await conn.execute('set role authenticated');
@@ -73,9 +71,7 @@ void main() {
   /// Ids das declarações visíveis para a identidade corrente, dentro do Grupo.
   Future<List<String>> visibleDeclarationUserIds() async {
     final r = await conn.execute(
-      Sql.named(
-        'select usuario_id from public.liderancas where grupo_id = @g',
-      ),
+      Sql.named('select usuario_id from public.liderancas where grupo_id = @g'),
       parameters: {'g': _groupId},
     );
     return r.map((row) => row[0] as String).toList();
@@ -83,9 +79,7 @@ void main() {
 
   Future<int> countVisibleDeclarations() async {
     final r = await conn.execute(
-      Sql.named(
-        'select count(*) from public.liderancas where grupo_id = @g',
-      ),
+      Sql.named('select count(*) from public.liderancas where grupo_id = @g'),
       parameters: {'g': _groupId},
     );
     return r.first[0] as int;
@@ -94,9 +88,13 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     for (final userId in _allUserIds) {
-      await createTestProfile(conn, userId,
-          name: 'Pessoa ${userId.substring(31)}');
+      await createTestProfile(
+        conn,
+        userId,
+        name: 'Pessoa ${userId.substring(31)}',
+      );
     }
+    await createTestVisitor(conn, _visitorUserId);
     await createTestDistrictAdmin(conn, _adminUserId);
 
     await conn.execute(
@@ -151,6 +149,7 @@ void main() {
       ),
       parameters: {'u': _adminUserId},
     );
+    await cleanUpTestUser(conn, _visitorUserId);
     for (final userId in _allUserIds) {
       await cleanUpTestUser(conn, userId);
     }
@@ -165,48 +164,52 @@ void main() {
         visible = await visibleDeclarationUserIds();
       });
 
-      expect(visible, [_confirmedUserId],
-          reason: 'a identificação do Líder confirmado é pública, e só ela');
-      expect(visible, isNot(contains(_rejectedUserId)),
-          reason: 'quem foi rejeitado não vira notícia pública');
+      expect(visible, [
+        _confirmedUserId,
+      ], reason: 'a identificação do Líder confirmado é pública, e só ela');
+      expect(
+        visible,
+        isNot(contains(_rejectedUserId)),
+        reason: 'quem foi rejeitado não vira notícia pública',
+      );
       expect(visible, isNot(contains(_pendingUserId)));
     },
   );
 
-  test(
-    'FR-002/SC-001: Usuário cadastrado que não é o autor vê o mesmo que o '
-    'Visitante',
-    () async {
-      late List<String> visible;
-      await asUser(_otherUserId, () async {
-        visible = await visibleDeclarationUserIds();
-      });
+  test('FR-002/SC-001: Usuário cadastrado que não é o autor vê o mesmo que o '
+      'Visitante', () async {
+    late List<String> visible;
+    await asUser(_otherUserId, () async {
+      visible = await visibleDeclarationUserIds();
+    });
 
-      // Ter cadastro não é motivo. O 2º disjunto é sobre ser a própria pessoa,
-      // não sobre estar logada.
-      expect(visible, [_confirmedUserId]);
-    },
-  );
+    // Ter cadastro não é motivo. O 2º disjunto é sobre ser a própria pessoa,
+    // não sobre estar logada.
+    expect(visible, [_confirmedUserId]);
+  });
 
-  test(
-    'FR-002/FR-008: a própria pessoa vê a própria declaração em qualquer '
-    'estado',
-    () async {
-      late List<String> seenByRejected;
-      await asUser(_rejectedUserId, () async {
-        seenByRejected = await visibleDeclarationUserIds();
-      });
-      expect(seenByRejected, unorderedEquals([_confirmedUserId, _rejectedUserId]),
-          reason: 'ela precisa saber que foi rejeitada');
+  test('FR-002/FR-008: a própria pessoa vê a própria declaração em qualquer '
+      'estado', () async {
+    late List<String> seenByRejected;
+    await asUser(_rejectedUserId, () async {
+      seenByRejected = await visibleDeclarationUserIds();
+    });
+    expect(
+      seenByRejected,
+      unorderedEquals([_confirmedUserId, _rejectedUserId]),
+      reason: 'ela precisa saber que foi rejeitada',
+    );
 
-      late List<String> seenByPending;
-      await asUser(_pendingUserId, () async {
-        seenByPending = await visibleDeclarationUserIds();
-      });
-      expect(seenByPending, unorderedEquals([_confirmedUserId, _pendingUserId]),
-          reason: 'e quem espera precisa saber que ainda espera');
-    },
-  );
+    late List<String> seenByPending;
+    await asUser(_pendingUserId, () async {
+      seenByPending = await visibleDeclarationUserIds();
+    });
+    expect(
+      seenByPending,
+      unorderedEquals([_confirmedUserId, _pendingUserId]),
+      reason: 'e quem espera precisa saber que ainda espera',
+    );
+  });
 
   test('FR-003/FR-007: Administrador do distrito vê todas', () async {
     late List<String> visible;

@@ -19,6 +19,13 @@ import 'db_test_helper.dart';
 const _uidOwner = 'a1000000-0000-0000-0000-000000000001';
 const _uidMember = 'a1000000-0000-0000-0000-000000000002';
 const _uidOutsider = 'a1000000-0000-0000-0000-000000000003';
+
+/// O Visitante: pessoa sem cadastro, e por isso SEM linha em `perfis`. Tem
+/// sessão — `signInAnonymously` no arranque do app —, então chega ao banco
+/// como `authenticated`. Até 2026-08-16 este teste rodava como `anon`, que é a
+/// requisição sem credencial nenhuma e não é o que o app produz.
+const _uidVisitor = 'a1000000-0000-0000-0000-0000000000f0';
+
 const _allUids = [_uidOwner, _uidMember, _uidOutsider];
 
 void main() {
@@ -33,10 +40,15 @@ void main() {
     await createTestProfile(conn, _uidOwner, name: 'Dona A1');
     await createTestProfile(conn, _uidMember, name: 'Participante A1');
     await createTestProfile(conn, _uidOutsider, name: 'De Fora A1');
+    await createTestVisitor(conn, _uidVisitor);
 
     groupId = await createGroup(conn, ownerId: _uidOwner);
     await joinGroup(conn, groupId, _uidMember);
-    roundId = await createVotingRound(conn, groupId: groupId, openedBy: _uidOwner);
+    roundId = await createVotingRound(
+      conn,
+      groupId: groupId,
+      openedBy: _uidOwner,
+    );
 
     restrictedId = await createGroupAction(
       conn,
@@ -60,7 +72,8 @@ void main() {
   tearDownAll(() async {
     await conn.execute(
       Sql.named(
-          'update public.rodadas_votacao set vencedora_id = null where grupo_id = @g'),
+        'update public.rodadas_votacao set vencedora_id = null where grupo_id = @g',
+      ),
       parameters: {'g': groupId},
     );
     await conn.execute(
@@ -75,6 +88,10 @@ void main() {
       Sql.named('delete from public.grupos where id = @g'),
       parameters: {'g': groupId},
     );
+    // FORA de `_allUids` de propósito: em outros arquivos uma lista com esse
+    // nome ALIMENTA `createTestProfile`, e Visitante é justamente quem não tem
+    // Perfil. Mesmo nome, dois contratos — a limpeza dele vem à parte.
+    await cleanUpTestUser(conn, _uidVisitor);
     for (final uid in _allUids) {
       await cleanUpTestUser(conn, uid);
     }
@@ -82,32 +99,56 @@ void main() {
   });
 
   test('Visitante não vê a Ação restrita', () async {
-    final n = await asVisitor(conn, () => visibleActionCount(conn, restrictedId));
+    final n = await asVisitor(
+      conn,
+      _uidVisitor,
+      () => visibleActionCount(conn, restrictedId),
+    );
     expect(n, 0);
   });
 
   test('autenticado de fora do Grupo não vê a Ação restrita', () async {
-    final n =
-        await asUser(conn, _uidOutsider, () => visibleActionCount(conn, restrictedId));
+    final n = await asUser(
+      conn,
+      _uidOutsider,
+      () => visibleActionCount(conn, restrictedId),
+    );
     expect(n, 0);
   });
 
   test('quem participa do Grupo vê a Ação restrita', () async {
-    final n =
-        await asUser(conn, _uidMember, () => visibleActionCount(conn, restrictedId));
+    final n = await asUser(
+      conn,
+      _uidMember,
+      () => visibleActionCount(conn, restrictedId),
+    );
     expect(n, 1);
   });
 
   test('quem criou vê a própria Ação restrita', () async {
-    final n =
-        await asUser(conn, _uidOwner, () => visibleActionCount(conn, restrictedId));
+    final n = await asUser(
+      conn,
+      _uidOwner,
+      () => visibleActionCount(conn, restrictedId),
+    );
     expect(n, 1);
   });
 
   test('a Ação pública do mesmo Grupo continua visível para todos', () async {
-    expect(await asVisitor(conn, () => visibleActionCount(conn, publicId)), 1);
     expect(
-      await asUser(conn, _uidOutsider, () => visibleActionCount(conn, publicId)),
+      await asVisitor(
+        conn,
+        _uidVisitor,
+        () => visibleActionCount(conn, publicId),
+      ),
+      1,
+    );
+    expect(
+      await asUser(
+        conn,
+        _uidOutsider,
+        () => visibleActionCount(conn, publicId),
+      ),
       1,
     );
   });
@@ -120,7 +161,10 @@ void main() {
       _uidOutsider,
       () => conn.execute('select id from public.acoes'),
     );
-    expect(rows.map((r) => r.toColumnMap()['id']), isNot(contains(restrictedId)));
+    expect(
+      rows.map((r) => r.toColumnMap()['id']),
+      isNot(contains(restrictedId)),
+    );
     expect(rows.map((r) => r.toColumnMap()['id']), contains(publicId));
   });
 }

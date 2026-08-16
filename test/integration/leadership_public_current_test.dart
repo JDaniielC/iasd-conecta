@@ -1,9 +1,16 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidLider = '90000000-0000-0000-0000-000000000050';
+
+/// Visitante: pessoa sem cadastro, e por isso sem linha em `perfis`. TEM
+/// sessão — `signInAnonymously` no arranque do app. Até 2026-08-16 este arquivo
+/// o representava como `anon`, que é a requisição sem credencial nenhuma e não
+/// é o que o app produz.
+const _uidVisitor = '90000000-0000-0000-0000-0000000000f0';
 
 void main() {
   late Connection conn;
@@ -12,6 +19,7 @@ void main() {
   setUpAll(() async {
     conn = await openTestConnection();
     await createTestProfile(conn, _uidLider, name: 'Lider PublicCurrent');
+    await createTestVisitor(conn, _uidVisitor);
     final groupRows = await conn.execute(
       Sql.named(
         "insert into public.grupos (nome, categoria, horario, local, dono_id) "
@@ -47,34 +55,36 @@ void main() {
       Sql.named('delete from public.grupos where id = @id'),
       parameters: {'id': groupId},
     );
+    await cleanUpTestUser(conn, _uidVisitor);
     await cleanUpTestUser(conn, _uidLider);
     await conn.close();
   });
 
-  test('FR-006/FR-008: só a confirmada do ano corrente conta como atual', () async {
-    final rows = await conn.execute(
-      Sql.named(
-        'select ano from public.liderancas '
-        'where grupo_id = @grupo and confirmado_em is not null and rejeitado_em is null '
-        'and ano = extract(year from now())::int',
-      ),
-      parameters: {'grupo': groupId},
-    );
-    expect(rows, hasLength(1));
-  });
-
-  test('FR-006: visível ao role anon (Visitante sem cadastro)', () async {
-    await conn.execute('set role anon');
-    try {
+  test(
+    'FR-006/FR-008: só a confirmada do ano corrente conta como atual',
+    () async {
       final rows = await conn.execute(
         Sql.named(
-          'select ano from public.liderancas where grupo_id = @grupo and confirmado_em is not null',
+          'select ano from public.liderancas '
+          'where grupo_id = @grupo and confirmado_em is not null and rejeitado_em is null '
+          'and ano = extract(year from now())::int',
+        ),
+        parameters: {'grupo': groupId},
+      );
+      expect(rows, hasLength(1));
+    },
+  );
+
+  test('FR-006: visível ao Visitante sem cadastro', () async {
+    await asVisitor(conn, _uidVisitor, () async {
+      final rows = await conn.execute(
+        Sql.named(
+          'select ano from public.liderancas where grupo_id = @grupo '
+          'and confirmado_em is not null',
         ),
         parameters: {'grupo': groupId},
       );
       expect(rows, hasLength(2));
-    } finally {
-      await conn.execute('reset role');
-    }
+    });
   });
 }

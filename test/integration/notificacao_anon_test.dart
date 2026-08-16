@@ -39,7 +39,7 @@ void main() {
   test('anon não lê a tabela', () async {
     Object? erro;
     try {
-      await asVisitor(conn, () => notificacoesVisiveis(conn));
+      await asAnon(conn, () => notificacoesVisiveis(conn));
     } catch (e) {
       erro = e;
     }
@@ -49,7 +49,7 @@ void main() {
   test('anon não lê a view', () async {
     Object? erro;
     try {
-      await asVisitor(conn, () => notificacoesAtivas(conn));
+      await asAnon(conn, () => notificacoesAtivas(conn));
     } catch (e) {
       erro = e;
     }

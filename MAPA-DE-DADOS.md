@@ -139,18 +139,68 @@ continua nulo, então a tela escreve "mensagem de conta excluída" e não
 na Política**: mensagem de **terceiro** que cite a pessoa **não** é apagada
 por aqui. Aquilo é texto de outra pessoa, e sai por denúncia.
 
-**Moderação é humana e reativa.** Não há filtro de palavrão, análise de
-conteúdo nem varredura. `palavras_bloqueadas` e `nome_valido()` existem e
-seriam reuso de uma linha, mas foram desenhados para barrar um nome de
-cadastro por substring — `like '%...%'` sem fronteira de palavra produz falso
-positivo em texto corrido e nenhum caminho para a pessoa entender a recusa.
-Omitir isto deixaria subentendido um controle que não existe.
+**Moderação é humana e reativa para o que a lista não pega.** ~~Não há filtro
+de palavrão, análise de conteúdo nem varredura.~~ **Corrigido em 2026-08-16**:
+a frase riscada virou FALSA com a change `filtro-e-intervalo-de-mensagem`, e
+ficou aqui alguns dias dentro do documento que é o rascunho do ROPA (art. 37).
+Achada pelo `advogado-digital`, junto com a gêmea dela na Política de
+Privacidade.
+
+O que passa a valer:
+
+- **Existe UMA leitura automática, e é só ela**: `palavra_bloqueada_em(text)`
+  compara as palavras da mensagem com `palavras_bloqueadas_mensagem` por
+  palavra inteira (regex `\y`), sem acento e sem caixa. Casou, o gatilho
+  `mensagens_filtro_de_palavra_trigger` recusa **antes de gravar** — a linha
+  não existe, e o canal de tempo real não emite evento. O mesmo vale no
+  `motivo` de `denuncias_mensagem`.
+- **Não há análise de conteúdo, IA nem varredura.** A comparação é com uma
+  lista, e nada além dela.
+- **A mensagem recusada não vira dado**: não é gravada, não é logada, não há
+  contador de tentativa. Ver a seção de conferência acima.
+- **A lista é outra**, e não `palavras_bloqueadas`: aquela foi desenhada para
+  barrar NOME de cadastro por substring, e `like '%...%'` sem fronteira de
+  palavra produz falso positivo em texto corrido. Duas listas, duas regras de
+  casamento, de propósito.
+- **O limite continua declarado**: palavra inteira não pega grafia alterada
+  nem ofensa montada sem palavrão, e esse é o caso comum. Omitir isto
+  deixaria subentendido um controle que não existe — o mesmo motivo pelo qual
+  a frase antiga foi escrita, aplicado ao estado novo.
 
 **Tempo real**: `public.mensagens` está na publicação `supabase_realtime`, com RLS ligada. É a segunda tabela publicada do projeto, e a
 diferença em relação à primeira importa: em `notificacoes` o canal carrega um
 sinal, aqui ele carrega o **texto**. A RLS no canal é a única barreira, e está
 provada com sessões reais em `test/integration/chat_realtime_test.dart` — não
 por revisão.
+
+## Conferência: `filtro-e-intervalo-de-mensagem` NÃO acrescenta dado (2026-08-16)
+
+Esta seção existe para registrar uma **ausência**, e ausência não conferida é
+palpite. A change acrescentou filtro de palavra e limite de ritmo à conversa, e
+as duas coisas soam como se guardassem alguma coisa sobre a pessoa. Não guardam.
+
+Conferido em `supabase/migrations/20260816160000_filtro_e_intervalo_de_mensagem.sql`:
+
+- **Nenhum `alter table ... add column`.** A migration tem exatamente um
+  `create table` — `palavras_bloqueadas_mensagem (palavra text primary key)` —
+  e a coluna guarda uma palavra que o distrito não aceita, não um dado de
+  pessoa. Gêmea de `palavras_bloqueadas`, que já estava fora deste documento
+  pelo mesmo motivo.
+- **Nenhuma tabela de tentativa, contador ou log.** O intervalo e o teto se
+  calculam do `created_at` que `mensagens` já tinha. Um contador de tentativa
+  seria dado de COMPORTAMENTO — quando esta pessoa tentou falar e quantas
+  vezes —, e o projeto já recusou por escrito criar dado desse tipo por
+  conveniência (`lib/features/news/data/news_repository.dart:7-16`).
+- **A recusa não deixa rastro.** Provado, e não só afirmado:
+  `ritmo_de_mensagem_test.dart`, caso `3.4`, lê o corpo das três funções de
+  gatilho em `pg_proc` e reprova se qualquer uma contiver `insert`, `update`,
+  `delete`, `truncate` ou `copy`.
+- O resto da migration é função, gatilho e um índice
+  (`mensagens (autor_id, created_at desc)`). Índice não é dado novo: ele
+  reorganiza o que já estava mapeado na seção Conversa.
+
+Consequência para este documento: **nada muda**. A seção Conversa continua
+válida como está.
 
 ## Classificação de sensibilidade (LGPD art. 5º, II)
 

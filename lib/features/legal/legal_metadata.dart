@@ -50,8 +50,26 @@ abstract final class LegalMetadata {
   /// TERCEIRO que cite a pessoa não sai pela exclusão de conta. Sobe porque
   /// ADICIONA tratamento: quem se cadastrar agora aceita algo diferente de
   /// quem se cadastrou antes.
-  static const version = '1.5';
-  static const effectiveDate = '14 de agosto de 2026';
+  /// 1.6 (change `filtro-e-intervalo-de-mensagem`): o app passou a RECUSAR o
+  /// que a pessoa escreve, na escrita, sem ninguém no meio — filtro de palavra
+  /// na mensagem e no motivo da denúncia, e limite de ritmo de 3 s e 20 por 5
+  /// minutos por conversa. **Nenhum dado pessoal novo é tratado**: o filtro não
+  /// guarda nada e o ritmo se calcula do `created_at` que a mensagem já tinha.
+  /// Sobe assim mesmo, e o precedente é a 1.2, que também não adicionou
+  /// tratamento: quem aceitou a 1.5 leu nos Termos que "nada do que você
+  /// escreve é checado antes de aparecer", e isso deixou de ser verdade. Versão
+  /// existe para separar quem leu a afirmação antiga de quem leu a nova —
+  /// manter 1.5 seria carimbar os dois grupos como se tivessem lido o mesmo
+  /// texto. Some-se que a recusa é decisão automatizada com efeito sobre o
+  /// titular (art. 20), e o direito de revisão só se exerce sobre uma regra que
+  /// a pessoa sabe que existe.
+  ///
+  /// A Política de Privacidade entrou nesta versão junto com os Termos, e não
+  /// por simetria: ela tinha a MESMA afirmação falsa, no documento que existe
+  /// para não mentir para a titular. Publicar 1.6 sem corrigi-la teria
+  /// carimbado consentimento sob texto com afirmação falsa dentro.
+  static const version = '1.6';
+  static const effectiveDate = '16 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

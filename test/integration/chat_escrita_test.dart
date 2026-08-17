@@ -43,7 +43,22 @@ void main() {
         age: 30,
       );
     }
-    groupId = await createGroup(conn, ownerId: _uidOwner, name: 'Grupo AE');
+  });
+
+  // UM GRUPO POR CASO, e não um só no `setUpAll`. Desde a change
+  // `filtro-e-intervalo-de-mensagem` o banco recusa duas mensagens da mesma
+  // pessoa no MESMO chat dentro de 3 segundos, e três casos aqui escrevem com
+  // sucesso pelo mesmo autor. Compartilhar o Grupo faria o segundo falhar por
+  // ritmo — recusa correta, mas de outra regra que não a que o caso mede.
+  var groupSeq = 0;
+  setUp(() async {
+    // `grupos.nome` é `unique` (20260723220703:6), então o nome carrega o
+    // contador.
+    groupId = await createGroup(
+      conn,
+      ownerId: _uidOwner,
+      name: 'Grupo AE ${groupSeq++}',
+    );
     await joinGroup(conn, groupId, _uidOther);
   });
 
@@ -157,7 +172,7 @@ void main() {
     final other = await createGroup(
       conn,
       ownerId: _uidOwner,
-      name: 'Grupo AE 2',
+      name: 'Grupo AE destino',
     );
 
     for (final (sql, params) in [

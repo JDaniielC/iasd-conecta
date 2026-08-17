@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +9,8 @@ import '../../../core/theme/app_theme.dart';
 import '../chat_providers.dart';
 import '../domain/chat_state.dart';
 import '../domain/message.dart';
+import '../domain/send_refusal.dart';
+import '../domain/send_refusal_message.dart';
 
 /// A conversa de um Grupo ou de uma Ação.
 ///
@@ -49,11 +53,113 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   final _scroll = ScrollController();
   var _sending = false;
 
+  /// A última recusa do banco, enquanto ela ainda importa.
+  SendRefusal? _refusal;
+
+  /// Quanto ainda falta para o envio reabrir. Nulo quando não há espera — é o
+  /// caso da recusa por palavra, que se corrige editando o texto e não
+  /// esperando.
+  ///
+  /// **CONTAGEM E NÃO HORÁRIO-ALVO.** Guardar um `DateTime` de quando libera e
+  /// comparar com `DateTime.now()` parece mais correto, e é pior por dois
+  /// motivos. O prático: `DateTime.now()` não anda em teste de widget — o
+  /// relógio que `tester.pump` move é o dos `Timer`, não o do calendário —,
+  /// então a contagem regressiva ficaria sem nenhuma prova de que anda. O de
+  /// desenho: quem decide é o servidor, sempre. Esta contagem é cortesia para a
+  /// pessoa não apertar em vão; se ela atrasar um segundo, o custo é um segundo
+  /// de espera a mais, e nunca um envio liberado cedo demais.
+  Duration? _remaining;
+
+  Timer? _ticker;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onTextChanged);
+  }
+
   @override
   void dispose() {
+    _ticker?.cancel();
+    _controller.removeListener(_onTextChanged);
     _controller.dispose();
     _scroll.dispose();
     super.dispose();
+  }
+
+  /// A faixa de palavra bloqueada some assim que a pessoa mexe no texto.
+  ///
+  /// **As duas recusas expiram de jeitos diferentes, e é por isso que existe
+  /// este listener.** A de ritmo tem `retryAfter`, então o relógio a apaga
+  /// sozinho. A de palavra não tem tempo — ela se corrige EDITANDO —, e sem
+  /// isto ficava na tela até um envio dar certo: "a palavra X não é aceita,
+  /// troque essa parte" continuava dito depois de a pessoa ter trocado.
+  ///
+  /// Só a de palavra sai daqui. Apagar a de ritmo ao digitar seria mentir ao
+  /// contrário: o envio continua fechado, e a explicação de por quê tem de
+  /// continuar à vista.
+  void _onTextChanged() {
+    if (_refusal?.kind == SendRefusalKind.blockedWord) _clearRefusal();
+  }
+
+  /// Registra a recusa e, quando ela é de ritmo, fecha o envio até dar a hora.
+  ///
+  /// **O TEXTO DIGITADO NÃO É TOCADO AQUI, e é metade do requisito.** Só o
+  /// caminho de sucesso limpa o campo. Perder a frase por causa de uma recusa
+  /// que se corrige esperando 3 segundos seria transformar um limite de ritmo
+  /// numa punição.
+  void _applyRefusal(SendRefusal refusal) {
+    _ticker?.cancel();
+    setState(() {
+      _refusal = refusal;
+      _remaining = refusal.retryAfter;
+    });
+
+    if (_remaining != null) {
+      _startTicker();
+      return;
+    }
+
+    // RECUSA DE RITMO SEM TEMPO. `retryAfter` nulo acontece quando o `hint` não
+    // chega ou não é número — o caso que `SendRefusal._seconds` trata de
+    // propósito. Aqui não há relógio para descontar, e sem esta guarda a faixa
+    // ficava na tela para sempre: `_onTextChanged` só apaga a de palavra, e
+    // nenhum outro caminho a alcançava.
+    //
+    // O envio fica ABERTO, e isso é decisão: a tela não sabe até quando esperar,
+    // e fechar o botão por tempo indeterminado seria pior do que deixar a pessoa
+    // tentar e o servidor decidir. O que expira é só a explicação, depois do
+    // tempo de leitura dela.
+    if (refusal.kind != SendRefusalKind.blockedWord) {
+      _ticker = Timer(const Duration(seconds: 5), () {
+        if (mounted) _clearRefusal();
+      });
+    }
+  }
+
+  /// Desconta um segundo por vez até liberar.
+  void _startTicker() {
+    // O ENVIO VOLTA SOZINHO. Sem o relógio, o botão ficaria fechado até a
+    // pessoa digitar alguma coisa — e ela ficaria olhando um contador parado
+    // sem saber se já pode tentar.
+    _ticker = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) return timer.cancel();
+      final left = _remaining! - const Duration(seconds: 1);
+      if (left <= Duration.zero) {
+        timer.cancel();
+        _clearRefusal();
+      } else {
+        setState(() => _remaining = left);
+      }
+    });
+  }
+
+  void _clearRefusal() {
+    _ticker?.cancel();
+    setState(() {
+      _refusal = null;
+      _remaining = null;
+    });
   }
 
   /// A TELA NÃO COMPÕE LISTA, e é a costura da convergência 5.
@@ -68,11 +174,18 @@ class _ChatPageState extends ConsumerState<ChatPage> {
   Future<void> _send() async {
     final text = _controller.text.trim();
     if (text.isEmpty || text.length > _maxLength) return;
+    if (_remaining != null) return;
 
     setState(() => _sending = true);
     try {
       await ref.read(chatProvider(widget.space).notifier).send(text);
       _controller.clear();
+      if (mounted) _clearRefusal();
+    } on SendRefusal catch (refusal) {
+      // A recusa que o banco EXPLICA fica na tela, não num aviso que some. Um
+      // `SnackBar` de três segundos para uma espera de três segundos é a pessoa
+      // perdendo a explicação junto com o tempo.
+      if (mounted) _applyRefusal(refusal);
     } catch (_) {
       if (mounted) _warn('Não deu pra enviar agora. Tente de novo.');
     } finally {
@@ -149,6 +262,8 @@ class _ChatPageState extends ConsumerState<ChatPage> {
               controller: _controller,
               sending: _sending,
               onSend: _send,
+              refusal: _refusal,
+              remaining: _remaining,
             ),
         ],
       ),
@@ -366,57 +481,65 @@ class _MessageActions extends ConsumerWidget {
     }
   }
 
+  /// Abre o diálogo de denúncia e insiste até dar certo ou a pessoa desistir.
+  ///
+  /// **O LAÇO É O PONTO, e ele nasceu de um efeito colateral desta change.** O
+  /// filtro de palavra passou a valer no `motivo`, e a versão anterior deste
+  /// método fechava o diálogo antes de escrever: a recusa chegava por
+  /// `SnackBar`, o `controller` já tinha sido descartado, e o texto se perdia.
+  ///
+  /// Quem denuncia uma ofensa costuma CITAR a ofensa. O desenho antigo
+  /// significava que denunciar um palavrão era ser recusado e ter de reescrever
+  /// do zero — desestimulando exatamente o mecanismo em que a moderação deste
+  /// app se apoia. Achado pelo agente `advogado-digital` na revisão dos Termos.
+  ///
+  /// Agora o texto vive fora do diálogo e sobrevive a quantas recusas
+  /// acontecerem, e a explicação aparece DENTRO dele, colada ao campo que
+  /// precisa mudar.
   Future<void> _report(BuildContext context, WidgetRef ref) async {
-    final controller = TextEditingController();
-    // MOTIVO OBRIGATÓRIO, e a recusa é local: o `check` do banco também recusa
-    // motivo vazio, mas chegar lá para ouvir não é resposta que se dê a quem
-    // está denunciando alguma coisa.
-    final reason = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Denunciar esta mensagem'),
-        content: TextField(
-          controller: controller,
-          maxLines: 3,
-          autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'O que há de errado?',
-            hintText: 'Conte com suas palavras. Quem analisa lê isto.',
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancelar'),
-          ),
-          FilledButton(
-            onPressed: () {
-              final text = controller.text.trim();
-              if (text.isEmpty) return;
-              Navigator.pop(context, text);
-            },
-            child: const Text('Denunciar'),
-          ),
-        ],
-      ),
-    );
-    controller.dispose();
-    if (reason == null || !context.mounted) return;
+    var draft = '';
+    String? refusalMessage;
 
-    try {
-      await ref.read(chatRepositoryProvider).reportMessage(message.id, reason);
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Denúncia enviada. Quem cuida do espaço vai ver.'),
-          ),
-        );
-      }
-    } catch (_) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Não deu pra denunciar agora.')),
-        );
+    while (true) {
+      // A partir da segunda volta há um `await` atrás: sem esta guarda, uma
+      // tela fechada durante o envio reabriria o diálogo sobre nada.
+      if (!context.mounted) return;
+
+      final reason = await showDialog<String>(
+        context: context,
+        builder: (context) => _ReportDialog(
+          initialText: draft,
+          refusalMessage: refusalMessage,
+        ),
+      );
+      if (reason == null || !context.mounted) return;
+      draft = reason;
+
+      try {
+        await ref
+            .read(chatRepositoryProvider)
+            .reportMessage(message.id, reason);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Denúncia enviada. Quem cuida do espaço vai ver.'),
+            ),
+          );
+        }
+        return;
+      } on SendRefusal catch (refusal) {
+        // Só a recusa que a pessoa CONSEGUE corrigir reabre o diálogo. Não há
+        // limite de ritmo em denúncia — denunciar não é conversar, e um limite
+        // aqui protegeria quem está sendo denunciado —, então na prática esta é
+        // sempre a palavra bloqueada.
+        refusalMessage = sendRefusalMessage(refusal);
+      } catch (_) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Não deu pra denunciar agora.')),
+          );
+        }
+        return;
       }
     }
   }
@@ -449,16 +572,115 @@ class _MessageActions extends ConsumerWidget {
   }
 }
 
+/// O diálogo de denúncia. `StatefulWidget` e não um `AlertDialog` montado
+/// inline, e o motivo é o ciclo de vida do `TextEditingController`.
+///
+/// Quem cria o controller precisa descartá-lo, e um controller criado ao lado do
+/// `showDialog` só pode ser descartado depois que o `await` volta — que é ANTES
+/// de a animação de saída terminar. O `TextField` ainda é reconstruído nesses
+/// quadros finais e bate num controller morto ("A TextEditingController was
+/// used after being disposed"). Medido pelo teste de widget da denúncia
+/// recusada, que reabre o diálogo e é o único caminho que chega até lá.
+///
+/// Com o controller dentro de um `State`, quem escolhe a hora do `dispose` é o
+/// Flutter, e ele escolhe certo.
+///
+/// O RASCUNHO NÃO MORA AQUI. Ele volta pelo `Navigator.pop` e é o chamador que
+/// o guarda entre uma tentativa e outra — este widget é descartado a cada
+/// recusa, e o que ele guardasse morreria junto.
+class _ReportDialog extends StatefulWidget {
+  const _ReportDialog({required this.initialText, this.refusalMessage});
+
+  final String initialText;
+
+  /// Por que a tentativa anterior foi recusada. Nulo na primeira.
+  final String? refusalMessage;
+
+  @override
+  State<_ReportDialog> createState() => _ReportDialogState();
+}
+
+class _ReportDialogState extends State<_ReportDialog> {
+  late final _controller = TextEditingController(text: widget.initialText);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final refusalMessage = widget.refusalMessage;
+
+    return AlertDialog(
+      title: const Text('Denunciar esta mensagem'),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // A explicação fica COLADA ao campo que precisa mudar. Num `SnackBar`
+          // ela apareceria sobre a conversa, longe do texto que a pessoa
+          // acabou de escrever e sem dizer onde mexer.
+          if (refusalMessage != null) ...[
+            Text(
+              refusalMessage,
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.sm),
+          ],
+          TextField(
+            controller: _controller,
+            maxLines: 3,
+            autofocus: true,
+            decoration: const InputDecoration(
+              labelText: 'O que há de errado?',
+              hintText: 'Conte com suas palavras. Quem analisa lê isto.',
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () {
+            // MOTIVO OBRIGATÓRIO, e a recusa de vazio é local: o `check` do
+            // banco também recusa motivo vazio, mas chegar lá para ouvir não é
+            // resposta que se dê a quem está denunciando alguma coisa.
+            final text = _controller.text.trim();
+            if (text.isEmpty) return;
+            Navigator.pop(context, text);
+          },
+          child: const Text('Denunciar'),
+        ),
+      ],
+    );
+  }
+}
+
 class _Composer extends StatefulWidget {
   const _Composer({
     required this.controller,
     required this.sending,
     required this.onSend,
+    this.refusal,
+    this.remaining,
   });
 
   final TextEditingController controller;
   final bool sending;
   final Future<void> Function() onSend;
+
+  /// A recusa em vigor, quando há uma.
+  final SendRefusal? refusal;
+
+  /// Quanto falta para o envio reabrir. Nulo quando não há espera.
+  final Duration? remaining;
 
   @override
   State<_Composer> createState() => _ComposerState();
@@ -483,7 +705,9 @@ class _ComposerState extends State<_Composer> {
   Widget build(BuildContext context) {
     final length = widget.controller.text.trim().length;
     final tooLong = length > _maxLength;
-    final canSend = !widget.sending && length > 0 && !tooLong;
+    final waiting = widget.remaining != null;
+    final canSend = !widget.sending && length > 0 && !tooLong && !waiting;
+    final refusal = widget.refusal;
 
     return SafeArea(
       child: Padding(
@@ -491,6 +715,36 @@ class _ComposerState extends State<_Composer> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            // A RECUSA VAI ACIMA DO CAMPO, e a largura de celular é o motivo.
+            // Ao lado do campo ela espremeria a digitação; num `SnackBar` ela
+            // sumiria antes da espera acabar. Aqui ela ocupa a linha inteira,
+            // quebra em quantas linhas precisar e some sozinha quando o tempo
+            // passa.
+            if (refusal != null)
+              Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      refusal.kind == SendRefusalKind.blockedWord
+                          ? Icons.block_outlined
+                          : Icons.schedule_outlined,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(
+                        sendRefusalMessage(refusal, remaining: widget.remaining),
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [

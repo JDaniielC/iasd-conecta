@@ -258,16 +258,37 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'app, no Supabase, em servidor no Brasil. Ela não passa por '
               'nenhum outro serviço e não sai do país.',
             ),
+            // ESTE PARÁGRAFO AFIRMAVA O CONTRÁRIO até 2026-08-16, e a frase
+            // antiga ("não existe leitura automática do que você escreve")
+            // virou declaração FALSA no dia em que
+            // `mensagens_filtro_de_palavra_trigger` (20260816160000) entrou.
+            // Achado pelo `advogado-digital` ao revisar os Termos da change
+            // `filtro-e-intervalo-de-mensagem` — os Termos estavam sendo
+            // corrigidos e a Política tinha a mesma frase, num documento que
+            // existe justamente para não mentir para a titular.
+            //
+            // O que se pode continuar afirmando é o que o código cumpre: a
+            // comparação é com uma LISTA e nada mais, e o texto recusado não
+            // é gravado nem guardado em lugar nenhum.
             const LegalParagraph(
-              'Não existe leitura automática do que você escreve: não há '
-              'filtro de palavrão, não há inteligência artificial, não há '
-              'análise de conteúdo de nenhum tipo, e o app não varre as '
-              'conversas atrás de nada. Quem lê é quem está na conversa, '
-              'mais o Administrador do distrito nos casos acima. A '
-              'moderação é humana e só começa quando alguém denuncia — e a '
-              'consequência disso é honesta de dizer: uma mensagem ofensiva '
-              'fica no ar até alguém denunciar e alguém com autoridade no '
-              'espaço abrir o app.',
+              'Existe uma conferência automática no que você escreve, e ela '
+              'é uma só: o app compara as palavras da mensagem com uma lista '
+              'de palavras que este distrito não aceita. Se casar, a mensagem '
+              'não é enviada. Fora isso não há leitura automática nenhuma — '
+              'não há inteligência artificial, não há análise de conteúdo, e '
+              'o app não varre as conversas atrás de nada. A mensagem '
+              'recusada não é gravada, não é lida por ninguém e não fica '
+              'registrada em lugar nenhum: ela simplesmente não acontece.',
+            ),
+            const LegalParagraph(
+              'Quem lê é quem está na conversa, mais o Administrador do '
+              'distrito nos casos acima. Para tudo o que a lista não pega — '
+              'e é a maior parte, porque ela compara palavras inteiras e não '
+              'entende contexto — a moderação continua humana e só começa '
+              'quando alguém denuncia. A consequência disso é honesta de '
+              'dizer: uma mensagem ofensiva que escape da lista fica no ar '
+              'até alguém denunciar e alguém com autoridade no espaço abrir '
+              'o app.',
             ),
             const LegalParagraph(
               'Quando uma mensagem é removida — por quem a escreveu, por '

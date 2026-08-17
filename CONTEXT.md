@@ -68,6 +68,12 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Lápide (mensagem sem texto) | `MessageTombstone` |
 | Expurgo de mensagens de Ação | `purgeExpiredActionMessages` |
 | Maior de 18 (corte do chat) | `isOfAge` |
+| Palavra bloqueada na conversa | `blockedWord` |
+| Recusa de envio (a causa) | `SendRefusal` / `SendRefusalKind` |
+| Intervalo mínimo entre mensagens | `minimumInterval` |
+| Janela do teto | `window` |
+| Teto de mensagens na janela | `windowCeiling` |
+| Quanto falta para poder enviar | `retryAfter` |
 
 ### Colisões conhecidas, com decisão já tomada
 

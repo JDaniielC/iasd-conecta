@@ -842,6 +842,125 @@ ao `anon`), não algo que a migration controle além de publicar a tabela. A
 mitigação a investigar é canal privado; **[NÃO VERIFICADO]** se elimina o
 envelope.
 
+### 2.22 Moderação da conversa: a dívida "só humana e reativa" fechou pela metade
+
+`chat-de-grupo-e-acao` entregou a conversa com moderação **humana e reativa** —
+a mensagem ofensiva fica no ar até alguém denunciar e o dono do Grupo abrir o
+app. Estava registrado como risco aceito no design daquela change e em
+`REVISAO-JURIDICA.md` § 4-C.
+
+**O que a change `filtro-e-intervalo-de-mensagem` fechou** (2026-08-16):
+
+- Passou a existir filtro automático, e ele recusa **na escrita**: a mensagem
+  com palavra da lista não é gravada, e nenhum assinante do canal de tempo real
+  recebe evento (`filtro_palavra_realtime_test.dart`). O mesmo vale para o
+  `motivo` de uma denúncia.
+- Passou a existir limite de ritmo — 3 s entre mensagens e 20 por 5 minutos,
+  por pessoa e por conversa, verificado no banco sob trava. Encher um chat
+  deixou de ser possível em segundos.
+
+**O que continua aberto, e é a metade que importa:**
+
+- **A lista nasceu VAZIA, e com lista vazia o filtro não barra nada.** Isto não
+  é defeito: a migration é aditiva de propósito para poder subir antes de a
+  lista existir. Mas enquanto ninguém escrever palavras em
+  `palavras_bloqueadas_mensagem`, o comportamento é idêntico ao de antes da
+  change. **Quem vai escrever a lista, e com base em quê, não está decidido.**
+- **Não há tela de administração da lista**, por decisão (Non-goal do design).
+  Ela se edita direto no banco, como a de nomes. Consequência prática: tirar um
+  falso positivo da lista depende de alguém com acesso ao Supabase, e não do
+  dono do Grupo que recebeu a reclamação.
+- **Falso negativo continua sendo o caso comum.** Lista de palavra inteira não
+  pega grafia alterada, espaçamento no meio, nem insulto construído sem
+  palavrão. A denúncia continua sendo o caminho para o resto, e os Termos de
+  Uso dizem isso — prometer mais seria promessa que o código não cumpre.
+- **A remoção continua uma a uma.** Não existe "remover tudo o que esta pessoa
+  escreveu neste chat", e quem passa do limite de ritmo espera: não é
+  bloqueado, não é silenciado, não entra em lista nenhuma. Foi decisão, não
+  esquecimento — mas se o abuso persistente aparecer, é aqui que ele vai doer.
+- **O limite de ritmo zera quando a conversa da Ação expira**, porque a
+  contagem sai do `created_at` das mensagens que existem e elas deixaram de
+  existir. Consequência aceita e escrita na spec: chat expirado não é chat que
+  se possa encher.
+
+Nada disto bloqueia nada. Está aqui para a dívida não ser dada como quitada
+inteira no dia em que alguém ler "existe filtro agora".
+
+### 2.23 A denúncia ficou sem limite nenhum, e a decisão nunca foi escrita
+
+Achado na convergência 1 de `filtro-e-intervalo-de-mensagem`, em 2026-08-17.
+Não é defeito daquela change — é uma assimetria que ela tornou visível.
+
+O chat ganhou dois limites (3 s entre mensagens, 20 por 5 minutos, por pessoa
+e por conversa). `denuncias_mensagem` ganhou **só o filtro de palavra**. O
+raciocínio está escrito em `chat_repository.dart`, e ele é bom: *denunciar não
+é conversar, e um limite de ritmo aqui protegeria quem está sendo denunciado*.
+
+O que ninguém escreveu é o outro lado. Medido em 2026-08-17, em
+`pg_constraint` e `pg_indexes`: `denuncias_mensagem` tem chave primária,
+duas FK e dois `check`, e **nenhuma restrição de unicidade**. Nada impede a
+mesma pessoa de denunciar a MESMA mensagem mil vezes, e nada impede mil
+denúncias em um minuto. A fila que enche é a de quem modera, e o `motivo` é
+texto livre lido por gente.
+
+**Decisão tomada aqui: não acrescentar limite de ritmo na denúncia.** O
+argumento do design continua de pé — um limite por tempo atrapalha quem está
+denunciando abuso em série, que é justamente o caso em que a denúncia importa.
+
+**O que fica em aberto, e é outra coisa:** uma restrição que não é de ritmo e
+não protege o denunciado — **uma denúncia pendente por (mensagem, denunciante)**,
+como índice único parcial sobre `estado = 'pendente'`. Ela impede repetir a
+mesma denúncia sem limitar quantas mensagens DIFERENTES a pessoa denuncia. Não
+entrou porque é comportamento novo, fora do que as specs desta change pedem, e
+comportamento novo nasce em spec.
+
+Não bloqueia nada. Está aqui para a assimetria não virar decisão por inércia.
+
+### 2.24 Quem modera pode reescrever a denúncia dos outros
+
+Medido em 2026-08-17, na convergência 3 de `filtro-e-intervalo-de-mensagem`.
+**Não é defeito daquela change** — a causa é de `chat-de-grupo-e-acao`, e ela
+só apareceu porque a convergência foi olhar o `update` do `motivo`.
+
+Como `authenticated`, o dono de um Grupo:
+
+- **reescreveu o `motivo`** de uma denúncia alheia — ACEITO;
+- **trocou o `denunciante_id`** da denúncia para si mesmo — ACEITO.
+
+`information_schema.column_privileges`: `authenticated` tem `update` em `id`,
+`mensagem_id`, `created_at`, `denunciante_id`, `motivo`, `estado` e
+`resolvida_em`. `pg_trigger`: nenhum gatilho recortando coluna em
+`denuncias_mensagem`.
+
+O contraste está na tabela irmã. `mensagens` tem `mensagens_so_remove`, que
+recusa mudança em `id`, `grupo_id`, `acao_id`, `autor_id` e `created_at` uma a
+uma — no mesmo ensaio, reescrever `mensagens.texto` foi **recusado**.
+`denuncias_mensagem` nasceu sem o equivalente.
+
+**O que isso contradiz, por escrito:**
+
+- a própria migration de `chat-de-grupo-e-acao`: *"o `motivo` escrito por quem
+  denunciou é o que fica como registro do caso"*;
+- os Termos de Uso: *"O motivo que você escrever fica registrado como a
+  história do caso"*;
+- e a spec, que diz que a denúncia não revela a quem a lê quem denunciou —
+  trocar `denunciante_id` é pior do que revelar, é atribuir.
+
+**O que a change `filtro-e-intervalo-de-mensagem` fechou** (2026-08-17,
+`20260817140000`): só a metade que era dela — o filtro de palavra passou a
+valer no `update` do `motivo`, com `when (new.motivo is distinct from
+old.motivo)` para não travar o desfecho de denúncia antiga.
+
+**O que continua aberto:** o recorte de coluna. O conserto provável é
+`revoke update` + `grant update (estado, resolvida_em)` e/ou um gatilho
+`denuncias_mensagem_so_resolve` no molde de `mensagens_so_remove`. Não entrou
+junto porque é comportamento novo sobre requirement de OUTRA capability, e
+comportamento novo nasce em spec.
+
+Gravidade: quem pode fazer isso já é autoridade do espaço ou Administrador do
+distrito — não é escalada de privilégio. É integridade de registro, e é o tipo
+de coisa que só se descobre quando alguém precisa do registro.
+
 ## 3. Verificação manual — só gente mede
 
 Nenhuma destas é "esqueci". Todas exigem rodar o app, olhar a tela, cronometrar alguém ou

@@ -159,17 +159,61 @@ class TermsOfUsePage extends StatelessWidget {
               'constranger, fazer propaganda ou vender. Além de a mensagem '
               'ser removida, o Dono do Grupo pode remover você do Grupo.',
             ),
-            // Non-goal declarado no design da change: `palavras_bloqueadas`
-            // barra NOME de cadastro por substring, e `like %...%` sem
-            // fronteira de palavra produz falso positivo em texto corrido.
-            // Dizer que não existe filtro é obrigação: sem esta frase, o
-            // aviso automático do cadastro deixaria subentendido um controle
-            // que a conversa não tem.
+            // A change `filtro-e-intervalo-de-mensagem` tornou FALSA a frase
+            // que estava aqui ("nada do que você escreve é checado antes de
+            // aparecer"). Existe filtro, ele recusa na ESCRITA
+            // (`mensagens_filtro_de_palavra_trigger`, 20260816160000:223), e
+            // regra que recusa conteúdo sem estar escrita em lugar nenhum é a
+            // pior versão disso.
+            //
+            // O LIMITE do filtro entra no mesmo fôlego, e não é rodapé: a
+            // lista casa palavra inteira, então falso negativo é o caso comum
+            // (design.md → Risks). Prometer detecção de contexto, sigla ou
+            // grafia trocada seria promessa que o código não cumpre.
             const LegalBullet(
-              'Nada do que você escreve é checado antes de aparecer. Não há '
-              'filtro automático de palavrão na conversa — diferente do que '
-              'acontece com o nome no cadastro. A moderação depende de '
-              'alguém denunciar.',
+              'Antes de a mensagem sair, o app confere se ela tem alguma '
+              'palavra que este distrito não aceita. Se tiver, a mensagem não '
+              'é enviada: ela não chega a ser gravada e ninguém na conversa '
+              'vê nada. Você fica sabendo na hora qual palavra causou a '
+              'recusa, o texto que você digitou continua no campo, e dá para '
+              'corrigir e mandar de novo.',
+            ),
+            const LegalBullet(
+              'Essa conferência é limitada, e é honesto dizer o quanto: ela '
+              'compara palavras inteiras com uma lista. Não entende contexto, '
+              'não pega palavra escrita de propósito com letra trocada ou '
+              'espaço no meio, nem ofensa montada sem palavrão — e esse é o '
+              'caso mais comum. O filtro tira o óbvio da frente; para todo o '
+              'resto, o caminho continua sendo denunciar a mensagem, e a '
+              'moderação continua sendo humana.',
+            ),
+            const LegalBullet(
+              'A mesma conferência vale para o motivo que você escreve ao '
+              'denunciar uma mensagem. Se o motivo tiver palavra da lista, a '
+              'denúncia não é registrada, e o aviso diz qual palavra foi.',
+            ),
+            const LegalBullet(
+              'A lista de palavras não fica à vista no app e é mantida fora '
+              'dele. Se uma palavra comum foi recusada e você acha que não '
+              'deveria, escreva para ${LegalMetadata.contactEmail}: uma '
+              'pessoa lê e decide. A recusa é automática; a revisão dela é '
+              'humana.',
+            ),
+            const LegalBullet(
+              'Existe um limite de ritmo, contado por conversa: 3 segundos '
+              'entre uma mensagem sua e a seguinte, e no máximo 20 mensagens '
+              'suas a cada 5 minutos na mesma conversa. É para ninguém '
+              'conseguir encher o espaço de todo mundo. O limite conta '
+              'separado em cada Grupo e em cada Ação — falar em dois lugares '
+              'ao mesmo tempo não atrapalha.',
+            ),
+            const LegalBullet(
+              'Passar do limite é só esperar. Você não é bloqueado, não é '
+              'silenciado, não entra em lista nenhuma, e isso não pesa contra '
+              'você depois. O app mostra quanto falta e libera o envio '
+              'sozinho quando o tempo passa. E nada é guardado sobre a '
+              'tentativa recusada: não fica registro de que você tentou '
+              'enviar e não deu.',
             ),
             const LegalBullet(
               'Mensagem enviada não se edita. Errou, remove — não reescreve. '

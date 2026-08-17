@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/message.dart';
 import '../domain/message_report.dart';
+import '../domain/send_refusal.dart';
 
 /// Único ponto de acesso a `mensagens` e `denuncias_mensagem`.
 ///
@@ -68,20 +69,43 @@ class ChatRepository {
   /// Resolve nome de quem escreveu, uma chamada por AUTOR DISTINTO e não por
   /// linha, concorrentes. Mesmo desenho de `NotificationRepository.fetch` — em
   /// série cada uma esperava a anterior e a latência somava em rede de celular.
+  ///
+  /// **FALHA DE NOME NÃO DERRUBA A MENSAGEM**, e é a mesma decisão que
+  /// [withAuthorName] (singular) já tomava vinte linhas abaixo: sem o nome a
+  /// mensagem ainda é legível; sem a mensagem, não. Aqui ela faltava, e o
+  /// estrago aparecia no ENVIO.
+  ///
+  /// `send` são duas idas ao servidor. O `insert` commita sozinho — medido na
+  /// convergência 2, a contagem do Grupo foi de 1 para 2 antes de qualquer
+  /// passo seguinte. Sem este `catch`, uma falha na resolução do nome subia,
+  /// `ChatNotifier.send` propagava, e a tela dizia "Não deu pra enviar agora.
+  /// Tente de novo." sobre uma mensagem que JÁ ESTAVA no chat. A pessoa tentava
+  /// de novo e levava `PT425 espere 3 segundos` — recusa correta, sobre um
+  /// problema que ela não causou. Antes do limite de ritmo o reenvio só
+  /// duplicava em silêncio; o limite transformou o defeito invisível em recusa
+  /// que ninguém entende.
+  ///
+  /// O `catch` é POR AUTOR e não em volta do `Future.wait`: um nome que falha
+  /// não pode levar junto os nomes que deram certo na mesma leva.
   Future<List<Message>> _withAuthorNames(
     List<Map<String, dynamic>> rows,
   ) async {
     final authorIds = rows.map((r) => r['autor_id'] as String).toSet().toList();
     final resolved = await Future.wait(
       authorIds.map((uid) async {
-        final r =
-            await _client.rpc('perfil_publico', params: {'p_id': uid}) as List;
-        return r.isEmpty
-            ? null
-            : MapEntry(
-                uid,
-                (r.first as Map<String, dynamic>)['nome_exibido'] as String,
-              );
+        try {
+          final r =
+              await _client.rpc('perfil_publico', params: {'p_id': uid})
+                  as List;
+          return r.isEmpty
+              ? null
+              : MapEntry(
+                  uid,
+                  (r.first as Map<String, dynamic>)['nome_exibido'] as String,
+                );
+        } catch (_) {
+          return null;
+        }
       }),
     );
     final names = Map.fromEntries(
@@ -157,14 +181,39 @@ class ChatRepository {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) throw StateError('é preciso ter sessão para escrever');
 
-    final rows = await _client.from(_table).insert({
-      'grupo_id': groupId,
-      'acao_id': actionId,
-      'autor_id': uid,
-      'texto': text,
-    }).select();
+    final rows = await _refusalAware(
+      () => _client.from(_table).insert({
+        'grupo_id': groupId,
+        'acao_id': actionId,
+        'autor_id': uid,
+        'texto': text,
+      }).select(),
+    );
 
     return _withAuthorNames(rows).then((list) => list.single);
+  }
+
+  /// Roda [write] e troca a exceção crua do Supabase pela recusa que a tela
+  /// sabe explicar — quando ela é uma das três desta feature.
+  ///
+  /// **O ÚNICO lugar do cliente que conhece `PostgrestException` nestas três
+  /// recusas.** `SendRefusal` é Dart puro para poder ser provado em `dart test`
+  /// contra o PostgREST de verdade (`test/integration/limites_de_chat_test.dart`),
+  /// fora do Flutter; o desembrulho fica aqui, onde o pacote do Supabase já é
+  /// dependência.
+  ///
+  /// O que não é uma das três sobe como estava: falta de rede, recusa de policy
+  /// e violação de `check` continuam sendo "não deu pra enviar agora", e devem
+  /// continuar — inventar explicação para elas seria pior do que a frase
+  /// genérica.
+  Future<T> _refusalAware<T>(Future<T> Function() write) async {
+    try {
+      return await write();
+    } on PostgrestException catch (error) {
+      final refusal = SendRefusal.fromCode(error.code, error.hint);
+      if (refusal != null) throw refusal;
+      rethrow;
+    }
   }
 
   /// Remove. É `update`, não `delete` — não existe policy de `delete` em
@@ -199,15 +248,22 @@ class ChatRepository {
 
   /// Denuncia. O `motivo` escrito aqui é o que fica como registro do caso —
   /// o texto denunciado não é conservado.
+  ///
+  /// O MESMO filtro de palavra do chat vale aqui. Sem ele o campo de denúncia
+  /// vira a via aberta que o chat deixou de ser — e ele é lido por quem modera.
+  /// Não há limite de ritmo em denúncia: denunciar não é conversar, e um limite
+  /// aqui protegeria quem está sendo denunciado.
   Future<void> reportMessage(String messageId, String reason) async {
     final uid = _client.auth.currentUser?.id;
     if (uid == null) throw StateError('é preciso ter sessão para denunciar');
 
-    await _client.from('denuncias_mensagem').insert({
-      'mensagem_id': messageId,
-      'motivo': reason,
-      'denunciante_id': uid,
-    });
+    await _refusalAware(
+      () => _client.from('denuncias_mensagem').insert({
+        'mensagem_id': messageId,
+        'motivo': reason,
+        'denunciante_id': uid,
+      }),
+    );
   }
 
   /// Manda no espaço? `pode_moderar_espaco`, a mesma função das policies de

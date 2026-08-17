@@ -1,0 +1,32 @@
+-- Change filtro-e-intervalo-de-mensagem — a versão 1.6 do texto legal.
+--
+-- Gêmea da constante `LegalMetadata.version`. Não dá para derivar uma da outra:
+-- o texto legal está compilado no binário, e a versão é metadado dele.
+-- `test/integration/versao_texto_legal_registro_test.dart` falha se divergirem
+-- — e a divergência NÃO daria erro em produção: gravaria em cada cadastro novo
+-- uma versão diferente da que a pessoa leu na tela.
+--
+-- MIGRATION SEPARADA da 20260816160000, e é decisão. Aquela é o mecanismo e
+-- pode subir sozinha sem quebrar nada — com a lista vazia o comportamento é
+-- idêntico ao de antes. Esta é a PUBLICAÇÃO do texto novo, e só vale depois de
+-- os dois documentos estarem corrigidos. Juntá-las tiraria a possibilidade de
+-- subir o mecanismo e publicar o texto em momentos diferentes.
+--
+-- POR QUE SOBE, e não é formalidade. Esta change **não acrescenta tratamento
+-- nenhum**: o filtro não guarda nada, e o ritmo se calcula do `created_at` que
+-- a mensagem já tinha. O precedente é a 1.2, que também não acrescentou
+-- tratamento e subiu do mesmo jeito.
+--
+-- O que mudou é mais forte do que "o texto foi reescrito": uma afirmação
+-- deixou de ser verdadeira. Quem aceitou a 1.5 leu, com todas as letras, nos
+-- Termos de Uso e na Política de Privacidade, que nada do que escrevia era
+-- checado antes de aparecer. Desde 20260816160000, é. Manter a 1.5 carimbaria
+-- os dois grupos — quem leu a afirmação antiga e quem leu a nova — como se
+-- tivessem aceitado o mesmo documento.
+--
+-- Some-se que recusar mensagem é decisão automatizada com efeito sobre o
+-- titular (LGPD art. 20), e o direito de revisão só se exerce sobre uma regra
+-- que a pessoa sabe que existe. Ver REVISAO-JURIDICA.md § 4-D.
+insert into public.versoes_texto_legal (versao, vigente_desde)
+values ('1.6', timestamptz '2026-08-16 00:00:00-03')
+on conflict (versao) do nothing;

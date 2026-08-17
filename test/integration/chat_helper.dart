@@ -83,25 +83,65 @@ Future<int> visibleMessageCount(
 }
 
 /// Escreve pela sessão corrente. Devolve o id, ou lança se a policy recusar.
+///
+/// [createdAtOffset] recua o `created_at` da linha, e existe por causa do
+/// gatilho de ritmo da change `filtro-e-intervalo-de-mensagem` — ver
+/// [seedMessage]. Nulo é o caminho real: o banco carimba `now()`.
+///
+/// **`createdAtOffset` SÓ funciona como `postgres`.** Desde
+/// `20260817120000_mensagens_insert_por_coluna.sql`, `authenticated` tem
+/// `insert` apenas em `(grupo_id, acao_id, autor_id, texto)`: mandar
+/// `created_at` por uma sessão de app leva `42501 permission denied`, e é de
+/// propósito — era assim que o limite de ritmo se contornava. Chamar isto
+/// dentro de `asUser` falha, e falha certo.
 Future<String> writeMessage(
   Connection conn, {
   required String authorId,
   String? groupId,
   String? actionId,
   String text = 'quem leva o som?',
+  Duration? createdAtOffset,
 }) async {
   final r = await conn.execute(
     Sql.named(
-      'insert into public.mensagens (grupo_id, acao_id, autor_id, texto) '
-      'values (@g, @a, @autor, @t) returning id',
+      'insert into public.mensagens (grupo_id, acao_id, autor_id, texto'
+      '${createdAtOffset != null ? ', created_at' : ''}) '
+      'values (@g, @a, @autor, @t'
+      '${createdAtOffset != null ? ", now() - (@off || ' milliseconds')::interval" : ''})'
+      ' returning id',
     ),
-    parameters: {'g': groupId, 'a': actionId, 'autor': authorId, 't': text},
+    parameters: {
+      'g': groupId,
+      'a': actionId,
+      'autor': authorId,
+      't': text,
+      if (createdAtOffset != null) 'off': createdAtOffset.inMilliseconds,
+    },
   );
   return r.single.toColumnMap()['id']! as String;
 }
 
+/// Quantas semeaduras já saíram desta conexão. Ver [seedMessage].
+var _seedCount = 0;
+
 /// Semeia uma mensagem como `postgres`, sem passar por policy — para montar
 /// cenário sem que a montagem já seja o teste.
+///
+/// **O `created_at` vem de UMA HORA ATRÁS, e isto não é detalhe de conveniência.**
+/// A change `filtro-e-intervalo-de-mensagem` pôs um gatilho `before insert` em
+/// `mensagens` que recusa duas mensagens da mesma pessoa no mesmo chat dentro
+/// de 3 segundos — e ele vale para superusuário também, porque gatilho não é
+/// RLS. Sem recuar o relógio, montar um cenário com duas mensagens do mesmo
+/// autor passaria a falhar na MONTAGEM, e o teste morreria por um motivo que
+/// não é o dele.
+///
+/// Recuar é o certo e não um contorno: semeadura FABRICA histórico, e histórico
+/// de uma hora atrás é o que ela está dizendo que existe. O caminho real de
+/// escrita continua sendo [writeMessage] sem offset, e é lá que o ritmo se
+/// prova (`ritmo_de_mensagem_test.dart`).
+///
+/// O contador mantém a ordem de inserção: cada semeadura é um milissegundo mais
+/// nova que a anterior, todas ainda a ~1h de distância de agora.
 Future<String> seedMessage(
   Connection conn, {
   required String authorId,
@@ -114,6 +154,7 @@ Future<String> seedMessage(
   groupId: groupId,
   actionId: actionId,
   text: text,
+  createdAtOffset: Duration(hours: 1) - Duration(milliseconds: _seedCount++),
 );
 
 /// Estado de uma mensagem, lido como `postgres` — o real, não o que a sessão vê.

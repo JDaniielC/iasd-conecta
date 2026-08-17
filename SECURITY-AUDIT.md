@@ -792,3 +792,101 @@ o oráculo reabriu, e é `false` que entrega que o termo está na lista.
 `inventario_superficie_anon_test.dart` impede a próxima: enumera toda função de
 `public` e falha se alguma alcançar `anon` fora de uma lista de exceções escrita
 à mão, com motivo por linha.
+
+---
+
+# O limite de ritmo era contornável mandando `created_at` — 2026-08-17
+
+Change `filtro-e-intervalo-de-mensagem`. Achado pela **convergência 1**, não por
+pentest e não por revisão: `flutter analyze` estava limpo, 447 testes de
+unidade/widget e 479 de integração estavam verdes, e o controle não valia.
+
+## O que foi medido
+
+Pela API real — PostgREST, sessão `authenticated` de verdade com JWT assinado,
+não `set request.jwt.claims`:
+
+```
+POST /rest/v1/mensagens
+{"grupo_id":"…","autor_id":"…","texto":"flood","created_at":"2020-01-01T00:00:00Z"}
+```
+
+**30 mensagens inseridas em segundos. Zero recusas.** O limite recém-escrito —
+3 segundos entre mensagens e 20 por 5 minutos, por pessoa e por conversa — não
+recusou nenhuma.
+
+## A causa
+
+`mensagens_ritmo_de_envio` conta `max(created_at)` e `count(*)` das linhas que
+**já existem** dentro da janela. Linha gravada com data antiga nasce fora da
+janela, e a checagem seguinte não a vê. Cada mensagem nova apagava o rastro que
+tornaria a próxima recusável.
+
+O que permitiu escrever a coluna veio de antes:
+`20260813200000_chat_de_grupo_e_acao.sql:328` deu
+`grant select, insert, update on public.mensagens to authenticated` — a tabela
+inteira, sem recorte. Medido em `information_schema.column_privileges`:
+`authenticated` tinha `insert` nas **oito** colunas, `created_at`, `id` e
+`removida_por` inclusive.
+
+## A lição, e ela não é sobre chat
+
+**Um `grant` sem recorte não é dívida enquanto ninguém depende da coluna.** Até
+esta change, forjar `created_at` só bagunçava a ordem da conversa — feio, sem
+consequência. No dia em que um controle passou a LER aquela coluna, o mesmo
+grant virou contorno do controle.
+
+O sinal genérico, para procurar em qualquer feature nova: **toda vez que uma
+regra de segurança passar a depender de uma coluna, conferir quem pode
+escrevê-la.** A pergunta não é "esta coluna é sensível?" — é "alguma decisão
+agora depende dela?".
+
+## O conserto, e o que NÃO se fez
+
+```sql
+revoke insert on public.mensagens from authenticated;
+grant insert (grupo_id, acao_id, autor_id, texto) on public.mensagens to authenticated;
+```
+
+Mesmo precedente de `20260811160000_grant_update_perfis_por_coluna.sql`. Grant
+de coluna restringe a cláusula do próprio `insert` e recusa com `42501` antes de
+qualquer policy rodar. Fecha `id` e `removida_por` forjados junto, e o app não
+mudou uma linha — `ChatRepository.send` já mandava exatamente essas quatro.
+
+**Policy com `with check` não serviria**: a linha resultante de um `created_at`
+forjado é perfeitamente válida, e não há predicado que a distinga de uma
+legítima sem comparar com `now()` — o que recusaria também restauração de dump.
+
+**Não se carimbou `new.created_at := now()` no gatilho.** Reescrever em silêncio
+um valor que alguém mandou é pior do que recusar: quem mandou não fica sabendo
+que foi ignorado. E impediria semear histórico como superusuário, que é como a
+suíte monta conversa antiga e como uma restauração funciona.
+
+`update` continua com a tabela inteira, de propósito: lá quem protege é o
+gatilho `mensagens_so_remove`, que recusa mudança em `id`, `grupo_id`,
+`acao_id`, `autor_id` e `created_at` uma a uma, com mensagem que diz o que
+aconteceu. Recortar o grant trocaria essa mensagem por um `permission denied`
+genérico sem ganhar barreira.
+
+## Verificação
+
+`limites_de_chat_test.dart` prova pela **API**, e a escolha é o ponto: como
+`postgres` o grant de coluna não se aplica (superusuário), e o caso passaria
+verde sobre o defeito intacto. É a mesma armadilha que
+`security_nome_valido_rls_test.dart` documenta para RLS, aplicada a privilégio
+de coluna.
+
+Dois casos: mandar `created_at` devolve `42501`; e o flood de 5 tentativas grava
+**exatamente 1** — a primeira passa, a de data forjada cai por privilégio, as
+demais pelo intervalo. Medido em 30 antes do conserto.
+
+## Achados vizinhos da mesma varredura
+
+- **A trava do ritmo foi provada por remoção**, não por leitura: sem o
+  `perform 1 from perfis … for update`, duas inserções simultâneas da mesma
+  pessoa gravam **2 linhas**; com ela, 1.
+- **O filtro de palavra no `motivo` da denúncia valia só na inserção**
+  (convergência 3): um moderador reescreveu o motivo alheio para uma palavra da
+  lista e o banco aceitou. Conserto em `20260817140000`. A metade que continua
+  aberta — moderador reescrevendo `motivo` e trocando `denunciante_id` — é de
+  `chat-de-grupo-e-acao` e está em `PENDENCIAS.md` 2.24.

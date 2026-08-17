@@ -179,3 +179,22 @@ Future<void> createTestProfileWithoutAccount(
     parameters: {'id': id, 'nome': name},
   );
 }
+
+/// Serializa os arquivos que semeiam `palavras_bloqueadas_mensagem`.
+///
+/// A tabela é GLOBAL — a palavra é a chave primária, e não há como escopar por
+/// UUID como o resto da suíte faz. `dart test` roda os arquivos em PARALELO
+/// contra o mesmo Postgres, então dois arquivos que inserem e apagam a mesma
+/// lista se atropelam: um limpa no `tearDownAll` a palavra que o outro acabou
+/// de inserir, e o segundo falha por uma recusa que deixou de acontecer.
+///
+/// Mesmo mecanismo e mesmo motivo de [createTestDistrictAdmin], inclusive o
+/// escopo: o lock é de SESSÃO, some sozinho quando a conexão fecha, e um
+/// arquivo que morra no meio não trava a suíte.
+///
+/// Chamar no `setUpAll`, ANTES da primeira inserção na lista.
+Future<void> lockBlockedWordList(Connection conn) async {
+  await conn.execute(
+    "select pg_advisory_lock(hashtext('palavras_bloqueadas_mensagem'))",
+  );
+}

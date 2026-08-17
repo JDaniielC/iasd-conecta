@@ -246,6 +246,95 @@ class ChatRepository {
     }
   }
 
+  /// As mensagens FIXADAS daquele espaço, mais recente primeiro.
+  ///
+  /// **Consulta separada, e a decisão foi MEDIDA** (tarefa 5.4). Com 2000
+  /// mensagens no chat e as três fixadas sendo as mais antigas de todas, num
+  /// Postgres local:
+  ///
+  ///   página de histórico sozinha ......... 0,023 ms
+  ///   fixadas sozinhas (índice parcial) ... 0,006 ms
+  ///   as duas em `union` numa consulta .... 0,048 ms
+  ///
+  /// O `union` é mais CARO que as duas somadas — ele paga um `HashAggregate`
+  /// para deduzir as fixadas que já vieram na página. E, no PostgREST, `union`
+  /// não existe: sairia numa função `security definer` nova, com grant novo e
+  /// superfície nova, para ficar mais lento.
+  ///
+  /// Por que não basta separar em memória o que o histórico já trouxe: uma
+  /// fixada ANTIGA está fora da primeira página. Era o caso da medição, e é o
+  /// caso que dá sentido à faixa — o que se fixa é justamente o que ia afundar.
+  ///
+  /// Quem chama dispara esta junto com [fetchHistory], não depois: são duas
+  /// idas ao servidor que correm em paralelo, então a segunda não soma latência.
+  Future<List<Message>> fetchPinned({String? groupId, String? actionId}) async {
+    assert(
+      (groupId == null) != (actionId == null),
+      'exatamente um espaço, como o check mensagens_um_espaco_so',
+    );
+
+    final rows = await _client
+        .from(_table)
+        .select()
+        .eq(groupId != null ? 'grupo_id' : 'acao_id', groupId ?? actionId!)
+        .not('fixada_em', 'is', null)
+        .order('fixada_em', ascending: false);
+
+    return _withAuthorNames(rows);
+  }
+
+  /// Fixa. `fixada_por` é a sessão corrente porque o gatilho RECUSA outro
+  /// valor — carimbar por cima seria ignorar em silêncio o que o cliente
+  /// mandou, e o banco preferiu recusar.
+  ///
+  /// `.select()` no fim pela regra desta base: recusa de RLS num `update` é
+  /// ZERO LINHA, não erro. Quem não passa pela policy — participante comum —
+  /// receberia sucesso sobre nada, e a faixa apareceria vazia sem explicação.
+  /// Quem passa pela policy e é barrado pelo GATILHO — o autor sem autoridade,
+  /// e o teto — recebe exceção com `errcode`, e é o `_refusalAware` que a
+  /// traduz. As duas formas de recusa existem, e esta função trata as duas.
+  Future<void> pinMessage(String messageId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('é preciso ter sessão para fixar');
+
+    final affected = await _refusalAware(
+      () => _client
+          .from(_table)
+          .update({
+            'fixada_em': DateTime.now().toUtc().toIso8601String(),
+            'fixada_por': uid,
+          })
+          .eq('id', messageId)
+          .select(),
+    );
+
+    if (affected.isEmpty) {
+      throw StateError('esta mensagem não pôde ser fixada por você');
+    }
+  }
+
+  /// Desfixa. Autoridade do espaço **ou** o autor da mensagem — e o braço do
+  /// autor é o que devolve a ele o controle do prazo do que escreveu: fixada
+  /// não expira, e sem este caminho o prazo dele dependeria de outra pessoa
+  /// indefinidamente.
+  ///
+  /// As duas colunas vão juntas: `mensagens_fixada_completa` recusa uma sem a
+  /// outra.
+  Future<void> unpinMessage(String messageId) async {
+    final uid = _client.auth.currentUser?.id;
+    if (uid == null) throw StateError('é preciso ter sessão para desfixar');
+
+    final affected = await _client
+        .from(_table)
+        .update({'fixada_em': null, 'fixada_por': null})
+        .eq('id', messageId)
+        .select();
+
+    if (affected.isEmpty) {
+      throw StateError('esta mensagem não pôde ser desfixada por você');
+    }
+  }
+
   /// Denuncia. O `motivo` escrito aqui é o que fica como registro do caso —
   /// o texto denunciado não é conservado.
   ///

@@ -36,6 +36,17 @@ String sendRefusalMessage(SendRefusal refusal, {Duration? remaining}) {
                 'Dê um tempo e volte.'
           : 'Você enviou muitas mensagens seguidas nesta conversa. '
                 'Dá para voltar em ${_countdown(remaining)}.';
+
+    case SendRefusalKind.pinnedCeiling:
+      // DIZ O QUE FAZER, e é o ponto desta frase: o teto não passa com o tempo
+      // como as duas de cima, então "tente mais tarde" seria mentira. O que
+      // libera vaga é desfixar, e é isso que a pessoa precisa ler.
+      final ceiling = refusal.ceiling;
+      return ceiling == null
+          ? 'Este chat já está com o máximo de mensagens fixadas. '
+                'Desfixe uma antes de fixar outra.'
+          : 'Este chat já tem $ceiling mensagens fixadas, o máximo. '
+                'Desfixe uma antes de fixar outra.';
   }
 }
 

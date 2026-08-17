@@ -8,6 +8,13 @@ enum SendRefusalKind {
 
   /// O teto de mensagens na janela foi atingido.
   windowCeiling,
+
+  /// O chat já tem o número máximo de mensagens FIXADAS.
+  ///
+  /// Não é recusa de envio, e mora aqui mesmo assim: é a mesma disciplina —
+  /// causa lida do `errcode`, dado de máquina no `hint` — e um segundo arquivo
+  /// para decodificar um código da mesma família seria a cópia que diverge.
+  pinnedCeiling,
 }
 
 /// A recusa que a tela sabe explicar.
@@ -28,7 +35,12 @@ enum SendRefusalKind {
 /// código certo no corpo, mas como HTTP 500 — e recusa esperada subindo como
 /// erro de servidor envenena log e alarme de produção.
 class SendRefusal implements Exception {
-  const SendRefusal({required this.kind, this.blockedWord, this.retryAfter});
+  const SendRefusal({
+    required this.kind,
+    this.blockedWord,
+    this.retryAfter,
+    this.ceiling,
+  });
 
   final SendRefusalKind kind;
 
@@ -41,6 +53,11 @@ class SendRefusal implements Exception {
 
   /// Quanto falta para poder enviar, quando a recusa é de ritmo.
   final Duration? retryAfter;
+
+  /// Quantas fixadas cabem, quando [kind] é [SendRefusalKind.pinnedCeiling].
+  /// Vem do `hint`, que é o banco dizendo o próprio teto — a tela não precisa
+  /// confiar na cópia dela para escrever a frase.
+  final int? ceiling;
 
   /// Lê a recusa do par (`code`, `hint`) que o servidor devolveu, ou `null`
   /// quando o erro é outro — falta de rede, policy, constraint.
@@ -69,6 +86,11 @@ class SendRefusal implements Exception {
         return SendRefusal(
           kind: SendRefusalKind.windowCeiling,
           retryAfter: _seconds(hint),
+        );
+      case 'PT409':
+        return SendRefusal(
+          kind: SendRefusalKind.pinnedCeiling,
+          ceiling: int.tryParse(hint ?? ''),
         );
       default:
         return null;

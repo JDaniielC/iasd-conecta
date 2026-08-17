@@ -68,8 +68,22 @@ abstract final class LegalMetadata {
   /// por simetria: ela tinha a MESMA afirmação falsa, no documento que existe
   /// para não mentir para a titular. Publicar 1.6 sem corrigi-la teria
   /// carimbado consentimento sob texto com afirmação falsa dentro.
-  static const version = '1.6';
-  static const effectiveDate = '16 de agosto de 2026';
+  ///
+  /// 1.7 (change `mensagem-fixada`): a promessa de prazo GANHOU EXCEÇÃO. Até
+  /// aqui a Política dizia, sem ressalva, que as mensagens da Ação são apagadas
+  /// 30 dias depois do encontro. Desde 20260817160000 o expurgo tem
+  /// `and fixada_em is null`, e mensagem fixada não expira — no máximo 3 por
+  /// conversa. Manter a 1.6 seria carimbar consentimento sob um texto que a
+  /// migration acabou de tornar falso, que é exatamente o caso da 1.6.
+  ///
+  /// **Nenhum dado pessoal novo**, além de quem fixou e quando. O que muda é
+  /// mais forte do que dado novo: muda por quanto tempo o dado que já existia
+  /// permanece, e prazo declarado é a promessa que a titular usa para decidir
+  /// o que escreve. Sobe também porque a exceção é acionável por OUTRA pessoa
+  /// sobre texto seu, e o contrapeso — o autor sempre desfixa a própria
+  /// mensagem — só serve a quem sabe que ele existe.
+  static const version = '1.7';
+  static const effectiveDate = '17 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

@@ -63,6 +63,15 @@ void _stubHistory(
     (invocation) async =>
         invocation.namedArguments[#before] == null ? initial : older,
   );
+  // A consulta das fixadas roda JUNTO com a de abertura desde
+  // `mensagem-fixada`. Sem este stub ela cai no caminho de falha e devolve
+  // vazio — que é o resultado certo por acidente, e acidente não é prova.
+  when(
+    () => repository.fetchPinned(
+      groupId: any(named: 'groupId'),
+      actionId: any(named: 'actionId'),
+    ),
+  ).thenAnswer((_) async => const <Message>[]);
 }
 
 Future<FakeRealtime> _pumpChat(

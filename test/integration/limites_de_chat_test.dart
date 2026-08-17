@@ -57,6 +57,16 @@ void main() {
     test('teto na janela', () async {
       expect(await constantOf('mensagem_teto_na_janela'), ChatLimits.windowCeiling);
     });
+
+    // Change `mensagem-fixada`, tarefa 5.2 — a MESMA costura, e a divergência
+    // aqui é pior: a tela ofereceria fixar quando não há vaga, e a pessoa
+    // levaria PT409 depois de escolher o que fixar.
+    test('teto de fixadas', () async {
+      expect(
+        await constantOf('mensagem_teto_de_fixadas'),
+        ChatLimits.pinnedCeiling,
+      );
+    });
   });
 
   group('5.3 — a recusa chega ao cliente com o código, pela API de verdade', () {

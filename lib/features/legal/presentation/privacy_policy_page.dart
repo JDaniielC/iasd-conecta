@@ -304,7 +304,64 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'Conversa de Ação: apagamos as mensagens 30 dias depois da '
               'data e hora da Ação. A conta corre a partir do encontro, e '
               'não de quando você escreveu. Depois disso elas deixam de '
-              'existir.',
+              'existir — com uma exceção, no item seguinte.',
+            ),
+            // A EXCEÇÃO PRECISA ESTAR AQUI, e não só no código. Depois da
+            // change `mensagem-fixada`, "apagamos em 30 dias" sem ressalva é
+            // falso: `expurgar_mensagens_de_acao()` ganhou
+            // `and fixada_em is null` (20260817160000). O teto de 3 é o que
+            // impede que fixar vire uma forma de desligar a retenção inteira,
+            // e ele vive em `mensagem_teto_de_fixadas()`.
+            const LegalBullet(
+              'Mensagem fixada não é apagada nesse prazo. Quem cuida do '
+              'espaço — o dono do Grupo, quem criou a Ação, o dono do Grupo '
+              'a que a Ação pertence, ou o Administrador do distrito — pode '
+              'fixar uma mensagem no alto da conversa, e ela fica enquanto '
+              'estiver fixada. Cabem no máximo 3 fixadas por conversa: é um '
+              'limite, não um detalhe, porque sem ele fixar seria uma forma '
+              'de desligar o prazo da conversa inteira. Guardamos quem fixou '
+              'e quando; isso não aparece na conversa para ninguém, e some '
+              'com a conta de quem fixou, como o resto.',
+            ),
+            // A RESSALVA DO BOTÃO É MEDIÇÃO, não cautela de redação. Medido em
+            // 2026-08-17: autor que desistiu da Ação ou saiu do Grupo tem
+            // `pode_moderar_mensagem` = true e mesmo assim o `update` afeta
+            // ZERO LINHAS — a policy de `select` esconde a linha, e um `update`
+            // não alcança linha que não lê. Enquanto não houver caminho de
+            // desfixe fora da conversa (`PENDENCIAS.md` 2.28), a frase antiga
+            // — "a qualquer momento" — era falsa, e falsa justamente no caso
+            // em que a pessoa mais precisa dela.
+            const LegalBullet(
+              'Se você escreveu a mensagem, você pode desfixá-la mesmo sem '
+              'cuidar do espaço, e a partir daí ela volta a contar o prazo '
+              'normal e é apagada na passagem seguinte, sem prazo novo. Um '
+              'limite que é preciso dizer: o botão de desfixar fica dentro '
+              'da conversa. Se você sair do Grupo, desistir da Ação ou '
+              'deixar de poder ler aquele chat por qualquer motivo, você '
+              'perde o botão e a mensagem continua fixada. Nesse caso, '
+              'escreva para ${LegalMetadata.contactEmail} — e estamos '
+              'trabalhando para que isso não dependa de e-mail.',
+            ),
+            const LegalBullet(
+              'Mensagem fixada que é removida, ou cujo autor exclui a conta, '
+              'deixa de estar fixada sozinha.',
+            ),
+            // Este bullet fecha o achado A-3 do `advogado-digital`: até
+            // 16/08/2026 o prazo de 30 dias resolvia sozinho o caso da pessoa
+            // citada por outro. A partir da fixação, não resolve, e nenhuma
+            // linha exibida dizia isso. O limite em si já era declarado; o que
+            // mudou é a duração dele.
+            const LegalBullet(
+              'Se quem escreveu foi outra pessoa e a mensagem fala de você, '
+              'o desfixe não está na sua mão: você não é quem escreveu e não '
+              'cuida do espaço. Enquanto ela estiver fixada, não há prazo '
+              'para ela sair — nem os 30 dias, nem a exclusão da sua conta, '
+              'que não alcança texto escrito por outra pessoa. O caminho é '
+              'denunciar a mensagem pelo app ou escrever para '
+              '${LegalMetadata.contactEmail}. É o mesmo caminho de antes, e '
+              'a diferença é honesta de dizer: antes o prazo de 30 dias '
+              'resolvia sozinho se ninguém fizesse nada, e agora não '
+              'resolve.',
             ),
             const LegalBullet(
               'Conversa de Grupo: não tem prazo. As mensagens ficam '
@@ -389,8 +446,9 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'Ação", acima.',
             ),
             const LegalParagraph(
-              'As conversas têm prazos próprios: 30 dias depois da Ação, e '
-              'sem prazo no Grupo. Estão detalhados na seção "Conversas em '
+              'As conversas têm prazos próprios: 30 dias depois da Ação — '
+              'salvo mensagem fixada, no máximo 3 por conversa —, e sem '
+              'prazo no Grupo. Estão detalhados na seção "Conversas em '
               'Grupos e Ações", acima.',
             ),
 
@@ -506,12 +564,23 @@ class PrivacyPolicyPage extends ConsumerWidget {
             ),
 
             const LegalHeading('Alterações nesta política'),
+            // A FRASE ANTERIOR PROMETIA AVISO PRÉVIO, e a versão 1.7 valeu no
+            // mesmo dia em que foi publicada — com a explicação em Novidades,
+            // que é aviso posterior e só para quem abre a tela. Achado A-1 do
+            // `advogado-digital`. Esta redação diz o que o app faz de verdade.
+            // O aviso com destaque que o art. 8º, §6º pede — comparar
+            // `perfis.consentimento_lgpd_versao` com
+            // `versao_texto_legal_vigente()` e mostrar o que mudou a quem está
+            // atrasado — não existe, e está em `PENDENCIAS.md` 2.29.
             const LegalParagraph(
-              'Se mudarmos o que coletamos ou para que usamos, publicamos '
-              'uma nova versão com data e número atualizados, e avisamos '
-              'antes de qualquer mudança valer para quem já está '
-              'cadastrado. O aceite dado numa versão não cobre finalidade '
-              'nova que só a versão seguinte passe a ter.',
+              'Se este texto mudar, publicamos uma versão nova, com número e '
+              'data, e escrevemos em "Novidades", no app, o que mudou e o '
+              'que isso significa na prática. A mudança vale a partir da '
+              'data da versão nova. O aceite dado numa versão não cobre '
+              'finalidade nova que só a versão seguinte passe a ter — e, se '
+              'a mudança não te agradar, você pode retirar seu '
+              'consentimento ou excluir sua conta, pelos caminhos da seção '
+              '"Seus direitos e como usar cada um".',
             ),
 
             const LegalHeading('Fale com a gente'),

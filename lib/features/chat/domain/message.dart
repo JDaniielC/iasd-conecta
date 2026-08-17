@@ -12,8 +12,8 @@
 /// | nulo | nulo | [authorDeletedAccount] |
 ///
 /// A quarta combinação — texto preenchido COM `removida_em` — o banco não
-/// produz: o gatilho `mensagens_so_remove` recusa `update` que deixe `texto`
-/// não nulo. Se ela chegar mesmo assim, este código trata como removida e
+/// produz: o gatilho `mensagens_so_remove` recusa marcar removida sem esvaziar
+/// o texto. Se ela chegar mesmo assim, este código trata como removida e
 /// esconde o texto. É a direção segura: mostrar conteúdo que alguém decidiu
 /// remover é o erro que não dá para desfazer; esconder conteúdo que deveria
 /// aparecer, dá.
@@ -42,6 +42,8 @@ class Message {
     this.actionId,
     this.text,
     this.removedAt,
+    this.pinnedAt,
+    this.pinnedBy,
     this.authorName,
   });
 
@@ -56,11 +58,42 @@ class Message {
   final String? text;
   final DateTime? removedAt;
 
+  /// Quando foi fixada, e por quem. Os dois andam juntos — a constraint
+  /// `mensagens_fixada_completa` recusa um sem o outro.
+  ///
+  /// **Fixada não expira**, e é a única exceção ao prazo de 30 dias do chat de
+  /// Ação. Desfixar devolve a mensagem ao prazo na hora, sem carência nova.
+  final DateTime? pinnedAt;
+  final String? pinnedBy;
+
+  /// Está fixada? Lápide nunca está: o gatilho zera a fixação quando o texto
+  /// vai a nulo, então [pinnedAt] não nulo implica [tombstone] visível. A tela
+  /// não precisa conferir os dois.
+  bool get isPinned => pinnedAt != null;
+
   /// Resolvido na leitura por `perfil_publico`, como em
   /// `NotificationRepository`. Nunca por `select` direto em `perfis`: é
   /// `perfil_publico` que devolve o Apelido no lugar do nome quando a pessoa é
   /// menor de idade.
   final String? authorName;
+
+  /// A mesma linha com a fixação trocada. Sem argumento, desfixada.
+  ///
+  /// Os dois campos andam juntos de propósito — é o que a constraint
+  /// `mensagens_fixada_completa` cobra no banco, e um `copyWith` genérico
+  /// deixaria escrever a metade.
+  Message withPin({DateTime? at, String? by}) => Message(
+    id: id,
+    authorId: authorId,
+    createdAt: createdAt,
+    groupId: groupId,
+    actionId: actionId,
+    text: text,
+    removedAt: removedAt,
+    pinnedAt: at,
+    pinnedBy: by,
+    authorName: authorName,
+  );
 
   MessageTombstone get tombstone {
     if (removedAt != null) return MessageTombstone.removedByModeration;
@@ -79,6 +112,10 @@ class Message {
       removedAt: map['removida_em'] == null
           ? null
           : DateTime.parse(map['removida_em'] as String),
+      pinnedAt: map['fixada_em'] == null
+          ? null
+          : DateTime.parse(map['fixada_em'] as String),
+      pinnedBy: map['fixada_por'] as String?,
       authorName: authorName,
     );
   }
@@ -113,7 +150,12 @@ class Message {
 /// com menos texto é sempre a de depois.
 ///
 /// Empate de estado — a mesma linha pelos dois caminhos, sem mudança — fica com
-/// [newer], que é o que traz o nome do autor já resolvido.
+/// [newer], que é o que traz o nome do autor já resolvido. **É por aí que
+/// fixar e desfixar passam**: os dois mantêm a lápide onde está, então o empate
+/// decide, e quem chega depois vence. A fixação não precisa da regra absorvente
+/// da lápide porque ela é reversível de propósito — o pior caso é a faixa
+/// mostrar o estado anterior até a próxima leitura, e não texto removido
+/// voltando à tela.
 ///
 /// Ordem final é cronológica crescente — a conversa se lê de cima para baixo,
 /// ao contrário da consulta, que pede as mais recentes primeiro para paginar.

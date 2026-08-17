@@ -239,11 +239,22 @@ class TermsOfUsePage extends StatelessWidget {
               'continua lá para quem participava, e ninguém escreve mais '
               'nada.',
             ),
+            const LegalBullet(
+              'Quem cuida do espaço pode FIXAR uma mensagem no alto da '
+              'conversa — no máximo 3 por conversa. Fixar não muda quem lê a '
+              'mensagem: ela continua visível só para quem já podia ver '
+              'aquela conversa. Se a mensagem é sua, você pode desfixá-la '
+              'mesmo sem cuidar do espaço; fixar de volta é de quem cuida. O '
+              'botão de desfixar fica dentro da conversa: se você sair do '
+              'Grupo ou desistir da Ação, perde o botão, e o caminho passa a '
+              'ser escrever para a gente.',
+            ),
             const LegalParagraph(
               'A conversa do Grupo fica guardada sem prazo; a da Ação é '
-              'apagada 30 dias depois da data e hora dela. Isso, e o que '
-              'acontece com as suas mensagens quando você exclui a conta, '
-              'está na Política de Privacidade.',
+              'apagada 30 dias depois da data e hora dela, com uma exceção: '
+              'mensagem fixada não é apagada enquanto estiver fixada. Isso, '
+              'e o que acontece com as suas mensagens quando você exclui a '
+              'conta, está na Política de Privacidade.',
             ),
             const LegalParagraph(
               'A conversa não é canal de emergência nem canal oficial da '

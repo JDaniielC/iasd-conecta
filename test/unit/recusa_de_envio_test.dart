@@ -125,6 +125,35 @@ void main() {
       );
     });
 
+    test('a do teto de fixadas manda DESFIXAR, e nomeia o teto', () {
+      // Convergência 2 da change `mensagem-fixada`: o cenário da spec diz
+      // "a operação é recusada AND a tela diz que é preciso desfixar alguma
+      // antes", e a segunda metade não era provada em lugar nenhum — o laço
+      // abaixo só exigia frase não vazia e sem `null`.
+      //
+      // O TETO NÃO PASSA COM O TEMPO, ao contrário das duas recusas de ritmo.
+      // Dizer "tente mais tarde" seria mentira, e é por isso que esta frase
+      // precisa mandar fazer alguma coisa.
+      const refusal = SendRefusal(
+        kind: SendRefusalKind.pinnedCeiling,
+        ceiling: 3,
+      );
+      final message = sendRefusalMessage(refusal);
+
+      expect(message, contains('3'));
+      expect(message.toLowerCase(), contains('desfixe'));
+      expect(
+        message.toLowerCase(),
+        isNot(contains('espere')),
+        reason: 'esperar não resolve teto de fixadas',
+      );
+
+      // Sem o `hint` a frase ainda precisa mandar desfixar — só não sabe o
+      // número. `hint` pode não chegar por um proxy que o corte.
+      const anonymous = SendRefusal(kind: SendRefusalKind.pinnedCeiling);
+      expect(sendRefusalMessage(anonymous).toLowerCase(), contains('desfixe'));
+    });
+
     test('sem tempo restante a frase ainda serve', () {
       // `retryAfter` nulo acontece quando o `hint` não chegou. A tela não pode
       // ficar muda por causa disso.

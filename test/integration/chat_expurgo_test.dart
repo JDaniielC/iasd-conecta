@@ -144,10 +144,16 @@ void main() {
 
     // O expurgo roda UMA vez, no setUp: se cada teste chamasse, a ordem entre
     // eles passaria a importar e o arquivo deixaria de ser determinístico.
-    final n = await conn.execute('select public.expurgar_mensagens_de_acao()');
+    await conn.execute('select public.expurgar_mensagens_de_acao()');
+    // A fumaça é sobre a linha DESTE arquivo, e não sobre o número que a função
+    // devolve — o mesmo cuidado que o cabeçalho pede e que esta linha
+    // desobedecia. `expurgar_mensagens_de_acao()` é global e roda em paralelo
+    // com outros arquivos: desde `mensagem-fixada` há um segundo arquivo que a
+    // chama, e ele pode levar a linha vencida antes daqui, deixando o número
+    // em zero sem que nada esteja errado. Medido em 2026-08-17.
     expect(
-      n.first[0]! as int,
-      greaterThanOrEqualTo(1),
+      await exists(oldMessage),
+      isFalse,
       reason: 'sem nada apagado, o resto deste arquivo não prova nada',
     );
   });

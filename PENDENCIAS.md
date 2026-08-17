@@ -735,11 +735,21 @@ arquivos rodam em PARALELO contra o mesmo banco — a capability
 faz o `cleanUpTestUser` de um apagar o Perfil que o outro está usando no meio
 do teste.
 
-**Não está mordendo hoje**, e vale dizer por quê: os inserts de Perfil são
-`on conflict (id) do nothing`, e as limpezas moram em `tearDownAll`. A janela
-existe mesmo assim — dois `tearDownAll` concorrentes, ou um arquivo que passe a
-limpar em `tearDown` —, e é do tipo que aparece uma vez em trinta execuções e é
-descartada como "flaky". Foi assim com o § 2.6 e com o § 2.7.
+**PASSOU A MORDER EM 2026-08-17**, e o par que mordeu está consertado:
+`chat_denuncias_do_grupo_test.dart` usava `c4000000-...0001/2/3`, os mesmos
+três uids de `convite_nao_reserva_vaga_test.dart`. `dart test test/integration`
+falhava de forma intermitente no `tearDownAll` daquele arquivo — duas em três
+execuções —, com FK de `perfis` e linha já apagada. Os dois `tearDownAll`
+concorrentes eram exatamente a janela descrita abaixo. O arquivo do chat mudou
+para `cc000000`, prefixo conferido livre em toda a suíte; três execuções
+seguidas depois disso: 520 testes verdes. **Os outros 16 pares continuam
+abertos**, e agora se sabe que a janela é real.
+
+O texto original da dívida, que continua valendo para os 16: os inserts de
+Perfil são `on conflict (id) do nothing`, e as limpezas moram em
+`tearDownAll`. A janela existe mesmo assim — dois `tearDownAll` concorrentes,
+ou um arquivo que passe a limpar em `tearDown` —, e é do tipo que aparece uma
+vez em trinta execuções e é descartada como "flaky". Foi assim com o § 2.6 e com o § 2.7.
 
 | uid | arquivo A | arquivo B |
 |---|---|---|
@@ -960,6 +970,133 @@ comportamento novo nasce em spec.
 Gravidade: quem pode fazer isso já é autoridade do espaço ou Administrador do
 distrito — não é escalada de privilégio. É integridade de registro, e é o tipo
 de coisa que só se descobre quando alguém precisa do registro.
+
+### 2.25 Quem é citado por outro não tem caminho para desfixar
+
+Aberto pela change `mensagem-fixada` (2026-08-17). **Não é defeito da
+implementação** — é o limite do desenho, e ele está declarado em
+`REVISAO-JURIDICA.md` § 4-E e na Política de Privacidade 1.7.
+
+Fixar tira a mensagem do prazo de 30 dias da conversa de Ação. Quem fixa é a
+autoridade do espaço. Então uma pessoa com autoridade pode fixar mensagem de
+**terceiro que cite alguém**, e essa mensagem passa a não expirar.
+
+A pessoa citada não tem caminho direto:
+
+- não é a autora, então o braço "o autor sempre desfixa a própria mensagem"
+  não a alcança;
+- não tem autoridade no espaço;
+- e `excluir_minha_conta` não apaga texto escrito por outra pessoa — limite
+  antigo, já declarado.
+
+O que ela tem é a **denúncia**, o mesmo caminho de antes. O que mudou é o
+efeito de ninguém agir: antes o prazo de 30 dias resolvia sozinho.
+
+Contrapesos que já existem: teto de 3 fixadas por conversa
+(`mensagem_teto_de_fixadas()`) e autoridade estreita para fixar.
+
+**A decisão é humana e não de código**: dar à pessoa citada um caminho direto
+para pedir o desfixe, ou aceitar que a denúncia basta. Se for o primeiro, é
+comportamento novo e nasce em spec.
+
+### 2.26 O teto de fixadas é escolha sem medição
+
+`mensagem_teto_de_fixadas()` devolve **3**, e está escrito na migration que é
+escolha e não medição: três cabe numa faixa recolhida de tela de celular e
+força escolher. Ninguém mediu quantas fixadas uma conversa real quer.
+
+Trocar é uma linha na migration e uma em `ChatLimits.pinnedCeiling`, e o teste
+de integração falha se divergirem. O que reabre isto é uso real — e o número
+está na Política de Privacidade 1.7, então mudá-lo **muda texto legal**.
+
+### 2.27 A faixa de fixadas não foi vista num aparelho de verdade
+
+O caso que manda no desenho — 3 fixadas de 2000 caracteres, a 360x800 — está
+provado em `test/widget/conversa_fixada_test.dart`, e teste de widget mede
+árvore e geometria, não legibilidade. Falta olhar num celular: se a primeira
+linha de cada fixada diz o suficiente para a pessoa decidir se expande, e se a
+faixa expandida rolando por dentro é entendida como rolável.
+
+Entra na seção 3 deste documento, "exigem rodar o app e olhar".
+
+### 2.28 O autor que saiu do espaço NÃO consegue desfixar — a requirement não é cumprida
+
+Medido em 2026-08-17 pelos agentes `advogado-digital` e `promessa-vs-execucao`,
+no fechamento da change `mensagem-fixada`. **Contradiz em letra a requirement
+daquela change**: *"O sistema DEVE permitir que o autor desfixe mensagem que ele
+escreveu, mesmo sem ter autoridade no espaço."*
+
+Medição, contra o Postgres local, em transação revertida:
+
+| Sessão | `pode_moderar_mensagem` | `update ... set fixada_em = null` |
+|---|---|---|
+| autor participante do Grupo | `t` | **1 linha** |
+| autor que saiu do Grupo | `t` | **0 linhas** |
+| autor que desistiu da Ação | `t` | **0 linhas** |
+| autor com idade corrigida para 17 | `t` | **0 linhas** |
+
+**A causa não é a policy de `update`, que acerta.** No Postgres, um `UPDATE` só
+alcança linha que a policy de `SELECT` deixa a sessão ler, e
+`pode_ver_chat_grupo`/`pode_ver_chat_acao` passaram a devolver `false`. Some-se
+que o único caminho de desfixe em todo o `lib/` é `ChatRepository.unpinMessage`,
+chamado só de dentro de `chat_page.dart` — e `ChatGatePage` fecha a tela antes.
+
+**Por que importa mais do que parece:** este braço é o contrapeso que sustentou
+a subida do texto legal para 1.7 — fixar tira a mensagem do prazo, e o autor
+devolvê-la ao prazo é o que impede que o prazo do que ele escreveu dependa de
+outra pessoa para sempre. Sem ele, o único caminho medido que resta é **excluir
+a conta inteira**, e exigir isso para eliminar um dado é o oposto do art. 18.
+
+**Estado hoje:** a Política 1.7 declara o limite em vez de prometer o que o app
+não faz, e oferece o e-mail de contato. É honesto e é fraco.
+
+**Conserto provável, e ele tem duas metades:**
+
+1. Banco — uma função `security definer` `desfixar_minha_mensagem(uuid)` que
+   confira `auth.uid() = autor_id` e **só** toque nas duas colunas de fixação.
+   É o único jeito de alcançar linha que a policy de `select` esconde.
+2. Tela — de onde a pessoa chama isso. Ela não vê o chat, então precisa de uma
+   lista "minhas mensagens fixadas" em algum lugar que ela ainda alcança
+   (`Meu Perfil` é o candidato). **Isso é superfície de produto nova, e nasce
+   em spec.**
+
+Não entrou na change porque a metade 1 sem a metade 2 é função sem chamador.
+
+### 2.29 A Política prometia aviso PRÉVIO de mudança, e nenhuma versão cumpriu
+
+Achado A-1 do `advogado-digital` em 2026-08-17. A frase antiga dizia *"avisamos
+antes de qualquer mudança valer para quem já está cadastrado"*. A 1.7 entrou com
+`vigente_desde '2026-08-17'` e a Novidade que a explica é do mesmo dia — aviso
+posterior, e só para quem abrir a tela.
+
+Pior: o marcador de Novidade lida é **por instalação**
+(`news_repository.dart`), então quem reinstala não é alcançado e não fica
+registro de quem foi informado. E `perfis.consentimento_lgpd_versao` é carimbada
+só na criação do Perfil — nada compara a versão aceita com a vigente.
+
+LGPD art. 8º, §6º: em alteração de informação do art. 9º, II — **forma e duração
+do tratamento**, exatamente o que a 1.7 mudou — o controlador *"deverá informar
+ao titular, com destaque de forma específica do teor das alterações, podendo o
+titular ... revogá-lo caso discorde"*.
+
+**Fechado nesta rodada:** a frase falsa saiu. A Política agora descreve o que o
+app faz — publica versão nova, escreve em Novidades, vale a partir da data — e
+diz que dá para revogar o consentimento ou excluir a conta.
+
+**Continua aberto:** o aviso com destaque. O mecanismo é comparar
+`perfis.consentimento_lgpd_versao` com `versao_texto_legal_vigente()` e mostrar
+o que mudou a quem está atrasado. É comportamento novo, e nasce em spec.
+
+### 2.30 `REVISAO-JURIDICA.md` § 8 descreve um app que não existe mais
+
+Achado A-6, ⚪. A seção diz que o texto legal *"não afirma que existe uma tela de
+'meu perfil' ... porque não existe"* e o mesmo sobre o botão de excluir conta.
+As duas existem desde a feature 016, e a própria Política manda abrir "Meu
+Perfil" e usar "Excluir conta".
+
+O documento que existe para dizer ao advogado o que ainda falta afirma que
+faltam duas coisas já entregues. Não é da change `mensagem-fixada` — mas ela
+editou o arquivo e passou ao lado, e é assim que uma seção envelhece.
 
 ## 3. Verificação manual — só gente mede
 

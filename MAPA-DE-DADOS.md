@@ -103,6 +103,7 @@ vida pessoal de terceiro a desmentiria. O que dá para declarar com honestidade
 | Onde | O quê |
 |---|---|
 | Tabela | `public.mensagens` (`20260813200000_chat_de_grupo_e_acao.sql`, `create table public.mensagens`) — `grupo_id` **ou** `acao_id` por constraint, `autor_id`, `texto` (máx. 2000), `removida_em`, `removida_por`, `created_at` |
+| Colunas de fixação | `fixada_em timestamptz` e `fixada_por uuid references perfis(id)` (`20260817160000_mensagem_fixada.sql`, `alter table public.mensagens`). Dado pessoal novo: **quem fixou e quando**, nada além. `fixada_por` aponta para `perfis` como `removida_por`, então a anonimização de conta propaga sozinha |
 | Conteúdo | **Indeterminado.** Texto livre, sem estrutura, sem validação de conteúdo. Só o tamanho é limitado |
 | Quem escreve | Quem lê aquela conversa e tem 18 anos ou mais, em Grupo não arquivado — policy `mensagens_insert_autor` |
 | Quem lê (Grupo) | Quem participa, mais o Administrador do distrito — `pode_ver_chat_grupo` |
@@ -122,7 +123,23 @@ depois do encontro, não da escrita — por `expurgar_mensagens_de_acao()`
 (`expurgar_mensagens_de_acao`), com dois executores: `pg_cron` e uma chamada do app ao abrir a
 conversa (`ChatRepository.fetchHistory`). Mensagem de
 **Grupo não expira**, nem em Grupo arquivado — o histórico é justamente o que
-sobra de um Grupo arquivado. Isso significa que a conversa de Grupo é o
+sobra de um Grupo arquivado.
+
+**Exceção ao prazo, desde 2026-08-17**: o `delete` daquela função tem
+`and m.fixada_em is null` (`20260817160000_mensagem_fixada.sql`,
+`create or replace function public.expurgar_mensagens_de_acao`). **Mensagem
+fixada não expira.** Quem fixa é a autoridade do espaço (`pode_moderar_espaco`
+— dono do Grupo, criador da Ação, dono do Grupo da Ação, Administrador do
+distrito); participante comum não fixa nem a própria mensagem. Teto de **3 por
+conversa** (`mensagem_teto_de_fixadas()`), verificado em gatilho sob trava na
+linha do espaço — sem teto, fixar desligaria a retenção da conversa inteira.
+O **autor sempre desfixa a própria mensagem**, mesmo sem autoridade
+(`pode_moderar_mensagem`), e desfixar não abre prazo novo: a vencida sai no
+expurgo seguinte. Lápide não fica fixada — quando `texto` vai a nulo, o mesmo
+gatilho zera as duas colunas na mesma transação. A exceção e o teto estão
+declarados na Política de Privacidade desde a versão **1.7**; ver
+`REVISAO-JURIDICA.md` § 4-E, inclusive o limite de que **quem é citado por
+outro não tem caminho para desfixar**. Isso significa que a conversa de Grupo é o
 primeiro dado do app **sem prazo e com conteúdo indeterminado**, e é o que
 reabre a decisão de backup (`PENDENCIAS.md` 2.15).
 

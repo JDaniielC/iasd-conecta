@@ -20,9 +20,16 @@ import 'db_test_helper.dart';
 /// primeira divergência entre elas é esta — uma tela mostrando menos do que a
 /// pessoa tem direito de ver.
 
-const _uidOwner = 'c4000000-0000-0000-0000-000000000001';
-const _uidMember = 'c4000000-0000-0000-0000-000000000002';
-const _uidOtherOwner = 'c4000000-0000-0000-0000-000000000003';
+// PREFIXO PRÓPRIO, e a troca é conserto e não arrumação. Este arquivo usava
+// `c4000000`, os mesmos TRÊS uids de `convite_nao_reserva_vaga_test.dart` —
+// medido em 2026-08-17: `dart test test/integration` falhava de forma
+// intermitente no `tearDownAll` daquele arquivo, porque os dois apagam os
+// mesmos `perfis` em paralelo e quem chega depois encontra a linha já sem
+// existir ou ainda referenciada. É o caso concreto da dívida `PENDENCIAS.md`
+// 2.21, e `cc000000` foi conferido como livre em toda a suíte.
+const _uidOwner = 'cc000000-0000-0000-0000-000000000001';
+const _uidMember = 'cc000000-0000-0000-0000-000000000002';
+const _uidOtherOwner = 'cc000000-0000-0000-0000-000000000003';
 const _allUids = [_uidOwner, _uidMember, _uidOtherOwner];
 
 void main() {

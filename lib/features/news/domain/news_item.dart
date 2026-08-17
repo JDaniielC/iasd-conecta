@@ -210,6 +210,21 @@ final allNews = <NewsItem>[
         'por outra pessoa, mesmo citando você, não é apagada por aí — o '
         'caminho para ela é a denúncia.',
   ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 17),
+    text:
+        'Quem cuida do espaço — o Dono do Grupo, quem criou a Ação ou o '
+        'Administrador do distrito — pode fixar uma mensagem no alto da '
+        'conversa, até 3 por conversa. O que fica fixado numa conversa de '
+        'Ação não é apagado no prazo de 30 dias, e é o ponto: o endereço e a '
+        'lista do que cada um leva costumam ser justamente o que precisa '
+        'sobreviver ao encontro. Se a mensagem é sua, você pode desfixá-la '
+        'pela própria conversa, e a partir daí ela volta a contar o prazo '
+        'normal. Isso muda o que dizia a Novidade anterior sobre os 30 dias: '
+        'o prazo continua, com essa exceção. A Política de Privacidade '
+        'explica tudo, inclusive o que fazer se você já não alcança a '
+        'conversa.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

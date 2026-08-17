@@ -31,12 +31,24 @@ class ChatState {
   const ChatState({
     required this.messages,
     required this.connection,
+    this.pinned = const [],
     this.hasMoreOlder = true,
     this.loadingOlder = false,
   });
 
   /// A conversa inteira, em ordem cronológica crescente.
   final List<Message> messages;
+
+  /// As fixadas daquele chat, mais recente primeiro.
+  ///
+  /// LISTA PRÓPRIA e não um filtro sobre [messages], porque uma fixada ANTIGA
+  /// está fora da primeira página do histórico — e é justamente ela que dá
+  /// sentido à faixa: o que se fixa é o que ia afundar. Vem de uma consulta
+  /// separada (`ChatRepository.fetchPinned`), medida contra a alternativa em
+  /// `union`.
+  ///
+  /// Nunca tem lápide: o gatilho do banco desfixa a mensagem que perde o texto.
+  final List<Message> pinned;
 
   final ChatConnection connection;
 
@@ -50,11 +62,13 @@ class ChatState {
   ChatState copyWith({
     List<Message>? messages,
     ChatConnection? connection,
+    List<Message>? pinned,
     bool? hasMoreOlder,
     bool? loadingOlder,
   }) => ChatState(
     messages: messages ?? this.messages,
     connection: connection ?? this.connection,
+    pinned: pinned ?? this.pinned,
     hasMoreOlder: hasMoreOlder ?? this.hasMoreOlder,
     loadingOlder: loadingOlder ?? this.loadingOlder,
   );

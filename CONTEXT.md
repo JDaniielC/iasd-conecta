@@ -74,6 +74,13 @@ Termos que não são entradas do glossário, mas aparecem o tempo todo no códig
 | Janela do teto | `window` |
 | Teto de mensagens na janela | `windowCeiling` |
 | Quanto falta para poder enviar | `retryAfter` |
+| Fixar mensagem | `pinMessage` |
+| Desfixar mensagem | `unpinMessage` |
+| Mensagem fixada (está fixada?) | `isPinned` |
+| Quando foi fixada / quem fixou | `pinnedAt` / `pinnedBy` |
+| Teto de fixadas por conversa | `pinnedCeiling` |
+| Carregar as fixadas da conversa | `fetchPinned` |
+| Faixa de fixadas (acima da conversa) | `PinnedBanner` |
 
 ### Colisões conhecidas, com decisão já tomada
 

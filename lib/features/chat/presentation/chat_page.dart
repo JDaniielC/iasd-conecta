@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../chat_providers.dart';
+import '../domain/chat_limits.dart';
 import '../domain/chat_state.dart';
 import '../domain/message.dart';
 import '../domain/send_refusal.dart';
@@ -233,6 +234,10 @@ class _ChatPageState extends ConsumerState<ChatPage> {
       body: Column(
         children: [
           _ConnectionBanner(connection: chatAsync.value?.connection),
+          _PinnedBanner(
+            pinned: chatAsync.value?.pinned ?? const [],
+            space: widget.space,
+          ),
           Expanded(
             child: chatAsync.when(
               loading: () => const Center(child: CircularProgressIndicator()),
@@ -304,6 +309,189 @@ class _ConnectionBanner extends StatelessWidget {
       ),
       child: Text(text, style: theme.textTheme.labelMedium),
     );
+  }
+}
+
+/// A faixa de mensagens fixadas, acima da conversa.
+///
+/// **RECOLHIDA POR PADRÃO, e isto é requisito e não gosto.** O teto é 3 e a
+/// mensagem vai a 2000 caracteres: três fixadas por extenso ocupam mais que uma
+/// tela de celular inteira, e a conversa — que é o motivo de a pessoa ter
+/// aberto — ficaria abaixo do primeiro rolar. Recolhida, cada fixada ocupa uma
+/// linha; sob toque, a faixa expande.
+///
+/// O julgamento é NA LARGURA DE CELULAR, não no desktop: é onde a faixa compete
+/// com a conversa, e onde o desenho quebra primeiro.
+///
+/// Expandida ela também tem teto de altura, e o resto rola DENTRO dela. Sem
+/// isso, expandir devolveria o problema que recolher resolveu — só que depois
+/// de um toque, que é pior, porque aí a pessoa não sabe como voltar.
+///
+/// Sem fixada, NADA ocupa espaço — nem uma faixa vazia dizendo que não há
+/// nada fixado.
+class _PinnedBanner extends StatefulWidget {
+  const _PinnedBanner({required this.pinned, required this.space});
+
+  final List<Message> pinned;
+  final ChatSpace space;
+
+  @override
+  State<_PinnedBanner> createState() => _PinnedBannerState();
+}
+
+class _PinnedBannerState extends State<_PinnedBanner> {
+  var _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.pinned.isEmpty) return const SizedBox.shrink();
+
+    final theme = Theme.of(context);
+    final count = widget.pinned.length;
+
+    return Material(
+      color: theme.colorScheme.surfaceContainerHighest,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md,
+                vertical: AppSpacing.sm,
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.push_pin_outlined, size: 18),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(
+                      // O TETO APARECE QUANDO ESTÁ CHEIO, e só então. Dizer
+                      // "1 de 3" o tempo todo transformaria um limite raro em
+                      // ruído permanente; dizer "3 de 3" no momento em que ele
+                      // passa a valer é a única hora em que o número informa
+                      // alguma coisa. Sem isto, quem modera só descobre o
+                      // limite depois de escolher a mensagem e levar a recusa.
+                      switch (count) {
+                        1 => '1 mensagem fixada',
+                        final n when n >= ChatLimits.pinnedCeiling =>
+                          '$n de ${ChatLimits.pinnedCeiling} mensagens fixadas',
+                        final n => '$n mensagens fixadas',
+                      },
+                      style: theme.textTheme.labelLarge,
+                    ),
+                  ),
+                  Icon(_expanded ? Icons.expand_less : Icons.expand_more),
+                ],
+              ),
+            ),
+          ),
+          // A altura máxima é fração da TELA e não um número de pixels: o mesmo
+          // valor fixo que caberia num celular grande engoliria um pequeno.
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.sizeOf(context).height * 0.35,
+            ),
+            child: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  for (final message in widget.pinned)
+                    _PinnedTile(
+                      message: message,
+                      space: widget.space,
+                      expanded: _expanded,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Uma fixada na faixa. Recolhida mostra a PRIMEIRA LINHA; expandida, o texto
+/// inteiro.
+class _PinnedTile extends ConsumerWidget {
+  const _PinnedTile({
+    required this.message,
+    required this.space,
+    required this.expanded,
+  });
+
+  final Message message;
+  final ChatSpace space;
+  final bool expanded;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final uid = ref.watch(currentUserIdProvider);
+    final canModerate =
+        ref.watch(canModerateSpaceProvider(space)).value ?? false;
+    // DESFIXAR é da autoridade OU do autor, e o braço do autor é o que devolve
+    // a ele o controle do prazo do que escreveu: fixada não expira.
+    final canUnpin = canModerate || message.authorId == uid;
+
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.md,
+        0,
+        AppSpacing.sm,
+        AppSpacing.sm,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  message.authorName ?? 'Alguém',
+                  style: theme.textTheme.labelSmall,
+                ),
+                Text(
+                  // A faixa NUNCA desenha lápide: o gatilho do banco desfixa a
+                  // mensagem que perde o texto, então este `??` é piso e não
+                  // caso. Uma marca de "mensagem removida" no alto do chat
+                  // ocuparia vaga do teto sem informar nada.
+                  message.text ?? '',
+                  style: theme.textTheme.bodyMedium,
+                  maxLines: expanded ? null : 1,
+                  overflow: expanded
+                      ? TextOverflow.clip
+                      : TextOverflow.ellipsis,
+                ),
+              ],
+            ),
+          ),
+          if (canUnpin)
+            IconButton(
+              icon: const Icon(Icons.push_pin, size: 18),
+              tooltip: 'Desfixar',
+              onPressed: () => _unpin(context, ref),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _unpin(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(chatProvider(space).notifier).unpin(message.id);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Você não pode desfixar esta mensagem.'),
+          ),
+        );
+      }
+    }
   }
 }
 
@@ -544,6 +732,45 @@ class _MessageActions extends ConsumerWidget {
     }
   }
 
+  /// Fixa, e explica quando não cabe mais.
+  ///
+  /// O TETO NÃO É ERRO, e a frase precisa dizer o que fazer: ele não passa com
+  /// o tempo como as recusas de ritmo, então "tente mais tarde" seria mentira.
+  /// O que libera vaga é desfixar. A recusa chega por `errcode` PT409 e o texto
+  /// dela mora em `sendRefusalMessage`, junto com as outras — a tela nunca
+  /// interpreta a mensagem crua do servidor.
+  Future<void> _pin(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(chatProvider(space).notifier).pin(message.id);
+    } on SendRefusal catch (refusal) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(sendRefusalMessage(refusal))));
+      }
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Você não pode fixar esta mensagem.')),
+        );
+      }
+    }
+  }
+
+  Future<void> _unpin(BuildContext context, WidgetRef ref) async {
+    try {
+      await ref.read(chatProvider(space).notifier).unpin(message.id);
+    } catch (_) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Você não pode desfixar esta mensagem.'),
+          ),
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     // Oferecer "Remover" a todo leitor era o que os Termos chamam de "mais
@@ -559,6 +786,20 @@ class _MessageActions extends ConsumerWidget {
           TextButton(
             onPressed: () => _remove(context, ref),
             child: const Text('Remover'),
+          ),
+        // FIXAR é só da autoridade do espaço, e nem o autor entra — fixar
+        // decide o que todo mundo vê primeiro, e tira a mensagem do prazo de
+        // 30 dias. DESFIXAR aparece também para o autor, pelo motivo inverso:
+        // é o que devolve a ele o controle do prazo do que escreveu.
+        if (canModerate && !message.isPinned)
+          TextButton(
+            onPressed: () => _pin(context, ref),
+            child: const Text('Fixar'),
+          ),
+        if (message.isPinned && (canModerate || isMine))
+          TextButton(
+            onPressed: () => _unpin(context, ref),
+            child: const Text('Desfixar'),
           ),
         // Denunciar a própria mensagem não faz sentido: quem escreveu pode
         // simplesmente remover.

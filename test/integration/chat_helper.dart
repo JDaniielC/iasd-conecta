@@ -183,3 +183,70 @@ Future<void> clearGroupChat(Connection conn, String groupId) async {
     parameters: {'g': groupId},
   );
 }
+
+/// Fixa pela sessão corrente, e devolve quantas linhas mudaram.
+///
+/// **`affectedRows`, não `throwsA`.** Recusa de RLS num `update` é ZERO LINHA e
+/// não exceção — quem não passa por `mensagens_update_autor_ou_autoridade` nem
+/// chega ao gatilho, e um teste que esperasse exceção passaria pelo motivo
+/// errado ou não passaria nunca. Quem passa pela policy e é recusado pelo
+/// GATILHO recebe exceção com `errcode`, e aí o teste é `throwsA`. As duas
+/// formas de recusa existem nesta feature de propósito, e distingui-las é
+/// metade do que estes testes provam.
+Future<int> pinMessage(
+  Connection conn, {
+  required String uid,
+  required String messageId,
+}) async {
+  final r = await conn.execute(
+    Sql.named(
+      'update public.mensagens set fixada_em = now(), fixada_por = @u '
+      'where id = @m',
+    ),
+    parameters: {'m': messageId, 'u': uid},
+  );
+  return r.affectedRows;
+}
+
+/// Desfixa pela sessão corrente. Ver [pinMessage] sobre `affectedRows`.
+Future<int> unpinMessage(Connection conn, {required String messageId}) async {
+  final r = await conn.execute(
+    Sql.named(
+      'update public.mensagens set fixada_em = null, fixada_por = null '
+      'where id = @m',
+    ),
+    parameters: {'m': messageId},
+  );
+  return r.affectedRows;
+}
+
+/// Estado de fixação lido como `postgres` — o real, não o que a sessão vê.
+Future<({bool pinned, String? pinnedBy})> pinnedStateOf(
+  Connection conn,
+  String messageId,
+) async {
+  final r = await conn.execute(
+    Sql.named(
+      'select fixada_em, fixada_por::text from public.mensagens where id = @m',
+    ),
+    parameters: {'m': messageId},
+  );
+  final row = r.single.toColumnMap();
+  return (pinned: row['fixada_em'] != null, pinnedBy: row['fixada_por'] as String?);
+}
+
+/// Quantas fixadas o espaço tem, lido como `postgres`.
+Future<int> pinnedCountIn(
+  Connection conn, {
+  String? groupId,
+  String? actionId,
+}) async {
+  final r = await conn.execute(
+    Sql.named(
+      'select count(*) from public.mensagens where fixada_em is not null and '
+      '${groupId != null ? 'grupo_id = @id' : 'acao_id = @id'}',
+    ),
+    parameters: {'id': groupId ?? actionId},
+  );
+  return r.first[0]! as int;
+}

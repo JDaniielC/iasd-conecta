@@ -210,6 +210,39 @@ final allNews = <NewsItem>[
         'por outra pessoa, mesmo citando você, não é apagada por aí — o '
         'caminho para ela é a denúncia.',
   ),
+  // Change `fechar-superficie-anon`. Correção de segurança COM efeito sobre o
+  // que os outros enxergam da pessoa — a exceção que o CRITERIO-DE-NOVIDADE.md
+  // manda escrever, no molde do exemplo da Liderança.
+  NewsItem(
+    date: DateTime.utc(2026, 8, 16),
+    text:
+        'De quais Grupos e Ministérios você participa deixou de ser visível '
+        'para quem não entrou no app. Antes, essa lista podia ser consultada '
+        'de fora, sem login. Dentro do app nada muda: quem já via, continua '
+        'vendo.',
+  ),
+  // Change `filtro-e-intervalo-de-mensagem`. DOIS itens porque são duas ideias
+  // — a regra 3 do critério. As duas são recusa que a pessoa leva na cara, e a
+  // segunda existe também porque o direito de revisão de uma decisão
+  // automatizada só se exerce sobre regra que a pessoa sabe que existe
+  // (REVISAO-JURIDICA.md § 4-D).
+  NewsItem(
+    date: DateTime.utc(2026, 8, 17),
+    text:
+        'Algumas palavras não são aceitas nas conversas nem no texto de uma '
+        'denúncia. Se você usar uma delas, a mensagem não é enviada e o app '
+        'diz qual foi a palavra, para você trocar e mandar de novo. O que '
+        'você escreveu não se perde.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 17),
+    text:
+        'Há um ritmo máximo para escrever numa conversa: uma mensagem a cada '
+        'poucos segundos, e um limite por conversa a cada poucos minutos. '
+        'Serve para ninguém encher o chat de todo mundo. Quando o limite '
+        'pega, o app diz quanto falta para você poder enviar, e o texto '
+        'continua no campo.',
+  ),
   NewsItem(
     date: DateTime.utc(2026, 8, 17),
     text:

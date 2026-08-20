@@ -1,4 +1,65 @@
-.PHONY: deploy-web
+.PHONY: deploy-web coverage
+# ---------------------------------------------------------------------
+# COBERTURA — o piso que a árvore não pode furar
+# ---------------------------------------------------------------------
+# Constituição, Princípio IV (inegociável, 1.2.0): a cobertura de linha dos
+# testes de unidade e de widget é medida por um comando único, versionado, que
+# reprova quando o número cai abaixo do piso registrado.
+#
+# 🔴 A SUÍTE VERMELHA NÃO REPORTA COBERTURA, DE PROPÓSITO
+# Um `lcov.info` de execução parcial produz percentual ALTO — o que não rodou
+# não conta como não coberto — e passaria o gate numa árvore quebrada. Por isso
+# `flutter test --coverage` vem primeiro e `make` aborta a receita se ele sair
+# diferente de zero, antes de qualquer medição.
+#
+# 🔴 O QUE FICA FORA DO DENOMINADOR, E POR QUÊ
+# A lista mora em scripts/coverage_summary.dart (isExcluded), com o motivo em
+# comentário ao lado de cada entrada. Hoje são duas:
+#   - lib/features/*/data/  — a camada de repositório é provada por
+#     `dart test test/integration`, que roda contra Postgres e não entra nesta
+#     medição. Mantê-la no denominador faria o número medir a ausência da
+#     integração, não a cobertura do código.
+#
+#     UMA EXCEÇÃO DENTRO DA EXCEÇÃO, e o motivo escrito precisa dizê-la:
+#     `action/data/actions_seen_repository.dart` cai neste padrão mas NÃO fala
+#     com o Supabase — é SharedPreferences, e quem o prova é
+#     `test/unit/actions_seen_repository_test.dart`, que roda DENTRO desta
+#     medição. O padrão descarta as linhas dele mesmo estando cobertas, então o
+#     número reportado é levemente MENOR que a realidade. Errar para baixo é o
+#     lado certo de errar num piso; estreitar o padrão para salvar um arquivo
+#     de 20 linhas custaria mais do que rende.
+#
+# É a ÚNICA. `lib/main.dart` já esteve aqui e saiu na convergência C1.3: a
+# requirement recusa excluir código que nenhuma suíte prova, e nenhuma prova o
+# main. A exclusão também não mudava número — ele nem chega ao lcov.
+#
+# NÃO estão excluídos, e é deliberado:
+#   lib/features/chat/domain/chat_limits.dart e
+#   lib/features/legal/legal_metadata.dart. Estavam fora do lcov só porque
+#   nenhum teste os importava. São constantes que a regra usa, e o caminho certo
+#   é um teste importá-los — não o gate ignorá-los. Desde a change
+#   `cobertura-e-tdd` há teste de unidade que os importa, e eles contam.
+#
+# 🔴 O PISO SOBE, E NÃO DESCE
+# Medido em 2026-08-20 sobre o denominador acima, ao fim da change
+# `cobertura-e-tdd`: 3511/4131 = 85,0%, estável em três execuções seguidas.
+#
+# O piso fica em 84.5, e não em 85.0, por um motivo medido e não por
+# conservadorismo genérico: durante a change o mesmo comando deu 2980/4131 numa
+# execução e 2990/4131 nas três seguintes, sem uma linha de lib/ ter mudado —
+# 0,24pp de variação. A causa não foi perseguida. A folga de 0,5pp absorve essa
+# ordem de grandeza, porque um gate que reprova sozinho é pior que gate nenhum:
+# ensina a ignorá-lo, e aí ele deixa de funcionar quando importa.
+#
+# Quando o gate reprovar, o conserto é escrever o teste que falta. Baixar este
+# número exige motivo escrito no corpo do commit — remoção deliberada de código
+# testado, por exemplo. O piso é o registro do que já esteve provado.
+COVERAGE_FLOOR := 84.5
+
+coverage:
+	flutter test --coverage test/unit test/widget
+	@dart run scripts/coverage_summary.dart --floor $(COVERAGE_FLOOR)
+
 
 # Publica o Flutter Web em Cloud Storage + Cloud CDN. MANUAL enquanto
 # iam.disableServiceAccountKeyCreation bloquear o CI (ver

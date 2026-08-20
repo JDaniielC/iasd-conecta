@@ -46,7 +46,17 @@ class SuggestedActionRepository {
     });
   }
 
+  /// A recusa da policy `acoes_sugeridas_delete_admin` é **ausência, não
+  /// erro**: quem não é Administrador do distrito recebe `DELETE 0` e sucesso,
+  /// porque a linha deixa de existir para aquela sessão. Sem o `.select()`
+  /// abaixo, esta chamada reportava que a sugestão saiu enquanto ela continuava
+  /// na lista para todo mundo. Medido em 2026-08-20 — ver
+  /// `test/integration/acao_sugerida_remocao_test.dart`.
   Future<void> delete(String id) async {
-    await _client.from('acoes_sugeridas').delete().eq('id', id);
+    final affected =
+        await _client.from('acoes_sugeridas').delete().eq('id', id).select();
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra remover agora.');
+    }
   }
 }

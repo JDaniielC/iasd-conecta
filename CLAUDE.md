@@ -26,6 +26,61 @@ dizendo que a branch "não está totalmente mesclada". Conferir antes com
 - Trabalho que não é de change (correção pontual, ledger avulso) continua
   direto em `main`.
 
+## Teste primeiro, e o vermelho tem que ser o certo
+
+**A regra mora na constituição, Princípio IV** — inegociável, e reescrita em
+2026-08-20 (1.1.0 → 1.2.0). Este arquivo só acrescenta o *como* neste repo.
+
+O ciclo é: escreve o teste, roda, **lê a mensagem da falha**, e só então escreve
+o código de produção. Ler a mensagem não é formalidade — é o passo que separa
+prova de teatro. Um teste que falha porque o widget não está na árvore, porque
+não compila ou porque o `setUp` não montou vira verde assim que o obstáculo sai,
+com o requisito ainda por implementar. O vermelho útil diz *valor errado*,
+*contagem errada*, *estado errado*.
+
+**Em escrita do cliente contra o Supabase, o vermelho de uma recusa de RLS é
+`affectedRows == 0`, nunca exceção.** Ver a seção "Recusa de RLS é ausência, não
+erro" mais abaixo: a policy que recusa faz a linha não existir para aquela
+sessão, e o `update` volta com sucesso sobre nada. Um teste que espera exceção
+aí passa pelo motivo errado ou não passa nunca.
+
+**Teste de widget sem asserção sobre o que a pessoa vê não conta como teste**,
+mesmo que o lcov conte. Um `pumpWidget` sozinho sobe a cobertura e não prova
+coisa alguma. Afirme texto, estado de botão, mensagem de erro — o que estaria
+errado na tela se a regra quebrasse. Não há gate automático contra isso; é
+revisão.
+
+**Cobertura retroativa de código que já existe nasce verde, e está certo.**
+Teste-primeiro pressupõe comportamento que ainda não existe. Escrever teste para
+uma página que já funciona não é comportamento novo nem alterado — é uma das
+quatro exceções declaradas do Princípio IV, junto de texto de tela, tradução de
+identificador e movimentação de código. Forjar um vermelho comentando a página
+para descomentar depois é teatro, não disciplina.
+
+### O piso de cobertura
+
+`make coverage` roda a suíte de unidade e widget com `--coverage`, aborta se ela
+estiver vermelha, e reprova se o número cair abaixo de `COVERAGE_FLOOR`.
+
+Suíte vermelha **não** reporta cobertura, de propósito: um `lcov.info` de
+execução parcial produz percentual alto — o que não rodou não conta como não
+coberto — e passaria o gate numa árvore quebrada.
+
+Quando o gate reprova, o conserto é escrever o teste que falta. **Baixar o
+número do piso exige motivo escrito no corpo do commit** (remoção deliberada de
+código testado, por exemplo). O piso é o registro do que já esteve provado.
+
+O que fica fora do denominador está escrito no alvo, com o motivo. Hoje é uma
+só: `lib/features/*/data/`, porque quem prova aquela camada é
+`dart test test/integration`, que não entra nessa medição. Exclusão sem motivo
+escrito é como o número sobe sem o código melhorar — e **excluir código que
+nenhuma outra suíte prova não é exclusão, é esconder**.
+
+O padrão tem uma imprecisão declarada: `actions_seen_repository.dart` cai nele
+sem falar com o Supabase (é SharedPreferences, provado por teste de unidade que
+roda dentro desta medição). O número sai levemente menor que a realidade, e
+errar para baixo é o lado certo de errar num piso.
+
 ## Testes de integração
 
 `dart test test/integration` roda os arquivos **em paralelo contra o mesmo

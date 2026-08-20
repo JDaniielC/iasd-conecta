@@ -1,25 +1,39 @@
 <!--
 Sync Impact Report
-Version change: 1.0.0 → 1.1.0
-Modified principles: I. Linguagem Ubíqua do Domínio — adicionada a subseção
-  "Fronteira de idioma (código Dart)": identificadores Dart em inglês (tradução
-  consistente do glossário), banco de dados e strings de UI continuam em
-  português. Nenhuma remoção/redefinição incompatível — é expansão de escopo,
+Version change: 1.1.0 → 1.2.0
+Modified principles: IV. Integridade das Regras de Domínio Testada — de
+  "teste automatizado antes de ser considerada pronta" (teste antes de fechar)
+  para **teste-primeiro**: o teste do comportamento novo ou alterado DEVE
+  existir e DEVE falhar antes do código de produção, e o vermelho DEVE ser pelo
+  motivo do requisito. Acrescenta as quatro exceções declaradas e o piso de
+  cobertura medido por comando versionado. Nenhuma remoção nem redefinição
+  incompatível — a lista de regras de domínio enumeradas continua idêntica —
   daí MINOR, não MAJOR.
-Added sections: none (subseção dentro do Princípio I existente)
+Added sections: none (subseções dentro do Princípio IV existente)
 Removed sections: none
 Templates requiring updates:
-  ✅ .specify/templates/plan-template.md — Constitution Check gate é genérico,
-     nenhuma edição necessária
-  ✅ .specify/templates/spec-template.md — specs continuam em português, sem
-     referência a identificadores Dart, nenhuma edição necessária
-  ✅ .specify/templates/tasks-template.md — nenhuma referência específica de
-     idioma de código, nenhuma edição necessária
-  ✅ .claude/skills/speckit-*/SKILL.md — nenhuma referência desatualizada
+  ⚠️ .specify/templates/tasks-template.md — EDITADO. Dizia "Tests are OPTIONAL -
+     only include them if explicitly requested in the feature specification",
+     em contradição direta com um princípio NON-NEGOTIABLE. Seis trechos
+     corrigidos: o cabeçalho **Tests**, os três títulos "Tests for User Story N
+     (OPTIONAL - only if tests requested)", "Additional unit tests (if
+     requested)", e "Tests (if included) MUST be written and FAIL before
+     implementation" — este último ganhou a exigência do vermelho pelo motivo
+     certo. A nota "Write these tests FIRST, ensure they FAIL before
+     implementation" já existia e ficou como estava.
+  ✅ .specify/templates/plan-template.md — o Constitution Check é genérico
+     ("[Gates determined based on constitution file]"), lê o arquivo em tempo de
+     execução; nenhuma edição necessária
+  ✅ .specify/templates/spec-template.md — fala de "Independent Test" como
+     critério de aceite da user story, não de quando o teste é escrito; nenhuma
+     edição necessária
 Follow-up TODOs:
   - TODO(RATIFICATION_DATE): data de adoção original ainda desconhecida.
   - Código Dart das features 001-004 permanece com identificadores em
     português; tradução é gradual, ao tocar cada arquivo (ver Princípio I).
+  - `test/integration` continua fora da medição de cobertura (exigiria o ciclo
+    de vida do Supabase local dentro do gate rápido). Registrado em
+    PENDENCIAS.md.
 -->
 
 # Rede IASD Vitória de Santo Antão Constitution
@@ -82,17 +96,49 @@ onde ficam implícitas e não revisáveis.
 
 ### IV. Integridade das Regras de Domínio Testada (NON-NEGOTIABLE)
 
-Toda regra de negócio central tem teste automatizado antes de ser considerada
-pronta, incluindo no mínimo: promoção automática da fila de espera quando uma
-vaga é liberada; desempate por sorteio aleatório ao fechar uma Rodada de votação;
-revogabilidade de voto (só a última escolha conta) e de Participar (Grupo ou
-Ação); descarte de candidatas perdedoras e suas presenças ao fechar a Rodada;
-validação de composição de gênero de Dupla Missionária. Regressão nessas regras
-bloqueia merge.
+Toda regra de negócio central tem teste automatizado, incluindo no mínimo:
+promoção automática da fila de espera quando uma vaga é liberada; desempate por
+sorteio aleatório ao fechar uma Rodada de votação; revogabilidade de voto (só a
+última escolha conta) e de Participar (Grupo ou Ação); descarte de candidatas
+perdedoras e suas presenças ao fechar a Rodada; validação de composição de
+gênero de Dupla Missionária. Regressão nessas regras bloqueia merge.
+
+**Teste-primeiro**: o teste que descreve um comportamento novo ou alterado DEVE
+existir e DEVE falhar antes do código de produção que o satisfaz. O teste NÃO
+DEVE ser escrito depois, a partir do código pronto — um teste escrito olhando
+para a implementação descreve o que o código faz, não o que o requisito pede, e
+as duas coisas divergirem em silêncio é exatamente o defeito que o teste existia
+para pegar. Correção de defeito segue a mesma regra: primeiro o teste que
+reproduz o defeito e falha, depois o conserto.
+
+**O vermelho DEVE ser pelo motivo do requisito.** Falhar porque não compila,
+porque o widget não foi encontrado na árvore ou porque o setup não montou é
+vermelho que não prova nada — e vira verde assim que o obstáculo sai, com o
+requisito ainda por implementar. Quem escreve o teste confere a mensagem da
+falha antes de escrever o código de produção.
+
+**Exceções declaradas, e são só estas**: correção de texto de tela sem mudança
+de regra, tradução de identificador (Princípio I), movimentação de código sem
+alteração de comportamento observável, e cobertura retroativa de código que já
+existe — que não é comportamento novo nem alterado, e por isso nasce verde.
+
+**Piso de cobertura**: a cobertura de linha dos testes de unidade e de widget é
+medida por um comando único, versionado no repositório, que reprova quando o
+número cai abaixo do piso registrado. O piso sobe quando a cobertura sobe; NÃO
+DEVE ser baixado para fazer uma árvore vermelha passar. O que fica fora do
+denominador DEVE carregar, escrito junto da exclusão, o motivo e onde aquele
+código é provado.
 
 **Rationale**: são as regras com mais casos de borda e maior custo de erro
 silencioso (ex.: vaga que não libera, voto que conta errado, dupla inválida
 liberada). Cobertura textual na spec não substitui verificação executável.
+
+O teste-primeiro existe porque a redação anterior — "teste antes de ser
+considerada pronta" — permitia exatamente o que a primeira medição de cobertura
+deste projeto encontrou em 2026-08-20: a regra tinha teste em algum lugar da
+suíte de integração, e a tela que a pessoa usa não tinha nenhum. Dez páginas
+somavam 476 linhas com 7 cobertas, e quatro delas eram Rodada de votação e
+Declaração de liderança — as regras enumeradas acima como inegociáveis.
 
 ### V. Simplicidade e Papéis Mínimos
 
@@ -140,4 +186,4 @@ regra. Todo `/speckit-plan` DEVE incluir o Constitution Check preenchido contra
 os cinco princípios; violação não justificada em Complexity Tracking bloqueia a
 fase seguinte.
 
-**Version**: 1.1.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar data original de adoção | **Last Amended**: 2026-07-24
+**Version**: 1.2.0 | **Ratified**: TODO(RATIFICATION_DATE): confirmar data original de adoção | **Last Amended**: 2026-08-20

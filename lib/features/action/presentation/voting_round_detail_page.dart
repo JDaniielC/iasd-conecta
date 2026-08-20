@@ -70,7 +70,13 @@ class VotingRoundDetailPage extends ConsumerWidget {
                 Text('Prazo: ${DateFormat('dd/MM/yyyy HH:mm').format(votingRound.deadline)}'),
                 if (votingRound.isOpen) ...[
                   const SizedBox(height: AppSpacing.md),
-                  Row(
+                  // `Wrap`, não `Row`: os dois rótulos lado a lado pedem ~570px
+                  // e estouravam 229px numa tela de 360 — quebrado em qualquer
+                  // celular, não só nos estreitos. Achado pelo teste de widget
+                  // desta tela, escrito na change `cobertura-e-tdd`.
+                  Wrap(
+                    spacing: AppSpacing.sm,
+                    runSpacing: AppSpacing.sm,
                     children: [
                       ElevatedButton(
                         onPressed: () {
@@ -80,7 +86,6 @@ class VotingRoundDetailPage extends ConsumerWidget {
                         },
                         child: const Text('Propor Candidata'),
                       ),
-                      const SizedBox(width: AppSpacing.sm),
                       OutlinedButton(
                         onPressed: () => _close(context, ref),
                         child: const Text('Encerrar Rodada'),

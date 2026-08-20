@@ -7,7 +7,7 @@ on:
 
 jobs:
   fast:
-    name: fast (analyze + unit/widget)
+    name: fast (analyze + unit/widget + cobertura)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,7 +18,11 @@ jobs:
 
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test test/unit test/widget
+
+      # `make coverage` roda a mesma suíte que `flutter test test/unit
+      # test/widget` rodava aqui, com --coverage, e reprova se o piso cair.
+      # Rodar as duas dobraria o tempo do job para provar a mesma coisa.
+      - run: make coverage
 
   integration:
     name: integration (Supabase local)

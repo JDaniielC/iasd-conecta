@@ -119,10 +119,14 @@ class _PendingCard extends ConsumerWidget {
             Text('Declarante: ${declarantAsync.value?.displayName ?? '...'}'),
             Text('Ano: ${declaration.year}'),
             const SizedBox(height: AppSpacing.sm),
-            Row(
+            // `Wrap`, não `Row`: os dois botões lado a lado estouravam 72px
+            // numa tela de 360. Achado pelo teste de widget desta tela,
+            // escrito na change `cobertura-e-tdd`.
+            Wrap(
+              spacing: AppSpacing.sm,
+              runSpacing: AppSpacing.sm,
               children: [
                 ElevatedButton(onPressed: onApprove, child: const Text('Confirmar')),
-                const SizedBox(width: AppSpacing.sm),
                 OutlinedButton(onPressed: onReject, child: const Text('Rejeitar')),
               ],
             ),

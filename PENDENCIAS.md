@@ -1,6 +1,6 @@
 # Pendências
 
-**Atualizado**: 2026-08-10 | **Base**: `main`, commit `90c9bee`
+**Atualizado**: 2026-08-20 | **Base**: `main`, commit `90c9bee` (§ 2.31-2.35 vieram da change `cobertura-e-tdd`)
 
 O que falta, em quatro grupos: o que **implementar** (já tem spec, plan e tasks), o que
 **especificar** (achado real, sem spec), o que **só gente mede** (verificação manual), e o
@@ -1097,6 +1097,122 @@ Perfil" e usar "Excluir conta".
 O documento que existe para dizer ao advogado o que ainda falta afirma que
 faltam duas coisas já entregues. Não é da change `mensagem-fixada` — mas ela
 editou o arquivo e passou ao lado, e é assim que uma seção envelhece.
+
+### 2.31 `ProfileGuard` só funciona porque `app.dart` esquenta o provider
+
+`lib/features/profile/domain/profile_guard.dart:20` decide com
+`ref.read(hasProfileProvider).value ?? false`. `hasProfileProvider` é um
+`FutureProvider`, e um FutureProvider que ninguém leu antes nasce
+`AsyncLoading` — `.value` é `null`, vira `false`, e o guard manda para
+`/cadastro` **quem tem Perfil**.
+
+Não acontece em produção por um motivo que não está escrito no `ProfileGuard`:
+`lib/app.dart:47` faz `ref.listen(hasProfileProvider, ...)` no arranque do
+router, e o provider não é `autoDispose`, então quando alguém toca em Votar ele
+já resolveu há muito tempo. A corretude do guard depende de uma linha em outro
+arquivo, que ninguém que edite `app.dart` tem motivo para preservar.
+
+**Achado em 2026-08-20**, pela change `cobertura-e-tdd`, e por acidente: dois
+testes de "Visitante sem Perfil" passaram de primeira e não deviam — passavam
+porque o override não tinha efeito nenhum, e o guard recusava todo mundo.
+
+O padrão correto já existe no repo: `report_image_sheet.dart:62` usa
+`await ref.read(hasProfileProvider.future)`. `ProfileGuard` não pode usá-lo
+porque é síncrono e retorna `bool`. Consertar é mudar a assinatura e os cinco
+pontos de chamada — não é one-liner, e não entrou na change que achou.
+
+⚪ Baixo risco hoje, alto custo de descoberta se `app.dart` mudar.
+
+### 2.32 Três estouros de layout a 360 de largura — **FECHADOS em 2026-08-20**
+
+Nenhum teste de widget deste app julgava essas três telas em largura de
+celular, porque nenhum teste de widget existia para elas. Assim que passaram a
+existir, o Flutter transformou o estouro em falha:
+
+| Tela | Estouro | Causa |
+|---|---|---|
+| `voting_round_detail_page.dart:73` | 229px | `Row(Propor Candidata, Encerrar Rodada)` — só cabia por volta de ~570px |
+| `pending_declarations_page.dart:120` | 72px | `Row(Confirmar, Rejeitar)` |
+| `manage_suggested_actions_page.dart:77` | 39px | `DropdownButtonFormField` sem `isExpanded`; "Ministério da Música" não cabia com a seta |
+
+Os dois primeiros viraram `Wrap`, o terceiro ganhou `isExpanded: true`.
+Fechados na própria change `cobertura-e-tdd` por decisão explícita do dono — o
+defeito estava no caminho do teste que a change existia para escrever.
+
+**O que fica aberto é a classe, não os três casos.** As dez telas cobertas na
+change agora são julgadas a 360; as demais não têm essa garantia, e o gate de
+cobertura não a dá — cobertura mede execução, não largura. Um teste que renderiza
+a 360 é a única coisa neste repo que pega estouro, e ele só existe onde alguém o
+escreveu.
+
+### 2.33 `test/integration` continua fora da medição de cobertura
+
+`make coverage` mede `test/unit` e `test/widget`. A camada de repositório
+(`lib/features/*/data/`, 693 linhas) sai do denominador porque quem a prova é
+`dart test test/integration`, que exige Postgres local.
+
+Incluí-la exigiria o ciclo de vida do Supabase local dentro do gate rápido — o
+mesmo custo já medido e recusado em `travar-deploy-com-teste-vermelho` para o
+alvo `deploy-web`: subir e derrubar Docker dentro de um alvo pode matar uma
+sessão de desenvolvimento em andamento na mesma máquina.
+
+Consequência aceita e declarada: **o número que o gate reporta não é a cobertura
+do projeto**, é a cobertura do que roda sem banco. O projeto inteiro está entre
+esse número e ele mais o que a integração cobre, e ninguém mediu o segundo.
+
+⚪ Dívida declarada, não defeito.
+
+### 2.34 O número de cobertura variou 0,24pp sem mudança em `lib/`
+
+Durante a change `cobertura-e-tdd`, o mesmo `flutter test --coverage test/unit
+test/widget` deu `2980/4131` numa execução e `2990/4131` nas três seguintes,
+com o mesmo denominador e sem uma linha de `lib/` ter mudado entre elas.
+
+A causa não foi perseguida. Hipótese não verificada: os arquivos de teste rodam
+em paralelo, e algum caminho assíncrono (descarte de provider, timer) executa ou
+não conforme o escalonamento.
+
+O `COVERAGE_FLOOR` está em 84.5 contra 85,0 medido justamente por isso — 0,5pp
+de folga absorve essa ordem de grandeza. Se o gate reprovar sem ninguém ter
+mexido em código, é aqui que se olha primeiro.
+
+⚪ Não bloqueia. Vira problema se a variação crescer.
+
+### 2.35 Treze escritas do cliente não conferem linhas afetadas
+
+**Medido em 2026-08-20**, na convergência da change `cobertura-e-tdd`: das 20
+chamadas `update`/`delete` que o cliente manda ao Supabase, **13 não chamam
+`.select()`** e por isso não sabem quantas linhas afetaram.
+
+```
+action_repository.dart:93,112      group_repository.dart:140,197,206,216
+cover_photo_repository.dart:198    image_report_repository.dart:82,88
+district_admin_repository.dart:42  notification_repository.dart:90
+profile_repository.dart:50         suggested_action_repository.dart:50 ✔ FECHADO
+```
+
+A regra está no `CLAUDE.md`, seção "Recusa de RLS é ausência, não erro", e já
+custou três achados na change `chat-de-grupo-e-acao`. O sintoma é sempre o
+mesmo: a policy recusa fazendo a linha não existir para aquela sessão, o
+`update` volta com sucesso sobre nada, e a tela reporta que deu certo.
+
+**Uma foi fechada**, porque estava no alcance da change que a achou:
+`suggested_action_repository.dart:50`. Medido contra o Postgres local sob o
+papel `authenticated` sem privilégio — `DELETE 0`, sem exceção, linha intacta.
+Prova em `test/integration/acao_sugerida_remocao_test.dart`, com asserção sobre
+`affectedRows` e não `throwsA`.
+
+**As outras 12 não são varredura mecânica.** Cada uma precisa de uma decisão
+que não está escrita em lugar nenhum: *o que a tela diz quando aquela recusa
+acontecer*. `profile_repository.dart:50` e `notification_repository.dart:90`
+provavelmente nem devem lançar — são escritas na própria linha, onde a recusa
+significa outra coisa. Sair patchando `.select()` nas 12 produziria doze
+`StateError` sem frase e telas piores que hoje.
+
+É change própria, e o que ela precisa decidir primeiro é a regra: quais dessas
+escritas podem legitimamente afetar zero linhas.
+
+⚪ Não bloqueia. É a classe da qual `chat-de-grupo-e-acao` já pagou três casos.
 
 ## 3. Verificação manual — só gente mede
 

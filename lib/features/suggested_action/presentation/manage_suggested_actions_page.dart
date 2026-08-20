@@ -76,6 +76,11 @@ class _ManageSuggestedActionsPageState extends ConsumerState<ManageSuggestedActi
             categoriesAsync.when(
               data: (categories) => DropdownButtonFormField<String>(
                 initialValue: _categoryId,
+                // `isExpanded`: sem isto o campo se dimensiona pelo texto do
+                // item, e "Ministério da Música" estourava 39px numa tela de
+                // 360. Achado pelo teste de widget desta tela, escrito na
+                // change `cobertura-e-tdd`.
+                isExpanded: true,
                 decoration: const InputDecoration(labelText: 'Categoria'),
                 items: categories
                     .map((c) => DropdownMenuItem(value: c.id, child: Text(c.name)))

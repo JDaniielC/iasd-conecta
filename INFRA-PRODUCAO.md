@@ -374,15 +374,56 @@ precisa cumprir o prazo. Mesma lição da drenagem de capas.
 **A migration cria o agendamento, e em produção isso pode não bastar.** Se o
 `cron.schedule` não tiver rodado no projeto hospedado, a consulta acima devolve
 zero linhas — e não há erro em lugar nenhum, porque o segundo gatilho continua
-funcionando e escondendo a ausência do primeiro. Criar à mão:
+funcionando e escondendo a ausência do primeiro. Criar à mão (note o
+`p_disparada_por => 'cron'` explícito — sem ele, uma criação manual registraria
+como se fosse o app, e o sintoma que a seção seguinte descreve ficaria
+escondido de novo):
 
 ```sql
 select cron.schedule(
   'expurgar-mensagens-de-acao',
   '43 3 * * *',
-  $$select public.expurgar_mensagens_de_acao()$$
+  $$select public.expurgar_mensagens_de_acao(p_disparada_por => 'cron')$$
 );
 ```
+
+**Confirmado em 2026-08-30 (tarefa 0.3 da change `observador-de-retencao`):
+este job NÃO EXISTE em produção hoje**, e não porque falhou — a migration que
+o cria (`20260813200000_chat_de_grupo_e_acao.sql`) está entre as 15 que nunca
+foram empurradas (produção parada em `20260817180000`, `main` já em
+`20260830130000`). Vale para toda feature dessas 15 migrations, não só esta.
+Fora do escopo desta change resolver o atraso de deploy; o que muda aqui é que
+agora dá para CONFIRMAR pela tela em vez de deduzir.
+
+### Os jobs de `pg_cron` de `observador-de-retencao`
+
+A change acrescenta rastro de execução e mais dois jobs diários:
+
+```sql
+select jobname, schedule from cron.job
+where jobname in ('expurgar-mudancas', 'expurgar-rastro');
+```
+
+Esperado: `expurgar-mudancas` em `30 4 * * *`, `expurgar-rastro` em
+`45 4 * * *`. Os dois seguem o precedente de `expurgar-notificacoes-lidas` —
+**sem** segundo gatilho no app: nenhum dos dois guarda conteúdo indeterminado
+de conversa, então atraso aqui é atraso de faxina, não defeito de correção.
+
+**A forma de conferir os TRÊS jobs de retenção mudou com esta change, e é o
+ponto dela**: em vez de rodar as consultas acima à mão, abra o app como
+Administrador do distrito, em "Mais opções → Faxinas de retenção"
+(`/district-admin/retencao`). A tela diz a última execução de cada faxina, e
+sinaliza "atrasada" quando passam mais de 2 dias sem registro novo
+(`RetentionLimits.staleAfter`, `lib/features/retention/domain/retention_limits.dart`).
+As consultas SQL acima continuam válidas para confirmar o AGENDAMENTO em si —
+o que a tela não mostra é se o `cron.job` existe, só se ele tem RODADO.
+
+**O limite conhecido, escrito também no design da change:** o registro de
+execução é `exception`-safe — a faxina não deixa de apagar porque o rastro
+falhou ao gravar. Consequência: a tela pode dizer "atrasada" sobre uma faxina
+que rodou e só não conseguiu se registrar. Por isso ela nunca afirma "não
+rodou", só "sem registro desde X" — e por isso, numa suspeita real de atraso,
+a consulta SQL acima ainda é o desempate.
 
 ### O job de `pg_cron` do expurgo de motivo de denúncia
 
@@ -397,7 +438,7 @@ where jobname = 'expurgar-motivos-de-denuncia';
 Esperado: `47 3 * * *`.
 
 **Mesma exigência do job de cima, e pelo mesmo motivo**: o prazo é promessa
-escrita na Política de Privacidade (versão 1.8), e o `motivo` é texto livre
+escrita na Política de Privacidade (versão 1.9), e o `motivo` é texto livre
 que uma pessoa escreveu sobre outra — atraso aqui é guardar além do
 prometido. Por isso ele também tem **segundo gatilho no app**:
 `ChatRepository.fetchReports` chama `public.expurgar_motivos_de_denuncia()`

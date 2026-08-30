@@ -252,4 +252,41 @@ void main() {
     );
     expect(d['motivo'], 'denúncia já julgada antes do expurgo');
   });
+
+  // Change `observador-de-retencao`, tarefa 3.9 — ESTENDIDO, não substituído:
+  // o `where` do expurgo acima (linhas 199-225) prova que nada mudou no que é
+  // apagado. Este teste prova o ACRÉSCIMO — a MESMA chamada do `setUpAll`
+  // (`select public.expurgar_mensagens_de_acao()`, sem argumento) deixou
+  // rastro.
+  //
+  // `disparada_por` e não `quantas`: este arquivo roda em PARALELO com
+  // `chat_fixada_expurgo_test.dart`, `chat_privilegio_funcao_test.dart` e
+  // `ritmo_de_mensagem_test.dart`, que também chamam esta função global sem
+  // argumento — a linha "mais recente" pode ser de qualquer um deles. Mas
+  // TODOS chamam sem argumento, então `disparada_por` só pode ser 'app' —
+  // ninguém neste arquivo passa 'cron'. É a asserção que sobrevive à corrida.
+  test(
+    'a chamada do setUpAll (sem argumento) registrou disparada_por = app',
+    () async {
+      final r = await conn.execute(
+        "select disparada_por, quando from public.execucoes_de_faxina "
+        "where faxina = 'expurgar_mensagens_de_acao' "
+        "order by quando desc limit 1",
+      );
+      expect(
+        r,
+        isNotEmpty,
+        reason: 'nenhuma execução registrada — o registro parou de acontecer',
+      );
+      final row = r.single.toColumnMap();
+      expect(row['disparada_por'], 'app');
+      expect(
+        (row['quando']! as DateTime).isAfter(
+          DateTime.now().toUtc().subtract(const Duration(minutes: 5)),
+        ),
+        isTrue,
+        reason: 'tem que ser uma execução desta rodada da suíte',
+      );
+    },
+  );
 }

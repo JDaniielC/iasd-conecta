@@ -201,6 +201,10 @@ void main() {
             path: '/district-admin/churches',
             builder: (context, state) => const Text('TELA_IGREJAS'),
           ),
+          GoRoute(
+            path: '/district-admin/retencao',
+            builder: (context, state) => const Text('TELA_RETENCAO'),
+          ),
         ],
       );
 
@@ -247,6 +251,22 @@ void main() {
 
       expect(find.text('TELA_IGREJAS'), findsOneWidget);
     });
+
+    testWidgets(
+      '"Faxinas de retenção" aparece administrando e navega pra lá',
+      (tester) async {
+        await pump(tester, isDistrictAdmin: true);
+
+        await tester.tap(find.byTooltip('Mais opções'));
+        await tester.pumpAndSettle();
+        expect(find.text('Faxinas de retenção'), findsOneWidget);
+
+        await tester.tap(find.text('Faxinas de retenção'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('TELA_RETENCAO'), findsOneWidget);
+      },
+    );
 
     testWidgets('"Política de Privacidade e Termos de Uso" navega pra lá',
         (tester) async {

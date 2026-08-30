@@ -466,6 +466,19 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'prazo no Grupo. Estão detalhados na seção "Conversas em '
               'Grupos e Ações", acima.',
             ),
+            // Change `observador-de-retencao` — `public.mudancas` era a
+            // única tabela do app guardada para sempre, sem prazo declarado.
+            // 90 dias e não os 30 da conversa: aqui o dado é histórico
+            // ESTRUTURAL (o que mudou, não o que se escreveu), e apagar no
+            // mesmo ritmo tiraria contexto que ninguém pediu para perder mais
+            // cedo — REVISAO-JURIDICA.md § 4-F.
+            const LegalParagraph(
+              'O histórico de "Mudanças recentes" de um Grupo/Ministério ou '
+              'de uma Ação — horário e local alterados, cancelamento, quem '
+              'entrou ou saiu, quem confirmou presença ou desistiu — fica '
+              'guardado por 90 dias e depois é apagado. Ele não guarda o que '
+              'mudou de que para que, só que mudou.',
+            ),
 
             const LegalHeading('Seus direitos e como usar cada um'),
             const LegalBullet(

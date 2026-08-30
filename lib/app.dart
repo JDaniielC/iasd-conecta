@@ -40,6 +40,7 @@ import 'features/profile/presentation/profile_signup_page.dart';
 import 'features/profile/presentation/login_page.dart';
 import 'features/profile/presentation/delete_account_page.dart';
 import 'features/profile/presentation/upgrade_account_page.dart';
+import 'features/retention/presentation/retention_watch_page.dart';
 
 /// Notifica o [GoRouter] pra reavaliar `redirect` sempre que [hasPerfilProvider]
 /// muda (ex.: cadastro concluído, upgrade pra Conta).
@@ -239,6 +240,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/district-admin/imagens-denunciadas',
         builder: (context, state) => const PendingReportsPage(),
+      ),
+      GoRoute(
+        path: '/district-admin/retencao',
+        builder: (context, state) => const RetentionWatchPage(),
       ),
       GoRoute(
         path: '/district-admin/consentimentos',

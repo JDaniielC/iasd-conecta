@@ -208,6 +208,7 @@ enum _ListMenuAction {
   archivedGroups,
   consentVersions,
   reportedImages,
+  retentionWatch,
   upgradeAccount,
   privacy,
 }
@@ -242,6 +243,8 @@ class _ListMenuButton extends StatelessWidget {
           context.push('/district-admin/consentimentos'),
         _ListMenuAction.reportedImages =>
           context.push('/district-admin/imagens-denunciadas'),
+        _ListMenuAction.retentionWatch =>
+          context.push('/district-admin/retencao'),
         _ListMenuAction.upgradeAccount => context.push('/upgrade-conta'),
         _ListMenuAction.privacy => context.push('/privacidade'),
       },
@@ -296,6 +299,15 @@ class _ListMenuButton extends StatelessWidget {
             child: ListTile(
               leading: Icon(Icons.flag_outlined),
               title: Text('Imagens denunciadas'),
+            ),
+          ),
+          // Change `observador-de-retencao`: responde "as faxinas de prazo
+          // rodaram ontem?" sem ir ao banco à mão.
+          const PopupMenuItem(
+            value: _ListMenuAction.retentionWatch,
+            child: ListTile(
+              leading: Icon(Icons.history_toggle_off_outlined),
+              title: Text('Faxinas de retenção'),
             ),
           ),
         ],

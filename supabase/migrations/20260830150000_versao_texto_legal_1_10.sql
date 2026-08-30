@@ -1,0 +1,36 @@
+-- Change observador-de-retencao — a versão 1.10 do texto legal.
+--
+-- Gêmea da constante `LegalMetadata.version`, pelo mesmo motivo da 1.6 e da
+-- 1.7: o texto está compilado no binário e a versão é metadado dele.
+-- `test/integration/versao_texto_legal_registro_test.dart` falha se
+-- divergirem.
+--
+-- 1.10 e não 1.8: as changes `alcance-do-titular-sobre-texto-proprio` (1.8) e
+-- `denuncia-como-registro` (1.9) nasceram do mesmo commit que esta e
+-- mesclaram antes. Renumerado ao mesclar main nesta branch.
+--
+-- `vigente_desde` é 2 SEGUNDOS depois das outras duas, e não o mesmo instante
+-- cravado ('2026-08-30 00:00:00-03') que elas usam — de propósito.
+-- `versao_texto_legal_vigente()` desempata `order by vigente_desde desc`
+-- comparando `versao` como TEXTO (`20260809220000_versao_do_consentimento.sql`),
+-- e '1.9' > '1.10' naquela comparação (o dígito '9' vence o '1'). Com as três
+-- no mesmo instante, a vigente voltava '1.9' — medido rodando
+-- `versao_texto_legal_registro_test.dart` depois do merge. Um instante
+-- realmente mais tarde resolve pelo desempate PRINCIPAL, sem depender do
+-- secundário, e é também a verdade: esta migration mesclou por último.
+--
+-- MIGRATION SEPARADA da `20260830120000_observador_de_retencao.sql`, mesma
+-- decisão da 1.6/1.7: aquela é o MECANISMO e sobe sozinha — sem esta, o prazo
+-- de `mudancas` já vale no banco antes de a Política declará-lo, o que é o
+-- lado seguro de errar (o app cumpre mais do que promete, nunca o contrário).
+-- Esta é a PUBLICAÇÃO do texto novo.
+--
+-- POR QUE SOBE. `public.mudancas` era a única tabela do app guardada PARA
+-- SEMPRE, sem prazo declarado — dívida registrada desde
+-- `log-de-mudancas-em-grupo-e-acao` (PENDENCIAS.md 2.10). Ganhou 90 dias,
+-- decidido com o dono do app (REVISAO-JURIDICA.md § 4-F). Nenhum dado pessoal
+-- NOVO — o que muda é por quanto tempo o `autor_id` que já existia permanece,
+-- mesmo raciocínio da 1.7 aplicado a uma tabela diferente.
+insert into public.versoes_texto_legal (versao, vigente_desde)
+values ('1.10', timestamptz '2026-08-30 00:00:02-03')
+on conflict (versao) do nothing;

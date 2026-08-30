@@ -141,6 +141,9 @@ void main() {
       'liderancas',
       'mudancas',
       'votos',
+      // Change `observador-de-retencao`: nasceu fechada como as demais —
+      // `anon` sem grant nenhum, e o único braço da RLS é o Administrador.
+      'execucoes_de_faxina',
     ]) {
       test('$table é inalcançável', () async {
         Object? error;

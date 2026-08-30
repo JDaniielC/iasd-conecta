@@ -448,7 +448,7 @@ iOS/macOS são descartados por colisão de id (`Package.swift`,
 `AppDelegate.swift`/`SceneDelegate.swift` repetem nome em diretórios diferentes). O
 graphify sugere `extract` por subpasta + `merge-graphs` para o segundo caso.
 
-### 2.10 `mudancas` cresce sem retenção
+### 2.10 `mudancas` cresce sem retenção — **FECHADO em 2026-08-30**
 
 Registrado em 2026-08-13 pela change `log-de-mudancas-em-grupo-e-acao`, que já a
 declarou como dívida no próprio design (Risks).
@@ -466,6 +466,19 @@ armazenamento cresce.
 lembrar que a decisão tem efeito legal — o registro é dado pessoal (`autor_id`),
 e a Política de Privacidade fala de prazos. Se um prazo for adotado, ele entra em
 `REVISAO-JURIDICA.md` junto.
+
+**FECHADO** pela change `observador-de-retencao`. Prazo de **90 dias**,
+decidido com o dono do app — mesmo prazo de `notificacoes`, e não os 30 dias
+da conversa: `mudancas` é histórico ESTRUTURAL (por que algo mudou, não o que
+se escreveu), e apagar no mesmo ritmo da conversa tiraria contexto
+administrativo que ninguém pediu para perder mais cedo. Decisão e custo
+declarados em `REVISAO-JURIDICA.md` § 4-F. `expurgar_mudancas()`
+(`20260830120000_observador_de_retencao.sql`) executa, agendada no `pg_cron`,
+SEM segundo gatilho no app — mesmo precedente de `expurgar_notificacoes_lidas`:
+atraso aqui é atraso de faxina, não defeito de correção, porque o conteúdo é
+estrutural e não indeterminado como o da conversa. A execução se registra em
+`execucoes_de_faxina` como as demais (ver 2.17). A Política de Privacidade
+subiu para a versão 1.8 declarando o prazo.
 
 ### 2.11 Quatro dívidas recusadas na limpeza de 2026-08-13
 
@@ -648,7 +661,7 @@ conter dado sensível de terceiro — saúde, religião — que o app não imped
 detecta. A Política do projeto não tem seção de base legal, e um advogado
 inscrito precisa dizer se o consentimento do cadastro cobre isso.
 
-### 2.17 O prazo de 30 dias tem dois executores e nenhum observador
+### 2.17 O prazo de 30 dias tem dois executores e nenhum observador — **FECHADO em 2026-08-30**
 
 Achado pelo agente `promessa-vs-execucao` no fechamento de
 `chat-de-grupo-e-acao`, em 2026-08-14. **Não é promessa quebrada** — o expurgo
@@ -680,7 +693,36 @@ inclusive Visitante anônimo sem Perfil — invoca uma varredura global que roda
 `security definer`. Não viola promessa nenhuma (só apaga o que já venceu) e o
 grant existe porque o app É o segundo gatilho. Fica registrado porque é uma
 função de escrita global exposta na REST, e quem for endurecer isso precisa
-saber que o cliente depende dela.
+saber que o cliente depende dela. **Isto continua exatamente assim** depois do
+fechamento abaixo — o grant não mudou.
+
+**FECHADO** pela change `observador-de-retencao`. `execucoes_de_faxina`
+(`20260830120000_observador_de_retencao.sql`) grava `quando`, `quantas` e
+`disparada_por` ('cron' ou 'app') a cada execução — inclusive quando não havia
+nada a apagar, que é o registro que distingue "rodou vazio" de "não rodou". A
+tela do Administrador (`/district-admin/retencao`) lê a mais recente de cada
+faxina e diz "atrasada" quando passam mais de 2 dias sem registro novo
+(`RetentionLimits.staleAfter`).
+
+**O que o conserto NÃO resolve, e é decisão, não lacuna esquecida:** o segundo
+gatilho do app (`ChatRepository.purgeExpiredActionMessages`) continua podendo
+esconder a ausência do cron atrás de uma execução `disparada_por = 'app'`
+idêntica em forma à do cron — é o defeito descrito acima, e ele **continua
+existindo**. O que mudou é que agora ele é VISÍVEL: `disparada_por` só 'app'
+por vários dias seguidos, na tela do Administrador, é o sintoma de que o cron
+não está rodando (ou não existe — ver 0.3 do tasks.md desta change: em
+produção, hoje, ele literalmente não existe, porque a migration que o cria
+está entre as 15 que nunca foram empurradas).
+
+O registro é `exception`-safe de propósito (`begin ... exception when others
+then null end`, depois do `delete`): a faxina não pode deixar de apagar porque
+o rastro falhou. Consequência aceita: uma execução real pode não deixar rastro
+se o `insert` falhar por outro motivo, e a tela então diria "atrasada" sobre
+uma faxina que rodou. É por isso que a tela nunca afirma "não rodou" — só "sem
+registro desde X".
+
+`public.mudancas` (PENDENCIAS.md 2.10) ganhou prazo pelo mesmo mecanismo — ver
+o fechamento daquele item.
 
 ### 2.18 Seis funções `security definer` anteriores continuam chamáveis por `anon` — **FECHADO em 2026-08-16**
 

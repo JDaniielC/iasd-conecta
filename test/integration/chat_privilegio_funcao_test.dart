@@ -37,7 +37,11 @@ void main() {
     'public.pode_ver_chat_acao(uuid)',
     'public.pode_moderar_espaco(uuid, uuid)',
     'public.pode_moderar_mensagem(uuid, uuid, uuid)',
-    'public.expurgar_mensagens_de_acao()',
+    // Change `observador-de-retencao`: ganhou o parâmetro `disparada_por`
+    // (com padrão), então a assinatura de catálogo mudou de `()` para
+    // `(text)` — a CHAMADA sem argumento (linha 84 abaixo) continua igual,
+    // porque o padrão cobre.
+    'public.expurgar_mensagens_de_acao(text)',
     // Change denuncia-como-registro (20260830120000): mesmo desenho de
     // expurgar_mensagens_de_acao — security definer, delete/update global, e
     // a mesma armadilha de nascer aberta a PUBLIC se o `revoke` for

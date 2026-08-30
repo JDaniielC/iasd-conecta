@@ -116,7 +116,16 @@ abstract final class LegalMetadata {
   /// consentimento colhido sob a promessa antiga (eterno, sobrevivendo à
   /// exclusão de conta) não cobre a nova (prazo de 30 dias, some com a
   /// conta). Nenhum dado pessoal novo é tratado.
-  static const version = '1.9';
+  ///
+  /// 1.10 (change `observador-de-retencao`): `public.mudancas` — o histórico
+  /// de "Mudanças recentes" de Grupo/Ministério e Ação — era a única tabela
+  /// do app guardada PARA SEMPRE, sem prazo declarado. Ganhou 90 dias, mesmo
+  /// prazo de `notificacoes` (REVISAO-JURIDICA.md § 4-F). **Nenhum dado
+  /// pessoal novo**: o que muda é por quanto tempo o `autor_id` que já
+  /// existia permanece — o mesmo raciocínio da 1.7, aplicado a uma tabela
+  /// diferente. O rastro de execução das faxinas (`execucoes_de_faxina`) não
+  /// entra aqui: não guarda dado pessoal, então não é matéria da Política.
+  static const version = '1.10';
   static const effectiveDate = '30 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.

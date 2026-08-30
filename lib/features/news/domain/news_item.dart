@@ -327,6 +327,16 @@ final allNews = <NewsItem>[
         'uma denúncia e qual foi a decisão. Se você excluir sua conta antes '
         'disso, o motivo que você escreveu some junto, na hora.',
   ),
+  // Change `observador-de-retencao`. Só este item: a tela de Administrador do
+  // distrito não vira Novidade pelo `CRITERIO-DE-NOVIDADE.md` — só o que
+  // mudou nos SEUS dados (o prazo de `mudancas`) percebe-se de fora.
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'O histórico de "Mudanças recentes" de um Grupo/Ministério ou de '
+        'uma Ação passa a ser apagado depois de 90 dias. Antes ficava '
+        'guardado para sempre.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

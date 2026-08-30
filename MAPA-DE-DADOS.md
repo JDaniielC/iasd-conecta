@@ -325,6 +325,30 @@ A tabela **não guarda valor anterior nem valor novo**: diz que o horário mudou
 não de que horário para qual. Isso é decisão de privacidade além de simplicidade
 — o par completo seria um histórico de onde e quando cada Grupo se encontrou.
 
+A change `observador-de-retencao` deu a `mudancas` o prazo que faltava desde a
+criação dela (PENDENCIAS.md 2.10, fechado): **90 dias** a partir de
+`created_at`, mesmo prazo de `notificacoes` — e não os 30 dias da conversa,
+porque aqui o dado é histórico ESTRUTURAL, não conteúdo escrito por uma
+pessoa. `expurgar_mudancas()` (`20260830120000_observador_de_retencao.sql`)
+executa a faxina, agendada no `pg_cron`, sem segundo gatilho no app (mesmo
+raciocínio de `expurgar_notificacoes_lidas`: atraso aqui é atraso de faxina,
+não defeito de correção). Decisão e custo (contexto administrativo perdido
+mais cedo do que o mínimo já em uso) em `REVISAO-JURIDICA.md` § 4-F; a
+Política de Privacidade declara o prazo desde a versão 1.8.
+
+A mesma change criou `public.execucoes_de_faxina`
+(`20260830120000_observador_de_retencao.sql:33`), o rastro de quando cada
+faxina de retenção rodou, quanto apagou e quem a disparou (`cron` ou `app`).
+**Não guarda dado pessoal** — nem quem foi afetado pela faxina, nem conteúdo —
+e por isso não entra na Política de Privacidade. Lida só pelo Administrador do
+distrito (`execucoes_de_faxina_select_admin`); escrita só por
+`registrar_faxina()`, `security definer`, chamada de dentro das próprias
+funções de expurgo. Tem prazo próprio de 30 dias
+(`expurgar_rastro()`), **preservando a execução mais recente de cada faxina**
+mesmo quando ela também já venceu — sem essa exceção, a limpeza do rastro
+apagaria a única informação que distingue "parada há muito tempo" de "nunca
+rodou".
+
 A change `convite-para-acao` acrescentou **dado pessoal novo**: quem chamou
 quem, quando, e por qual Grupo. `convites_acao`
 (`20260813140000_convite_para_acao.sql:25`) referencia `perfis(id)` e **nunca

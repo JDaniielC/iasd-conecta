@@ -374,6 +374,7 @@ void main() {
             .single
             .toColumnMap()['id']!
         as String;
+    String? oldMessageId;
 
     try {
       // O dono do Grupo é quem modera aqui, e é ele quem tem `update`.
@@ -399,22 +400,52 @@ void main() {
       // uma denúncia gravada antes de a palavra entrar na lista viraria
       // impossível de resolver — o moderador levaria PT422 sobre um texto que
       // não escreveu e não pode editar.
-      // A montagem reproduz a HISTÓRIA REAL: o motivo foi escrito antes de a
-      // palavra entrar na lista. Tirar a palavra, escrever, e recolocá-la é o
-      // único jeito honesto de fabricar isso — o gatilho vale para superusuário
-      // também, então não há atalho, e não deveria haver.
+      //
+      // A MONTAGEM MUDOU na change `denuncia-como-registro`: não dá mais para
+      // fabricar "motivo antigo com palavra bloqueada" reescrevendo um motivo
+      // já registrado — `denuncias_mensagem_so_resolve_trigger` recusa
+      // QUALQUER update que troque o motivo por outro texto, mesmo como
+      // superusuário, sem olhar o conteúdo. A reconstituição fica mais
+      // honesta: tira a palavra da lista, INSERE a denúncia já com a palavra
+      // dentro (aceita, porque a lista ainda não a tem), e só depois
+      // recoloca a palavra — a ordem real dos fatos que o comentário
+      // original já descrevia, sem depender de reescrever nada.
       await conn.execute(
         Sql.named(
           'delete from public.palavras_bloqueadas_mensagem where palavra = @p',
         ),
         parameters: {'p': _onlyChat},
       );
-      await conn.execute(
-        Sql.named(
-          'update public.denuncias_mensagem set motivo = @mo where id = @d',
-        ),
-        parameters: {'mo': 'motivo antigo com $_onlyChat dentro', 'd': reportId},
+      oldMessageId = await seedMessage(
+        conn,
+        authorId: _uidAuthor,
+        groupId: groupId,
+        text: 'outra mensagem, para o motivo antigo',
       );
+      await asUser(conn, _uidOther, () async {
+        await conn.execute(
+          Sql.named(
+            'insert into public.denuncias_mensagem (mensagem_id, motivo, '
+            'denunciante_id) values (@m, @mo, @d)',
+          ),
+          parameters: {
+            'm': oldMessageId,
+            'mo': 'motivo antigo com $_onlyChat dentro',
+            'd': _uidOther,
+          },
+        );
+      });
+      final oldReportId =
+          (await conn.execute(
+                Sql.named(
+                  'select id from public.denuncias_mensagem '
+                  'where mensagem_id = @m',
+                ),
+                parameters: {'m': oldMessageId},
+              ))
+              .single
+              .toColumnMap()['id']!
+          as String;
       await conn.execute(
         Sql.named(
           'insert into public.palavras_bloqueadas_mensagem (palavra) '
@@ -430,7 +461,7 @@ void main() {
               "update public.denuncias_mensagem set estado = 'improcedente', "
               'resolvida_em = now() where id = @d',
             ),
-            parameters: {'d': reportId},
+            parameters: {'d': oldReportId},
           );
         }),
         isNull,
@@ -440,12 +471,20 @@ void main() {
       );
     } finally {
       await conn.execute(
-        Sql.named('delete from public.denuncias_mensagem where mensagem_id = @m'),
-        parameters: {'m': messageId},
+        Sql.named(
+          'delete from public.denuncias_mensagem where mensagem_id = any(@ms::uuid[])',
+        ),
+        parameters: {
+          'ms': [messageId, ?oldMessageId],
+        },
       );
       await conn.execute(
-        Sql.named('delete from public.mensagens where id = @m'),
-        parameters: {'m': messageId},
+        Sql.named(
+          'delete from public.mensagens where id = any(@ms::uuid[])',
+        ),
+        parameters: {
+          'ms': [messageId, ?oldMessageId],
+        },
       );
     }
   });

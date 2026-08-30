@@ -543,6 +543,18 @@ conserto é de uma linha (`alter table ... drop constraint ... add constraint`) 
 não tem risco de dado existente — nenhum motivo em produção é feito só de
 espaço em branco, porque não há produção com denúncia ainda.
 
+**Tentativa em 2026-08-30, pela change `denuncia-como-registro` (tarefa
+3.4): BLOQUEADA, não fechada.** A pressuposição acima — "não há produção com
+denúncia ainda" — deixou de poder ser afirmada sem medir: a change propunha
+justamente contar
+`select count(*) from denuncias_imagem where btrim(motivo, E' \t\n\r') = ''`
+na base de PRODUÇÃO antes de subir o `check` novo (`not valid` em silêncio
+sobre linha existente seria o erro que a constante do design queria evitar).
+Esta sessão só tinha a chave pública do app, sem `service_role` nem acesso de
+Administrador de produção — a consulta não pôde rodar. Continua aberta;
+quem tiver acesso ao painel roda a consulta e decide o que fazer com o que
+aparecer, e só então a migration sobe.
+
 ### 2.13 ~~As duas funções de acesso do chat não têm teste de unidade próprio~~ — FECHADO em 2026-08-16
 
 Estava registrado como **dispensado por decisão em 2026-08-14**: as duas funções
@@ -571,10 +583,10 @@ para dentro de um braço só.
 Provado que discrimina por mutação: trocar o esperado de `na fila da Ação` para
 `false` deixa vermelho (`Expected: <false> Actual: <true>`).
 
-### 2.14 `denuncias_mensagem.motivo` é texto livre do titular, sem prazo e fora da exclusão de conta
+### 2.14 ~~`denuncias_mensagem.motivo` é texto livre do titular, sem prazo e fora da exclusão de conta~~ — FECHADO em 2026-08-30
 
 Achado em 2026-08-14 pelo `advogado-digital`, conferindo a Política contra o
-código. Não consertado.
+código.
 
 O `motivo` é escrito por quem denuncia, em campo aberto, e a Política agora
 declara que ele é o registro do caso — é ele que sobrevive ao expurgo da
@@ -594,6 +606,15 @@ O conserto provável é prazo após `resolvida_em` e apagar o motivo na
 anonimização do denunciante — mas isso é decisão, não conserto óbvio: apagar o
 motivo de uma denúncia julgada apaga o registro de por que uma mensagem foi
 removida.
+
+**FECHADO pela change `denuncia-como-registro`** (`20260830120000`). Prazo
+decidido com o dono do app em 2026-08-30: 30 dias, contado do **desfecho**
+(`denuncia_prazo_do_motivo()`), o mesmo número que a Política já usava para
+outra coisa. Pendente não expira — é a mesma razão do `on delete set null`.
+`excluir_minha_conta` ganhou a linha que esvazia o `motivo` de quem é
+`denunciante_id`, na mesma transação, sem anular a coluna. Política de
+Privacidade subiu para a versão 1.8. `test/integration/chat_denuncia_expurgo_test.dart`
+(4.9, 4.10) e `chat_denuncia_exclusao_conta_test.dart` provam.
 
 ### 2.15 A decisão de não ter backup foi tomada antes de existir texto livre
 
@@ -896,7 +917,7 @@ app. Estava registrado como risco aceito no design daquela change e em
 Nada disto bloqueia nada. Está aqui para a dívida não ser dada como quitada
 inteira no dia em que alguém ler "existe filtro agora".
 
-### 2.23 A denúncia ficou sem limite nenhum, e a decisão nunca foi escrita
+### 2.23 ~~A denúncia ficou sem limite nenhum, e a decisão nunca foi escrita~~ — FECHADO em 2026-08-30
 
 Achado na convergência 1 de `filtro-e-intervalo-de-mensagem`, em 2026-08-17.
 Não é defeito daquela change — é uma assimetria que ela tornou visível.
@@ -926,7 +947,16 @@ comportamento novo nasce em spec.
 
 Não bloqueia nada. Está aqui para a assimetria não virar decisão por inércia.
 
-### 2.24 Quem modera pode reescrever a denúncia dos outros
+**FECHADO pela change `denuncia-como-registro`** (`20260830120000`): índice
+único parcial `denuncias_mensagem_pendente_unica` sobre `(mensagem_id,
+denunciante_id) where estado = 'pendente'`, com gatilho `before insert` que
+troca a violação de índice crua por `PT423` — o código que a tela lê para
+dizer "já está aguardando desfecho". **O limite de ritmo continua ausente,
+de propósito** — esta decisão não mudou, e o índice não é limite de ritmo:
+quantas mensagens DIFERENTES a pessoa denuncia continua sem teto
+(`test/integration/chat_denuncia_unica_pendente_test.dart`, caso 4.8).
+
+### 2.24 ~~Quem modera pode reescrever a denúncia dos outros~~ — FECHADO em 2026-08-30
 
 Medido em 2026-08-17, na convergência 3 de `filtro-e-intervalo-de-mensagem`.
 **Não é defeito daquela change** — a causa é de `chat-de-grupo-e-acao`, e ela
@@ -970,6 +1000,15 @@ comportamento novo nasce em spec.
 Gravidade: quem pode fazer isso já é autoridade do espaço ou Administrador do
 distrito — não é escalada de privilégio. É integridade de registro, e é o tipo
 de coisa que só se descobre quando alguém precisa do registro.
+
+**FECHADO pela change `denuncia-como-registro`** (`20260830120000`):
+`denuncias_mensagem_so_resolve_trigger`, no molde de `mensagens_so_remove`,
+recusa mudança em `id`, `mensagem_id`, `denunciante_id`, `motivo` (para outro
+texto) e `created_at`. Só o desfecho (`estado`, `resolvida_em`) muda depois
+do registro — e só `mensagem_id`/`motivo` indo a NULL (expurgo de mensagem,
+prazo do motivo, exclusão de conta) são a exceção prevista.
+`test/integration/chat_denuncia_imutavel_test.dart` prova os quatro casos
+recusados e o contraste do desfecho aceito.
 
 ### 2.25 Quem é citado por outro não tem caminho para desfixar
 

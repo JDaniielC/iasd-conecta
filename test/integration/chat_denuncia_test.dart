@@ -129,6 +129,16 @@ void main() {
   test(
     'a lista de denúncias é de quem manda no espaço — de mais ninguém',
     () async {
+      // Mensagem PRÓPRIA deste teste, e não a `messageId` do arquivo: a
+      // change `denuncia-como-registro` restringe uma pendente por
+      // (mensagem, denunciante), e `_uidMember` já denunciou a mensagem
+      // compartilhada no primeiro teste deste arquivo.
+      final ownMessageId = await seedMessage(
+        conn,
+        authorId: _uidAuthor,
+        groupId: groupId,
+        text: 'mensagem só deste teste',
+      );
       final r = await conn.execute(
         Sql.named(
           'insert into public.denuncias_mensagem '
@@ -136,7 +146,7 @@ void main() {
           'values (@m, @mo, @d) returning id',
         ),
         parameters: {
-          'm': messageId,
+          'm': ownMessageId,
           'mo': 'marcador da leitura de denúncia',
           'd': _uidMember,
         },
@@ -169,6 +179,14 @@ void main() {
   test(
     'a autora da mensagem denunciada não resolve a denúncia contra si',
     () async {
+      // Mesma razão do teste de cima: mensagem PRÓPRIA, para não colidir com
+      // a pendente de `_uidMember` sobre a `messageId` compartilhada.
+      final ownMessageId = await seedMessage(
+        conn,
+        authorId: _uidAuthor,
+        groupId: groupId,
+        text: 'outra mensagem só deste teste',
+      );
       final r = await conn.execute(
         Sql.named(
           'insert into public.denuncias_mensagem '
@@ -176,7 +194,7 @@ void main() {
           'values (@m, @mo, @d) returning id',
         ),
         parameters: {
-          'm': messageId,
+          'm': ownMessageId,
           'mo': 'marcador da resolução de denúncia',
           'd': _uidMember,
         },

@@ -47,6 +47,14 @@ String sendRefusalMessage(SendRefusal refusal, {Duration? remaining}) {
                 'Desfixe uma antes de fixar outra.'
           : 'Este chat já tem $ceiling mensagens fixadas, o máximo. '
                 'Desfixe uma antes de fixar outra.';
+
+    case SendRefusalKind.alreadyPending:
+      // NÃO diz "tente de novo" nem reabre o campo para editar: reescrever o
+      // motivo não muda nada, porque a causa não é o TEXTO — é já existir uma
+      // denúncia sua sobre esta mensagem esperando decisão. O que resolve é
+      // quem modera decidir, não a pessoa tentar de novo.
+      return 'Você já denunciou esta mensagem, e ela já está aguardando '
+          'desfecho.';
   }
 }
 

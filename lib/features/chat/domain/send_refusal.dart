@@ -15,6 +15,12 @@ enum SendRefusalKind {
   /// causa lida do `errcode`, dado de máquina no `hint` — e um segundo arquivo
   /// para decodificar um código da mesma família seria a cópia que diverge.
   pinnedCeiling,
+
+  /// Já existe denúncia PENDENTE da mesma pessoa sobre a mesma mensagem
+  /// (change `denuncia-como-registro`). Não é recusa de envio nem de fixação,
+  /// e mora aqui pelo mesmo motivo de [pinnedCeiling]: mesma família de
+  /// código, mesma disciplina de leitura.
+  alreadyPending,
 }
 
 /// A recusa que a tela sabe explicar.
@@ -22,15 +28,15 @@ enum SendRefusalKind {
 /// **A CAUSA VEM DO CÓDIGO DO ERRO, NUNCA DO TEXTO DELE.** Interpretar a
 /// mensagem do servidor é o que este arquivo existe para não fazer: texto se
 /// reescreve, se traduz e ganha maiúscula sem ninguém notar, e no dia em que
-/// isso acontecer a tela para de distinguir as três recusas — em silêncio, com
-/// os testes verdes, porque nenhum deles olha o texto.
+/// isso acontecer a tela para de distinguir as recusas — em silêncio, com os
+/// testes verdes, porque nenhum deles olha o texto.
 ///
 /// `profile_error_message.dart` faz o contrário e casa por `error.message`. Não
 /// é descuido lá: aquelas recusas vêm de `check constraint`, e o único sinal que
 /// um `check` violado carrega é o NOME da constraint, dentro do texto. Aqui as
 /// recusas vêm de gatilho, que pode escolher o `errcode` — e escolhe.
 ///
-/// Os três códigos são da família `PT`, que o PostgREST traduz para o código
+/// Os códigos são da família `PT`, que o PostgREST traduz para o código
 /// HTTP dos três últimos dígitos. Um SQLSTATE inventado fora dela chegaria com o
 /// código certo no corpo, mas como HTTP 500 — e recusa esperada subindo como
 /// erro de servidor envenena log e alarme de produção.
@@ -92,6 +98,8 @@ class SendRefusal implements Exception {
           kind: SendRefusalKind.pinnedCeiling,
           ceiling: int.tryParse(hint ?? ''),
         );
+      case 'PT423':
+        return const SendRefusal(kind: SendRefusalKind.alreadyPending);
       default:
         return null;
     }

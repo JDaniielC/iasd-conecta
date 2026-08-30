@@ -112,11 +112,37 @@ vida pessoal de terceiro a desmentiria. O que dá para declarar com honestidade
 | Sensível? | **Pode conter qualquer categoria do art. 5º, II**, inclusive de terceiro que nem usa o app. Não há como classificar de antemão nem detectar depois. **[EM ABERTO — precisa de advogado]**: se o consentimento genérico do cadastro cobre isto. Ver `PENDENCIAS.md` 2.16 |
 
 **Denúncia**: `public.denuncias_mensagem` — `mensagem_id` com
-`on delete set null` (**não** cascade), `motivo` obrigatório, `denunciante_id`
-não nulo, `estado` em `pendente`/`mensagem_removida`/`improcedente`/
-`sem_mensagem`. O `motivo` **também é texto livre do titular**, e sobre ele
-pesam duas dívidas registradas em `PENDENCIAS.md` 2.14: não é alcançado por
-`excluir_minha_conta`, e não tem prazo nenhum.
+`on delete set null` (**não** cascade), `motivo` **obrigatório ao nascer, mas
+nulável** desde a change `denuncia-como-registro`, `denunciante_id` não nulo,
+`estado` em `pendente`/`mensagem_removida`/`improcedente`/`sem_mensagem`. O
+`motivo` **também é texto livre do titular**, e as duas dívidas que pesavam
+sobre ele (`PENDENCIAS.md` 2.14) fecharam nesta change:
+
+- **Prazo**: `denuncia_prazo_do_motivo()` (30 dias, decisão do dono do app),
+  contado do **desfecho** (`resolvida_em`) — nunca da criação. Pendente NÃO
+  expira, pelo mesmo motivo de `mensagem_id` ter `on delete set null` em vez
+  de cascade: denúncia esquecida sem julgar é o pior resultado para quem
+  denunciou. `expurgar_motivos_de_denuncia()`, dois executores (`pg_cron` +
+  `ChatRepository.fetchReports`), no molde de `expurgar_mensagens_de_acao()`.
+- **Exclusão de conta**: `excluir_minha_conta` esvazia o `motivo` de quem é
+  `denunciante_id`, na mesma transação, sem anular a coluna — anular
+  quebraria o índice único da unicidade abaixo. A denúncia continua existindo,
+  com o desfecho que tiver.
+
+**Imutabilidade, nova nesta change**: `denuncias_mensagem_so_resolve_trigger`
+recusa `update` de `id`, `mensagem_id`, `denunciante_id`, `motivo` (para
+outro texto) e `created_at`. Só o **desfecho** (`estado`, `resolvida_em`)
+muda depois do registro — e só `mensagem_id`/`motivo` indo a NULL (expurgo,
+exclusão de conta) são a exceção. Fecha `PENDENCIAS.md` 2.24: até aqui
+`authenticated` reescrevia o motivo alheio e trocava `denunciante_id` para si
+mesmo, os dois ACEITOS.
+
+**Unicidade, nova nesta change**: índice único parcial
+`denuncias_mensagem_pendente_unica` sobre `(mensagem_id, denunciante_id)
+where estado = 'pendente'` — uma denúncia pendente por par, não uma pendura
+sem limite. Fecha `PENDENCIAS.md` 2.23. **Não é limite de ritmo**: a decisão
+de não ter limite de ritmo em denúncia continua valendo, escrita na spec
+`moderacao-de-mensagem`.
 
 **Retenção**: mensagem de **Ação** é apagada 30 dias após `acoes.data_hora` —
 depois do encontro, não da escrita — por `expurgar_mensagens_de_acao()`

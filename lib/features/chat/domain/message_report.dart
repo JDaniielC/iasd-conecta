@@ -29,6 +29,11 @@ enum MessageReportState {
 /// texto denunciado não é conservado em lugar nenhum. Quem analisa lê a
 /// mensagem enquanto ela existe e o motivo depois — se remover primeiro, sobra
 /// só o motivo.
+///
+/// **[reason] é nulo depois do prazo** (change `denuncia-como-registro`):
+/// `denuncia_prazo_do_motivo()`, contado do desfecho, apaga o texto — nunca o
+/// registro. Uma denúncia PENDENTE nunca tem [reason] nulo; só quem já tem
+/// [state] resolvido pode ter perdido o motivo.
 class MessageReport {
   const MessageReport({
     required this.id,
@@ -41,7 +46,7 @@ class MessageReport {
   });
 
   final String id;
-  final String reason;
+  final String? reason;
   final MessageReportState state;
   final DateTime createdAt;
 
@@ -68,7 +73,7 @@ class MessageReport {
     // — denúncia órfã não tem mensagem —, então ambas são opcionais.
     return MessageReport(
       id: map['id'] as String,
-      reason: map['motivo'] as String,
+      reason: map['motivo'] as String?,
       state: state,
       createdAt: DateTime.parse(map['created_at'] as String),
       messageId: map['mensagem_id'] as String?,

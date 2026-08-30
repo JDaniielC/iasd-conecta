@@ -209,7 +209,7 @@ class _ReportCard extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text('Motivo', style: theme.textTheme.labelMedium),
-            Text(report.reason, style: theme.textTheme.bodyMedium),
+            Text(_reasonLine, style: theme.textTheme.bodyMedium),
             const SizedBox(height: AppSpacing.sm),
             Text('Mensagem', style: theme.textTheme.labelMedium),
             Text(_messageLine, style: theme.textTheme.bodyMedium),
@@ -236,6 +236,17 @@ class _ReportCard extends ConsumerWidget {
       ),
     );
   }
+
+  /// O motivo, ou a explicação de por que ele não está mais aqui.
+  ///
+  /// **NÃO é "erro ao carregar".** `denuncia_prazo_do_motivo()` apaga o texto
+  /// de uma denúncia já decidida, passado o prazo — o registro do ATO (motivo
+  /// pendente NUNCA fica nulo, então isto só acontece com `state` resolvido)
+  /// continua na tela via [_stateLine]; só o que a pessoa escreveu, não.
+  String get _reasonLine =>
+      report.reason ??
+      'O motivo não existe mais — o prazo de guarda depois do desfecho já '
+          'passou. O caso continua registrado, com a decisão ao lado.';
 
   String get _messageLine {
     if (report.messageId == null) {
@@ -289,8 +300,9 @@ class _OrphanReports extends ConsumerWidget {
           padding: EdgeInsets.only(bottom: AppSpacing.sm),
           child: Text(
             'A mensagem foi apagada pelo prazo de 30 dias antes de alguém '
-            'analisar. O motivo escrito por quem denunciou fica; de que '
-            'conversa era, não dá mais para saber.',
+            'analisar. De que conversa era, não dá mais para saber — e o '
+            'motivo escrito por quem denunciou tem prazo próprio, contado '
+            'deste desfecho sem mérito.',
           ),
         ),
         for (final r in orphans)
@@ -304,7 +316,13 @@ class _OrphanReports extends ConsumerWidget {
                     'Motivo',
                     style: Theme.of(context).textTheme.labelMedium,
                   ),
-                  Text(r.reason),
+                  // `sem_mensagem` também tem `resolvida_em` (é um desfecho,
+                  // só que sem mérito) — o motivo expira igual ao das outras.
+                  Text(
+                    r.reason ??
+                        'O motivo não existe mais — o prazo de guarda depois '
+                            'deste desfecho já passou.',
+                  ),
                 ],
               ),
             ),

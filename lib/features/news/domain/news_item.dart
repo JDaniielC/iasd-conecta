@@ -316,6 +316,17 @@ final allNews = <NewsItem>[
         'desfixá-la do mesmo jeito, em Meu Perfil — sem precisar escrever '
         'para a gente.',
   ),
+  // Change `denuncia-como-registro`. É mudança sobre os dados dela: o que
+  // a pessoa escreveu ao denunciar passa a ter prazo, e sai com a conta.
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'O motivo que você escreve ao denunciar uma mensagem passa a ter '
+        'prazo: continua guardado por 30 dias depois de alguém decidir o '
+        'caso, e então deixa de existir — fica só o registro de que houve '
+        'uma denúncia e qual foi a decisão. Se você excluir sua conta antes '
+        'disso, o motivo que você escreveu some junto, na hora.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

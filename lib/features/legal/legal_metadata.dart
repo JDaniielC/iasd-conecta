@@ -97,7 +97,26 @@ abstract final class LegalMetadata {
   /// que era limite passou a ser falsa (o botão não fica mais só dentro da
   /// conversa), e manter a 1.7 carimbaria consentimento sob texto que a
   /// mudança acabou de tornar impreciso.
-  static const version = '1.8';
+  ///
+  /// 1.9 (change `denuncia-como-registro`): o motivo de denúncia GANHOU
+  /// PRAZO e passou a sair com a exclusão de conta de quem denunciou. Até
+  /// aqui a Política afirmava, sem ressalva, que o motivo "não expira com o
+  /// tempo" e que a exclusão de conta não o alcançava — as duas frases eram
+  /// verdadeiras no código (PENDENCIAS.md 2.14) e a promessa de registro
+  /// eterno tinha um custo que ninguém tinha decidido pagar: guardar para
+  /// sempre o que uma pessoa escreveu sobre outra. Agora, com desfecho
+  /// registrado, o motivo dura mais 30 dias e então some — o desfecho e o
+  /// instante permanecem, o texto não; e sai imediatamente se quem
+  /// denunciou excluir a conta antes disso. Pendente continua sem prazo,
+  /// porque denúncia esquecida sem julgar é o pior resultado para quem
+  /// denunciou.
+  ///
+  /// **Sobe porque a mudança é mais restritiva sobre dado que já existia**,
+  /// mesmo caso da 1.7: reduz por quanto tempo o motivo permanece, e
+  /// consentimento colhido sob a promessa antiga (eterno, sobrevivendo à
+  /// exclusão de conta) não cobre a nova (prazo de 30 dias, some com a
+  /// conta). Nenhum dado pessoal novo é tratado.
+  static const version = '1.9';
   static const effectiveDate = '30 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.

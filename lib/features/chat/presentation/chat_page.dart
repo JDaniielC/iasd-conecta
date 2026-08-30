@@ -716,10 +716,22 @@ class _MessageActions extends ConsumerWidget {
         }
         return;
       } on SendRefusal catch (refusal) {
+        // `alreadyPending` não reabre o diálogo: reescrever o motivo não
+        // muda nada, a causa não é o TEXTO — é já existir uma denúncia sua
+        // sobre esta mensagem esperando desfecho. As outras recusas (palavra
+        // bloqueada) SÃO corrigíveis reescrevendo, e por isso reabrem.
+        if (refusal.kind == SendRefusalKind.alreadyPending) {
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(sendRefusalMessage(refusal))),
+            );
+          }
+          return;
+        }
         // Só a recusa que a pessoa CONSEGUE corrigir reabre o diálogo. Não há
         // limite de ritmo em denúncia — denunciar não é conversar, e um limite
-        // aqui protegeria quem está sendo denunciado —, então na prática esta é
-        // sempre a palavra bloqueada.
+        // aqui protegeria quem está sendo denunciado —, então fora de
+        // `alreadyPending` esta é sempre a palavra bloqueada.
         refusalMessage = sendRefusalMessage(refusal);
       } catch (_) {
         if (context.mounted) {

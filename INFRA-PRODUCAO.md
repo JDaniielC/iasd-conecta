@@ -384,6 +384,38 @@ select cron.schedule(
 );
 ```
 
+### O job de `pg_cron` do expurgo de motivo de denúncia
+
+Change `denuncia-como-registro`. O prazo de **30 dias após o desfecho**
+(`resolvida_em`, nunca a criação) é executado por job diário:
+
+```sql
+select jobname, schedule from cron.job
+where jobname = 'expurgar-motivos-de-denuncia';
+```
+
+Esperado: `47 3 * * *`.
+
+**Mesma exigência do job de cima, e pelo mesmo motivo**: o prazo é promessa
+escrita na Política de Privacidade (versão 1.8), e o `motivo` é texto livre
+que uma pessoa escreveu sobre outra — atraso aqui é guardar além do
+prometido. Por isso ele também tem **segundo gatilho no app**:
+`ChatRepository.fetchReports` chama `public.expurgar_motivos_de_denuncia()`
+ao abrir a tela de denúncias. Com o projeto pausado no plano Free quem acorda
+o banco é o app.
+
+**A migration cria o agendamento, e em produção isso pode não bastar** — a
+mesma ressalva do job de cima. Se a consulta acima devolver zero linhas,
+criar à mão:
+
+```sql
+select cron.schedule(
+  'expurgar-motivos-de-denuncia',
+  '47 3 * * *',
+  $$select public.expurgar_motivos_de_denuncia()$$
+);
+```
+
 ## 4. Backup
 
 **A decisão sobre backup existe, está fechada e assinada, e não mora aqui.** Ela

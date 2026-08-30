@@ -514,4 +514,56 @@ void main() {
           findsOneWidget);
     });
   });
+
+  group('6.3 — denúncia repetida (change denuncia-como-registro)', () {
+    /// AO CONTRÁRIO da recusa de palavra, esta NÃO reabre o diálogo. A causa
+    /// não é o TEXTO que a pessoa escreveu — é já existir uma denúncia dela
+    /// mesma sobre esta mensagem, esperando desfecho. Reabrir o diálogo para
+    /// reescrever não mudaria nada, e sugeriria um conserto que não existe.
+    testWidgets(
+      'já está aguardando desfecho: SnackBar, sem reabrir o diálogo',
+      (tester) async {
+        final repository = MockChatRepository();
+        when(() => repository.reportMessage(any(), any())).thenAnswer((
+          _,
+        ) async {
+          throw const SendRefusal(kind: SendRefusalKind.alreadyPending);
+        });
+
+        await _pumpChat(
+          tester,
+          repository: repository,
+          messages: [
+            Message(
+              id: 'm1',
+              authorId: 'outra-1',
+              createdAt: DateTime(2026, 8, 30, 19),
+              groupId: 'g1',
+              text: 'mensagem alheia',
+              authorName: 'Ana',
+            ),
+          ],
+        );
+
+        await tester.longPress(find.text('mensagem alheia'));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Denunciar'));
+        await tester.pumpAndSettle();
+
+        await tester.enterText(find.byType(TextField).last, 'motivo qualquer');
+        await tester.tap(find.widgetWithText(FilledButton, 'Denunciar'));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.textContaining('já está aguardando desfecho'),
+          findsOneWidget,
+        );
+        expect(
+          find.text('Denunciar esta mensagem'),
+          findsNothing,
+          reason: 'o diálogo fechou — reescrever o motivo não corrige nada',
+        );
+      },
+    );
+  });
 }

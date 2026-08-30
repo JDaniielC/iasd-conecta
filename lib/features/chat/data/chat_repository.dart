@@ -418,6 +418,12 @@ class ChatRepository {
     String? groupId,
     String? actionId,
   }) async {
+    // O segundo gatilho do prazo do motivo (change denuncia-como-registro).
+    // Mesmo desenho de [fetchHistory]: `unawaited`, ANTES do `await` da
+    // consulta, para as duas idas ao servidor correrem juntas — quem abriu a
+    // tela de denúncias veio decidir casos, não esperar uma faxina.
+    unawaited(purgeExpiredReportReasons());
+
     final rows =
         await _client.rpc(
               'denuncias_do_espaco',
@@ -497,6 +503,21 @@ class ChatRepository {
   Future<int> purgeExpiredActionMessages() async {
     try {
       final r = await _client.rpc('expurgar_mensagens_de_acao');
+      return r as int? ?? 0;
+    } catch (_) {
+      // Faxina que falha não estraga a leitura. Ver [fetchHistory].
+      return 0;
+    }
+  }
+
+  /// O segundo gatilho do prazo do `motivo` de denúncia. Ver [fetchReports].
+  ///
+  /// Molde de [purgeExpiredActionMessages]: `pg_cron` sozinho não cumpre —
+  /// no plano gratuito o projeto pausa por inatividade e o cron para junto —,
+  /// então quem abre a tela de denúncias também dispara a faxina.
+  Future<int> purgeExpiredReportReasons() async {
+    try {
+      final r = await _client.rpc('expurgar_motivos_de_denuncia');
       return r as int? ?? 0;
     } catch (_) {
       // Faxina que falha não estraga a leitura. Ver [fetchHistory].

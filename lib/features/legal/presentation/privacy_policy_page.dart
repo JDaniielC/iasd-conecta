@@ -400,18 +400,28 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'assim, o caminho é denunciar — pelo próprio app ou '
               'escrevendo para ${LegalMetadata.contactEmail}.',
             ),
+            // O PRAZO E O ALCANCE DA EXCLUSÃO DE CONTA SÃO NOVOS aqui — até a
+            // change `denuncia-como-registro` esta seção dizia que o motivo
+            // "não expira com o tempo" e que a exclusão de conta não o
+            // alcançava. As duas afirmações eram verdadeiras no código e
+            // deixaram de ser: a promessa de registro eterno tinha um custo
+            // que ninguém tinha decidido pagar, e as duas metades da exclusão
+            // de conta discordavam entre si.
             const LegalParagraph(
               'Ao denunciar, o motivo que você escrever fica guardado como '
               'registro do caso, junto com a informação de que foi você quem '
-              'denunciou. Ele não expira com o tempo, e continua existindo '
-              'mesmo depois de as mensagens da Ação serem apagadas — uma '
-              'denúncia que some sem desfecho é o pior resultado para quem '
-              'denunciou. A denúncia é vista só por quem pode resolvê-la: o '
-              'Dono do Grupo, o criador da Ação, o Dono do Grupo a que a Ação '
-              'pertence, e o Administrador do distrito. Se você excluir sua '
-              'conta, esse motivo continua '
-              'registrado, ligado apenas ao seu Perfil anonimizado — '
-              '"Membro removido".',
+              'denunciou. Enquanto ninguém decide o caso, esse motivo não '
+              'tem prazo — mesmo que a mensagem denunciada já tenha sido '
+              'apagada, uma denúncia sem decisão não pode simplesmente '
+              'sumir. Depois que alguém decide, o motivo continua guardado '
+              'por mais 30 dias e então deixa de existir: fica o registro '
+              'de que houve uma denúncia e qual foi a decisão, sem o texto '
+              'que você escreveu. Se você excluir sua conta antes disso, o '
+              'motivo some junto, na hora — a denúncia continua existindo, '
+              'com a decisão que ela tiver, mas sem o que você escreveu. A '
+              'denúncia é vista só por quem pode resolvê-la: o Dono do '
+              'Grupo, o criador da Ação, o Dono do Grupo a que a Ação '
+              'pertence, e o Administrador do distrito.',
             ),
             const LegalParagraph(
               'Uma última coisa, e ela é um pedido: não escreva na conversa '

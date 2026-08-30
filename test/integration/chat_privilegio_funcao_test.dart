@@ -38,6 +38,11 @@ void main() {
     'public.pode_moderar_espaco(uuid, uuid)',
     'public.pode_moderar_mensagem(uuid, uuid, uuid)',
     'public.expurgar_mensagens_de_acao()',
+    // Change denuncia-como-registro (20260830120000): mesmo desenho de
+    // expurgar_mensagens_de_acao — security definer, delete/update global, e
+    // a mesma armadilha de nascer aberta a PUBLIC se o `revoke` for
+    // esquecido.
+    'public.expurgar_motivos_de_denuncia()',
   ];
 
   Future<bool> canExecute(String role, String signature) async {
@@ -75,22 +80,25 @@ void main() {
   });
 
   test(
-    'anon chamando o expurgo é recusado de verdade, não só no catálogo',
+    'anon chamando qualquer expurgo é recusado de verdade, não só no '
+    'catálogo',
     () async {
-      Object? error;
-      try {
-        await asAnon(
-          conn,
-          () => conn.execute('select public.expurgar_mensagens_de_acao()'),
+      for (final f in const [
+        'public.expurgar_mensagens_de_acao()',
+        'public.expurgar_motivos_de_denuncia()',
+      ]) {
+        Object? error;
+        try {
+          await asAnon(conn, () => conn.execute('select $f'));
+        } catch (e) {
+          error = e;
+        }
+        expect(
+          error,
+          isA<ServerException>(),
+          reason: '$f — RPC destrutiva alcançável sem autenticação',
         );
-      } catch (e) {
-        error = e;
       }
-      expect(
-        error,
-        isA<ServerException>(),
-        reason: 'RPC destrutiva alcançável sem autenticação',
-      );
     },
   );
 }

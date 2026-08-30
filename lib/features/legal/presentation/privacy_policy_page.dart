@@ -323,24 +323,29 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'e quando; isso não aparece na conversa para ninguém, e some '
               'com a conta de quem fixou, como o resto.',
             ),
-            // A RESSALVA DO BOTÃO É MEDIÇÃO, não cautela de redação. Medido em
-            // 2026-08-17: autor que desistiu da Ação ou saiu do Grupo tem
-            // `pode_moderar_mensagem` = true e mesmo assim o `update` afeta
-            // ZERO LINHAS — a policy de `select` esconde a linha, e um `update`
-            // não alcança linha que não lê. Enquanto não houver caminho de
-            // desfixe fora da conversa (`PENDENCIAS.md` 2.28), a frase antiga
-            // — "a qualquer momento" — era falsa, e falsa justamente no caso
-            // em que a pessoa mais precisa dela.
+            // O LIMITE DA 1.7 FECHOU. Medido em 2026-08-17 (`PENDENCIAS.md`
+            // 2.28): autor que desistiu da Ação ou saiu do Grupo tinha
+            // `pode_moderar_mensagem` = true e mesmo assim o `update` afetava
+            // ZERO LINHAS — a policy de `select` esconde a linha, e um
+            // `update` não alcança linha que não lê. A change
+            // `alcance-do-titular-sobre-texto-proprio` deu à pessoa um
+            // segundo caminho, por fora da conversa: `desfixar_minha_mensagem`
+            // (chat_repository.dart:351) alcança a linha pelo autor, sem
+            // depender da policy de leitura, e aparece em Meu Perfil
+            // (`_PinnedMessagesSection`, my_profile_page.dart:314). Por isso
+            // "a qualquer momento" volta a ser verdade, e o texto não promete
+            // mais um e-mail que o app já resolveu sozinho.
             const LegalBullet(
-              'Se você escreveu a mensagem, você pode desfixá-la mesmo sem '
-              'cuidar do espaço, e a partir daí ela volta a contar o prazo '
-              'normal e é apagada na passagem seguinte, sem prazo novo. Um '
-              'limite que é preciso dizer: o botão de desfixar fica dentro '
-              'da conversa. Se você sair do Grupo, desistir da Ação ou '
-              'deixar de poder ler aquele chat por qualquer motivo, você '
-              'perde o botão e a mensagem continua fixada. Nesse caso, '
-              'escreva para ${LegalMetadata.contactEmail} — e estamos '
-              'trabalhando para que isso não dependa de e-mail.',
+              'Se você escreveu a mensagem, você pode desfixá-la a qualquer '
+              'momento, e a partir daí ela volta a contar o prazo normal e é '
+              'apagada na passagem seguinte, sem prazo novo. Tem dois '
+              'jeitos de fazer isso: dentro da própria conversa, no botão de '
+              'desfixar, ou em Meu Perfil, na seção "Mensagens fixadas", que '
+              'lista tudo que você fixou em qualquer Grupo ou Ação. O '
+              'segundo caminho existe justamente para quando você já saiu '
+              'do Grupo, desistiu da Ação ou, por qualquer motivo, não '
+              'acessa mais aquele chat: mesmo sem ler a conversa, você '
+              'continua vendo e desfixando o que você mesmo escreveu.',
             ),
             const LegalBullet(
               'Mensagem fixada que é removida, ou cujo autor exclui a conta, '

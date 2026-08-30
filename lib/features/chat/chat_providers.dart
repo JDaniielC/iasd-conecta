@@ -8,9 +8,18 @@ import 'data/chat_repository.dart';
 import 'domain/chat_state.dart';
 import 'domain/message.dart';
 import 'domain/message_report.dart';
+import 'domain/pinned_message.dart';
 
 final chatRepositoryProvider = Provider<ChatRepository>((ref) {
   return ChatRepository(ref.watch(supabaseClientProvider));
+});
+
+/// As próprias mensagens fixadas, para a seção de `Meu Perfil`
+/// (`alcance-do-titular-sobre-texto-proprio`). `autoDispose`: a tela some, o
+/// provider some — ninguém precisa deste dado fora dela.
+final myPinnedMessagesProvider =
+    FutureProvider.autoDispose<List<PinnedMessage>>((ref) {
+  return ref.watch(chatRepositoryProvider).fetchMyPinned();
 });
 
 /// De qual espaço é a conversa. Exatamente um dos dois é não nulo, como o

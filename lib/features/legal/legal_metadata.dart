@@ -82,8 +82,23 @@ abstract final class LegalMetadata {
   /// o que escreve. Sobe também porque a exceção é acionável por OUTRA pessoa
   /// sobre texto seu, e o contrapeso — o autor sempre desfixa a própria
   /// mensagem — só serve a quem sabe que ele existe.
-  static const version = '1.7';
-  static const effectiveDate = '17 de agosto de 2026';
+  ///
+  /// 1.8 (change `alcance-do-titular-sobre-texto-proprio`): o contrapeso da
+  /// 1.7 — "o autor sempre desfixa a própria mensagem" — não se cumpria fora
+  /// da conversa. Medido em 2026-08-17 (`PENDENCIAS.md` 2.28): autor que saiu
+  /// do Grupo ou desistiu da Ação tinha `pode_moderar_mensagem = true` e o
+  /// `update` afetava zero linhas, porque a policy de `select` esconde a
+  /// linha e um `update` não alcança linha que não lê. A Política 1.7
+  /// declarava esse limite e mandava escrever para o e-mail de contato. Esta
+  /// change cria um segundo caminho de desfixe — `desfixar_minha_mensagem`,
+  /// alcançável de "Meu Perfil", sem depender de ler a conversa — e o texto
+  /// deixa de prometer e-mail porque o app já resolve sozinho. Sobe pelo
+  /// mesmo critério da 1.6: **nenhum dado pessoal novo**, mas uma afirmação
+  /// que era limite passou a ser falsa (o botão não fica mais só dentro da
+  /// conversa), e manter a 1.7 carimbaria consentimento sob texto que a
+  /// mudança acabou de tornar impreciso.
+  static const version = '1.8';
+  static const effectiveDate = '30 de agosto de 2026';
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

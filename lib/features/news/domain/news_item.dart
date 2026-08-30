@@ -307,6 +307,15 @@ final allNews = <NewsItem>[
         'para a tela inicial. Antes, em alguns casos, você ficava preso na '
         'tela de entrar.',
   ),
+  // Change `alcance-do-titular-sobre-texto-proprio`.
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'Se você fixou uma mensagem e depois saiu do Grupo, desistiu da '
+        'Ação ou perdeu o acesso àquela conversa, agora você consegue '
+        'desfixá-la do mesmo jeito, em Meu Perfil — sem precisar escrever '
+        'para a gente.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

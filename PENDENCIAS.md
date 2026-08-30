@@ -1019,7 +1019,7 @@ faixa expandida rolando por dentro é entendida como rolável.
 
 Entra na seção 3 deste documento, "exigem rodar o app e olhar".
 
-### 2.28 O autor que saiu do espaço NÃO consegue desfixar — a requirement não é cumprida
+### 2.28 O autor que saiu do espaço NÃO consegue desfixar — a requirement não é cumprida — **FECHADO em 2026-08-30**
 
 Medido em 2026-08-17 pelos agentes `advogado-digital` e `promessa-vs-execucao`,
 no fechamento da change `mensagem-fixada`. **Contradiz em letra a requirement
@@ -1059,6 +1059,27 @@ não faz, e oferece o e-mail de contato. É honesto e é fraco.
    lista "minhas mensagens fixadas" em algum lugar que ela ainda alcança
    (`Meu Perfil` é o candidato). **Isso é superfície de produto nova, e nasce
    em spec.**
+
+**FECHADO em 2026-08-30** pela change `alcance-do-titular-sobre-texto-proprio`,
+exatamente pelas duas metades acima: `desfixar_minha_mensagem(uuid)` e
+`minhas_mensagens_fixadas()` (`20260830100000_alcance_do_titular_sobre_texto_proprio.sql`),
+e a seção "Mensagens fixadas" em `Meu Perfil`
+(`_PinnedMessagesSection`, `my_profile_page.dart`). Medição de fechamento —
+mesmos quatro casos da tabela acima, agora pela função:
+
+| Sessão | `desfixar_minha_mensagem` |
+|---|---|
+| autor participante do Grupo | 1 linha |
+| autor que saiu do Grupo | **1 linha** |
+| autor que desistiu da Ação | **1 linha** |
+| autor com idade corrigida para 17 | **1 linha** |
+| não autor (incluindo quem tem autoridade no espaço) | 0 linhas |
+
+Provado em `test/integration/alcance_do_titular_test.dart` (9 casos, 2x para
+determinismo) e `test/widget/pinned_messages_section_test.dart`. Ver
+`REVISAO-JURIDICA.md` § 4-E para o fechamento com efeito legal e a versão do
+texto legal. A 2.25 logo acima **não** fecha por esta change — é limite de
+desenho diferente, sobre a pessoa citada por outro, não sobre o autor.
 
 Não entrou na change porque a metade 1 sem a metade 2 é função sem chamador.
 

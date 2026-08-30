@@ -4,6 +4,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../domain/message.dart';
 import '../domain/message_report.dart';
+import '../domain/pinned_message.dart';
 import '../domain/send_refusal.dart';
 
 /// Único ponto de acesso a `mensagens` e `denuncias_mensagem`.
@@ -333,6 +334,38 @@ class ChatRepository {
     if (affected.isEmpty) {
       throw StateError('esta mensagem não pôde ser desfixada por você');
     }
+  }
+
+  /// Desfixa de FORA da conversa — `Meu Perfil`, para quem já não alcança o
+  /// espaço onde escreveu (saiu do Grupo, desistiu da Ação, perdeu o corte de
+  /// idade). Ver `desfixar_minha_mensagem` na migration
+  /// `20260830100000_alcance_do_titular_sobre_texto_proprio.sql`: ela é quem
+  /// alcança a linha que a policy de leitura esconde, e o predicado dela é só
+  /// `auth.uid() = autor_id` — sem braço de autoridade, porque quem modera
+  /// tem [unpinMessage], de dentro da conversa.
+  ///
+  /// A decisão de sucesso/recusa vem do NÚMERO que a função devolve
+  /// (`row_count`), nunca de texto de erro: zero é a única forma de recusa
+  /// aqui, e cobre tanto "mensagem de outra pessoa" quanto "mensagem que já
+  /// não existe" — as duas são, para quem chama, "não é sua para desfixar".
+  Future<void> unpinMyMessage(String messageId) async {
+    final linhas = await _client.rpc(
+      'desfixar_minha_mensagem',
+      params: {'p_mensagem_id': messageId},
+    ) as int;
+
+    if (linhas == 0) {
+      throw StateError('esta mensagem não pôde ser desfixada por você');
+    }
+  }
+
+  /// As próprias mensagens fixadas, de qualquer conversa — inclusive das que
+  /// a sessão já não lê. Ver `minhas_mensagens_fixadas` na mesma migration.
+  Future<List<PinnedMessage>> fetchMyPinned() async {
+    final rows = await _client.rpc('minhas_mensagens_fixadas') as List;
+    return [
+      for (final row in rows) PinnedMessage.fromMap(row as Map<String, dynamic>),
+    ];
   }
 
   /// Denuncia. O `motivo` escrito aqui é o que fica como registro do caso —

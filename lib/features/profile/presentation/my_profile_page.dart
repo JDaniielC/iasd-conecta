@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
+import '../../chat/chat_providers.dart';
+import '../../chat/domain/pinned_message.dart';
 import '../domain/name_moderation.dart';
 import '../domain/profile.dart';
 import '../domain/profile_error_message.dart';
@@ -287,6 +289,7 @@ class _MyProfilePageState extends ConsumerState<MyProfilePage> {
                   : () => _save(loaded),
               child: Text(_submitting ? 'Salvando…' : 'Salvar'),
             ),
+            const _PinnedMessagesSection(),
           ],
         ),
       ),
@@ -302,6 +305,106 @@ class _MyProfilePageState extends ConsumerState<MyProfilePage> {
   }
 }
 
+/// Change `alcance-do-titular-sobre-texto-proprio` — as próprias mensagens
+/// fixadas, alcançáveis daqui mesmo sem a pessoa entrar na conversa onde
+/// escreveu (PENDENCIAS.md 2.28).
+///
+/// **Some quando não há nenhuma**, mesma escolha da faixa de destaque em
+/// `/acoes`: seção vazia declarando que não há nada é espaço gasto à toa.
+class _PinnedMessagesSection extends ConsumerStatefulWidget {
+  const _PinnedMessagesSection();
+
+  @override
+  ConsumerState<_PinnedMessagesSection> createState() =>
+      _PinnedMessagesSectionState();
+}
+
+class _PinnedMessagesSectionState
+    extends ConsumerState<_PinnedMessagesSection> {
+  /// Preenchida uma vez, quando a lista chega. Depois disso ela só muda por
+  /// desfixar LOCAL — nunca por um novo carregamento. É o que faz "desfixar
+  /// tira a linha na hora, sem recarregar" ser verdade: recarregar reabriria
+  /// a mesma ida ao servidor que a pessoa já pagou para abrir esta tela.
+  List<PinnedMessage>? _messages;
+
+  Future<void> _unpin(PinnedMessage message) async {
+    try {
+      await ref.read(chatRepositoryProvider).unpinMyMessage(message.id);
+      if (!mounted) return;
+      setState(() => _messages?.removeWhere((m) => m.id == message.id));
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Não deu pra desfixar agora. Tente de novo.'),
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    _messages ??= ref.watch(myPinnedMessagesProvider).value;
+    final messages = _messages;
+    if (messages == null || messages.isEmpty) return const SizedBox.shrink();
+
+    final text = Theme.of(context).textTheme;
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.lg),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Divider(),
+          const SizedBox(height: AppSpacing.sm),
+          Text('Mensagens fixadas', style: text.titleMedium),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'O que você fixou continua seu para desfixar, mesmo que você já '
+            'não alcance mais aquela conversa.',
+            style: text.bodySmall,
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          for (final m in messages)
+            _PinnedMessageTile(message: m, onUnpin: () => _unpin(m)),
+        ],
+      ),
+    );
+  }
+}
+
+class _PinnedMessageTile extends StatelessWidget {
+  const _PinnedMessageTile({required this.message, required this.onUnpin});
+
+  final PinnedMessage message;
+  final VoidCallback onUnpin;
+
+  @override
+  Widget build(BuildContext context) {
+    final text = Theme.of(context).textTheme;
+    return Card(
+      margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.md),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(message.spaceName, style: text.labelMedium),
+            const SizedBox(height: AppSpacing.xs),
+            Text(message.text, style: text.bodyMedium),
+            Align(
+              alignment: Alignment.centerRight,
+              child: TextButton(
+                onPressed: onUnpin,
+                child: const Text('Desfixar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 class _ReadOnlyRow extends StatelessWidget {
   const _ReadOnlyRow({required this.label, required this.value});
 
@@ -313,10 +416,22 @@ class _ReadOnlyRow extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium),
+          Expanded(
+            flex: 3,
+            child: Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            flex: 2,
+            child: Text(
+              value,
+              style: Theme.of(context).textTheme.bodyMedium,
+              textAlign: TextAlign.end,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );

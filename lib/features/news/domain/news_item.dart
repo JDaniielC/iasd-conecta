@@ -258,6 +258,55 @@ final allNews = <NewsItem>[
         'explica tudo, inclusive o que fazer se você já não alcança a '
         'conversa.',
   ),
+  // Change `redesenho de navegação e visual`. Cada item é uma ideia distinta
+  // do mesmo commit, pela regra 3 do critério.
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'O app ganhou uma barra fixa no rodapé, com Meus Grupos, Grupos, '
+        'Ações e Notificações, para você trocar de tela sem precisar voltar '
+        'para o início.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'Uma tela nova, Meus Grupos, reúne num só lugar os Grupos e '
+        'Ministérios de que você participa.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'A tela inicial mudou de visual, com uma imagem de destaque no '
+        'topo. Meu Perfil virou um ícone no alto da tela, no lugar do botão '
+        'que havia antes.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'Tocar num Grupo ou Ministério na lista abre antes uma prévia — '
+        'categoria, horário, local e quem participa — e só depois, se você '
+        'quiser, a tela completa dele.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'A lista de Ações ganhou um calendário: toque o ícone para filtrar '
+        'as Ações dos próximos 7 dias por data.',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'Alguns itens que ficavam soltos no alto da tela de Grupos — como a '
+        'administração do distrito e as páginas legais — passaram para um '
+        'menu único, "Mais opções".',
+  ),
+  NewsItem(
+    date: DateTime.utc(2026, 8, 30),
+    text:
+        'Ao entrar numa Conta que já tem Perfil, o app agora leva direto '
+        'para a tela inicial. Antes, em alguns casos, você ficava preso na '
+        'tela de entrar.',
+  ),
 ];
 
 /// O que de fato aparece na tela: descarta o que é anterior ao lançamento e

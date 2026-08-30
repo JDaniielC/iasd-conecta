@@ -123,8 +123,17 @@ void main() {
       expect(find.text('Ministério Jovem'), findsOneWidget);
       expect(find.text('Participantes'), findsOneWidget);
       expect(find.text('Bia'), findsOneWidget);
-      expect(find.byTooltip('Rodadas de Votação'), findsOneWidget);
-      expect(find.byTooltip('Líder/Diretor de Ministério'), findsOneWidget);
+
+      // Rodadas de Votação e Líder/Diretor moraram como ícone solto no título
+      // até ele ficar apertado demais pro nome do Grupo (comentário de
+      // `_pumpGroupDetail`) — agora vivem no menu "Mais opções" do cabeçalho.
+      await tester.tap(find.byTooltip('Mais opções'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rodadas de Votação'), findsOneWidget);
+      expect(find.text('Líder/Diretor de Ministério'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10)); // fecha o menu
+      await tester.pumpAndSettle();
+
       expect(find.text('Sair do Grupo/Ministério'), findsOneWidget);
 
       // A seção de mudanças, que a spec cita por nome: ela vive no rodapé da

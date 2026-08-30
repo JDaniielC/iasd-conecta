@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/profile/data/auth_repository.dart';
 import 'package:iasd_conecta/features/profile/presentation/login_page.dart';
@@ -17,23 +18,40 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 class MockAuthRepository extends Mock implements AuthRepository {}
 
-Widget _app(AuthRepository auth) {
+// MaterialApp.router com GoRouter de verdade, não MaterialApp(home:) — o
+// login bem-sucedido navega com `context.go('/home')` (ver login_page.dart),
+// que precisa de um GoRouter ancestral pra não lançar.
+Widget _app(AuthRepository auth, {bool hasProfile = false}) {
+  final router = GoRouter(
+    initialLocation: '/login',
+    routes: [
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+      GoRoute(
+        path: '/home',
+        builder: (context, state) => const Text('Tela inicial'),
+      ),
+    ],
+  );
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
-      hasProfileProvider.overrideWith((ref) => false),
+      hasProfileProvider.overrideWith((ref) => hasProfile),
     ],
-    child: const MaterialApp(home: LoginPage()),
+    child: MaterialApp.router(routerConfig: router),
   );
 }
 
-Future<void> _pump(WidgetTester tester, AuthRepository auth) async {
+Future<void> _pump(
+  WidgetTester tester,
+  AuthRepository auth, {
+  bool hasProfile = false,
+}) async {
   tester.view.physicalSize = const Size(360, 800);
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.resetPhysicalSize);
   addTearDown(tester.view.resetDevicePixelRatio);
 
-  await tester.pumpWidget(_app(auth));
+  await tester.pumpWidget(_app(auth, hasProfile: hasProfile));
   await tester.pumpAndSettle();
 }
 
@@ -136,6 +154,24 @@ void main() {
       expect(find.text('Não deu pra entrar agora. Tente de novo em instantes.'),
           findsOneWidget);
     });
+  });
+
+  testWidgets('login bem-sucedido navega pra tela inicial', (tester) async {
+    // O redirect global de app.dart só reage a hasProfileProvider MUDAR de
+    // valor (_RouterRefresh escuta esse provider). Quando a Conta já tem
+    // Perfil antes do login (recuperando sessão num aparelho novo, caso desta
+    // tela — ver o comentário da classe), o valor não muda e o redirect nunca
+    // reavalia: a pessoa fica presa em /login. A navegação tem que ser
+    // explícita, não depender do redirect.
+    final auth = MockAuthRepository();
+    when(() => auth.login(email: any(named: 'email'), password: any(named: 'password')))
+        .thenAnswer((_) async {});
+
+    await _pump(tester, auth, hasProfile: true);
+    await _signIn(tester);
+
+    expect(find.text('Tela inicial'), findsOneWidget);
+    expect(find.byType(LoginPage), findsNothing);
   });
 
   testWidgets('depois da falha o botão volta a ficar disponível', (tester) async {

@@ -14,7 +14,8 @@ import '../../profile/domain/profile_guard.dart';
 import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../domain/group.dart';
 import '../group_providers.dart';
-import '../../notification/presentation/notification_badge.dart';
+import 'group_quick_view_sheet.dart';
+import '../../navigation/presentation/app_bottom_nav.dart';
 
 enum _GroupSortOrder { mostRecent, name, category }
 
@@ -51,69 +52,23 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
 
     return Scaffold(
       appBar: AppBar(
+        // Chega-se a `/grupos` por `context.go`, que não empilha rota — sem
+        // este botão a tela fica sem saída (nenhum back automático, porque
+        // não há nada para voltar).
+        leading: IconButton(
+          tooltip: 'Início',
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () => context.go('/home'),
+        ),
         title: const Text('Grupos/Ministérios'),
+        // Ações e Notificações saíram daqui — a barra inferior já leva às
+        // duas. O que sobra é só o que não tem lugar na barra: administração
+        // do distrito e as duas entradas de sempre (Virar Conta, páginas
+        // legais), tudo dentro de um menu só. Sete ícones soltos ao lado de
+        // "Grupos/Ministérios" era o que estourava a AppBar num celular —
+        // achado rodando o app no simulador.
         actions: [
-          // Change `notificacoes-in-app`. O app não tem barra global —
-          // cada tela monta a sua —, então o indicador vive nas duas telas
-          // de navegação principais, que é de onde se chega a tudo.
-          const NotificationBadge(),
-          IconButton(
-            tooltip: 'Ações',
-            icon: const Icon(Icons.event_outlined),
-            onPressed: () => context.push('/acoes'),
-          ),
-          if (isDistrictAdmin) ...[
-            IconButton(
-              tooltip: 'Igrejas do Distrito',
-              icon: const Icon(Icons.church_outlined),
-              onPressed: () => context.push('/district-admin/churches'),
-            ),
-            IconButton(
-              tooltip: 'Promover Administrador',
-              icon: const Icon(Icons.admin_panel_settings_outlined),
-              onPressed: () => context.push('/district-admin/promote'),
-            ),
-            IconButton(
-              tooltip: 'Declarações de Líder/Diretor pendentes',
-              icon: const Icon(Icons.pending_actions_outlined),
-              onPressed: () => context.push('/leadership/pending'),
-            ),
-            IconButton(
-              tooltip: 'Ações Sugeridas',
-              icon: const Icon(Icons.lightbulb_outline),
-              onPressed: () => context.push('/district-admin/suggested-actions'),
-            ),
-            IconButton(
-              tooltip: 'Grupos/Ministérios arquivados',
-              icon: const Icon(Icons.archive_outlined),
-              onPressed: () =>
-                  context.push('/district-admin/grupos-arquivados'),
-            ),
-            IconButton(
-              tooltip: 'Versões de consentimento',
-              icon: const Icon(Icons.fact_check_outlined),
-              onPressed: () => context.push('/district-admin/consentimentos'),
-            ),
-            // SC-003: da tela em que a imagem aparece até a remoção, em até 3
-            // toques. Por aqui são dois: abrir a lista e resolver.
-            IconButton(
-              tooltip: 'Imagens denunciadas',
-              icon: const Icon(Icons.flag_outlined),
-              onPressed: () =>
-                  context.push('/district-admin/imagens-denunciadas'),
-            ),
-          ],
-          if (hasProfile && !hasAccount)
-            IconButton(
-              tooltip: 'Virar Conta',
-              icon: const Icon(Icons.cloud_upload_outlined),
-              onPressed: () => context.push('/upgrade-conta'),
-            ),
-          IconButton(
-            tooltip: 'Política de Privacidade e Termos de Uso',
-            icon: const Icon(Icons.privacy_tip_outlined),
-            onPressed: () => context.push('/privacidade'),
-          ),
+          _ListMenuButton(hasProfile: hasProfile, hasAccount: hasAccount, isDistrictAdmin: isDistrictAdmin),
         ],
       ),
       floatingActionButton: FloatingActionButton(
@@ -124,6 +79,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
         },
         child: const Icon(Icons.add),
       ),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.groups),
       body: Column(
         children: [
           const MissingProfileBanner(),
@@ -162,7 +118,7 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
                     for (final section in sections) ...[
                       _SectionHeader(name: section.churchName),
                       for (final group in section.items)
-                        _GroupCard(group: group, cover: covers[group.id]),
+                        GroupCard(group: group, cover: covers[group.id]),
                     ],
                   ],
                 );
@@ -242,6 +198,125 @@ class _FilterBar extends StatelessWidget {
   }
 }
 
+enum _ListMenuAction {
+  churches,
+  promote,
+  pendingLeadership,
+  suggestedActions,
+  archivedGroups,
+  consentVersions,
+  reportedImages,
+  upgradeAccount,
+  privacy,
+}
+
+/// Tudo que não coube na barra inferior nem é a chamada principal da tela:
+/// administração do distrito (só visível a quem administra) e as duas
+/// entradas de sempre. Um menu só, não sete ícones soltos.
+class _ListMenuButton extends StatelessWidget {
+  const _ListMenuButton({
+    required this.hasProfile,
+    required this.hasAccount,
+    required this.isDistrictAdmin,
+  });
+
+  final bool hasProfile;
+  final bool hasAccount;
+  final bool isDistrictAdmin;
+
+  @override
+  Widget build(BuildContext context) {
+    return PopupMenuButton<_ListMenuAction>(
+      tooltip: 'Mais opções',
+      onSelected: (action) => switch (action) {
+        _ListMenuAction.churches => context.push('/district-admin/churches'),
+        _ListMenuAction.promote => context.push('/district-admin/promote'),
+        _ListMenuAction.pendingLeadership => context.push('/leadership/pending'),
+        _ListMenuAction.suggestedActions =>
+          context.push('/district-admin/suggested-actions'),
+        _ListMenuAction.archivedGroups =>
+          context.push('/district-admin/grupos-arquivados'),
+        _ListMenuAction.consentVersions =>
+          context.push('/district-admin/consentimentos'),
+        _ListMenuAction.reportedImages =>
+          context.push('/district-admin/imagens-denunciadas'),
+        _ListMenuAction.upgradeAccount => context.push('/upgrade-conta'),
+        _ListMenuAction.privacy => context.push('/privacidade'),
+      },
+      itemBuilder: (context) => [
+        if (isDistrictAdmin) ...[
+          const PopupMenuItem(
+            value: _ListMenuAction.churches,
+            child: ListTile(
+              leading: Icon(Icons.church_outlined),
+              title: Text('Igrejas do Distrito'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: _ListMenuAction.promote,
+            child: ListTile(
+              leading: Icon(Icons.admin_panel_settings_outlined),
+              title: Text('Promover Administrador'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: _ListMenuAction.pendingLeadership,
+            child: ListTile(
+              leading: Icon(Icons.pending_actions_outlined),
+              title: Text('Declarações de Líder/Diretor pendentes'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: _ListMenuAction.suggestedActions,
+            child: ListTile(
+              leading: Icon(Icons.lightbulb_outline),
+              title: Text('Ações Sugeridas'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: _ListMenuAction.archivedGroups,
+            child: ListTile(
+              leading: Icon(Icons.archive_outlined),
+              title: Text('Grupos/Ministérios arquivados'),
+            ),
+          ),
+          const PopupMenuItem(
+            value: _ListMenuAction.consentVersions,
+            child: ListTile(
+              leading: Icon(Icons.fact_check_outlined),
+              title: Text('Versões de consentimento'),
+            ),
+          ),
+          // SC-003: da tela em que a imagem aparece até a remoção, em até 3
+          // toques. Por aqui são dois: abrir o menu e escolher.
+          const PopupMenuItem(
+            value: _ListMenuAction.reportedImages,
+            child: ListTile(
+              leading: Icon(Icons.flag_outlined),
+              title: Text('Imagens denunciadas'),
+            ),
+          ),
+        ],
+        if (hasProfile && !hasAccount)
+          const PopupMenuItem(
+            value: _ListMenuAction.upgradeAccount,
+            child: ListTile(
+              leading: Icon(Icons.cloud_upload_outlined),
+              title: Text('Virar Conta'),
+            ),
+          ),
+        const PopupMenuItem(
+          value: _ListMenuAction.privacy,
+          child: ListTile(
+            leading: Icon(Icons.privacy_tip_outlined),
+            title: Text('Política de Privacidade e Termos de Uso'),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _SectionHeader extends StatelessWidget {
   const _SectionHeader({required this.name});
 
@@ -268,8 +343,10 @@ class _SectionHeader extends StatelessWidget {
   }
 }
 
-class _GroupCard extends ConsumerWidget {
-  const _GroupCard({required this.group, this.cover});
+/// Cartão de Grupo — reusado pela lista completa (`/grupos`) e por
+/// `MyGroupsPage` (`/meus-grupos`), por isso público.
+class GroupCard extends ConsumerWidget {
+  const GroupCard({super.key, required this.group, this.cover});
 
   final Group group;
 
@@ -283,7 +360,9 @@ class _GroupCard extends ConsumerWidget {
       margin: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
-        onTap: () => context.push('/grupos/${group.id}'),
+        // Abre a pré-visualização, não a tela cheia direto — "Ver detalhes"
+        // dentro dela é que navega. Ver GroupQuickViewSheet.
+        onTap: () => GroupQuickViewSheet.show(context, group),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

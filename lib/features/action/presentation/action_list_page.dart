@@ -14,7 +14,8 @@ import '../../profile/presentation/widgets/missing_profile_banner.dart';
 import '../../group/group_providers.dart';
 import '../action_providers.dart';
 import '../domain/action.dart';
-import '../../notification/presentation/notification_badge.dart';
+import 'action_date_strip.dart';
+import '../../navigation/presentation/app_bottom_nav.dart';
 
 enum _ActionSortOrder { byDate, mostRecent, name }
 
@@ -78,12 +79,45 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
   /// A faixa está aberta além dos [_maxHighlightsCollapsed] primeiros?
   bool _showAllHighlights = false;
 
+  /// `null` até a pessoa paginar — o calendário parte da semana de hoje.
+  DateTime? _weekStart;
+
+  /// Dia escolhido no calendário, truncado (sem hora). `null` = sem filtro
+  /// de data, o normal.
+  DateTime? _selectedDate;
+
+  /// Calendário começa fechado. `destaque_acoes_test.dart` mede a 1px que a
+  /// faixa de destaque cheia cabe na dobra de um celular — um calendário de
+  /// sete dias sempre visível estoura esse orçamento de novo (achado rodando
+  /// a suíte depois de ligar o widget). Fica um toque de distância, não
+  /// zero, mas só quem pede paga o espaço.
+  bool _showCalendar = false;
+
   @override
   Widget build(BuildContext context) {
     final actionsAsync = ref.watch(actionsWithChurchProvider);
     final countsAsync = ref.watch(confirmationCountsProvider);
     final churchesAsync = ref.watch(churchesProvider);
     final now = ref.watch(clockProvider)();
+    final today = DateTime(now.year, now.month, now.day);
+    final weekStart = _weekStart ?? today.subtract(Duration(days: today.weekday - 1));
+    // Igreja entra no ponto dos dias com bolinha — filtrar por Igreja e ver
+    // bolinha num dia sem nenhuma Ação daquela Igreja confundiria mais do que
+    // ajudaria. Sábado NÃO entra: é filtro de outra dimensão (ver o mesmo
+    // raciocínio da faixa de destaque, comentário abaixo).
+    final allItems = actionsAsync.value ?? const <ActionWithChurch>[];
+    final churchFilteredForStrip = _churchFilterId == _allChurches
+        ? allItems
+        : allItems.where((i) => i.churchId == _churchFilterId).toList();
+    final datesWithActions = {
+      for (final i in churchFilteredForStrip)
+        if (actionTimeStatus(i.action.dateTime, now) != ActionTimeStatus.ended)
+          DateTime(
+            i.action.dateTime.year,
+            i.action.dateTime.month,
+            i.action.dateTime.day,
+          ),
+    };
     // Uma consulta só para a lista inteira, como as capas e as contagens.
     // Sem Perfil/Conta a consulta nem sai do aparelho — conjunto vazio, e a
     // faixa fica só com as Ações avulsas.
@@ -99,18 +133,17 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
 
     return Scaffold(
       appBar: AppBar(
+        // Chega-se a `/acoes` por `context.go`, que não empilha rota — sem
+        // este botão a tela fica sem saída (nenhum back automático, porque
+        // não há nada para voltar).
+        leading: IconButton(
+          tooltip: 'Início',
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () => context.go('/home'),
+        ),
         title: const Text('Ações'),
-        actions: [
-          // Change `notificacoes-in-app`. O app não tem barra global —
-          // cada tela monta a sua —, então o indicador vive nas duas telas
-          // de navegação principais, que é de onde se chega a tudo.
-          const NotificationBadge(),
-          IconButton(
-            tooltip: 'Grupos/Ministérios',
-            icon: const Icon(Icons.groups_outlined),
-            onPressed: () => context.go('/grupos'),
-          ),
-        ],
+        // Grupos e Notificações saíram daqui: a barra inferior já leva às
+        // duas, e repetir os mesmos dois destinos na AppBar era ruído.
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
@@ -120,6 +153,7 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
         },
         child: const Icon(Icons.add),
       ),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.actions),
       body: Column(
         children: [
           const MissingProfileBanner(),
@@ -128,10 +162,34 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
             churchFilterId: _churchFilterId,
             sortOrder: _sortOrder,
             sabbathOnly: _sabbathOnly,
+            showCalendar: _showCalendar,
             onChurchFilterChanged: (v) => setState(() => _churchFilterId = v),
             onSortOrderChanged: (v) => setState(() => _sortOrder = v),
             onSabbathOnlyChanged: (v) => setState(() => _sabbathOnly = v),
+            onShowCalendarChanged: (v) => setState(() {
+              _showCalendar = v;
+              // Fechar o calendário limpa o filtro de dia — senão a lista
+              // continua filtrada por um dia que a pessoa não vê mais de
+              // onde veio.
+              if (!v) _selectedDate = null;
+            }),
           ),
+          if (_showCalendar)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+              child: ActionDateStrip(
+                weekStart: weekStart,
+                selectedDate: _selectedDate,
+                datesWithActions: datesWithActions,
+                onPreviousWeek: () => setState(
+                  () => _weekStart = weekStart.subtract(const Duration(days: 7)),
+                ),
+                onNextWeek: () => setState(
+                  () => _weekStart = weekStart.add(const Duration(days: 7)),
+                ),
+                onSelectDate: (d) => setState(() => _selectedDate = d),
+              ),
+            ),
           Expanded(
             child: actionsAsync.when(
               data: (items) {
@@ -151,6 +209,15 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                         actionTimeStatus(i.action.dateTime, now) !=
                         ActionTimeStatus.ended)
                     .toList();
+                // Calendário: mesma lógica de "Só Sábado" — dia é outra
+                // dimensão de filtro, então também não entra na faixa
+                // (comentário logo abaixo).
+                if (_selectedDate != null) {
+                  filtered = filtered.where((i) {
+                    final d = i.action.dateTime;
+                    return DateTime(d.year, d.month, d.day) == _selectedDate;
+                  }).toList();
+                }
                 // A faixa NÃO herda o filtro de Igreja. Medido em 2026-08-12:
                 // filtrando por uma Igreja, a Ação nova de um Grupo meu
                 // sediado em outra sumia da faixa — e o marcador avançava
@@ -170,7 +237,13 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
                         ActionTimeStatus.ended)
                     .toList();
                 if (filtered.isEmpty) {
-                  return const Center(child: Text('Nenhuma Ação ainda.'));
+                  return Center(
+                    child: Text(
+                      _selectedDate != null
+                          ? 'Nenhuma Ação neste dia.'
+                          : 'Nenhuma Ação ainda.',
+                    ),
+                  );
                 }
                 final sorted = [...filtered]..sort(_comparator(_sortOrder));
                 final sortedBand = [...bandItems]..sort(_comparator(_sortOrder));
@@ -312,18 +385,22 @@ class _FilterBar extends StatelessWidget {
     required this.churchFilterId,
     required this.sortOrder,
     required this.sabbathOnly,
+    required this.showCalendar,
     required this.onChurchFilterChanged,
     required this.onSortOrderChanged,
     required this.onSabbathOnlyChanged,
+    required this.onShowCalendarChanged,
   });
 
   final AsyncValue<List<Church>> churchesAsync;
   final String churchFilterId;
   final _ActionSortOrder sortOrder;
   final bool sabbathOnly;
+  final bool showCalendar;
   final ValueChanged<String> onChurchFilterChanged;
   final ValueChanged<_ActionSortOrder> onSortOrderChanged;
   final ValueChanged<bool> onSabbathOnlyChanged;
+  final ValueChanged<bool> onShowCalendarChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -378,11 +455,27 @@ class _FilterBar extends StatelessWidget {
             },
           ),
           const SizedBox(height: AppSpacing.sm),
-          FilterChip(
-            avatar: const Icon(Icons.nights_stay_outlined, size: 18),
-            label: const Text('Só Sábado'),
-            selected: sabbathOnly,
-            onSelected: onSabbathOnlyChanged,
+          Row(
+            children: [
+              FilterChip(
+                avatar: const Icon(Icons.nights_stay_outlined, size: 18),
+                label: const Text('Só Sábado'),
+                selected: sabbathOnly,
+                onSelected: onSabbathOnlyChanged,
+              ),
+              const Spacer(),
+              // Ícone, não outro FilterChip com rótulo: dois chips de texto
+              // lado a lado com "Só Sábado" quebravam a linha num celular de
+              // 390px e empurravam a lista por período pra fora da dobra —
+              // achado rodando destaque_acoes_test.dart depois de ligar isto.
+              IconButton(
+                tooltip: showCalendar ? 'Esconder calendário' : 'Calendário',
+                isSelected: showCalendar,
+                icon: const Icon(Icons.calendar_month_outlined),
+                selectedIcon: const Icon(Icons.calendar_month),
+                onPressed: () => onShowCalendarChanged(!showCalendar),
+              ),
+            ],
           ),
         ],
       ),

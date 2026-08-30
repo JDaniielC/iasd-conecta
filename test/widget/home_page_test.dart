@@ -100,4 +100,20 @@ void main() {
       expect(find.text('Termos de Uso'), findsOneWidget);
     });
   });
+
+  group('cabeçalho', () {
+    testWidgets('com Perfil, "Meu Perfil" é o ícone do cabeçalho', (tester) async {
+      await _pumpHome(tester, profileState: true);
+
+      expect(find.byTooltip('Meu Perfil'), findsOneWidget);
+      // Não sobra como botão de texto solto no corpo — virou só o ícone.
+      expect(find.widgetWithText(OutlinedButton, 'Meu Perfil'), findsNothing);
+    });
+
+    testWidgets('sem Perfil, não há ícone de Meu Perfil', (tester) async {
+      await _pumpHome(tester, profileState: false);
+
+      expect(find.byTooltip('Meu Perfil'), findsNothing);
+    });
+  });
 }

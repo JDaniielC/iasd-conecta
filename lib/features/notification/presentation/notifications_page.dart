@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
+import '../../navigation/presentation/app_bottom_nav.dart';
 import '../domain/app_notification.dart';
 import '../notification_providers.dart';
 
@@ -54,7 +55,15 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
     final noticesAsync = ref.watch(notificationsProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Avisos')),
+      appBar: AppBar(
+        leading: IconButton(
+          tooltip: 'Início',
+          icon: const Icon(Icons.home_outlined),
+          onPressed: () => context.go('/home'),
+        ),
+        title: const Text('Avisos'),
+      ),
+      bottomNavigationBar: const AppBottomNav(current: AppTab.notifications),
       body: noticesAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (_, _) =>

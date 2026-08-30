@@ -7,6 +7,12 @@ abstract final class AppColors {
   static const navyLight = Color(0xFF2A4270);
   static const background = Color(0xFFFFFFFF);
   static const surface = Color(0xFFF7F8FA);
+
+  /// Só a Home usa estas duas — o gradiente do herói (`heroDeep` → [navy]) e
+  /// o realce sobre ele (tag de local, tagline). Tom de `logo.png`, não
+  /// inventado: é a cor real do arquivo.
+  static const heroDeep = Color(0xFF0A1128);
+  static const accent = Color(0xFF7C8CF0);
 }
 
 abstract final class AppSpacing {

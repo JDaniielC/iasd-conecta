@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iasd_conecta/core/providers.dart';
+import 'package:iasd_conecta/features/district_admin/district_admin_providers.dart';
 import 'package:iasd_conecta/features/group/data/group_repository.dart';
 import 'package:iasd_conecta/features/group/domain/group.dart';
 import 'package:iasd_conecta/features/group/group_providers.dart';
@@ -127,5 +129,135 @@ void main() {
 
     expect(find.text('Central'), findsOneWidget);
     expect(find.text('Pombos'), findsOneWidget);
+  });
+
+  testWidgets('tem caminho de volta pra Home', (tester) async {
+    // Chega-se aqui por `context.go`, que não empilha rota — sem um botão
+    // próprio de volta pra Home, a pessoa fica sem saída desta tela.
+    final groupRepo = MockGroupRepository();
+    when(() => groupRepo.fetchGroups()).thenAnswer((_) async => _groups);
+    final authRepo = MockAuthRepository();
+    when(() => authRepo.hasAccount).thenReturn(false);
+
+    final router = GoRouter(
+      initialLocation: '/grupos',
+      routes: [
+        GoRoute(
+          path: '/grupos',
+          builder: (context, state) => const GroupListPage(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const Text('TELA_HOME'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hasProfileProvider.overrideWith((ref) async => false),
+          groupRepositoryProvider.overrideWithValue(groupRepo),
+          authRepositoryProvider.overrideWithValue(authRepo),
+          churchesProvider.overrideWith((ref) async => _churches),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Início'), findsOneWidget);
+    await tester.tap(find.byTooltip('Início'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TELA_HOME'), findsOneWidget);
+  });
+
+  group('menu "Mais opções"', () {
+    // Sete ícones soltos ao lado de "Grupos/Ministérios" estouravam a AppBar
+    // num celular (achado rodando o app no simulador) — Ações e Notificações
+    // já saem pela barra inferior; o resto do que sobra mora aqui dentro.
+    Future<void> pump(
+      WidgetTester tester, {
+      required bool isDistrictAdmin,
+    }) async {
+      final groupRepo = MockGroupRepository();
+      when(() => groupRepo.fetchGroups()).thenAnswer((_) async => _groups);
+      final authRepo = MockAuthRepository();
+      when(() => authRepo.hasAccount).thenReturn(true);
+
+      final router = GoRouter(
+        initialLocation: '/grupos',
+        routes: [
+          GoRoute(
+            path: '/grupos',
+            builder: (context, state) => const GroupListPage(),
+          ),
+          GoRoute(
+            path: '/privacidade',
+            builder: (context, state) => const Text('TELA_PRIVACIDADE'),
+          ),
+          GoRoute(
+            path: '/district-admin/churches',
+            builder: (context, state) => const Text('TELA_IGREJAS'),
+          ),
+        ],
+      );
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasProfileProvider.overrideWith((ref) async => true),
+            groupRepositoryProvider.overrideWithValue(groupRepo),
+            authRepositoryProvider.overrideWithValue(authRepo),
+            churchesProvider.overrideWith((ref) async => _churches),
+            isDistrictAdminProvider.overrideWith((ref) async => isDistrictAdmin),
+          ],
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('sem administrar o distrito, não mostra as opções de distrito',
+        (tester) async {
+      await pump(tester, isDistrictAdmin: false);
+
+      await tester.tap(find.byTooltip('Mais opções'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Igrejas do Distrito'), findsNothing);
+      expect(
+        find.text('Política de Privacidade e Termos de Uso'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('administrando o distrito, mostra as opções de distrito',
+        (tester) async {
+      await pump(tester, isDistrictAdmin: true);
+
+      await tester.tap(find.byTooltip('Mais opções'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Igrejas do Distrito'), findsOneWidget);
+
+      await tester.tap(find.text('Igrejas do Distrito'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('TELA_IGREJAS'), findsOneWidget);
+    });
+
+    testWidgets('"Política de Privacidade e Termos de Uso" navega pra lá',
+        (tester) async {
+      await pump(tester, isDistrictAdmin: false);
+
+      await tester.tap(find.byTooltip('Mais opções'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Política de Privacidade e Termos de Uso'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('TELA_PRIVACIDADE'), findsOneWidget);
+    });
   });
 }

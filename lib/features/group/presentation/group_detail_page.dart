@@ -9,6 +9,7 @@ import '../../leadership/leadership_providers.dart';
 import '../../profile/domain/profile_guard.dart';
 import '../../district_admin/district_admin_providers.dart';
 import '../../change_log/presentation/change_log_section.dart';
+import '../domain/group.dart';
 import '../group_providers.dart';
 import 'archive_group_sheet.dart';
 import '../../chat/chat_providers.dart';
@@ -67,6 +68,11 @@ class GroupDetailPage extends ConsumerWidget {
     final membersAsync = ref.watch(membersProvider(groupId));
     final uid = ref.watch(currentUserIdProvider);
     final isParticipant = membersAsync.value?.any((p) => p.id == uid) ?? false;
+    final group = groupAsync.value;
+    final isOwner = group != null && group.isOwner(uid);
+    final isDistrictAdmin = ref.watch(isDistrictAdminProvider).value ?? false;
+    final canSeeChat =
+        ref.watch(canSeeChatProvider(ChatSpace.group(groupId))).value ?? false;
 
     return Scaffold(
       appBar: AppBar(
@@ -74,13 +80,79 @@ class GroupDetailPage extends ConsumerWidget {
         // Change `notificacoes-in-app`. O app não tem barra global, então o
         // indicador entra nas telas onde a pessoa LÊ — nunca nos
         // formulários, onde ele seria distração no meio de um fluxo.
-        actions: const [NotificationBadge()],
+        actions: [
+          // Change `chat-de-grupo-e-acao`. Só aparece para quem PODE ver,
+          // igual à Ação — mesma função `pode_ver_chat_*` no banco. FORA do
+          // `if (!group.isArchived)` de propósito: Grupo arquivado mantém o
+          // histórico legível, e a tela da conversa é quem esconde o campo
+          // de envio.
+          if (canSeeChat)
+            IconButton(
+              icon: const Icon(Icons.forum_outlined),
+              tooltip: 'Conversa',
+              onPressed: () => context.push('/grupos/$groupId/conversa'),
+            ),
+          // O resto das ações administrativas — antes soltas no título, ao
+          // lado do nome do Grupo — apertava demais um nome comprido
+          // (achado testando `detalhe_grupo_conversa_test.dart`, com "SÓ
+          // Sábado" ligado num celular de 360px o nome quebrava em três
+          // linhas). Um menu só, igual ao padrão de outras telas do app.
+          if (group != null && _hasMenuActions(group, isOwner, isDistrictAdmin))
+            PopupMenuButton<_GroupMenuAction>(
+              tooltip: 'Mais opções',
+              onSelected: (action) => switch (action) {
+                _GroupMenuAction.rounds =>
+                  context.push('/grupos/$groupId/rodadas'),
+                _GroupMenuAction.leadership =>
+                  context.push('/grupos/$groupId/leadership/declare'),
+                _GroupMenuAction.edit =>
+                  context.push('/grupos/$groupId/editar'),
+                _GroupMenuAction.archive => _archive(context, ref),
+              },
+              itemBuilder: (context) => [
+                if (!group.isArchived) ...[
+                  const PopupMenuItem(
+                    value: _GroupMenuAction.rounds,
+                    child: ListTile(
+                      leading: Icon(Icons.how_to_vote_outlined),
+                      title: Text('Rodadas de Votação'),
+                    ),
+                  ),
+                  const PopupMenuItem(
+                    value: _GroupMenuAction.leadership,
+                    child: ListTile(
+                      leading: Icon(Icons.badge_outlined),
+                      title: Text('Líder/Diretor de Ministério'),
+                    ),
+                  ),
+                ],
+                if (isOwner && !group.isArchived)
+                  const PopupMenuItem(
+                    value: _GroupMenuAction.edit,
+                    child: ListTile(
+                      leading: Icon(Icons.edit_outlined),
+                      title: Text('Editar'),
+                    ),
+                  ),
+                // FR-001/FR-002: Dono do Grupo ou Administrador do distrito,
+                // e mais ninguém. Grupo já arquivado não oferece a opção de
+                // novo (FR-009). Quem garante é a função no banco; isto
+                // aqui é só não oferecer o que seria recusado.
+                if ((isOwner || isDistrictAdmin) && !group.isArchived)
+                  const PopupMenuItem(
+                    value: _GroupMenuAction.archive,
+                    child: ListTile(
+                      leading: Icon(Icons.archive_outlined),
+                      title: Text('Arquivar Grupo/Ministério'),
+                    ),
+                  ),
+              ],
+            ),
+          const NotificationBadge(),
+        ],
       ),
       body: groupAsync.when(
         data: (group) {
-          final isOwner = group.isOwner(uid);
-          final isDistrictAdmin =
-              ref.watch(isDistrictAdminProvider).value ?? false;
           return Padding(
             padding: const EdgeInsets.all(AppSpacing.lg),
             child: Column(
@@ -104,58 +176,7 @@ class GroupDetailPage extends ConsumerWidget {
                   canUpload: (isOwner || isDistrictAdmin) && !group.isArchived,
                   canRemove: isOwner || isDistrictAdmin,
                 ),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(group.name, style: Theme.of(context).textTheme.headlineMedium),
-                    ),
-                    // Change `chat-de-grupo-e-acao`. FORA do
-                    // `if (!group.isArchived)` de propósito: Grupo arquivado
-                    // mantém o histórico legível — é justamente o que sobra
-                    // dele — e a tela da conversa é quem esconde o campo de
-                    // envio. Esconder a entrada aqui trancaria o histórico
-                    // junto com a escrita.
-                    if (ref
-                            .watch(canSeeChatProvider(ChatSpace.group(groupId)))
-                            .value ??
-                        false)
-                      IconButton(
-                        icon: const Icon(Icons.forum_outlined),
-                        tooltip: 'Conversa',
-                        onPressed: () =>
-                            context.push('/grupos/$groupId/conversa'),
-                      ),
-                    if (!group.isArchived) ...[
-                      IconButton(
-                        icon: const Icon(Icons.how_to_vote_outlined),
-                        tooltip: 'Rodadas de Votação',
-                        onPressed: () =>
-                            context.push('/grupos/$groupId/rodadas'),
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.badge_outlined),
-                        tooltip: 'Líder/Diretor de Ministério',
-                        onPressed: () => context
-                            .push('/grupos/$groupId/leadership/declare'),
-                      ),
-                    ],
-                    if (isOwner && !group.isArchived)
-                      IconButton(
-                        icon: const Icon(Icons.edit_outlined),
-                        onPressed: () => context.push('/grupos/$groupId/editar'),
-                      ),
-                    // FR-001/FR-002: Dono do Grupo ou Administrador do
-                    // distrito, e mais ninguém. Grupo já arquivado não oferece
-                    // a opção de novo (FR-009). Quem garante é a função no
-                    // banco; isto aqui é só não oferecer o que seria recusado.
-                    if ((isOwner || isDistrictAdmin) && !group.isArchived)
-                      IconButton(
-                        icon: const Icon(Icons.archive_outlined),
-                        tooltip: 'Arquivar Grupo/Ministério',
-                        onPressed: () => _archive(context, ref),
-                      ),
-                  ],
-                ),
+                Text(group.name, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: AppSpacing.sm),
                 if (group.isArchived) ...[
                   // FR-013: alcançado por link direto, ele se apresenta como
@@ -228,7 +249,16 @@ class GroupDetailPage extends ConsumerWidget {
       ),
     );
   }
+
+  /// O menu não aparece vazio: nenhum item pra Grupo arquivado que ninguém
+  /// administra seria um botão que abre e não mostra nada.
+  bool _hasMenuActions(Group group, bool isOwner, bool isDistrictAdmin) {
+    if (!group.isArchived) return true; // Rodadas e Líder sempre entram
+    return (isOwner || isDistrictAdmin);
+  }
 }
+
+enum _GroupMenuAction { rounds, leadership, edit, archive }
 
 /// FR-006/FR-007: identificação pública do(s) Líder(es)/Diretor(es)
 /// confirmado(s) do ano corrente — visível até pra Visitante sem cadastro.

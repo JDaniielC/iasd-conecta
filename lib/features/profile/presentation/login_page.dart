@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../core/providers.dart';
 import '../../../core/theme/app_theme.dart';
@@ -41,6 +42,13 @@ class _LoginPageState extends ConsumerState<LoginPage> {
             password: _passwordController.text,
           );
       ref.invalidate(hasProfileProvider);
+      // Navegação explícita, não só invalidar e esperar o redirect global de
+      // app.dart: aquele redirect só reavalia quando hasProfileProvider MUDA
+      // de valor. Uma Conta que já tinha Perfil antes de logar (recuperando
+      // sessão num aparelho novo — o próprio caso desta tela) faz o valor
+      // ficar igual antes e depois, o redirect nunca reavalia, e a pessoa
+      // fica presa aqui. Ver test/widget/login_page_test.dart.
+      if (mounted) context.go('/home');
     } catch (error) {
       // `catch` sem tipo de propósito: `on AuthException` deixava passar
       // falha de rede e de servidor, que subiam sem ninguém capturar — o

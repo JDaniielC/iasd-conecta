@@ -26,6 +26,7 @@ import 'features/chat/presentation/message_reports_page.dart';
 import 'features/group/presentation/group_detail_page.dart';
 import 'features/group/presentation/edit_group_page.dart';
 import 'features/group/presentation/group_list_page.dart';
+import 'features/group/presentation/my_groups_page.dart';
 import 'features/home/presentation/home_page.dart';
 import 'features/leadership/presentation/declare_leadership_page.dart';
 import 'features/leadership/presentation/pending_declarations_page.dart';
@@ -62,10 +63,14 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       // (Home, lista/detalhe de Grupo — FR-008 da 001, FR-005 da 002).
       // Só ações concretas (Participar, Criar Grupo...) checam Perfil, via
       // PerfilGuard.exigirPerfil no próprio botão — não aqui no redirect
-      // global. As exceções são sair de /cadastro e de /login depois do
-      // objetivo da tela estar cumprido, pra não deixar a pessoa "presa" nela
-      // — nenhuma das duas navega sozinha, ambas só invalidam
-      // `hasPerfilProvider` e esperam este redirect.
+      // global. A exceção é sair de /cadastro depois do cadastro concluído,
+      // pra não deixar a pessoa "presa" nela — a tela não navega sozinha, só
+      // invalida `hasPerfilProvider` e espera este redirect. LoginPage NÃO
+      // segue esse padrão: ela navega direto (`context.go('/home')`), porque
+      // esse redirect só reavalia quando hasProfileProvider MUDA de valor, e
+      // uma Conta que já tinha Perfil antes de logar deixa o valor igual —
+      // ver o comentário em login_page.dart e
+      // test/widget/login_page_test.dart.
       if (hasProfile && state.matchedLocation == '/cadastro') return '/home';
       // `== false`, não `!hasProfile`: o caso "ainda carregando" já saiu acima,
       // e inverter isso empurraria ao cadastro quem só está esperando a rede.
@@ -104,6 +109,10 @@ final goRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/grupos',
         builder: (context, state) => const GroupListPage(),
+      ),
+      GoRoute(
+        path: '/meus-grupos',
+        builder: (context, state) => const MyGroupsPage(),
       ),
       GoRoute(
         path: '/grupos/novo',

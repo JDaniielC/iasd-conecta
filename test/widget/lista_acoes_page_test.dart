@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart' hide Action;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:iasd_conecta/core/providers.dart';
 import 'package:iasd_conecta/features/action/action_providers.dart';
 import 'package:iasd_conecta/features/action/domain/action.dart';
@@ -295,6 +296,156 @@ void main() {
       expect(text, contains('2 na fila de espera'));
       // A fila NUNCA é somada aos confirmados (FR-013).
       expect(text, isNot(contains('4 de 2')));
+    });
+  });
+
+  testWidgets('tem caminho de volta pra Home', (tester) async {
+    // Chega-se aqui por `context.go`, que não empilha rota — sem um botão
+    // próprio de volta pra Home, a pessoa fica sem saída desta tela.
+    final router = GoRouter(
+      initialLocation: '/acoes',
+      routes: [
+        GoRoute(
+          path: '/acoes',
+          builder: (context, state) => const ActionListPage(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const Text('TELA_HOME'),
+        ),
+      ],
+    );
+
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          hasProfileProvider.overrideWith((ref) async => true),
+          actionsWithChurchProvider.overrideWith((ref) async => _actionsWithChurch),
+          churchesProvider.overrideWith((ref) async => _churches),
+        ],
+        child: MaterialApp.router(routerConfig: router),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('Início'), findsOneWidget);
+    await tester.tap(find.byTooltip('Início'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('TELA_HOME'), findsOneWidget);
+  });
+
+  group('calendário', () {
+    // Uma segunda-feira real, fora do Sábado — não interfere na faixa nem
+    // no filtro "Só Sábado".
+    final segunda = DateTime(2026, 9, 7, 9, 0);
+    final quarta = DateTime(2026, 9, 9, 19, 0);
+
+    final actions = [
+      ActionWithChurch(
+        churchId: 'igreja-1',
+        action: Action(
+          id: 'seg',
+          name: 'Reunião de Segunda',
+          dateTime: segunda,
+          location: 'Sede',
+          creatorId: 'dono-1',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      ),
+      ActionWithChurch(
+        churchId: 'igreja-1',
+        action: Action(
+          id: 'qua',
+          name: 'Estudo de Quarta',
+          dateTime: quarta,
+          location: 'Sede',
+          creatorId: 'dono-1',
+          createdAt: DateTime(2026, 1, 1),
+        ),
+      ),
+    ];
+
+    Future<void> pumpComRelogioFixo(WidgetTester tester) async {
+      // Alto o bastante pra faixa de destaque + a lista por período caberem
+      // construídas de uma vez — não é o teste de orçamento da dobra
+      // (esse é destaque_acoes_test.dart), é o de que o filtro de dia
+      // funciona.
+      tester.view.physicalSize = const Size(400, 1200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            hasProfileProvider.overrideWith((ref) async => true),
+            actionsWithChurchProvider.overrideWith((ref) async => actions),
+            churchesProvider.overrideWith((ref) async => _churches),
+            clockProvider.overrideWithValue(() => segunda),
+          ],
+          child: const MaterialApp(home: ActionListPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('fica escondido até tocar o ícone', (tester) async {
+      await pumpComRelogioFixo(tester);
+
+      expect(find.byTooltip('Semana anterior'), findsNothing);
+      expect(find.byTooltip('Calendário'), findsOneWidget);
+    });
+
+    testWidgets('tocar um dia filtra a lista pra só aquele dia', (tester) async {
+      await pumpComRelogioFixo(tester);
+
+      await tester.tap(find.byTooltip('Calendário'));
+      await tester.pumpAndSettle();
+
+      // A semana começa na segunda (dia 7): tocar o primeiro dia da faixa.
+      await tester.tap(find.text('7').first);
+      await tester.pumpAndSettle();
+
+      // Segunda: faixa + período, as duas aparições normais de uma Ação
+      // avulsa. Quarta: só a faixa continua (ela NÃO herda o filtro de dia,
+      // mesma razão de não herdar Igreja nem "Só Sábado" — ver o comentário
+      // logo acima da faixa em action_list_page.dart) — sumiu é só do
+      // período.
+      expect(find.text('Reunião de Segunda'), findsNWidgets(2));
+      expect(find.text('Estudo de Quarta'), findsOneWidget);
+    });
+
+    testWidgets('tocar o mesmo dia de novo limpa o filtro', (tester) async {
+      await pumpComRelogioFixo(tester);
+
+      await tester.tap(find.byTooltip('Calendário'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('7').first);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('7').first);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Reunião de Segunda'), findsNWidgets(2));
+      expect(find.text('Estudo de Quarta'), findsNWidgets(2));
+    });
+
+    testWidgets('fechar o calendário limpa o filtro de dia', (tester) async {
+      await pumpComRelogioFixo(tester);
+
+      await tester.tap(find.byTooltip('Calendário'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('7').first);
+      await tester.pumpAndSettle();
+      // Filtrado: Quarta só na faixa (não herda o filtro de dia).
+      expect(find.text('Estudo de Quarta'), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Esconder calendário'));
+      await tester.pumpAndSettle();
+
+      // Filtro limpo: as duas voltam a aparecer duas vezes (faixa + período).
+      expect(find.text('Reunião de Segunda'), findsNWidgets(2));
+      expect(find.text('Estudo de Quarta'), findsNWidgets(2));
     });
   });
 }

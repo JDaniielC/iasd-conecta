@@ -171,13 +171,18 @@ void main() {
 
   testWidgets('o indicador acompanha quem está lendo, e some do formulário',
       (tester) async {
-    // C1 da convergência. O app não tem barra global, então "visível de qualquer
-    // tela" virou uma decisão: telas de leitura têm, formulários não. O teste
-    // trava as duas metades da decisão.
+    // C1 da convergência. O app não tinha barra global, então "visível de
+    // qualquer tela" era decisão por tela: leitura tem, formulário não.
+    // `action_list_page`/`group_list_page` saíram da lista quando ganharam
+    // `AppBottomNav` (change de redesenho da navegação): a aba Notificações
+    // da barra cumpre o mesmo papel do ícone solto, e repetir os dois seria
+    // ruído — a AppBar delas já ficou cheia de coisa de administração.
+    // As demais telas de leitura não têm barra inferior, e continuam com o
+    // ícone.
     const comIndicador = [
-      'action_list_page', 'group_list_page', 'action_detail_page',
-      'group_detail_page', 'news_page', 'received_invites_page',
-      'voting_round_detail_page', 'voting_round_list_page',
+      'action_detail_page', 'group_detail_page', 'news_page',
+      'received_invites_page', 'voting_round_detail_page',
+      'voting_round_list_page',
     ];
     const semIndicador = [
       'create_action_page', 'create_group_page', 'edit_group_page',

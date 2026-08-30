@@ -93,9 +93,10 @@ flutter:
   # segredo que estivesse no `.env` de um desenvolvedor ia inteiro para o
   # bundle público do `flutter build web`. Achado real, 2026-08-10.
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  # `assets/images/` só, nunca a raiz do repo nem um caminho genérico — é o
+  # padrão que vazou `.env` (comentário acima). Só imagem entra aqui.
+  assets:
+    - assets/images/logo.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

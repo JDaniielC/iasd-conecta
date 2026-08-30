@@ -1,4 +1,4 @@
-.PHONY: deploy-web coverage
+.PHONY: deploy-web coverage coverage-full
 # ---------------------------------------------------------------------
 # COBERTURA — o piso que a árvore não pode furar
 # ---------------------------------------------------------------------
@@ -59,6 +59,37 @@ COVERAGE_FLOOR := 84.5
 coverage:
 	flutter test --coverage test/unit test/widget
 	@dart run scripts/coverage_summary.dart --floor $(COVERAGE_FLOOR)
+
+# ---------------------------------------------------------------------
+# COBERTURA COMPLETA — o número sem exclusão, NÃO É GATE
+# ---------------------------------------------------------------------
+# openspec/changes/afirmar-sem-conferir, Decisão 5: `coverage` mede o que roda
+# sem banco, e exclui `lib/features/*/data/` por isso (ver o cabeçalho de
+# `coverage`, acima). Este alvo mede o projeto INTEIRO, sem exclusão — soma o
+# `lcov` de `flutter test test/unit test/widget` com o de
+# `dart test test/integration --coverage-path`, e reporta sobre os dois
+# juntos com `scripts/coverage_summary.dart --no-exclusions`.
+#
+# 🔴 NÃO ENTRA NO ci.yml, E O NÚMERO NÃO SE COMPARA COM COVERAGE_FLOOR
+# São denominadores diferentes: este inclui `lib/main.dart` e a camada de
+# repositório inteira, que quase não é exercitada por linha — os testes de
+# integração falam com o Postgres por `package:postgres`/`package:supabase`
+# direto, sem passar pelas classes `*Repository` de `lib/`, então a camada de
+# dados fica majoritariamente descoberta mesmo aqui. Um número baixo aqui é
+# esperado e não é regressão do gate rápido. Virar gate exigiria o ciclo de
+# vida do Supabase local dentro do CI — custo já medido e recusado para
+# `deploy-web` (ver o comentário daquele alvo, mais abaixo).
+#
+# 🔴 REQUER O SUPABASE LOCAL, E `dart test test/integration` FALA COM UM
+# POSTGRES COMPARTILHADO — leia a seção "Testes de integração" do CLAUDE.md
+# antes de rodar isto com outro agente/sessão ativo na mesma máquina.
+coverage-full:
+	@command -v supabase >/dev/null 2>&1 || { echo "erro: supabase CLI não encontrado. Rode 'supabase start' à mão primeiro."; exit 1; }
+	@supabase status >/dev/null 2>&1 || supabase start
+	flutter test --coverage test/unit test/widget
+	dart test test/integration --coverage-path=coverage/integration_lcov.info
+	dart run scripts/coverage_summary.dart --no-exclusions \
+		--lcov coverage/lcov.info --lcov coverage/integration_lcov.info
 
 
 # Publica o Flutter Web em Cloud Storage + Cloud CDN. MANUAL enquanto

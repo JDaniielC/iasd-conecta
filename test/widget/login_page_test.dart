@@ -35,7 +35,7 @@ Widget _app(AuthRepository auth, {bool hasProfile = false}) {
   return ProviderScope(
     overrides: [
       authRepositoryProvider.overrideWithValue(auth),
-      hasProfileProvider.overrideWith((ref) => hasProfile),
+      hasProfileProvider.overrideWith((ref) async => hasProfile),
     ],
     child: MaterialApp.router(routerConfig: router),
   );

@@ -32,7 +32,9 @@ class GroupQuickViewSheet extends ConsumerWidget {
     WidgetRef ref, {
     required bool isParticipant,
   }) async {
-    if (!isParticipant && !ProfileGuard.requireProfile(context, ref)) return;
+    if (!isParticipant && !await ProfileGuard.requireProfile(context, ref)) {
+      return;
+    }
     try {
       final repository = ref.read(groupRepositoryProvider);
       if (isParticipant) {

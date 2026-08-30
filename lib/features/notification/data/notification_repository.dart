@@ -85,6 +85,12 @@ class NotificationRepository {
   /// O valor enviado é apenas um marcador de "não nulo": um gatilho `before
   /// update` o substitui por `now()` do servidor. É o que impede o relógio do
   /// aparelho de decidir quando a retenção de 90 dias apaga a linha.
+  ///
+  /// **SEM `.select()`, e é decidido, não esquecido.** O filtro carrega
+  /// `.isFilter('lida_em', null)` — a condição que a escrita vai mudar. Zero
+  /// linhas quer dizer que já estavam lidas, e isso acontece **toda vez que a
+  /// tela reabre**. Lançar aqui seria erro visível no caminho mais comum do
+  /// app.
   Future<void> markRead(List<String> ids) async {
     if (ids.isEmpty) return;
     await _client

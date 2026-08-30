@@ -27,6 +27,23 @@ final _repositoryLayer = RegExp(r'^lib/features/[^/]+/data/');
 
 bool isExcluded(String path) => _repositoryLayer.hasMatch(path);
 
+/// Caminho do arquivo, normalizado para `lib/...` relativo ao pacote.
+///
+/// `flutter test --coverage` já grava `SF:` relativo (`lib/app.dart`).
+/// `dart test --coverage-path` grava o caminho ABSOLUTO do arquivo neste
+/// disco (`/Users/.../lib/app.dart`) — medido rodando os dois num arquivo de
+/// prova, ver `--no-exclusions`/`mergeLcov` abaixo. Sem normalizar, o mesmo
+/// arquivo viraria duas chaves diferentes ao fundir os dois relatórios, e a
+/// exclusão de `lib/features/*/data/` (que casa por prefixo) nunca bateria no
+/// caminho absoluto.
+String normalizePath(String path) {
+  if (path.startsWith('lib/')) return path;
+  const marker = '/lib/';
+  final index = path.indexOf(marker);
+  if (index == -1) return path;
+  return path.substring(index + 1);
+}
+
 class MissingLcovException implements Exception {
   MissingLcovException(this.path);
 
@@ -68,7 +85,12 @@ class CoverageSummary {
 /// Linha `DA:` malformada levanta [FormatException] em vez de ser ignorada: um
 /// parser que pula em silêncio faz o número subir quando o formato muda, e
 /// ninguém descobre.
-CoverageSummary summarize(String lcov) {
+///
+/// [noExclusions] desliga [isExcluded] — a medição completa da Decisão 5
+/// (`afirmar-sem-conferir`, `make coverage-full`), que existe para o
+/// denominador incluir `lib/features/*/data/` pelo menos uma vez. O gate
+/// rápido (`make coverage`) continua chamando sem a flag.
+CoverageSummary summarize(String lcov, {bool noExclusions = false}) {
   var hit = 0;
   var total = 0;
   var excludedLines = 0;
@@ -80,7 +102,7 @@ CoverageSummary summarize(String lcov) {
     final lineNumber = i + 1;
 
     if (line.startsWith('SF:')) {
-      currentFile = line.substring(3);
+      currentFile = normalizePath(line.substring(3));
       continue;
     }
 
@@ -109,7 +131,7 @@ CoverageSummary summarize(String lcov) {
       );
     }
 
-    if (isExcluded(currentFile)) {
+    if (!noExclusions && isExcluded(currentFile)) {
       excludedLines++;
       continue;
     }
@@ -125,6 +147,78 @@ CoverageSummary summarize(String lcov) {
   );
 }
 
+/// Funde relatórios lcov de suítes diferentes num só, por (arquivo, linha).
+///
+/// Existe para a Decisão 5 do design: `make coverage-full` junta o `lcov` de
+/// `flutter test test/unit test/widget` com o de `dart test test/integration`.
+/// **Concatenar os dois textos não serve** — o mesmo arquivo apareceria em
+/// dois blocos `SF:`, e [summarize] contaria a mesma linha duas vezes no
+/// denominador. Aqui cada (arquivo, linha) vira uma soma de execuções antes de
+/// [summarize] ver o resultado, então uma linha coberta num relatório e não no
+/// outro chega com contagem > 0 — coberta.
+///
+/// Caminhos passam por [normalizePath] antes de virar chave: sem isso o mesmo
+/// arquivo, absoluto num relatório e relativo no outro, viraria duas entradas.
+String mergeLcov(List<String> lcovContents) {
+  final fileLineHits = <String, Map<int, int>>{};
+
+  for (var reportIndex = 0; reportIndex < lcovContents.length; reportIndex++) {
+    String? currentFile;
+    final lines = lcovContents[reportIndex].split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final line = lines[i].trim();
+      final lineNumber = i + 1;
+
+      if (line.startsWith('SF:')) {
+        currentFile = normalizePath(line.substring(3));
+        fileLineHits.putIfAbsent(currentFile, () => {});
+        continue;
+      }
+
+      if (!line.startsWith('DA:')) continue;
+
+      if (currentFile == null) {
+        throw FormatException(
+          'relatório $reportIndex, linha $lineNumber: "$line" aparece antes '
+          'de qualquer "SF:" — não há arquivo a que atribuir a linha',
+        );
+      }
+
+      final payload = line.substring(3);
+      final comma = payload.indexOf(',');
+      if (comma < 0) {
+        throw FormatException(
+          'relatório $reportIndex, linha $lineNumber: "$line" não tem '
+          'vírgula separando número da linha e contagem de execuções',
+        );
+      }
+
+      final lcovLineNumber = int.tryParse(payload.substring(0, comma).trim());
+      final hits = int.tryParse(payload.substring(comma + 1).trim());
+      if (lcovLineNumber == null || hits == null) {
+        throw FormatException(
+          'relatório $reportIndex, linha $lineNumber: "$line" tem número de '
+          'linha ou contagem de execuções não numérica',
+        );
+      }
+
+      final linesHits = fileLineHits[currentFile]!;
+      linesHits[lcovLineNumber] = (linesHits[lcovLineNumber] ?? 0) + hits;
+    }
+  }
+
+  final buffer = StringBuffer();
+  for (final entry in fileLineHits.entries) {
+    buffer.writeln('SF:${entry.key}');
+    final sortedLineNumbers = entry.value.keys.toList()..sort();
+    for (final lcovLineNumber in sortedLineNumbers) {
+      buffer.writeln('DA:$lcovLineNumber,${entry.value[lcovLineNumber]}');
+    }
+    buffer.writeln('end_of_record');
+  }
+  return buffer.toString();
+}
+
 String readLcov(String path) {
   final file = File(path);
   if (!file.existsSync()) throw MissingLcovException(path);
@@ -132,27 +226,65 @@ String readLcov(String path) {
 }
 
 void main(List<String> args) {
-  var lcovPath = 'coverage/lcov.info';
+  // `--lcov` pode repetir: `make coverage-full` funde o lcov de
+  // unidade/widget com o de integração (ver mergeLcov). Um só `--lcov`
+  // continua o uso de sempre, sem fusão nenhuma.
+  final lcovPaths = <String>[];
   double? floor;
+  var noExclusions = false;
 
-  for (var i = 0; i < args.length - 1; i++) {
-    if (args[i] == '--lcov') lcovPath = args[i + 1];
-    if (args[i] == '--floor') floor = double.tryParse(args[i + 1]);
+  for (var i = 0; i < args.length; i++) {
+    if (args[i] == '--lcov' && i + 1 < args.length) {
+      lcovPaths.add(args[i + 1]);
+      i++;
+    } else if (args[i] == '--floor' && i + 1 < args.length) {
+      floor = double.tryParse(args[i + 1]);
+      i++;
+    } else if (args[i] == '--no-exclusions') {
+      noExclusions = true;
+    }
   }
 
-  if (floor == null) {
-    stderr.writeln('erro: --floor <número> é obrigatório.');
-    exit(2);
-  }
+  if (lcovPaths.isEmpty) lcovPaths.add('coverage/lcov.info');
 
-  final CoverageSummary summary;
+  final List<String> lcovContents;
   try {
-    summary = summarize(readLcov(lcovPath));
+    lcovContents = lcovPaths.map(readLcov).toList();
   } on MissingLcovException catch (e) {
     stderr.writeln('erro: $e');
     exit(2);
+  }
+
+  final merged =
+      lcovContents.length == 1 ? lcovContents.single : mergeLcov(lcovContents);
+
+  final CoverageSummary summary;
+  try {
+    summary = summarize(merged, noExclusions: noExclusions);
   } on FormatException catch (e) {
-    stderr.writeln('erro: $lcovPath está malformado — ${e.message}');
+    stderr.writeln(
+      'erro: ${lcovPaths.join(", ")} está malformado — ${e.message}',
+    );
+    exit(2);
+  }
+
+  if (noExclusions) {
+    // Decisão 5 do design de `afirmar-sem-conferir`: a medição completa NÃO
+    // é gate — reporta o número e sai 0 sempre que o lcov está bem formado,
+    // piso ou não. Comparar este número com COVERAGE_FLOOR mediria
+    // denominadores diferentes.
+    stdout.writeln(
+      'cobertura completa (sem exclusões): ${summary.formattedPercent}',
+    );
+    stdout.writeln(
+      'esta medição não é gate — não compara com COVERAGE_FLOOR '
+      '(denominadores diferentes; ver make coverage-full no Makefile)',
+    );
+    return;
+  }
+
+  if (floor == null) {
+    stderr.writeln('erro: --floor <número> é obrigatório sem --no-exclusions.');
     exit(2);
   }
 

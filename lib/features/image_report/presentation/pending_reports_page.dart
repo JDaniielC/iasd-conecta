@@ -91,6 +91,15 @@ class _ReportList extends ConsumerWidget {
         await repository.dismiss(image.photoId);
       }
       ref.invalidate(pendingReportedImagesProvider);
+    } on StateError catch (e) {
+      // Recusa definitiva, não incerteza: a escrita conferiu que não alcançou
+      // linha nenhuma. A denúncia continua pendente, que é o estado verdadeiro,
+      // e a frase diz o motivo em vez de mandar conferir.
+      ref.invalidate(pendingReportedImagesProvider);
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.message)),
+      );
     } catch (_) {
       // FR-031: mesma razão do editor de capa. Num erro de rede o cliente não
       // sabe se a remoção aconteceu, e uma imagem denunciada continuar na
@@ -184,15 +193,16 @@ class _ReportList extends ConsumerWidget {
                               child: Text('• $reason'),
                             ),
                           const SizedBox(height: 12),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
+                          Wrap(
+                            alignment: WrapAlignment.end,
+                            spacing: 8,
+                            runSpacing: 8,
                             children: [
                               TextButton(
                                 onPressed: () => _resolve(context, ref, image,
                                     removeImage: false),
                                 child: const Text('Improcedente'),
                               ),
-                              const SizedBox(width: 8),
                               FilledButton(
                                 onPressed: () => _resolve(context, ref, image,
                                     removeImage: true),

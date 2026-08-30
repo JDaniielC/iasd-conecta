@@ -107,14 +107,27 @@ void main() {
   testWidgets('FR-010: lista de Ações aparece sem exigir Perfil', (tester) async {
     await _pump(tester, hasProfile: false);
 
-    expect(find.text('Acampamento'), findsOneWidget);
+    // findsNWidgets(2), não findsOneWidget: Acampamento é avulsa, e a faixa
+    // de destaque (feature `destaque-de-acoes`) põe Ação avulsa no topo SEM
+    // tirá-la da lista por período — vale com ou sem Perfil (ver
+    // `actionHighlight`). `skipOffstage: false` porque a segunda aparição cai
+    // fora do cache do Sliver a 360px com o banner de Perfil ocupando altura
+    // acima: ela existe na árvore, só não está visível sem rolar — a mesma
+    // classe de falso-negativo do achado 5.3b.
+    expect(
+      find.text('Acampamento', skipOffstage: false),
+      findsNWidgets(2),
+    );
     expect(find.text('Criar Perfil'), findsOneWidget);
   });
 
   testWidgets('sem o banner de CTA quando já tem Perfil', (tester) async {
     await _pump(tester, hasProfile: true);
 
-    expect(find.text('Acampamento'), findsOneWidget);
+    // Mesma dupla aparição de FR-010 acima — aqui cabe sem rolar porque não
+    // há banner de Perfil ocupando altura, então nem precisa de
+    // `skipOffstage: false`.
+    expect(find.text('Acampamento'), findsNWidgets(2));
     expect(find.text('Criar Perfil'), findsNothing);
   });
 

@@ -194,8 +194,17 @@ class CoverPhotoRepository {
   }
 
   /// Remove a capa. Apaga só a linha — o arquivo sai pela fila.
+  ///
+  /// Zero linhas é recusa: quem não administra o Grupo/Ação não tira a capa, e
+  /// a policy responde com ausência, não com erro. Distinguir isso de uma falha
+  /// de rede importa para a tela — numa ela não sabe o que aconteceu, na outra
+  /// sabe que não aconteceu.
   Future<void> remove(CoverPhoto photo) async {
-    await _client.from('fotos_capa').delete().eq('id', photo.id);
+    final affected =
+        await _client.from('fotos_capa').delete().eq('id', photo.id).select('id');
+    if (affected.isEmpty) {
+      throw StateError('Essa imagem não saiu: você não administra este espaço.');
+    }
   }
 
   /// Cutuca a drenagem da fila. **Nunca lança.**

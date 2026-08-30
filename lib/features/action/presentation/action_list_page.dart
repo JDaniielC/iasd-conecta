@@ -146,10 +146,10 @@ class _ActionListPageState extends ConsumerState<ActionListPage> {
         // duas, e repetir os mesmos dois destinos na AppBar era ruído.
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (ProfileGuard.requireProfile(context, ref)) {
-            context.push('/acoes/novo');
-          }
+        onPressed: () async {
+          if (!await ProfileGuard.requireProfile(context, ref)) return;
+          if (!context.mounted) return;
+          context.push('/acoes/novo');
         },
         child: const Icon(Icons.add),
       ),
@@ -408,6 +408,7 @@ class _FilterBar extends StatelessWidget {
     final church = DropdownButtonFormField<String>(
       initialValue: churchFilterId,
       isDense: true,
+      isExpanded: true,
       decoration: const InputDecoration(labelText: 'Igreja'),
       items: [
         const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
@@ -418,6 +419,7 @@ class _FilterBar extends StatelessWidget {
     final sort = DropdownButtonFormField<_ActionSortOrder>(
       initialValue: sortOrder,
       isDense: true,
+      isExpanded: true,
       decoration: const InputDecoration(labelText: 'Ordenar por'),
       items: const [
         DropdownMenuItem(value: _ActionSortOrder.byDate, child: Text('Data')),

@@ -415,6 +415,9 @@ class _ReadOnlyRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(bottom: AppSpacing.sm),
+      // O valor é dado da pessoa — nome, telefone, Igreja — e pode ser longo.
+      // Sem `Flexible` ele empurrava a linha para fora da tela num celular
+      // estreito, e o que sumia era justamente o dado.
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -225,6 +225,14 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
       // Pede a limpeza do arquivo agora, sem esperar o cron — que no plano
       // gratuito para junto com o banco pausado. Não lança.
       await repository.requestDrain();
+    } on StateError catch (e) {
+      // Recusa da RLS, e ela é DEFINITIVA: `remove` só lança aqui depois de
+      // conferir que a escrita não alcançou linha nenhuma. Não é o caso de
+      // incerteza tratado abaixo — aqui sabemos que nada mudou, e mandar a
+      // pessoa "conferir antes de tentar de novo" desperdiçaria a única coisa
+      // que temos: o motivo.
+      _invalidatePhoto();
+      _say(e.message);
     } catch (_) {
       // FR-031, segunda metade: a tela mostra o estado REAL. O erro aqui é
       // quase sempre tempo esgotado de rede, e nesse caso o cliente **não
@@ -274,8 +282,13 @@ class _CoverPhotoEditorState extends ConsumerState<CoverPhotoEditor> {
           ),
         if (widget.canUpload || (widget.canRemove && photo != null)) ...[
           if (photo != null) const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+          // `Wrap`, não `Row`: "Trocar capa" e "Remover capa" com ícone não
+          // cabem lado a lado num celular estreito. Achado quando toda tela
+          // passou a ser julgada a 360 (change `afirmar-sem-conferir`).
+          Wrap(
+            alignment: WrapAlignment.end,
+            spacing: 8,
+            runSpacing: 8,
             children: [
               if (widget.canUpload)
                 TextButton.icon(

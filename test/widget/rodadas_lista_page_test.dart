@@ -47,10 +47,11 @@ Widget _app({
   return ProviderScope(
     overrides: [
       currentUserIdProvider.overrideWithValue('alguem'),
-      // Síncrono de propósito: `ProfileGuard` lê com `.value ?? false`, e um
-      // FutureProvider nunca lido antes nasce AsyncLoading. Ver o comentário
-      // equivalente em rodada_detalhe_page_test.dart.
-      hasProfileProvider.overrideWith((ref) => hasProfile),
+      // `async`, como o provider real. Foi síncrono enquanto `ProfileGuard`
+      // lia `.value ?? false` — aí um override assíncrono não tinha efeito e o
+      // guard recusava todo mundo. Desde a change `afirmar-sem-conferir` o
+      // guard espera a resposta, e o override volta a ser o normal.
+      hasProfileProvider.overrideWith((ref) async => hasProfile),
       unreadNotificationCountProvider.overrideWith((ref) async => 0),
       groupVotingRoundsProvider(_groupId).overrideWith(
         (ref) async => error != null ? throw error : rounds,

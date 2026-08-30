@@ -45,9 +45,21 @@ class ProfileRepository {
   /// As cinco colunas mudam juntas ou não mudam — um `update` é atômico, então
   /// não existe estado pela metade sem precisar de transação nem de RPC. Se
   /// falhar, o banco fica exatamente como estava.
+  /// Zero linhas aqui NÃO é recusa por privilégio — a policy deixa qualquer
+  /// pessoa escrever na própria linha. É a linha não existir, e o efeito para
+  /// quem está olhando é o mesmo: a tela diria "Dados atualizados." sobre nada.
   Future<void> updateMyProfile(Profile profile) async {
     final uid = _client.auth.currentUser!.id;
-    await _client.from('perfis').update(profile.toUpdateMap()).eq('id', uid);
+    final affected = await _client
+        .from('perfis')
+        .update(profile.toUpdateMap())
+        .eq('id', uid)
+        .select('id');
+    if (affected.isEmpty) {
+      throw StateError(
+        'Não deu pra salvar agora. Verifique sua conexão e tente de novo.',
+      );
+    }
   }
 
   Future<List<Church>> fetchChurches() async {

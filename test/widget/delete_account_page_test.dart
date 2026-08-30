@@ -31,6 +31,7 @@ void main() {
     expect(botao.onPressed, isNull,
         reason: 'o botão só habilita depois de marcar que entendeu');
 
+    await tester.ensureVisible(find.byType(FilledButton));
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
@@ -50,8 +51,10 @@ void main() {
     when(() => repo.deleteMyAccount()).thenAnswer((_) async {});
     await abrir(tester);
 
+    await tester.ensureVisible(find.byType(CheckboxListTile));
     await tester.tap(find.byType(CheckboxListTile));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(FilledButton));
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
@@ -69,8 +72,10 @@ void main() {
     );
     await abrir(tester);
 
+    await tester.ensureVisible(find.byType(CheckboxListTile));
     await tester.tap(find.byType(CheckboxListTile));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(FilledButton));
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 
@@ -81,8 +86,10 @@ void main() {
     when(() => repo.deleteMyAccount()).thenThrow(Exception('socket fechou'));
     await abrir(tester);
 
+    await tester.ensureVisible(find.byType(CheckboxListTile));
     await tester.tap(find.byType(CheckboxListTile));
     await tester.pumpAndSettle();
+    await tester.ensureVisible(find.byType(FilledButton));
     await tester.tap(find.byType(FilledButton));
     await tester.pumpAndSettle();
 

@@ -137,7 +137,12 @@ class GroupRepository {
       if (details != null) 'detalhes': details.trim().isEmpty ? null : details.trim(),
     };
     if (values.isEmpty) return;
-    await _client.from('grupos').update(values).eq('id', id);
+    // Zero linhas é recusa: só o Dono edita o Grupo.
+    final affected =
+        await _client.from('grupos').update(values).eq('id', id).select('id');
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra salvar. Você ainda é o Dono deste Grupo?');
+    }
   }
 
   Future<List<String>> fetchMemberIds(String groupId) async {
@@ -192,6 +197,14 @@ class GroupRepository {
 
   /// FR-007/FR-012: sair é auto-serviço, mas o Dono atual é bloqueado pelo
   /// trigger `participacoes_grupo_dono_nao_sai_sem_transferir` no banco.
+  ///
+  /// **SEM `.select()`, e é decidido, não esquecido.** Zero linhas aqui quer
+  /// dizer "essa pessoa já não participava", que é o resultado que ela queria —
+  /// a policy `participacoes_grupo_delete_self_or_dono` nunca recusa alguém de
+  /// apagar a própria linha. A recusa que existe é a do Dono que não
+  /// transferiu, e essa chega como **erro levantado** pelo trigger
+  /// (`transfira a posse do grupo antes de sair`), não como zero linhas. As
+  /// duas coisas são distinguíveis, e é isso que dispensa a contagem.
   Future<void> leave(String groupId) async {
     final uid = _client.auth.currentUser!.id;
     await _client
@@ -202,17 +215,33 @@ class GroupRepository {
   }
 
   /// FR-010: só o Dono consegue (garantido pela RLS de `participacoes_grupo`).
+  ///
+  /// Zero linhas é recusa da mesma policy — e não "essa pessoa já tinha saído":
+  /// a tela só oferece remover quem está na lista que ela acabou de ler.
   Future<void> removeMember(String groupId, String userId) async {
-    await _client
+    final affected = await _client
         .from('participacoes_grupo')
         .delete()
         .eq('grupo_id', groupId)
-        .eq('usuario_id', userId);
+        .eq('usuario_id', userId)
+        .select('usuario_id');
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra remover esse participante.');
+    }
   }
 
   /// FR-011: só transfere pra quem já participa (garantido pelo trigger
   /// `grupos_dono_deve_participar` no banco).
+  /// Zero linhas é recusa: quem não é Dono não passa a posse — inclusive não
+  /// passa para si mesmo, que é a tentativa que a policy existe para barrar.
   Future<void> transferOwnership(String groupId, String newOwnerId) async {
-    await _client.from('grupos').update({'dono_id': newOwnerId}).eq('id', groupId);
+    final affected = await _client
+        .from('grupos')
+        .update({'dono_id': newOwnerId})
+        .eq('id', groupId)
+        .select('id');
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra transferir a posse.');
+    }
   }
 }

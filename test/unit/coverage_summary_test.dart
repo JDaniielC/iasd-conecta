@@ -186,4 +186,103 @@ void main() {
       );
     });
   });
+
+  group('summarize: --no-exclusions', () {
+    test('com a flag, lib/features/*/data/ entra no denominador', () {
+      final summary = summarize(
+        _lcov({
+          'lib/features/group/data/group_repository.dart': [0, 0, 0],
+          'lib/features/group/presentation/group_list_page.dart': [1, 1],
+        }),
+        noExclusions: true,
+      );
+      expect(summary.total, 5, reason: 'as 3 linhas de data/ voltam a contar');
+      expect(summary.hit, 2);
+      expect(summary.excludedLines, 0);
+    });
+
+    test('sem a flag, a exclusão continua valendo (regressão)', () {
+      final summary = summarize(
+        _lcov({'lib/features/group/data/group_repository.dart': [0, 0, 0]}),
+      );
+      expect(summary.total, 0);
+      expect(summary.excludedLines, 3);
+    });
+  });
+
+  group('normalizePath', () {
+    test('caminho absoluto com /lib/ vira relativo a partir de lib/', () {
+      expect(
+        normalizePath('/Users/alguem/projetos/iasd/lib/app.dart'),
+        'lib/app.dart',
+      );
+    });
+
+    test('caminho já relativo a lib/ permanece igual', () {
+      expect(normalizePath('lib/app.dart'), 'lib/app.dart');
+    });
+
+    test('caminho sem /lib/ permanece inalterado', () {
+      expect(
+        normalizePath('test/unit/algo_test.dart'),
+        'test/unit/algo_test.dart',
+      );
+    });
+  });
+
+  group('summarize normaliza o caminho antes de excluir', () {
+    test('exclusão de lib/features/*/data/ bate mesmo com caminho absoluto', () {
+      final summary = summarize(
+        'SF:/home/ci/projeto/lib/features/group/data/group_repository.dart\n'
+        'DA:1,0\nDA:2,0\nend_of_record\n',
+      );
+      expect(summary.total, 0);
+      expect(summary.excludedLines, 2);
+    });
+  });
+
+  group('mergeLcov', () {
+    test('arquivos diferentes nos dois relatórios aparecem os dois, sem duplicar', () {
+      final merged = mergeLcov([
+        _lcov({
+          'lib/a.dart': [1, 0],
+        }),
+        _lcov({
+          'lib/b.dart': [1, 1],
+        }),
+      ]);
+      final summary = summarize(merged);
+      expect(summary.total, 4);
+      expect(summary.hit, 3);
+    });
+
+    test('mesma linha coberta em um relatório e não no outro conta como coberta', () {
+      final merged = mergeLcov([
+        _lcov({
+          'lib/a.dart': [1, 0, 0], // linha 2 não coberta aqui
+        }),
+        _lcov({
+          'lib/a.dart': [0, 1, 0], // linha 2 coberta aqui
+        }),
+      ]);
+      final summary = summarize(merged);
+      expect(summary.total, 3,
+          reason: 'a linha não duplica no denominador por aparecer nos dois');
+      expect(summary.hit, 2,
+          reason: 'linha 1 e linha 2 cobertas por um dos dois; linha 3 em nenhum');
+    });
+
+    test(
+        'mesmo arquivo por caminho absoluto num lado e relativo no outro é '
+        'uma entrada só', () {
+      final merged = mergeLcov([
+        'SF:lib/a.dart\nDA:1,1\nDA:2,0\nend_of_record\n',
+        'SF:/ci/runner/projeto/lib/a.dart\nDA:1,0\nDA:2,1\nend_of_record\n',
+      ]);
+      final summary = summarize(merged);
+      expect(summary.total, 2,
+          reason: 'sem normalizar viraria 4 — o mesmo arquivo contado duas vezes');
+      expect(summary.hit, 2);
+    });
+  });
 }

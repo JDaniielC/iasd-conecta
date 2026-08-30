@@ -105,16 +105,19 @@ class _HeroSection extends StatelessWidget {
                         const Icon(Icons.location_on_outlined,
                             size: 16, color: AppColors.accent),
                         const SizedBox(width: AppSpacing.xs),
-                        Text(
-                          'Vitória de Santo Antão',
-                          style: Theme.of(context)
-                              .textTheme
-                              .labelLarge
-                              ?.copyWith(
-                                color: AppColors.accent,
-                                letterSpacing: 1.1,
-                                fontWeight: FontWeight.w600,
-                              ),
+                        Flexible(
+                          child: Text(
+                            'Vitória de Santo Antão',
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context)
+                                .textTheme
+                                .labelLarge
+                                ?.copyWith(
+                                  color: AppColors.accent,
+                                  letterSpacing: 1.1,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                          ),
                         ),
                       ],
                     ),
@@ -258,7 +261,13 @@ class _ConceptCard extends StatelessWidget {
             children: [
               Icon(icon, color: AppColors.navy),
               const SizedBox(width: AppSpacing.sm),
-              Text(title, style: text.titleLarge),
+              Flexible(
+                child: Text(
+                  title,
+                  style: text.titleLarge,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.sm),

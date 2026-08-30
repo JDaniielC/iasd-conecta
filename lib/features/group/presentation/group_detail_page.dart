@@ -27,7 +27,7 @@ class GroupDetailPage extends ConsumerWidget {
   }
 
   Future<void> _join(BuildContext context, WidgetRef ref) async {
-    if (!ProfileGuard.requireProfile(context, ref)) return;
+    if (!await ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(groupRepositoryProvider).join(groupId);
       ref.invalidate(membersProvider(groupId));

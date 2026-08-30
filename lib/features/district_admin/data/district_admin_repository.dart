@@ -38,10 +38,15 @@ class DistrictAdminRepository {
   /// FR-005/FR-010: arquivar é só um `UPDATE`, nunca `DELETE` — preserva
   /// todo vínculo histórico. Reenviar o mesmo id é não-operação (a linha já
   /// fica com `arquivada_em` preenchido).
+  /// Zero linhas é recusa: só Administrador do distrito arquiva Igreja.
   Future<void> archiveChurch(String churchId) async {
-    await _client
+    final affected = await _client
         .from('igrejas')
         .update({'arquivada_em': DateTime.now().toUtc().toIso8601String()})
-        .eq('id', churchId);
+        .eq('id', churchId)
+        .select('id');
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra arquivar agora.');
+    }
   }
 }

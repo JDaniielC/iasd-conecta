@@ -20,7 +20,7 @@ class VotingRoundDetailPage extends ConsumerWidget {
   }
 
   Future<void> _vote(BuildContext context, WidgetRef ref, String candidateId) async {
-    if (!ProfileGuard.requireProfile(context, ref)) return;
+    if (!await ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(votingRoundRepositoryProvider).vote(votingRoundId, candidateId);
       ref.invalidate(myVoteProvider(votingRoundId));
@@ -79,10 +79,12 @@ class VotingRoundDetailPage extends ConsumerWidget {
                     runSpacing: AppSpacing.sm,
                     children: [
                       ElevatedButton(
-                        onPressed: () {
-                          if (ProfileGuard.requireProfile(context, ref)) {
-                            context.push('/rodadas/$votingRoundId/candidatas/novo');
+                        onPressed: () async {
+                          if (!await ProfileGuard.requireProfile(context, ref)) {
+                            return;
                           }
+                          if (!context.mounted) return;
+                          context.push('/rodadas/$votingRoundId/candidatas/novo');
                         },
                         child: const Text('Propor Candidata'),
                       ),

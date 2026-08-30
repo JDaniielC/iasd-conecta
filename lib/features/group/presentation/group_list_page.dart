@@ -72,10 +72,10 @@ class _GroupListPageState extends ConsumerState<GroupListPage> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (ProfileGuard.requireProfile(context, ref)) {
-            context.push('/grupos/novo');
-          }
+        onPressed: () async {
+          if (!await ProfileGuard.requireProfile(context, ref)) return;
+          if (!context.mounted) return;
+          context.push('/grupos/novo');
         },
         child: const Icon(Icons.add),
       ),
@@ -170,6 +170,7 @@ class _FilterBar extends StatelessWidget {
             child: DropdownButtonFormField<String>(
               initialValue: churchFilterId,
               isDense: true,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Igreja'),
               items: [
                 const DropdownMenuItem(value: _allChurches, child: Text('Todas as Igrejas')),
@@ -183,6 +184,7 @@ class _FilterBar extends StatelessWidget {
             child: DropdownButtonFormField<_GroupSortOrder>(
               initialValue: sortOrder,
               isDense: true,
+              isExpanded: true,
               decoration: const InputDecoration(labelText: 'Ordenar por'),
               items: const [
                 DropdownMenuItem(value: _GroupSortOrder.mostRecent, child: Text('Mais recentes')),

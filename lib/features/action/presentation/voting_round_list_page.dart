@@ -27,10 +27,10 @@ class VotingRoundListPage extends ConsumerWidget {
         actions: const [NotificationBadge()],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          if (ProfileGuard.requireProfile(context, ref)) {
-            context.push('/grupos/$groupId/rodadas/novo');
-          }
+        onPressed: () async {
+          if (!await ProfileGuard.requireProfile(context, ref)) return;
+          if (!context.mounted) return;
+          context.push('/grupos/$groupId/rodadas/novo');
         },
         child: const Icon(Icons.add),
       ),

@@ -89,11 +89,18 @@ class ActionRepository {
     }
   }
 
+  /// Zero linhas aqui é recusa da RLS — quem não criou a Ação não a cancela, e
+  /// a policy responde fazendo a linha não existir para aquela sessão, sem
+  /// levantar erro. Medido em `test/integration/escrita_recusada_test.dart`.
   Future<void> cancelAction(String id) async {
-    await _client.from('acoes').update({'cancelada_em': DateTime.now().toUtc().toIso8601String()}).eq(
-      'id',
-      id,
-    );
+    final affected = await _client
+        .from('acoes')
+        .update({'cancelada_em': DateTime.now().toUtc().toIso8601String()})
+        .eq('id', id)
+        .select('id');
+    if (affected.isEmpty) {
+      throw StateError('Não deu pra cancelar agora. Tente de novo.');
+    }
   }
 
   /// FR-012: idempotente — confirmar de novo não é erro nem duplica.
@@ -107,13 +114,38 @@ class ActionRepository {
   }
 
   /// FR-004: sempre auto-serviço; a promoção da fila é automática no banco.
+  ///
+  /// **Zero linhas aqui tem DUAS causas opostas**, e a contagem sozinha não as
+  /// separa — medido em `test/integration/desistencia_zero_ambiguo_test.dart`:
+  ///
+  ///   - a pessoa não estava confirmada, e não havia nada a apagar. Está tudo
+  ///     certo, e não é erro.
+  ///   - `confirmacoes_acao_delete_self` recusou por
+  ///     `public.acao_encerrada(acao_id)`, que existe para
+  ///     `confirmacoes_acao_promover_fila` não promover ninguém depois do
+  ///     encerramento (migration `20260809174740`). Aí ela **continua constando
+  ///     como presente num encontro que já aconteceu**, e precisa ouvir isso.
+  ///
+  /// A leitura extra só acontece no caminho vazio. Conferir antes gastaria duas
+  /// viagens em toda desistência para cobrir o caso raro — e ainda deixaria a
+  /// corrida entre a checagem e a escrita de pé.
   Future<void> withdraw(String actionId) async {
     final uid = _client.auth.currentUser!.id;
-    await _client
+    final affected = await _client
         .from('confirmacoes_acao')
         .delete()
         .eq('acao_id', actionId)
-        .eq('usuario_id', uid);
+        .eq('usuario_id', uid)
+        .select('usuario_id');
+    if (affected.isNotEmpty) return;
+
+    final action = await fetchAction(actionId);
+    if (actionTimeStatus(action.dateTime, DateTime.now()) ==
+        ActionTimeStatus.ended) {
+      throw StateError('Essa Ação já encerrou. Sua presença continua registrada.');
+    }
+    // Ação aberta e nada apagado: a pessoa não estava confirmada. O estado que
+    // a tela recarrega já mostra isso, e inventar erro aqui seria pior.
   }
 
   Future<List<AttendanceWithProfile>> fetchAttendees(String actionId) async {

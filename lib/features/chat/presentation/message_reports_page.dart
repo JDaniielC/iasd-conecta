@@ -218,7 +218,7 @@ class _ReportCard extends ConsumerWidget {
               Text(_stateLine, style: theme.textTheme.labelMedium),
             ],
             if (isPending && report.messageId != null && !report.messageRemoved)
-              Row(
+              Wrap(
                 children: [
                   TextButton(
                     onPressed: () => _removeMessage(context, ref),

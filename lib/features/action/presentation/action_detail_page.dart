@@ -27,7 +27,7 @@ class ActionDetailPage extends ConsumerWidget {
   }
 
   Future<void> _confirm(BuildContext context, WidgetRef ref) async {
-    if (!ProfileGuard.requireProfile(context, ref)) return;
+    if (!await ProfileGuard.requireProfile(context, ref)) return;
     try {
       await ref.read(actionRepositoryProvider).confirmAttendance(actionId);
       ref.invalidate(attendeesProvider(actionId));
@@ -47,6 +47,15 @@ class ActionDetailPage extends ConsumerWidget {
       // FR-015: a contagem da listagem reflete confirmação, desistência e
       // promoção da fila na próxima carga.
       ref.invalidate(confirmationCountsProvider);
+    } on StateError catch (e) {
+      // Recusa reconhecida — hoje só uma: a Ação encerrou entre a montagem
+      // desta tela e o toque. A frase genérica manda tentar de novo, e aqui
+      // tentar de novo não vai funcionar nunca. Reler o estado é o que faz o
+      // botão sumir, que é a segunda metade da resposta.
+      ref.invalidate(actionProvider(actionId));
+      ref.invalidate(attendeesProvider(actionId));
+      if (!context.mounted) return;
+      _showError(context, e.message);
     } catch (_) {
       if (!context.mounted) return;
       _showError(context, 'Não deu pra desistir agora. Tente de novo.');

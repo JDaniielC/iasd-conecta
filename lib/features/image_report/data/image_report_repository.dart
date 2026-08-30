@@ -78,12 +78,26 @@ class ImageReportRepository {
   /// desta imagem somem junto, por cascade — é o encerramento automático de
   /// FR-019, e é por isso que não há um update de estado aqui: a linha da
   /// denúncia deixa de existir.
+  ///
+  /// Zero linhas é recusa: só quem administra o espaço da imagem a remove. A
+  /// denúncia continua pendente, que é o estado verdadeiro.
   Future<void> resolveByRemovingImage(String photoId) async {
-    await _client.from('fotos_capa').delete().eq('id', photoId);
+    final affected =
+        await _client.from('fotos_capa').delete().eq('id', photoId).select('id');
+    if (affected.isEmpty) {
+      throw StateError('Essa imagem não saiu: você não administra este espaço.');
+    }
   }
 
   /// Resolve como **improcedente**. A imagem fica; as denúncias sobre ela saem
   /// da lista de pendências.
+  ///
+  /// **SEM `.select()`, e é decidido, não esquecido.** O filtro carrega
+  /// `.eq('estado', pendente)`, ou seja, a própria condição que a escrita vai
+  /// mudar. Zero linhas quer dizer que a denúncia já saiu de pendente — outra
+  /// pessoa moderando ganhou a corrida, e o resultado é o que esta chamada
+  /// queria. Lançar aqui transformaria duas pessoas fazendo a coisa certa em
+  /// erro na tela de uma delas.
   Future<void> dismiss(String photoId) async {
     await _client
         .from('denuncias_imagem')

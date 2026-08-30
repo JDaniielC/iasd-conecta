@@ -81,6 +81,29 @@ sem falar com o Supabase (é SharedPreferences, provado por teste de unidade que
 roda dentro desta medição). O número sai levemente menor que a realidade, e
 errar para baixo é o lado certo de errar num piso.
 
+### `make coverage` vs `make coverage-full` — dois números, um gate
+
+`make coverage` é O GATE. `make coverage-full` é medição — informativa,
+manual, não entra no `ci.yml` e não se compara com `COVERAGE_FLOOR`, porque os
+dois medem denominadores diferentes:
+
+- **`make coverage`** — só `test/unit` + `test/widget`, com
+  `lib/features/*/data/` fora do denominador (seção acima). É rápido, não
+  precisa de banco, e é o que reprova PR.
+- **`make coverage-full`** — funde o `lcov` de `test/unit`/`test/widget` com o
+  de `dart test test/integration --coverage-path`
+  (`scripts/coverage_summary.dart --no-exclusions`), sobre **todo** o `lib/`,
+  sem exclusão nenhuma. Precisa do Supabase local de pé — ver "Testes de
+  integração" logo abaixo antes de rodar.
+
+O número completo é mais baixo, e é para ser: a camada de repositório entra no
+denominador, mas os testes de integração falam com o Postgres por
+`package:postgres`/`package:supabase` direto (ver a seção abaixo), sem passar
+pelas classes `*Repository` de `lib/` — então essa camada continua
+majoritariamente descoberta mesmo com a integração somada. Medido pela
+primeira vez em 2026-08-30, na change `afirmar-sem-conferir`: ver
+`PENDENCIAS.md` § 2.33 para o número e o porquê.
+
 ## Testes de integração
 
 `dart test test/integration` roda os arquivos **em paralelo contra o mesmo

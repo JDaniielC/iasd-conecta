@@ -1119,7 +1119,7 @@ O documento que existe para dizer ao advogado o que ainda falta afirma que
 faltam duas coisas já entregues. Não é da change `mensagem-fixada` — mas ela
 editou o arquivo e passou ao lado, e é assim que uma seção envelhece.
 
-### 2.31 `ProfileGuard` só funciona porque `app.dart` esquenta o provider
+### 2.31 `ProfileGuard` só funciona porque `app.dart` esquenta o provider — **FECHADA em 2026-08-30**
 
 `lib/features/profile/domain/profile_guard.dart:20` decide com
 `ref.read(hasProfileProvider).value ?? false`. `hasProfileProvider` é um
@@ -1142,7 +1142,14 @@ O padrão correto já existe no repo: `report_image_sheet.dart:62` usa
 porque é síncrono e retorna `bool`. Consertar é mudar a assinatura e os cinco
 pontos de chamada — não é one-liner, e não entrou na change que achou.
 
-⚪ Baixo risco hoje, alto custo de descoberta se `app.dart` mudar.
+**Fechada pela change `afirmar-sem-conferir`, seção 4**: `requireProfile` virou
+`Future<bool>`, lendo com `ref.read(hasProfileProvider.future)` — o mesmo
+padrão de `report_image_sheet.dart:62`. Os sete pontos de chamada
+(`group_detail_page:29`, `group_list_page:121`, `voting_round_list_page:31`,
+`action_detail_page:30`, `voting_round_detail_page:23` e `:83`,
+`action_list_page:117`) acompanharam, com `context.mounted` conferido depois
+do `await`. A corretude do guard deixou de depender de `app.dart:47` ter
+lido o provider antes.
 
 ### 2.32 Três estouros de layout a 360 de largura — **FECHADOS em 2026-08-20**
 
@@ -1160,13 +1167,16 @@ Os dois primeiros viraram `Wrap`, o terceiro ganhou `isExpanded: true`.
 Fechados na própria change `cobertura-e-tdd` por decisão explícita do dono — o
 defeito estava no caminho do teste que a change existia para escrever.
 
-**O que fica aberto é a classe, não os três casos.** As dez telas cobertas na
-change agora são julgadas a 360; as demais não têm essa garantia, e o gate de
-cobertura não a dá — cobertura mede execução, não largura. Um teste que renderiza
-a 360 é a única coisa neste repo que pega estouro, e ele só existe onde alguém o
-escreveu.
+**O que ficava aberto era a classe, não os três casos** — e essa parte fechou
+também, pela change `afirmar-sem-conferir`, seção 5: `test/flutter_test_config.dart`
+passou a fixar 360×800 como largura de partida de **todo** teste sob `test/`,
+para as 37 telas de `lib/features/*/presentation/` (todas já tinham arquivo de
+teste — a diferença era só a largura julgada). A varredura achou mais dois
+estouros novos, trazidos pelo redesenho de navegação (`home_page.dart:103` e
+`:257`), consertados com `Flexible` + ellipsis. `flutter analyze`: 0 issues.
+`test/unit` + `test/widget`: 635/635 depois do conserto (26 vermelhos antes).
 
-### 2.33 `test/integration` continua fora da medição de cobertura
+### 2.33 `test/integration` continua fora da medição de cobertura — **MEDIDA em 2026-08-30**
 
 `make coverage` mede `test/unit` e `test/widget`. A camada de repositório
 (`lib/features/*/data/`, 693 linhas) sai do denominador porque quem a prova é
@@ -1181,7 +1191,32 @@ Consequência aceita e declarada: **o número que o gate reporta não é a cober
 do projeto**, é a cobertura do que roda sem banco. O projeto inteiro está entre
 esse número e ele mais o que a integração cobre, e ninguém mediu o segundo.
 
-⚪ Dívida declarada, não defeito.
+**Medido pela primeira vez em 2026-08-30**, pela change `afirmar-sem-conferir`
+(`make coverage-full`, `scripts/coverage_summary.dart --no-exclusions` fundindo
+o `lcov` de `test/unit`/`test/widget` com o de
+`dart test test/integration --coverage-path`): **3845/5174 = 74,3%**, sobre
+**todo** o `lib/`, sem exclusão — 730 linhas a mais no denominador que o gate
+rápido (`lib/features/*/data/`, mais a imprecisão declarada do `Makefile`).
+
+**Achado ao medir, e não hipótese**: o `lcov` de `dart test test/integration`
+só instrumenta 3 arquivos —
+`chat/domain/message.dart`, `chat/domain/send_refusal.dart` e
+`profile/domain/profile.dart`. **Nenhum arquivo de
+`lib/features/*/data/` aparece nele.** Os testes de integração falam com o
+Postgres por `package:postgres`/`package:supabase` direto (a suíte roda em
+`dart test`, que não carrega Flutter, e as classes `*Repository` usam
+`supabase_flutter`) — eles provam que a RLS/os triggers se comportam como o
+repositório presume, mas **nunca executam a linha do repositório**. Por isso o
+`hit` subiu só de 3824 para 3845 (+21, a exceção declarada de
+`actions_seen_repository.dart`, que É SharedPreferences e roda dentro de
+`test/unit`) apesar do denominador ganhar 730 linhas. **A camada de
+repositório continua, na prática, sem cobertura de linha nenhuma suíte —
+`test/integration` prova o contrato, não executa o código.**
+
+⚪ Medido, não mais dívida cega — mas o achado acima é uma dívida nova e menor:
+a frase "quem prova aquela camada é `dart test test/integration`" (`Makefile`,
+`CLAUDE.md`) é verdade sobre o *comportamento*, não sobre a *cobertura de
+linha*. Vale corrigir a frase num commit futuro para não confundir as duas.
 
 ### 2.34 O número de cobertura variou 0,24pp sem mudança em `lib/`
 
@@ -1199,7 +1234,12 @@ mexido em código, é aqui que se olha primeiro.
 
 ⚪ Não bloqueia. Vira problema se a variação crescer.
 
-### 2.35 Treze escritas do cliente não conferem linhas afetadas
+**Continua aberta.** Revisada em 2026-08-30 pela change `afirmar-sem-conferir`
+(Non-Goal explícito do design) — a causa não foi perseguida, e não é
+esquecimento: a change tocou cobertura (§ 2.33, `make coverage-full`) sem
+mexer nesta variação especificamente.
+
+### 2.35 Treze escritas do cliente não conferem linhas afetadas — **FECHADA em 2026-08-30**
 
 **Medido em 2026-08-20**, na convergência da change `cobertura-e-tdd`: das 20
 chamadas `update`/`delete` que o cliente manda ao Supabase, **13 não chamam
@@ -1233,7 +1273,26 @@ significa outra coisa. Sair patchando `.select()` nas 12 produziria doze
 É change própria, e o que ela precisa decidir primeiro é a regra: quais dessas
 escritas podem legitimamente afetar zero linhas.
 
-⚪ Não bloqueia. É a classe da qual `chat-de-grupo-e-acao` já pagou três casos.
+**Fechada pela change `afirmar-sem-conferir`**, que decidiu a regra pedida
+acima (Decisão 1 do design: "zero linhas é legítimo quando o filtro já carrega
+a condição que a escrita vai mudar, ou quando a operação remove o próprio
+vínculo de quem chamou") e aplicou nas 12:
+
+- **8 recebem `.select()` + `StateError` com a frase que a tela mostra**
+  (`ActionRepository.cancelAction`, `CoverPhotoRepository.remove`,
+  `DistrictAdminRepository.archiveChurch`, `GroupRepository.updateGroup`,
+  `GroupRepository.removeMember`, `GroupRepository.transferOwnership`,
+  `ImageReportRepository.resolveByRemovingImage`,
+  `ProfileRepository.updateMyProfile`) — seção 1 do `tasks.md`.
+- **3 ganham o comentário de por que zero é sucesso ali**
+  (`GroupRepository.leave`, `ImageReportRepository.dismiss`,
+  `NotificationRepository.markRead`) — seção 2.
+- **1 (`ActionRepository.withdraw`) é o zero ambíguo** — a mesma recusa pode
+  significar "nunca confirmou" ou "confirmada numa Ação já encerrada", e as
+  duas dão `affectedRows == 0`. Passou a ler o estado só quando o `delete`
+  volta vazio, e distinguir as duas causas — seção 3.
+
+Cada uma com teste de integração medindo `affectedRows`, nunca `throwsA`.
 
 ## 3. Verificação manual — só gente mede
 

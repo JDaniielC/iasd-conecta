@@ -21,7 +21,19 @@ max_rows = 1000
 # without explicit GRANTs. When unset, new entities are NOT auto-exposed, matching the new cloud
 # default. Set to `true` to keep the legacy behaviour of auto-exposing new entities; this is
 # deprecated and the field is removed on 2026-10-30 once the always-revoked behaviour is permanent.
-# auto_expose_new_tables = true
+#
+# PINNED, não deixado unset: CLI v2.116.0 mudou o default de "unset" pra
+# auto-expor de novo (#6337 no changelog), ao contrário do que o comentário
+# acima descreve. `supabase/setup-cli@v1 version: latest` no CI pegou essa
+# mudança e passou a conceder select/insert/update/delete de anon E
+# authenticated em toda tabela/função nova de `public` — por cima das
+# migrations de revoke deste repo. 27 testes de integração caíram
+# (inventario_superficie_anon_test.dart e afins), determinístico, 2 runs
+# seguidos. Local com CLI 2.111.0 não reproduzia; upgrade pra 2.116.0 e
+# reprodução foi imediata. Não deixar unset de novo — fixar explícito é o que
+# torna o comportamento independente de qual versão do CLI o `latest` resolver
+# amanhã.
+auto_expose_new_tables = false
 
 [api.tls]
 # Enable HTTPS endpoints locally using a self-signed certificate.

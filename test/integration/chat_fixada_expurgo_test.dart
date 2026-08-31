@@ -22,10 +22,10 @@ import 'db_test_helper.dart';
 /// paralelo. Por isso toda asserção é sobre linha identificada por id, nunca
 /// sobre o número que a função devolve.
 
-const _uidCreator = 'fb000000-0000-0000-0000-000000000001';
-const _uidOwner = 'fb000000-0000-0000-0000-000000000002';
-const _uidMember = 'fb000000-0000-0000-0000-000000000003';
-const _uidLeaver = 'fb000000-0000-0000-0000-000000000004';
+const _uidCreator = '1b000000-0000-0000-0000-000000000001';
+const _uidOwner = '1b000000-0000-0000-0000-000000000002';
+const _uidMember = '1b000000-0000-0000-0000-000000000003';
+const _uidLeaver = '1b000000-0000-0000-0000-000000000004';
 const _allUids = [_uidCreator, _uidOwner, _uidMember, _uidLeaver];
 
 void main() {

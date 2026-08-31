@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 009 — exclusão de conta com anonimização do Perfil.
@@ -18,21 +19,11 @@ void main() {
 
   tearDownAll(() => conn.close());
 
-  Future<void> asUser(String uid) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-  }
-
-  Future<void> deleteAccount(String uid) async {
-    await asUser(uid);
-    try {
-      await conn.execute('select public.excluir_minha_conta()');
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
+  Future<void> deleteAccount(String uid) => asUser(
+        conn,
+        uid,
+        () => conn.execute('select public.excluir_minha_conta()'),
+      );
 
   Future<int> contar(String sql, Map<String, dynamic> params) async {
     final rows = await conn.execute(Sql.named(sql), parameters: params);

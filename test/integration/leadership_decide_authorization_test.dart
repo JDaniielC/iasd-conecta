@@ -1,29 +1,17 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
-const _uidOwner = '90000000-0000-0000-0000-000000000030';
-const _uidComum = '90000000-0000-0000-0000-000000000031';
-const _uidLider = '90000000-0000-0000-0000-000000000032';
+const _uidOwner = '13000000-0000-0000-0000-000000000030';
+const _uidComum = '13000000-0000-0000-0000-000000000031';
+const _uidLider = '13000000-0000-0000-0000-000000000032';
 
 void main() {
   late Connection conn;
   late String groupId;
   late String declarationId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -65,7 +53,7 @@ void main() {
 
   test('FR-005: Dono do Grupo não consegue decidir (só Administrador do distrito)', () async {
     await expectLater(
-      asUser(_uidOwner, () async {
+      asUser(conn, _uidOwner, () async {
         await conn.execute(
           Sql.named('select public.decidir_lideranca(@id, true)'),
           parameters: {'id': declarationId},
@@ -77,7 +65,7 @@ void main() {
 
   test('FR-005: Usuário comum não consegue decidir', () async {
     await expectLater(
-      asUser(_uidComum, () async {
+      asUser(conn, _uidComum, () async {
         await conn.execute(
           Sql.named('select public.decidir_lideranca(@id, true)'),
           parameters: {'id': declarationId},

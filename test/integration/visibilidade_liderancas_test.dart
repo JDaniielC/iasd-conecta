@@ -55,18 +55,8 @@ void main() {
   Future<void> asVisitor(Future<void> Function() action) =>
       shared.asVisitor(conn, _visitorUserId, action);
 
-  Future<void> asUser(String userId, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$userId\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
+  Future<void> asUser(String userId, Future<void> Function() action) =>
+      shared.asUser(conn, userId, action);
 
   /// Ids das declarações visíveis para a identidade corrente, dentro do Grupo.
   Future<List<String>> visibleDeclarationUserIds() async {

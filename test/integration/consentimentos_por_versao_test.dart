@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 017, US2 — a coluna vira resposta.
@@ -11,29 +12,16 @@ import 'db_test_helper.dart';
 /// pede as duas provas que este arquivo dá: que só o Administrador do distrito
 /// chama, e que a resposta é contagem e nunca identidade.
 
-const _adminUid = '95000000-0000-0000-0000-000000000001';
-const _plainUserUid = '95000000-0000-0000-0000-000000000002';
-const _legacyUid = '95000000-0000-0000-0000-000000000003';
-const _anonymizedUid = '95000000-0000-0000-0000-000000000004';
+const _adminUid = '14000000-0000-0000-0000-000000000001';
+const _plainUserUid = '14000000-0000-0000-0000-000000000002';
+const _legacyUid = '14000000-0000-0000-0000-000000000003';
+const _anonymizedUid = '14000000-0000-0000-0000-000000000004';
 
 const _allUids = [_adminUid, _plainUserUid, _legacyUid, _anonymizedUid];
 
 void main() {
   late Connection conn;
   late String currentVersion;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   /// Perfil anterior à feature 017: versão nula, impossível pelo caminho normal.
   Future<void> seedLegacyProfile(String uid) async {
@@ -96,7 +84,7 @@ void main() {
 
   test('(a) quem não é Administrador do distrito é recusado', () async {
     await expectLater(
-      asUser(_plainUserUid, () async {
+      asUser(conn, _plainUserUid, () async {
         await conn.execute('select * from public.consentimentos_por_versao()');
       }),
       throwsA(isA<Exception>()),
@@ -108,7 +96,7 @@ void main() {
     'contada à parte',
     () async {
       late List<List<dynamic>> rows;
-      await asUser(_adminUid, () async {
+      await asUser(conn, _adminUid, () async {
         final r =
             await conn.execute('select * from public.consentimentos_por_versao()');
         rows = r.map((row) => row.toList()).toList();
@@ -132,7 +120,7 @@ void main() {
 
   test('(c) Princípio II: a resposta não traz coluna de identidade', () async {
     late List<String> columns;
-    await asUser(_adminUid, () async {
+    await asUser(conn, _adminUid, () async {
       final r =
           await conn.execute('select * from public.consentimentos_por_versao()');
       columns = r.schema.columns.map((c) => c.columnName ?? '').toList();
@@ -158,8 +146,8 @@ void main() {
     // Com uma versão exclusiva deste caso, a contagem daquele balde só depende
     // do que este teste inseriu.
     const isolatedVersion = '9.9-anon';
-    const keptUid = '95000000-0000-0000-0000-00000000000a';
-    const droppedUid = '95000000-0000-0000-0000-00000000000b';
+    const keptUid = '14000000-0000-0000-0000-00000000000a';
+    const droppedUid = '14000000-0000-0000-0000-00000000000b';
 
     await conn.execute('begin');
     try {

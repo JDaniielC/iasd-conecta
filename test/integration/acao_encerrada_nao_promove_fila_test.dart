@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 011, FR-005/FR-006/FR-007.
@@ -18,22 +19,6 @@ import 'db_test_helper.dart';
 const _uidOwner = '70000000-0000-0000-0000-000000000080';
 const _uidFirst = '70000000-0000-0000-0000-000000000081';
 const _uidSecond = '70000000-0000-0000-0000-000000000082';
-
-Future<void> _asUser(
-  Connection conn,
-  String uid,
-  Future<void> Function() action,
-) async {
-  await conn.execute('set role authenticated');
-  await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-    await conn.execute('reset request.jwt.claims');
-  }
-}
 
 /// Cria uma Ação com 2 vagas.
 ///
@@ -125,7 +110,7 @@ void main() {
       expect(await _statusOf(conn, actionId, _uidSecond), 'fila');
 
       // Quem tem a vaga tenta desistir, já encerrada.
-      await _asUser(conn, _uidFirst, () async {
+      await asUser(conn, _uidFirst, () async {
         await conn.execute(
           Sql.named(
             'delete from public.confirmacoes_acao '
@@ -161,7 +146,7 @@ void main() {
       );
       expect(await _statusOf(conn, actionId, _uidSecond), 'fila');
 
-      await _asUser(conn, _uidFirst, () async {
+      await asUser(conn, _uidFirst, () async {
         await conn.execute(
           Sql.named(
             'delete from public.confirmacoes_acao '
@@ -215,7 +200,7 @@ void main() {
 
       // A exclusão precisa concluir sem erro — é o que o bloqueio poderia ter
       // quebrado.
-      await _asUser(conn, uidLeaving, () async {
+      await asUser(conn, uidLeaving, () async {
         await conn.execute('select public.excluir_minha_conta()');
       });
 

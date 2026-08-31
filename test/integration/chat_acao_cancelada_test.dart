@@ -21,8 +21,8 @@ import 'db_test_helper.dart';
 ///
 /// Este arquivo é o alarme dessa herança.
 
-const _uidCreator = 'c5000000-0000-0000-0000-000000000001';
-const _uidConfirmed = 'c5000000-0000-0000-0000-000000000002';
+const _uidCreator = '18000000-0000-0000-0000-000000000001';
+const _uidConfirmed = '18000000-0000-0000-0000-000000000002';
 const _allUids = [_uidCreator, _uidConfirmed];
 
 void main() {

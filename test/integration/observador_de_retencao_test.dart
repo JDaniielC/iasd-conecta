@@ -22,9 +22,9 @@ import 'db_test_helper.dart';
 /// 3.9 mora em `chat_expurgo_test.dart` (estendido, não substituído) e 3.6 em
 /// `superficie_sem_sessao_test.dart` (a tabela entrou na lista existente).
 
-const _uidAdmin = 'ab000000-0000-0000-0000-000000000001';
-const _uidMember = 'ab000000-0000-0000-0000-000000000002';
-const _uidActionOwner = 'ab000000-0000-0000-0000-000000000003';
+const _uidAdmin = '16000000-0000-0000-0000-000000000001';
+const _uidMember = '16000000-0000-0000-0000-000000000002';
+const _uidActionOwner = '16000000-0000-0000-0000-000000000003';
 
 /// Faxinas sintéticas, só deste arquivo — nunca colidem com as três reais
 /// (`expurgar_mensagens_de_acao`, `expurgar_mudancas`, `expurgar_rastro`), que

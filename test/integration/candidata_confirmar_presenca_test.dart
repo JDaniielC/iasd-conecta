@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidOwner = '70000000-0000-0000-0000-000000000034';
@@ -10,18 +11,6 @@ void main() {
   late Connection conn;
   late Object groupId;
   late Object candidateId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -45,7 +34,7 @@ void main() {
     );
 
     late Object candidate;
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -90,7 +79,7 @@ void main() {
   });
 
   test('FR-015: confirmar presença numa candidata funciona igual Ação avulsa', () async {
-    await asUser(_uidMember, () async {
+    await asUser(conn, _uidMember, () async {
       await conn.execute(
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @usuario)',

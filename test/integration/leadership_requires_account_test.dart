@@ -1,26 +1,14 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
-const _uidSemConta = '90000000-0000-0000-0000-000000000020';
+const _uidSemConta = '11000000-0000-0000-0000-000000000020';
 
 void main() {
   late Connection conn;
   late String groupId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -50,7 +38,7 @@ void main() {
 
   test('FR-002: usuário só com Perfil (sem Conta) não consegue autodeclarar', () async {
     await expectLater(
-      asUser(_uidSemConta, () async {
+      asUser(conn, _uidSemConta, () async {
         await conn.execute(
           Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
           parameters: {'grupo': groupId},

@@ -22,10 +22,10 @@ import 'db_test_helper.dart';
 /// É a mesma categoria de dado que o corte etário existe para não entregar a
 /// menor de idade — só que numa tabela ao lado.
 
-const _uidOwner = 'c3000000-0000-0000-0000-000000000001';
-const _uidMember = 'c3000000-0000-0000-0000-000000000002';
-const _uidMinorAdmin = 'c3000000-0000-0000-0000-000000000003';
-const _uidAdultAdmin = 'c3000000-0000-0000-0000-000000000004';
+const _uidOwner = '17000000-0000-0000-0000-000000000001';
+const _uidMember = '17000000-0000-0000-0000-000000000002';
+const _uidMinorAdmin = '17000000-0000-0000-0000-000000000003';
+const _uidAdultAdmin = '17000000-0000-0000-0000-000000000004';
 const _allUids = [_uidOwner, _uidMember, _uidMinorAdmin, _uidAdultAdmin];
 
 void main() {

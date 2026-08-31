@@ -1,21 +1,11 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidHomem = '60000000-0000-0000-0000-000000000040';
 const _uidMulher = '60000000-0000-0000-0000-000000000041';
-
-Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
-  await conn.execute('set role authenticated');
-  await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-    await conn.execute('reset request.jwt.claims');
-  }
-}
 
 Future<String> _createMissionaryPair(
   Connection conn, {
@@ -55,7 +45,7 @@ void main() {
 
   test('FR-004: 1 homem + 1 mulher é válida visitando homem', () async {
     final actionId = await _createMissionaryPair(conn, creatorId: _uidHomem, visitedGender: 'masculino');
-    await _asUser(conn, _uidMulher, () async {
+    await asUser(conn, _uidMulher, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulher},
@@ -70,7 +60,7 @@ void main() {
 
   test('FR-004: 1 homem + 1 mulher é válida visitando mulher', () async {
     final actionId = await _createMissionaryPair(conn, creatorId: _uidMulher, visitedGender: 'feminino');
-    await _asUser(conn, _uidHomem, () async {
+    await asUser(conn, _uidHomem, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidHomem},

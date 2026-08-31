@@ -24,13 +24,13 @@ import 'db_test_helper.dart';
 /// aqui é mais estreita que a de escrever: participante comum não fixa nem a
 /// própria mensagem. O expurgo é provado em `chat_fixada_expurgo_test.dart`.
 
-const _uidOwner = 'fa000000-0000-0000-0000-000000000001';
-const _uidAuthor = 'fa000000-0000-0000-0000-000000000002';
-const _uidMember = 'fa000000-0000-0000-0000-000000000003';
-const _uidAdmin = 'fa000000-0000-0000-0000-000000000004';
-const _uidOtherGroupOwner = 'fa000000-0000-0000-0000-000000000005';
-const _uidOutsider = 'fa000000-0000-0000-0000-000000000006';
-const _uidMinor = 'fa000000-0000-0000-0000-000000000007';
+const _uidOwner = '1a000000-0000-0000-0000-000000000001';
+const _uidAuthor = '1a000000-0000-0000-0000-000000000002';
+const _uidMember = '1a000000-0000-0000-0000-000000000003';
+const _uidAdmin = '1a000000-0000-0000-0000-000000000004';
+const _uidOtherGroupOwner = '1a000000-0000-0000-0000-000000000005';
+const _uidOutsider = '1a000000-0000-0000-0000-000000000006';
+const _uidMinor = '1a000000-0000-0000-0000-000000000007';
 const _allUids = [
   _uidOwner,
   _uidAuthor,

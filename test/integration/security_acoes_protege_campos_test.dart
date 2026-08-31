@@ -1,20 +1,10 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidOwner = '95000000-0000-0000-0000-000000000020';
-
-Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
-  await conn.execute('set role authenticated');
-  await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-    await conn.execute('reset request.jwt.claims');
-  }
-}
 
 void main() {
   late Connection conn;
@@ -35,7 +25,7 @@ void main() {
     );
     groupId = groupRows.single.toColumnMap()['id']! as String;
 
-    await _asUser(conn, _uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -87,7 +77,7 @@ void main() {
     'candidata via UPDATE direto, bypassando a apuração',
     () async {
       await expectLater(
-        _asUser(conn, _uidOwner, () async {
+        asUser(conn, _uidOwner, () async {
           await conn.execute(
             Sql.named('update public.acoes set confirmada = true where id = @id'),
             parameters: {'id': candidateId},
@@ -101,7 +91,7 @@ void main() {
   test(
     'fechar_rodada_se_devido (caminho interno legítimo) ainda consegue confirmar a vencedora',
     () async {
-      await _asUser(conn, _uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         await conn.execute(
           Sql.named(
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '

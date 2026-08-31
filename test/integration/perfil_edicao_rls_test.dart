@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 016 — corrigir o próprio Perfil, e só o próprio.
@@ -25,23 +26,6 @@ const _allUids = [_uidA, _uidB, _uidMinor];
 void main() {
   late Connection conn;
   late String churchId;
-
-  Future<void> asUser(
-    Connection conn,
-    String uid,
-    Future<void> Function() action,
-  ) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   Future<Map<String, dynamic>> readProfile(String uid) async {
     final r = await conn.execute(

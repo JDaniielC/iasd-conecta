@@ -2,6 +2,7 @@ import 'package:iasd_conecta/features/legal/legal_metadata.dart';
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 017 — o guarda da duplicação declarada.
@@ -20,19 +21,6 @@ const _profileUid = '97000000-0000-0000-0000-000000000001';
 
 void main() {
   late Connection conn;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -73,7 +61,7 @@ void main() {
         "delete from public.versoes_texto_legal",
       ]) {
         await expectLater(
-          asUser(_profileUid, () async {
+          asUser(conn, _profileUid, () async {
             await conn.execute(statement);
           }),
           throwsA(isA<Exception>()),

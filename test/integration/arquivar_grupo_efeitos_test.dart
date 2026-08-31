@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 014 — o que arquivar um Grupo faz, e o que ele NÃO faz.
@@ -33,19 +34,6 @@ void main() {
   late String closedRoundId;
   late String closedRoundWinnerId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
-
   Future<int> countOf(String sql, Map<String, dynamic> params) async {
     final r = await conn.execute(Sql.named(sql), parameters: params);
     return (r.first[0] as num).toInt();
@@ -64,7 +52,7 @@ void main() {
     // identidade de quem participa, não como postgres.
     if (actingAs != null) {
       late String createdId;
-      await asUser(actingAs, () async {
+      await asUser(conn, actingAs, () async {
         createdId = await createAction(
           name: name,
           dayOffset: dayOffset,
@@ -96,7 +84,6 @@ void main() {
     return r.first[0] as String;
   }
 
-
   /// Cria uma Ação de Grupo **confirmada** pelo caminho real: abre Rodada,
   /// propõe candidata, vota e fecha apurando.
   ///
@@ -110,7 +97,7 @@ void main() {
     int? seats,
   }) async {
     late String roundId;
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final r = await conn.execute(
         Sql.named(
           'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -128,7 +115,7 @@ void main() {
       seats: seats,
       actingAs: _uidOwner,
     );
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('insert into public.votos (rodada_id, usuario_id, candidata_id) '
             'values (@r, @u, @c)'),
@@ -140,7 +127,7 @@ void main() {
           "interval '1 hour' where id = @r"),
       parameters: {'r': roundId},
     );
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@r, false)'),
         parameters: {'r': roundId},
@@ -208,7 +195,7 @@ void main() {
     ]) {
       // Cada presença com a identidade de quem confirma — confirmacoes_acao
       // tem RLS de insert própria (auth.uid() = usuario_id).
-      await asUser(entry.$2, () async {
+      await asUser(conn, entry.$2, () async {
         await conn.execute(
           Sql.named(
             'insert into public.confirmacoes_acao (acao_id, usuario_id) '
@@ -220,7 +207,7 @@ void main() {
     }
 
     // Rodada ABERTA, com duas candidatas e votos.
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final r = await conn.execute(
         Sql.named(
           'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -245,7 +232,7 @@ void main() {
       actingAs: _uidOwner,
     );
     for (final uid in [_uidOwner, _uidMemberA]) {
-      await asUser(uid, () async {
+      await asUser(conn, uid, () async {
         await conn.execute(
           Sql.named(
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '
@@ -257,7 +244,7 @@ void main() {
     }
 
     // Rodada JÁ FECHADA, com vencedora apurada. É o caso (f).
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final r = await conn.execute(
         Sql.named(
           'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -278,7 +265,7 @@ void main() {
     // com um `update ... set confirmada = true` seria recusado pelo trigger de
     // segurança que a auditoria de 2026-07 instalou — e usar o caminho real
     // deixa este arranjo mais próximo do que acontece em produção.
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) '
@@ -296,7 +283,7 @@ void main() {
           "interval '1 hour' where id = @r"),
       parameters: {'r': closedRoundId},
     );
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@r, false)'),
         parameters: {'r': closedRoundId},
@@ -374,7 +361,7 @@ void main() {
           reason: 'o arranjo precisa ter alguém na fila, senão (c) não prova nada');
 
       // --- ARQUIVAR ---
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         await conn.execute(
           Sql.named('select public.arquivar_grupo(@g)'),
           parameters: {'g': groupId},

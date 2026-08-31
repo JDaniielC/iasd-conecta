@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidOwner = '40000000-0000-0000-0000-000000000011';
@@ -35,20 +36,8 @@ void main() {
     await conn.close();
   });
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
-
   test('FR-009: quem não é Dono não consegue editar o Grupo', () async {
-    await asUser(_uidOutro, () async {
+    await asUser(conn, _uidOutro, () async {
       await conn.execute(
         Sql.named("update public.grupos set nome = 'Hackeado' where id = @grupo"),
         parameters: {'grupo': groupId},
@@ -63,7 +52,7 @@ void main() {
   });
 
   test('FR-010: quem não é Dono não consegue remover participante', () async {
-    await asUser(_uidOutro, () async {
+    await asUser(conn, _uidOutro, () async {
       await conn.execute(
         Sql.named(
           'delete from public.participacoes_grupo where grupo_id = @grupo and usuario_id = @dono',
@@ -83,7 +72,7 @@ void main() {
   });
 
   test('o Dono consegue editar o próprio Grupo', () async {
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named("update public.grupos set nome = 'Editado pelo Dono' where id = @grupo"),
         parameters: {'grupo': groupId},

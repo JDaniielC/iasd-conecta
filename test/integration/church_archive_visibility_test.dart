@@ -16,22 +16,6 @@ void main() {
   late Connection conn;
   late Object churchId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      // Limpa role E o GUC de jwt.claims — sem isso, um `set role anon`
-      // depois ainda enxergaria o claim antigo (RESET ROLE não limpa GUC
-      // customizado; achado durante a validação manual desta feature).
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
-
   setUpAll(() async {
     conn = await openTestConnection();
     await createTestProfile(conn, _uidAdmin, name: 'Admin ArchiveVisibility');
@@ -45,7 +29,7 @@ void main() {
     );
     churchId = rows.single.toColumnMap()['id']!;
 
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named(
           'update public.igrejas set arquivada_em = now() where id = @id',
@@ -84,7 +68,7 @@ void main() {
   });
 
   test('FR-008: Igreja arquivada continua visível pro Administrador', () async {
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       final rows = await conn.execute(
         Sql.named(
           'select count(*) as total from public.igrejas where id = @id',

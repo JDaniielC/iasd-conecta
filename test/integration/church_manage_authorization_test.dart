@@ -1,25 +1,13 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidNaoAdmin = '90000000-0000-0000-0000-000000000020';
 
 void main() {
   late Connection conn;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -33,7 +21,7 @@ void main() {
 
   test('FR-006: quem não é Administrador não consegue adicionar Igreja', () async {
     await expectLater(
-      asUser(_uidNaoAdmin, () async {
+      asUser(conn, _uidNaoAdmin, () async {
         await conn.execute(
           Sql.named("insert into public.igrejas (nome) values ('Igreja Intrusa')"),
         );
@@ -51,7 +39,7 @@ void main() {
     final existente = await conn.execute('select id from public.igrejas limit 1');
     final churchId = existente.single.toColumnMap()['id'];
 
-    await asUser(_uidNaoAdmin, () async {
+    await asUser(conn, _uidNaoAdmin, () async {
       await conn.execute(
         Sql.named('update public.igrejas set arquivada_em = now() where id = @id'),
         parameters: {'id': churchId},

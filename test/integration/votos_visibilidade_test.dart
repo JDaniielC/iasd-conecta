@@ -45,23 +45,6 @@ const _allUids = [
 ///
 /// Sem isto os testes rodariam como `postgres`, que é dono das tabelas e
 /// ignora RLS — provando exatamente nada.
-Future<void> _asUser(
-  Connection conn,
-  String uid,
-  Future<void> Function() action,
-) async {
-  await conn.execute('set role authenticated');
-  await conn.execute(
-    "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-  );
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-    await conn.execute('reset request.jwt.claims');
-  }
-}
-
 /// Executa [action] como Visitante: pessoa sem cadastro, COM sessão.
 ///
 /// Era uma cópia local que fazia `set role anon`, e estava errada de duas
@@ -110,7 +93,7 @@ Future<String> _openRound(
   required String openedBy,
 }) async {
   late String roundId;
-  await _asUser(conn, openedBy, () async {
+  await asUser(conn, openedBy, () async {
     final r = await conn.execute(
       Sql.named(
         'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -131,7 +114,7 @@ Future<String> _addCandidate(
   required String name,
 }) async {
   late String candidateId;
-  await _asUser(conn, creatorId, () async {
+  await asUser(conn, creatorId, () async {
     final r = await conn.execute(
       Sql.named(
         'insert into public.acoes '
@@ -154,7 +137,7 @@ Future<void> _vote(
   required String roundId,
   required String candidateId,
 }) async {
-  await _asUser(conn, uid, () async {
+  await asUser(conn, uid, () async {
     await conn.execute(
       Sql.named(
         'insert into public.votos (rodada_id, usuario_id, candidata_id) '
@@ -188,7 +171,7 @@ Future<void> _closeRound(
   required String roundId,
   required String calledBy,
 }) async {
-  await _asUser(conn, calledBy, () async {
+  await asUser(conn, calledBy, () async {
     await conn.execute(
       Sql.named('select public.fechar_rodada_se_devido(@r, false)'),
       parameters: {'r': roundId},
@@ -325,7 +308,7 @@ void main() {
     await buildContestedRound();
 
     late int seen;
-    await _asUser(conn, _uidOutsider, () async {
+    await asUser(conn, _uidOutsider, () async {
       seen = await _visibleVoteCount(conn);
     });
 
@@ -337,7 +320,7 @@ void main() {
     final round = await buildContestedRound();
 
     late List<List<dynamic>> rows;
-    await _asUser(conn, _uidVoterMinority, () async {
+    await asUser(conn, _uidVoterMinority, () async {
       final r = await conn.execute(
         'select usuario_id, candidata_id from public.votos',
       );
@@ -373,7 +356,7 @@ void main() {
       await _asVisitor(conn, () async {
         seenByVisitor = await _visibleVoteCount(conn);
       });
-      await _asUser(conn, _uidOutsider, () async {
+      await asUser(conn, _uidOutsider, () async {
         seenByOutsider = await _visibleVoteCount(conn);
       });
 
@@ -464,7 +447,7 @@ void main() {
 
       // Fechar a leitura não pode ter afrouxado a escrita.
       await expectLater(
-        _asUser(conn, _uidOutsider, () async {
+        asUser(conn, _uidOutsider, () async {
           await conn.execute(
             Sql.named(
               'insert into public.votos (rodada_id, usuario_id, candidata_id) '

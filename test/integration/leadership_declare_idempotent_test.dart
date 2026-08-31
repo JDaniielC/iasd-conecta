@@ -1,26 +1,14 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
-const _uidLider = '90000000-0000-0000-0000-000000000021';
+const _uidLider = '12000000-0000-0000-0000-000000000021';
 
 void main() {
   late Connection conn;
   late String groupId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -49,7 +37,7 @@ void main() {
   });
 
   test('FR-003: autodeclarar duas vezes pro mesmo Grupo/ano é não-operação', () async {
-    await asUser(_uidLider, () async {
+    await asUser(conn, _uidLider, () async {
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
         parameters: {'grupo': groupId},

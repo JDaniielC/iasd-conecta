@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 017, US3 — honestidade sobre o passado.
@@ -25,19 +26,6 @@ const _allUids = [_legacyUid, _legacyForDeleteUid];
 
 void main() {
   late Connection conn;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   /// Perfil "pré-feature": versão nula.
   ///
@@ -124,7 +112,7 @@ void main() {
       // restauraria o valor antigo — é a segunda camada, redundante de
       // propósito.
       await expectLater(
-        asUser(_legacyUid, () async {
+        asUser(conn, _legacyUid, () async {
           await conn.execute(
             Sql.named(
               "update public.perfis set consentimento_lgpd_versao = '1.1' "
@@ -146,7 +134,7 @@ void main() {
     () async {
       // É o caminho que a feature 016 (Meu Perfil) vai usar. Se um
       // `check ... not valid` tivesse entrado, isto falharia.
-      await asUser(_legacyUid, () async {
+      await asUser(conn, _legacyUid, () async {
         await conn.execute(
           Sql.named("update public.perfis set nome = 'Nome Corrigido' "
               'where id = @u'),
@@ -167,7 +155,7 @@ void main() {
     '(d) LGPD art. 18, VI: quem se cadastrou antes ainda consegue apagar a '
     'conta',
     () async {
-      await asUser(_legacyForDeleteUid, () async {
+      await asUser(conn, _legacyForDeleteUid, () async {
         await conn.execute('select public.excluir_minha_conta()');
       });
 

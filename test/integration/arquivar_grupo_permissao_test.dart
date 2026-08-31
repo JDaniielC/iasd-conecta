@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 014 — quem arquiva, quem desarquiva, e o que um Grupo arquivado
@@ -20,21 +21,8 @@ void main() {
   late Connection conn;
   late String groupId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
-
   Future<void> archiveAs(String uid) async {
-    await asUser(uid, () async {
+    await asUser(conn, uid, () async {
       await conn.execute(
         Sql.named('select public.arquivar_grupo(@g)'),
         parameters: {'g': groupId},
@@ -188,7 +176,7 @@ void main() {
       await archiveAs(_uidOwner);
 
       await expectLater(
-        asUser(_uidAdmin, () async {
+        asUser(conn, _uidAdmin, () async {
           await conn.execute(
             Sql.named('insert into public.participacoes_grupo '
                 '(grupo_id, usuario_id) values (@g, @u)'),
@@ -203,7 +191,7 @@ void main() {
       await archiveAs(_uidOwner);
 
       await expectLater(
-        asUser(_uidOwner, () async {
+        asUser(conn, _uidOwner, () async {
           await conn.execute(
             Sql.named(
               'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -226,7 +214,7 @@ void main() {
         // segura mesmo assim. É defesa em profundidade — sem ela, qualquer
         // caminho futuro que deixe uma Rodada aberta reabriria o buraco.
         late String roundId;
-        await asUser(_uidOwner, () async {
+        await asUser(conn, _uidOwner, () async {
           final r = await conn.execute(
             Sql.named(
               'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -244,7 +232,7 @@ void main() {
         );
 
         await expectLater(
-          asUser(_uidOwner, () async {
+          asUser(conn, _uidOwner, () async {
             await conn.execute(
               Sql.named(
                 'insert into public.acoes '
@@ -291,7 +279,7 @@ void main() {
       await archiveAs(_uidOwner);
 
       await expectLater(
-        asUser(_uidOwner, () async {
+        asUser(conn, _uidOwner, () async {
           await conn.execute(
             Sql.named('select public.desarquivar_grupo(@g)'),
             parameters: {'g': groupId},
@@ -313,7 +301,7 @@ void main() {
         );
 
         await archiveAs(_uidOwner);
-        await asUser(_uidAdmin, () async {
+        await asUser(conn, _uidAdmin, () async {
           await conn.execute(
             Sql.named('select public.desarquivar_grupo(@g)'),
             parameters: {'g': groupId},
@@ -333,7 +321,7 @@ void main() {
         expect(membersAfter.first[0], membersBefore.first[0]);
 
         // E volta a aceitar Rodada de votação.
-        await asUser(_uidOwner, () async {
+        await asUser(conn, _uidOwner, () async {
           await conn.execute(
             Sql.named(
               'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -350,7 +338,7 @@ void main() {
       // com grupo_id e rodada_id nulo é recusado desde a correção de segurança
       // de 20260724130000.
       late String roundId;
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         final r = await conn.execute(
           Sql.named(
             'insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) '
@@ -361,7 +349,7 @@ void main() {
         roundId = r.first[0] as String;
       });
       late String actionId;
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         final a = await conn.execute(
           Sql.named(
             'insert into public.acoes '
@@ -383,7 +371,7 @@ void main() {
             "interval '1 hour' where id = @r"),
         parameters: {'r': roundId},
       );
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         await conn.execute(
           Sql.named('select public.fechar_rodada_se_devido(@r, false)'),
           parameters: {'r': roundId},
@@ -391,7 +379,7 @@ void main() {
       });
 
       await archiveAs(_uidOwner);
-      await asUser(_uidAdmin, () async {
+      await asUser(conn, _uidAdmin, () async {
         await conn.execute(
           Sql.named('select public.desarquivar_grupo(@g)'),
           parameters: {'g': groupId},

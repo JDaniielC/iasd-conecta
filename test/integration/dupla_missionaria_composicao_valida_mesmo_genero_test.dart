@@ -1,23 +1,13 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidHomem1 = '60000000-0000-0000-0000-000000000030';
 const _uidHomem2 = '60000000-0000-0000-0000-000000000031';
 const _uidMulher1 = '60000000-0000-0000-0000-000000000032';
 const _uidMulher2 = '60000000-0000-0000-0000-000000000033';
-
-Future<void> _asUser(Connection conn, String uid, Future<void> Function() action) async {
-  await conn.execute('set role authenticated');
-  await conn.execute("set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'");
-  try {
-    await action();
-  } finally {
-    await conn.execute('reset role');
-    await conn.execute('reset request.jwt.claims');
-  }
-}
 
 Future<String> _createMissionaryPair(
   Connection conn, {
@@ -67,7 +57,7 @@ void main() {
       creatorId: _uidHomem1,
       visitedGender: 'masculino',
     );
-    await _asUser(conn, _uidHomem2, () async {
+    await asUser(conn, _uidHomem2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidHomem2},
@@ -86,7 +76,7 @@ void main() {
       creatorId: _uidMulher1,
       visitedGender: 'feminino',
     );
-    await _asUser(conn, _uidMulher2, () async {
+    await asUser(conn, _uidMulher2, () async {
       await conn.execute(
         Sql.named('insert into public.confirmacoes_acao (acao_id, usuario_id) values (@acao, @uid)'),
         parameters: {'acao': actionId, 'uid': _uidMulher2},

@@ -39,18 +39,6 @@ void main() {
   late Connection conn;
   late Object groupId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
-
   /// A fila conhece este caminho e ele ainda não foi drenado?
   Future<bool> isQueued(String path) async {
     final rows = await conn.execute(
@@ -153,7 +141,7 @@ void main() {
   test('(a) SC-005: remoção manual enfileira o arquivo', () async {
     final path = 'grupo/$groupId/manual-orfaotest.jpg';
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (grupo_id, caminho, enviada_por) '
@@ -168,7 +156,7 @@ void main() {
       reason: 'capa recém-criada não pode nascer na fila de remoção',
     );
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('delete from public.fotos_capa where caminho = @caminho'),
         parameters: {'caminho': path},
@@ -183,7 +171,7 @@ void main() {
     final oldPath = 'grupo/$groupId/antiga-orfaotest.jpg';
     final newPath = 'grupo/$groupId/nova-orfaotest.jpg';
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (grupo_id, caminho, enviada_por) '
@@ -216,7 +204,7 @@ void main() {
     );
     expect(await coverCountFor('grupo_id', groupId), 1);
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('delete from public.fotos_capa where caminho = @caminho'),
         parameters: {'caminho': newPath},
@@ -235,7 +223,7 @@ void main() {
     late Object winner;
     late Object loser;
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -267,7 +255,7 @@ void main() {
     final loserPath = 'acao/$loser/perdedora-orfaotest.jpg';
     final winnerPath = 'acao/$winner/vencedora-orfaotest.jpg';
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
@@ -284,7 +272,7 @@ void main() {
       );
     });
 
-    await asUser(_uidVoter, () async {
+    await asUser(conn, _uidVoter, () async {
       await conn.execute(
         Sql.named(
           'insert into public.votos (rodada_id, usuario_id, candidata_id) '
@@ -298,7 +286,7 @@ void main() {
       );
     });
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('select public.fechar_rodada_se_devido(@rodada, true)'),
         parameters: {'rodada': roundId},
@@ -336,7 +324,7 @@ void main() {
       // Sem gatilho explícito, a imagem de uma Ação cancelada ficaria pública
       // para sempre e ninguém perceberia — a Ação some das listas, a imagem não.
       late Object actionId;
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         final rows = await conn.execute(
           Sql.named(
             // Ação AVULSA: o domínio recusa Ação de Grupo que não seja
@@ -350,7 +338,7 @@ void main() {
       });
 
       final path = 'acao/$actionId/cancelada-orfaotest.jpg';
-      await asUser(_uidOwner, () async {
+      await asUser(conn, _uidOwner, () async {
         await conn.execute(
           Sql.named(
             'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
@@ -383,7 +371,7 @@ void main() {
     // aconteceu, tem presenças registradas, e a capa faz parte do registro.
     // Cancelada é o contrário: não aconteceu.
     late Object actionId;
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           // Ação AVULSA e no FUTURO: criar Ação já passada é recusado pela
@@ -408,7 +396,7 @@ void main() {
     );
 
     final path = 'acao/$actionId/encerrada-orfaotest.jpg';
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
@@ -435,7 +423,7 @@ void main() {
     final path = 'grupo/$groupId/denunciada-orfaotest.jpg';
     late Object photoId;
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (grupo_id, caminho, enviada_por) '
@@ -469,7 +457,7 @@ void main() {
     );
     expect(before.single.toColumnMap()['total'], 1);
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('delete from public.fotos_capa where id = @id'),
         parameters: {'id': photoId},
@@ -498,7 +486,7 @@ void main() {
     late Object roundId;
     late Object candidateId;
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final roundRows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -518,7 +506,7 @@ void main() {
       candidateId = candidateRows.single.toColumnMap()['id']!;
     });
 
-    await asUser(_uidVoter, () async {
+    await asUser(conn, _uidVoter, () async {
       await conn.execute(
         Sql.named(
           'insert into public.confirmacoes_acao (acao_id, usuario_id) '
@@ -555,7 +543,7 @@ void main() {
     }
 
     final path = 'acao/$candidateId/intacta-orfaotest.jpg';
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named(
           'insert into public.fotos_capa (acao_id, caminho, enviada_por) '
@@ -573,7 +561,7 @@ void main() {
     expect(before['presencas'], greaterThan(0));
     expect(before['votos'], 1);
 
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       await conn.execute(
         Sql.named('delete from public.fotos_capa where caminho = @c'),
         parameters: {'c': path},
@@ -775,7 +763,7 @@ void main() {
         // desta feature. E o disfarce seria perfeito: `requestDrain()` engole
         // exceção por desenho, então uma regressão de permissão aqui não
         // apareceria nem no teste nem na tela.
-        await asUser(_uidOwner, () async {
+        await asUser(conn, _uidOwner, () async {
           await conn.execute('select public.drenar_capas_a_remover()');
         });
 

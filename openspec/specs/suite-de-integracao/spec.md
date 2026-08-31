@@ -16,6 +16,15 @@ repetidas, com os arquivos rodando em paralelo contra o mesmo banco.
 Um arquivo NÃO DEVE alcançar linha criada por outro — nem para ler contagem, nem
 para apagar em limpeza.
 
+Cada arquivo DEVE ter **identidade própria**: os Usuários que ele cria não são
+os de nenhum outro arquivo. Duas limpezas concorrentes sobre a mesma pessoa são
+a janela por onde a suíte deixa de ser prova.
+
+Quando dois arquivos disputam um recurso que é **global por natureza** — uma
+tabela cuja contagem o app usa para decidir —, essa disputa DEVE ser declarada
+e serializada onde ela acontece. Descobri-la por falha intermitente é o modo de
+falha que esta requirement existe para eliminar.
+
 #### Scenario: Vinte execuções seguidas, mesmo resultado
 
 - **WHEN** a suíte inteira roda 20 vezes seguidas
@@ -32,6 +41,25 @@ para apagar em limpeza.
 - **WHEN** o caso "(d) Perfil anonimizado sai da contagem" roda dentro da suíte
   completa, 20 vezes
 - **THEN** ele passa nas 20, e o balde da versão isolada existe em todas
+
+#### Scenario: Dois arquivos não compartilham identidade
+
+- **WHEN** alguém varre os identificadores de Usuário declarados na suíte
+- **THEN** nenhum aparece em mais de um arquivo
+
+#### Scenario: Decisão que depende de contagem global
+
+- **WHEN** um teste exercita uma regra que o app decide pela contagem de uma
+  tabela global, e outro arquivo escreve na mesma tabela
+- **THEN** os dois são serializados entre si, e a regra é exercida sobre a
+  contagem que o teste montou
+
+#### Scenario: Identidade repetida reintroduzida
+
+- **WHEN** alguém acrescenta um arquivo com identificador de Usuário que já
+  pertence a outro
+- **THEN** uma verificação automática falha, e ela falha dizendo quais dois
+  arquivos colidem
 
 ### Requirement: A suíte exercita o papel que o app usa
 
@@ -81,11 +109,12 @@ anterior** e 32 devolvem. O comentário que explica por que o reset é
 obrigatório — sem ele o papel seguinte ainda enxerga a identidade anterior —
 mora dentro de UMA das 32, onde as outras 47 não o leem.
 
-**Débito declarado, e é permissão para não consertar agora, não para deixar
-crescer:** as 48 continuam existindo. Unificá-las é varredura de risco próprio
-— cada arquivo tem um `tearDown` diferente — e está registrada em
-`PENDENCIAS.md` com a contagem e a data. O que esta requirement proíbe a partir
-de hoje é a 49ª.
+Assumir um papel DEVE devolver a sessão ao estado anterior, e isso inclui o que
+`reset role` não limpa.
+
+A regra DEVE ser verificável por máquina. Uma regra sobre 48 arquivos que só
+uma pessoa lendo com atenção consegue conferir é uma regra que volta a ser
+violada na change seguinte.
 
 #### Scenario: Arquivo novo precisa de um papel que já existe
 - **WHEN** um teste novo precisa rodar sob um papel que a suíte já usa
@@ -97,3 +126,17 @@ de hoje é a 49ª.
   motivo que não é o dele
 - **AND** nada aponta para a cópia que causou isso, porque o arquivo que falha
   não é o que tem o defeito
+
+#### Scenario: Nenhuma cópia local resta
+- **WHEN** alguém varre a suíte procurando definições locais de papel
+- **THEN** não há nenhuma — todas usam a compartilhada
+
+#### Scenario: Cópia local reintroduzida
+- **WHEN** alguém escreve uma definição local de papel num arquivo de teste
+- **THEN** uma verificação automática falha, e ela falha dizendo em qual
+  arquivo
+
+#### Scenario: A identidade não sobrevive ao fim do papel
+- **WHEN** um trecho roda sob um papel e termina
+- **THEN** a sessão volta a não ter identidade nenhuma, e o trecho seguinte que
+  não assumir papel enxerga isso

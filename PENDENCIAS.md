@@ -310,6 +310,39 @@ entre arquivos, não código.
 cenários de "a única Administradora". O conserto precisa dar escopo à contagem ou ao dado, não
 só espaçar os testes no tempo.
 
+**Tarefa 3 de `suite-determinista-2` (2026-08-30): reproduzido de novo, e a hipótese do lock
+NÃO se sustenta como conserto.** A tarefa mandava confirmar antes de consertar: reproduzir com
+um Administrador de outro arquivo vivo de propósito e ver o cenário 12 passar quando devia
+recusar. Reproduzido — inserida uma linha em `administradores_distrito` por uma sessão à parte,
+já fechada, e o cenário 12 devolveu sucesso onde esperava `ServerException`, com o
+`tearDownAll` quebrando em seguida por `23503 mudancas_autor_id_fkey`. O mecanismo bate com o
+já descrito.
+
+**Mas a causa não é ausência de lock entre ARQUIVOS DE TESTE, e por isso o conserto proposto
+(tarefa 3.2 — tomar o mesmo `pg_advisory_lock` na eleição de herdeiro) não ataca o problema.**
+Lido `createTestDistrictAdmin`: o lock é de SESSÃO e não é liberado explicitamente — ele
+persiste até o `conn.close()`, que só acontece no `tearDownAll` do arquivo, DEPOIS da própria
+limpeza daquele arquivo. Isso já serializa TOTALMENTE dois arquivos que passam pelo helper: o
+segundo fica bloqueado em `pg_advisory_lock` até o primeiro fechar a conexão — e a essa altura o
+primeiro já apagou a própria linha. Dois arquivos que usam `createTestDistrictAdmin`
+corretamente **não podem coexistir** com admin um do outro vivo ao mesmo tempo; medido lendo o
+código, não hipótese.
+
+A linha que quebra o cenário 12 só existe porque foi criada por FORA dessa disciplina — a
+reprodução de hoje usou uma conexão avulsa sem lock nenhum, e o achado de 2026-08-13 foi um
+script de bootstrap de admin de demonstração, também sem lock. Um lock adicional em
+`account_deletion_test.dart` não fecha essa porta: por definição, quem cria a linha estranha
+não é código que passa pelo lock — é exatamente o tipo de escrita que o lock não alcança.
+
+**Resultado válido pela tarefa 3.3**: não consertado, porque o conserto proposto não é a causa.
+O que resolveria de verdade é um dos dois que `proposal.md` já descarta como fora de escopo —
+dar escopo à CONTAGEM (a policy/função contar só admins "de teste" de alguma forma) ou ao DADO
+(marcar de algum jeito o que é teste) — e os dois são mudança de produção, vedada por esta
+change. Fica aberto, com o achado mais preciso do que antes: **o risco é de HIGIENE do banco de
+desenvolvimento compartilhado** (nunca deixar `administradores_distrito` com linha viva fora de
+uma execução de teste em andamento — `supabase db reset` antes de rodar a suíte resolve na
+prática), não de concorrência entre arquivos que já seguem o padrão do helper.
+
 ### 2.8 `anon` lê `participacoes_grupo` inteira — quem participa de qual Ministério é público — **FECHADO em 2026-08-16**
 
 **FECHADO** pela change `fechar-superficie-anon`.
@@ -786,7 +819,7 @@ com a RPC aberta.
 Para procurar em qualquer migration: `proacl` com uma entrada que começa em `=`
 (nada antes do sinal) é o grant a `PUBLIC`.
 
-### 2.21 Dezessete uids repetidos entre arquivos da suíte
+### 2.21 Dezessete uids repetidos entre arquivos da suíte — **FECHADO em 2026-08-30**
 
 Achado em 2026-08-16, pela convergência da change `separar-visitante-de-anon`.
 Não consertado: cada par precisa de alguém decidindo qual dos dois arquivos
@@ -843,7 +876,35 @@ lendo o valor e o arquivo, e agrupando por valor. Havia 60 prefixos de oito
 dígitos em uso quando isto foi medido; escolher um uid novo de olho é como as
 colisões nasceram.
 
-### 2.20 Dezesseis cópias locais de `asUser` não devolvem o `jwt.claims`
+**FECHADO em 2026-08-30, pela change `suite-determinista-2`.** Levantamento
+novo, na hora de consertar: **19 identificadores em 12 pares** — não mais 16.
+A diferença é real, não erro de varredura: as 4 changes mescladas em
+2026-08-30 acrescentaram arquivo de teste novo, e um deles
+(`observador_de_retencao_test.dart`) nasceu colidindo com
+`chat_corte_de_idade_test.dart` nos três uids `ab000000-...-001/002/003` —
+um 13º par que não existia quando esta lista foi escrita. Os 16 originais
+mais esse: 12 pares no total (alguns pares compartilham mais de um uid).
+
+Cada par resolvido pela regra do design (menos ocorrências troca; empate, o
+mais novo — todos empataram, então foi sempre o mais novo por timestamp de
+primeiro commit). Onze arquivos trocados de prefixo (um deles,
+`consentimentos_por_versao_test.dart`, cobria dois pares de uma vez). Prefixos
+novos `11000000` a `1b000000`, sequenciais, conferidos contra os 85 prefixos
+já em uso antes de escolher.
+
+Verificação que impede a volta:
+`test/integration/identidade_de_arquivo_test.dart`, provada com colisão
+reintroduzida de propósito (vermelho citando os dois arquivos e o
+identificador, depois desfeita).
+
+`dart test test/integration`: 575-577/575-577 (o número sobe ao longo da
+change conforme outras frentes acrescentam teste), rodado depois de cada
+arquivo trocado, e depois **30 execuções seguidas** sem falha nenhuma —
+determinismo provado na janela que este projeto já observou (a falha de
+`account_deletion_test` cenário 12, ver § 2.7, apareceu na execução 29 de 30
+da vez anterior).
+
+### 2.20 Dezesseis cópias locais de `asUser` não devolvem o `jwt.claims` — **FECHADO em 2026-08-30**
 
 Achado em 2026-08-16, pela convergência da change `separar-visitante-de-anon`.
 Não consertado: é varredura de risco próprio, e a change que o achou é sobre
@@ -879,6 +940,30 @@ tem `tearDown` próprio para conferir. A requirement "cada papel de teste tem
 uma definição só" entra em `specs/suite-de-integracao` pela change
 `separar-visitante-de-anon`, com este débito declarado: ela proíbe a 49ª cópia,
 não apaga as 48.
+
+**FECHADO em 2026-08-30, pela change `suite-determinista-2`.** As 48 (na
+hora de consertar, já tinham entrado como cópia número 49 desde a medição —
+`observador_de_retencao_test.dart`, de hoje) foram lidas uma a uma e
+classificadas por comparação exata de corpo, não achismo: 17 já resetavam
+role E claims (dedup pura); 15 resetavam só role — os 15 mais
+`account_deletion_test` batem exatamente com os 16 listados acima; 12
+idênticas com nome privado `_asUser`; e 4 variantes únicas, sendo
+`account_deletion_test.dart` a mais diferente — `asUser()` sem callback,
+chamado só de `deleteAccount()`, que resetava role no `finally` e NUNCA
+`request.jwt.claims`.
+
+Todas as 48 agora delegam para `acao_restrita_helper.dart` (duas, que já
+delegavam com nome próprio pra fixar um uid do arquivo, ficaram assim — não
+reimplementam, só nomeiam uma aplicação parcial). Nenhuma asserção de teste
+mudou; conferido com `git diff | grep -i expect` sobre o maior lote.
+
+Verificação que impede a volta: `test/integration/papel_unico_test.dart`,
+provada com reimplementação reintroduzida de propósito (vermelho citando o
+arquivo certo, desfeita).
+
+`dart test test/integration`: 576-577/576-577 depois de cada frente, e as
+mesmas **30 execuções seguidas** da 2.21 acima — a mesma prova cobre as
+duas dívidas, porque as duas se manifestam na mesma suíte.
 
 ### 2.19 O canal de Realtime entrega envelope de atividade a `anon`
 

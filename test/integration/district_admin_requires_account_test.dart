@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidAdmin = '90000000-0000-0000-0000-000000000012';
@@ -9,19 +10,6 @@ const _uidComConta = '90000000-0000-0000-0000-000000000014';
 
 void main() {
   late Connection conn;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -46,7 +34,7 @@ void main() {
 
   test('FR-002: promover Usuário só com Perfil (sem Conta) falha', () async {
     await expectLater(
-      asUser(_uidAdmin, () async {
+      asUser(conn, _uidAdmin, () async {
         await conn.execute(
           Sql.named(
             'insert into public.administradores_distrito (usuario_id, promovido_por) '
@@ -60,7 +48,7 @@ void main() {
   });
 
   test('FR-001: promover Usuário com Conta funciona', () async {
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named(
           'insert into public.administradores_distrito (usuario_id, promovido_por) '

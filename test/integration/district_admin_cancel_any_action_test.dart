@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidAdmin = '90000000-0000-0000-0000-000000000030';
@@ -13,19 +14,6 @@ void main() {
   late Object groupId;
   late Object groupActionId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
-
   setUpAll(() async {
     conn = await openTestConnection();
     await createTestProfile(conn, _uidAdmin, name: 'Admin CancelAny');
@@ -34,7 +22,7 @@ void main() {
     await createTestDistrictAdmin(conn, _uidAdmin);
 
     late Object standaloneAction;
-    await asUser(_uidCreator, () async {
+    await asUser(conn, _uidCreator, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.acoes (nome, data_hora, local, criador_id) "
@@ -57,7 +45,7 @@ void main() {
     groupId = groupRows.single.toColumnMap()['id']!;
 
     late Object groupAction;
-    await asUser(_uidGroupOwner, () async {
+    await asUser(conn, _uidGroupOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -113,7 +101,7 @@ void main() {
   });
 
   test('FR-009: Administrador cancela Ação avulsa que não criou', () async {
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @id'),
         parameters: {'id': standaloneActionId},
@@ -128,7 +116,7 @@ void main() {
   });
 
   test('FR-009: Administrador cancela Ação de Grupo que não propôs nem administra', () async {
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @id'),
         parameters: {'id': groupActionId},

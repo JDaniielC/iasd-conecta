@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidAdmin = '90000000-0000-0000-0000-000000000070';
@@ -10,19 +11,6 @@ void main() {
   late Connection conn;
   late String groupId;
   late String declarationId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -38,7 +26,7 @@ void main() {
     );
     groupId = groupRows.single.toColumnMap()['id']! as String;
 
-    await asUser(_uidLider, () async {
+    await asUser(conn, _uidLider, () async {
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
         parameters: {'grupo': groupId},
@@ -52,7 +40,7 @@ void main() {
     );
     declarationId = row.single.toColumnMap()['id']! as String;
 
-    await asUser(_uidAdmin, () async {
+    await asUser(conn, _uidAdmin, () async {
       await conn.execute(
         Sql.named('select public.decidir_lideranca(@id, false)'),
         parameters: {'id': declarationId},
@@ -87,7 +75,7 @@ void main() {
         .toColumnMap();
     expect(row['rejeitado_em'], isNotNull);
 
-    await asUser(_uidLider, () async {
+    await asUser(conn, _uidLider, () async {
       await conn.execute(
         Sql.named('select public.declarar_lideranca(@grupo, 2026)'),
         parameters: {'grupo': groupId},

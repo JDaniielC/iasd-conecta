@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidCreator = '50000000-0000-0000-0000-000000000040';
@@ -35,20 +36,8 @@ void main() {
     await conn.close();
   });
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
-
   test('FR-008: quem não criou não consegue cancelar a Ação', () async {
-    await asUser(_uidOutro, () async {
+    await asUser(conn, _uidOutro, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
         parameters: {'acao': actionId},
@@ -63,7 +52,7 @@ void main() {
   });
 
   test('o criador consegue cancelar a própria Ação', () async {
-    await asUser(_uidCreator, () async {
+    await asUser(conn, _uidCreator, () async {
       await conn.execute(
         Sql.named('update public.acoes set cancelada_em = now() where id = @acao'),
         parameters: {'acao': actionId},

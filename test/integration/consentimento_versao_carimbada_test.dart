@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 017 — o banco carimba, o cliente não.
@@ -34,19 +35,6 @@ void main() {
   late String currentVersion;
   late String churchId;
 
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
-
   Future<String?> stampedVersionOf(String uid, {bool church = false}) async {
     final column =
         church ? 'consentimento_lgpd_igreja_versao' : 'consentimento_lgpd_versao';
@@ -77,7 +65,7 @@ void main() {
 
   test('(a) FR-001/SC-001: cadastrar grava a versão vigente ao lado da data',
       () async {
-    await asUser(_uidPlain, () async {
+    await asUser(conn, _uidPlain, () async {
       await conn.execute(
         Sql.named(
           'insert into public.perfis '
@@ -104,7 +92,7 @@ void main() {
   test(
     '(b) FR-004: versão mandada pelo cliente é DESCARTADA — o teste central',
     () async {
-      await asUser(_uidForged, () async {
+      await asUser(conn, _uidForged, () async {
         await conn.execute(
           Sql.named(
             'insert into public.perfis '
@@ -128,7 +116,7 @@ void main() {
 
   test('(c) FR-004: data antiga mandada pelo cliente vira o now() do banco',
       () async {
-    await asUser(_uidBackdated, () async {
+    await asUser(conn, _uidBackdated, () async {
       await conn.execute(
         Sql.named(
           'insert into public.perfis '
@@ -154,7 +142,7 @@ void main() {
   });
 
   test('(d) FR-003: consentimento de Igreja também carimba versão', () async {
-    await asUser(_uidChurch, () async {
+    await asUser(conn, _uidChurch, () async {
       await conn.execute(
         Sql.named(
           'insert into public.perfis '
@@ -174,7 +162,7 @@ void main() {
     '(e) FR-003: dar o consentimento de Igreja depois carimba a versão daquele '
     'instante; retirá-lo zera a versão junto',
     () async {
-      await asUser(_uidLater, () async {
+      await asUser(conn, _uidLater, () async {
         await conn.execute(
           Sql.named(
             'insert into public.perfis '
@@ -188,7 +176,7 @@ void main() {
           reason: 'sem Igreja escolhida, não há aceite a versionar');
 
       // O caminho que a feature 016 (Meu Perfil) vai usar.
-      await asUser(_uidLater, () async {
+      await asUser(conn, _uidLater, () async {
         await conn.execute(
           Sql.named(
             'update public.perfis set igreja_id = @i, '
@@ -200,7 +188,7 @@ void main() {
       expect(await stampedVersionOf(_uidLater, church: true), currentVersion);
 
       // Retirar a Igreja: versão sem aceite correspondente seria lixo.
-      await asUser(_uidLater, () async {
+      await asUser(conn, _uidLater, () async {
         await conn.execute(
           Sql.named(
             'update public.perfis set igreja_id = null, '
@@ -266,7 +254,7 @@ void main() {
       //
       // O sinal é o campo vir preenchido. Campo ausente é ausência de sinal.
       await expectLater(
-        asUser(_uidNoConsent, () async {
+        asUser(conn, _uidNoConsent, () async {
           await conn.execute(
             Sql.named(
               'insert into public.perfis (id, nome, genero, idade) '

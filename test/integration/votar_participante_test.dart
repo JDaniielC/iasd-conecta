@@ -1,6 +1,7 @@
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 const _uidOwner = '70000000-0000-0000-0000-000000000022';
@@ -11,18 +12,6 @@ void main() {
   late Object groupId;
   late Object votingRoundId;
   late Object candidateId;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-    }
-  }
 
   setUpAll(() async {
     conn = await openTestConnection();
@@ -40,7 +29,7 @@ void main() {
 
     late Object votingRound;
     late Object candidate;
-    await asUser(_uidOwner, () async {
+    await asUser(conn, _uidOwner, () async {
       final rows = await conn.execute(
         Sql.named(
           "insert into public.rodadas_votacao (grupo_id, aberta_por, prazo) "
@@ -83,7 +72,7 @@ void main() {
 
   test('FR-007: quem não participa do Grupo não vota', () async {
     await expectLater(
-      asUser(_uidOutsider, () async {
+      asUser(conn, _uidOutsider, () async {
         await conn.execute(
           Sql.named(
             'insert into public.votos (rodada_id, usuario_id, candidata_id) '

@@ -24,8 +24,8 @@ import 'db_test_helper.dart';
 /// cliente. Como gatilho, vale também para quem remove pela tela da CONVERSA,
 /// que nunca soube que havia denúncia.
 
-const _uidOwner = 'd2000000-0000-0000-0000-000000000001';
-const _uidMember = 'd2000000-0000-0000-0000-000000000002';
+const _uidOwner = '19000000-0000-0000-0000-000000000001';
+const _uidMember = '19000000-0000-0000-0000-000000000002';
 const _allUids = [_uidOwner, _uidMember];
 
 void main() {

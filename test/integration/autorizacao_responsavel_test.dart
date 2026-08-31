@@ -2,6 +2,7 @@ import 'package:iasd_conecta/features/profile/domain/profile.dart';
 import 'package:postgres/postgres.dart';
 import 'package:test/test.dart';
 
+import 'acao_restrita_helper.dart';
 import 'db_test_helper.dart';
 
 /// Feature 015 — a autorização do Responsável vale NO BANCO.
@@ -25,19 +26,6 @@ const _allUids = [_childUid, _adultUid, _legacyChildUid, _thresholdAgeUid];
 void main() {
   late Connection conn;
   late int childAgeThresholdFromDb;
-
-  Future<void> asUser(String uid, Future<void> Function() action) async {
-    await conn.execute('set role authenticated');
-    await conn.execute(
-      "set request.jwt.claims to '{\"sub\":\"$uid\",\"role\":\"authenticated\"}'",
-    );
-    try {
-      await action();
-    } finally {
-      await conn.execute('reset role');
-      await conn.execute('reset request.jwt.claims');
-    }
-  }
 
   Future<void> insertProfile({
     required String uid,
@@ -227,7 +215,7 @@ void main() {
       // linha, nunca O QUÊ muda. WITH CHECK não resolveria: política RLS não
       // enxerga OLD. Gatilho é o único lugar onde OLD existe.
       await expectLater(
-        asUser(_childUid, () async {
+        asUser(conn, _childUid, () async {
           await conn.execute(
             Sql.named("update public.perfis "
                 "set responsavel_nome = 'Fulano Inventado' where id = @u"),
@@ -243,7 +231,7 @@ void main() {
 
     test('FR-009: nem a data da autorização', () async {
       await expectLater(
-        asUser(_childUid, () async {
+        asUser(conn, _childUid, () async {
           await conn.execute(
             Sql.named('update public.perfis '
                 'set autorizacao_responsavel_em = now() where id = @u'),
@@ -291,7 +279,7 @@ void main() {
         // NÃO quer dizer "só vale para linhas novas". Todo update passa a ser
         // verificado, inclusive de coluna sem relação nenhuma.
         await expectLater(
-          asUser(_legacyChildUid, () async {
+          asUser(conn, _legacyChildUid, () async {
             await conn.execute(
               Sql.named("update public.perfis set telefone = '81999990000' "
                   'where id = @u'),
@@ -309,7 +297,7 @@ void main() {
         // É o que salva a feature de virar um bug de conformidade pior do que
         // o que ela conserta: o update de anonimização zera `idade`, e as duas
         // constraints resultam em NULL e passam.
-        await asUser(_legacyChildUid, () async {
+        await asUser(conn, _legacyChildUid, () async {
           await conn.execute('select public.excluir_minha_conta()');
         });
 
@@ -335,7 +323,7 @@ void main() {
         guardianContact: 'maria@exemplo.com',
       );
 
-      await asUser(_childUid, () async {
+      await asUser(conn, _childUid, () async {
         await conn.execute('select public.excluir_minha_conta()');
       });
 

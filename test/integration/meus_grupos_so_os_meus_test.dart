@@ -3,10 +3,10 @@ import 'package:test/test.dart';
 
 import 'db_test_helper.dart';
 
-const _eu = '96000000-0000-0000-0000-000000000001';
-const _outra = '96000000-0000-0000-0000-000000000002';
-const _meuGrupo = '96000000-0000-0000-0000-00000000000a';
-const _grupoDela = '96000000-0000-0000-0000-00000000000b';
+const _eu = '15000000-0000-0000-0000-000000000001';
+const _outra = '15000000-0000-0000-0000-000000000002';
+const _meuGrupo = '15000000-0000-0000-0000-00000000000a';
+const _grupoDela = '15000000-0000-0000-0000-00000000000b';
 
 /// A regra "Ação de Grupo entra no destaque só para quem participa" se apoia
 /// inteira numa linha: o `.eq('usuario_id', uid)` de

@@ -1274,6 +1274,21 @@ diz que dá para revogar o consentimento ou excluir a conta.
 `perfis.consentimento_lgpd_versao` com `versao_texto_legal_vigente()` e mostrar
 o que mudou a quem está atrasado. É comportamento novo, e nasce em spec.
 
+**FECHADA em 2026-09-09**, na change `presenca-em-acao`. Nasceu em spec, como
+previsto: a capability `versao-aceita-e-vigente`. `OutdatedConsentBanner` compara
+as duas versões e mostra, na Home, o TEOR das alterações — uma linha por versão,
+de `LegalMetadata.changeLog`, escrita para a titular ler. Não bloqueia o uso:
+consentimento obtido sob ameaça de perder o que já se tinha não é livre.
+
+Duas coisas que a change fechou de quebra, e que não estavam nesta pendência:
+**o reaceite não existia** — `consentimento_lgpd_aceito_em` não estava no
+`grant update` de `perfis`, então a única forma de "retirar o consentimento" que
+a Política menciona era excluir a conta; e **quem tem versão desconhecida vê que
+é desconhecida**, sem o app chutar de qual versão se trata.
+
+Nenhuma máquina nova de consentimento foi escrita: o gatilho
+`perfis_carimbar_consentimento` já tratava `UPDATE` desde a feature 017.
+
 ### 2.30 `REVISAO-JURIDICA.md` § 8 descreve um app que não existe mais
 
 Achado A-6, ⚪. A seção diz que o texto legal *"não afirma que existe uma tela de
@@ -1653,3 +1668,76 @@ Registrado para ninguém gastar tempo de novo.
 | 020 deploy-gcs-cdn | **Implementada e mergeada** — 24 de 32; as 8 abertas exigem acesso ao GCP (§ 3) |
 | 021 visibilidade-do-voto | **Entregue, sem pendência** |
 | 022 novidades | Entregue; a leitura por 3 pessoas do distrito continua aberta |
+
+### 2.34 Presença em atividade religiosa é sensível? E o consentimento por versão basta?
+
+Aberta em 2026-09-09 pela change `presenca-em-acao`, que passou a registrar quem
+esteve em cada Ação — quem compareceu, quem afirmou isso e quando.
+
+**Duas perguntas, e as duas são para advogado.**
+
+**(a) A classificação.** `igreja_id` já é tratado neste repo como provavelmente
+sensível pelo art. 5º, II — "filiação a organização de caráter religioso"
+(`MAPA-DE-DADOS.md`, § Classificação). Comparecimento é a mesma filiação com
+data e local: um histórico de presença em atividade religiosa diz mais sobre a
+prática de fé de alguém do que a escolha de uma igreja num menu. Se `igreja_id` é
+sensível, isto é.
+
+**(b) A base legal.** `REVISAO-JURIDICA.md:211` já fechou a questão de que "é a
+rede da própria igreja" NÃO muda a base — a LGPD não tem o equivalente ao GDPR
+art. 9(2)(d). Sobra o art. 11, I: consentimento **específico e destacado**. O app
+hoje trava a coleta pela versão do texto legal aceita (a marca é recusada para
+quem não aceitou a 1.11), e a Política descreve a finalidade nominalmente. **Em
+aberto**: se essa combinação — versão nova + finalidade nomeada + aviso com
+destaque e reaceite — basta como "destacado", ou se o app precisa de uma caixa
+própria, só para comparecimento, separada do aceite geral.
+
+É a mesma família de 2.16 e do achado A-2 do `advogado-digital`, e provavelmente
+se resolve na mesma consulta. **O que muda em relação àqueles**: aqui o dado é
+NOVO e a coleta já está de pé, então uma resposta desfavorável custa uma
+migration de expurgo, não só uma correção de texto.
+
+### 2.35 O app guarda UM aceite por pessoa, sem histórico
+
+Limite conhecido, registrado ao construir o reaceite na change
+`presenca-em-acao` (design D-008).
+
+`perfis.consentimento_lgpd_aceito_em` e `.consentimento_lgpd_versao` guardam o
+aceite **mais recente**, e o gatilho sobrescreve as duas a cada reaceite. Não há
+como responder "quando esta pessoa aceitou a 1.9?" depois de ela aceitar a 1.11.
+
+Não é defeito da change — era assim desde a feature 017, e o reaceite só tornou
+a perda observável, porque antes ninguém reaceitava. `public.versoes_texto_legal`
+permite reconstruir a linha do tempo do DOCUMENTO (o que cada versão dizia e
+desde quando), mas não a de cada PESSOA.
+
+**Custo de consertar**: tabela de histórico de aceite, com uma linha por
+aceite. **Custo de não consertar**: numa disputa sobre consentimento, o app
+demonstra sob qual texto a pessoa está agora, e não sob qual ela esteve. Não foi
+decidido; fica registrado para ser decidido de propósito e não por omissão.
+
+### 2.36 Criança cadastrada sob texto anterior fica permanentemente fora do registro de presença
+
+Consequência aceita da correção do achado C-1 da change `presenca-em-acao`, em
+2026-09-09. Registrada porque não é óbvia e vai parecer defeito para quem a
+encontrar.
+
+`pode_registrar_presenca` exige, abaixo de `limiar_crianca()`, que
+`autorizacao_responsavel_versao` seja a vigente. E
+`perfis_protege_autorizacao_responsavel` (`20260810000000:160-176`) levanta
+exceção em qualquer mudança nas quatro colunas do responsável — a autorização é
+imutável depois de escrita.
+
+**Somadas, as duas regras fazem toda criança cadastrada antes da 1.11 ficar fora
+do registro de comparecimento, para sempre.** Não é atraso que o reaceite
+resolva: não existe caminho no app para o responsável autorizar de novo.
+
+Está certo, e o alternativo é pior: sem isso, um toque da própria criança no
+aviso de reaceite destravaria o tratamento que só o responsável pode autorizar —
+que foi exatamente o defeito medido em C-1.
+
+**O que resolveria**: uma change de autorização retroativa, que a feature 015
+recusou de propósito por envolver COMO FALAR COM UMA CRIANÇA sobre pedir
+autorização a um responsável. Continua recusada, e continua sendo o caminho
+correto quando alguém decidir pagá-lo. Enquanto isso, os ministérios infantis
+registram presença só de quem se cadastrar a partir da 1.11.

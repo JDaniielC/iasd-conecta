@@ -125,8 +125,117 @@ abstract final class LegalMetadata {
   /// existia permanece — o mesmo raciocínio da 1.7, aplicado a uma tabela
   /// diferente. O rastro de execução das faxinas (`execucoes_de_faxina`) não
   /// entra aqui: não guarda dado pessoal, então não é matéria da Política.
-  static const version = '1.10';
-  static const effectiveDate = '30 de agosto de 2026';
+  /// 1.11 (change `presenca-em-acao`): **dado pessoal novo**, e de uma
+  /// categoria que o app nunca teve — quem esteve numa Ação, quem afirmou isso
+  /// e quando. Rompe a sequência da 1.6 à 1.10, que subiram sem tratamento
+  /// novo. É o PRIMEIRO dado do app escrito por terceiro sobre o titular:
+  /// `mensagens.texto` é do autor, `denuncias_mensagem.motivo` é de quem
+  /// denuncia; aqui alguém afirma um fato sobre outra pessoa. Por isso o texto
+  /// declara, junto: o contrapeso (a contestação, que tira a linha da contagem
+  /// mesmo quando negada), o significado de não estar marcado (não registrado,
+  /// nunca ausente), o prazo de 2 anos, e o fato de que a marca é recusada na
+  /// hora para quem não aceitou esta versão — o app não guarda primeiro para
+  /// filtrar depois. A autorização do responsável passou a citar
+  /// comparecimento por nome, porque autorização genérica não cobre
+  /// tratamento que quem autoriza não sabe que existe.
+  static const version = '1.11';
+  static const effectiveDate = '9 de setembro de 2026';
+
+  /// O TEOR de cada versão, em uma linha que a titular entende.
+  ///
+  /// Os comentários acima explicam a decisão editorial para quem mantém o
+  /// código; isto aqui é o que a PESSOA lê quando o app avisa que o texto
+  /// mudou. LGPD art. 8º, §6º pede "destaque de forma específica do teor das
+  /// alterações" — um aviso que diz "os termos mudaram" e não diz o quê tem o
+  /// destaque e não tem o teor.
+  ///
+  /// A ordem da lista é a ordem de publicação, e é ela que decide o que entra
+  /// no aviso: tudo o que veio DEPOIS da versão que a pessoa aceitou. Versão
+  /// nova entra no fim, no mesmo commit que muda [version] e que semeia a linha
+  /// em `public.versoes_texto_legal`.
+  ///
+  /// A 1.0 não está aqui: ela não tem data de vigência documentada no
+  /// repositório, e inventar uma seria o mesmo chute que
+  /// `consentimento_lgpd_versao` existe para evitar.
+  static const changeLog = <(String, String)>[
+    ('1.1', 'O texto legal passou a ter versão e data.'),
+    ('1.2', 'Seu voto em uma Rodada deixou de ser visível para os outros.'),
+    (
+      '1.3',
+      'Cadastro de criança passou a exigir a autorização de um responsável, '
+          'com o nome e um contato dele.',
+    ),
+    (
+      '1.4',
+      'Grupos e Ações passaram a ter foto de capa, visível para qualquer '
+          'pessoa na internet.',
+    ),
+    (
+      '1.5',
+      'O app passou a ter conversa: texto que você escreve para outras '
+          'pessoas, com corte de 18 anos e prazo de descarte.',
+    ),
+    (
+      '1.6',
+      'O que você escreve passa por um filtro de palavras e por um limite de '
+          'ritmo, na hora do envio.',
+    ),
+    (
+      '1.7',
+      'Mensagem fixada não é apagada no prazo de 30 dias — ela fica até '
+          'alguém desfixar.',
+    ),
+    (
+      '1.8',
+      'Você desfixa a sua própria mensagem por "Meu Perfil", mesmo depois de '
+          'sair do Grupo ou da Ação.',
+    ),
+    (
+      '1.9',
+      'O motivo que você escreve numa denúncia passou a ter prazo, e sai '
+          'junto se você excluir a conta.',
+    ),
+    (
+      '1.10',
+      'O histórico de mudanças de Grupo e Ação passou a ser apagado depois de '
+          '90 dias.',
+    ),
+    (
+      '1.11',
+      'Quem cria uma Ação passou a poder marcar quem esteve nela. Você vê e '
+          'pode contestar qualquer marca feita sobre você, e o registro é '
+          'apagado depois de 2 anos.',
+    ),
+  ];
+
+  /// O teor das alterações entre a versão aceita e a vigente.
+  ///
+  /// [acceptedVersion] nulo devolve lista vazia, de propósito: sem saber de
+  /// onde a pessoa partiu, listar mudanças seria escolher um ponto de partida
+  /// por chute. A tela diz que não sabe, em vez de fingir que sabe.
+  static List<String> changesBetween(
+    String? acceptedVersion,
+    String currentVersion,
+  ) {
+    if (acceptedVersion == null) return const [];
+
+    final acceptedIndex =
+        changeLog.indexWhere((entry) => entry.$1 == acceptedVersion);
+    if (acceptedIndex < 0) return const [];
+
+    final currentIndex =
+        changeLog.indexWhere((entry) => entry.$1 == currentVersion);
+    // Versão vigente ausente do catálogo significa que alguém publicou no banco
+    // sem atualizar o binário. Mostrar tudo o que se sabe é melhor do que
+    // mostrar nada, e o teste de registro já reprova a divergência.
+    final end = currentIndex < 0 ? changeLog.length : currentIndex + 1;
+    if (end <= acceptedIndex + 1) return const [];
+
+    return [
+      for (final entry in changeLog.sublist(acceptedIndex + 1, end))
+        '${entry.$1} — ${entry.$2}',
+    ];
+  }
 
   /// Controlador dos dados (LGPD). Confirmado pelo fundador em 24/07/2026.
   static const controllerName = 'JOSE DANIEL DESENVOLVIMENTO DE SOFTWARE LTDA';

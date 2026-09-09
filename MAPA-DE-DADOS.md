@@ -245,6 +245,59 @@ Conferido em `supabase/migrations/20260816160000_filtro_e_intervalo_de_mensagem.
 Consequência para este documento: **nada muda**. A seção Conversa continua
 válida como está.
 
+## Comparecimento (change `presenca-em-acao`)
+
+**É o primeiro dado deste app escrito por TERCEIRO sobre o titular.** Todas as
+outras entradas deste documento descrevem dado que a própria pessoa forneceu ou
+escreveu: `mensagens.texto` é do autor, `denuncias_mensagem.motivo` é de quem
+denuncia, `idade` e `nome` vêm do cadastro. Aqui uma pessoa afirma um fato sobre
+outra, e o desenho inteiro da feature gira em torno disso.
+
+Esta seção cita SÍMBOLO e não `arquivo:linha` pelo mesmo motivo da seção de
+Conversa: as migrations da change ainda estão vivas.
+
+| Onde | O quê |
+|---|---|
+| Colunas | `confirmacoes_acao.compareceu_em`, `.marcado_por`, `.contestada_em` (`20260909100000_presenca_em_acao.sql`) |
+| Fechamento | `acoes.presenca_fechada_em`, `acoes.presentes_no_fechamento` |
+| Contestação | `public.contestacoes_presenca` — `acao_id`, `usuario_id`, `contestada_em`, `decisao` (`mantida`/`desfeita`), `decidida_em`, `decidida_por` |
+| Quem escreve | Só quem criou a Ação, e só depois de ela acontecer, em Ação não cancelada e com a lista aberta — policy `confirmacoes_acao_update_presenca`. `marcado_por` é carimbado por gatilho, nunca concedido ao cliente |
+| Quem fecha | Só quem criou a Ação — e isso vive num **gatilho**, `acoes_checar_fechamento_de_presenca`, não na policy: `acoes` tem `grant update` de tabela inteira e a policy dela aceita também dono do Grupo e Administrador |
+| Quem lê | Quem enxerga a Ação, mais **sempre** a própria pessoa — braço `auth.uid() = usuario_id` em `confirmacoes_acao_select_conforme_acao` |
+| Sensível? | **Provavelmente sim, art. 5º, II.** Presença em atividade religiosa é a mesma filiação que `igreja_id` já carrega, agora com data e local. **[EM ABERTO — precisa de advogado]** |
+
+**`NULL` em `compareceu_em` significa NÃO REGISTRADO, nunca ausente.** A ausência
+só existe depois de `presenca_fechada_em`, que é um ato de uma pessoa. Nenhuma
+rotina converte um no outro por decurso de prazo. `public.presencas_computaveis`
+é o único lugar onde "esta linha conta" está escrito, e ela exclui Ação não
+fechada e linha contestada.
+
+**Linha contestada sai da contagem para sempre**, decida quem criou a Ação o que
+decidir. `confirmacoes_acao.contestada_em` é escrita por gatilho e nenhum ramo a
+limpa. A redundância com `contestacoes_presenca` é deliberada — ver design D-003
+da change.
+
+**Retenção**: 2 anos contados de `acoes.data_hora`, por
+`expurgar_presenca_vencida`, agendada em `pg_cron` e com rastro em
+`execucoes_de_faxina`. Zera as colunas e apaga a contestação; **não** apaga a
+linha de confirmação, que é dado de outra finalidade.
+`acoes.presentes_no_fechamento` não vence — agregado sem nome não é dado pessoal.
+
+**Exclusão de conta**: `excluir_minha_conta` só apaga confirmação de Ação
+**futura** (`20260806140000_exclusao_de_conta.sql:132-134`), e comparecimento só
+existe em Ação passada — então **a linha sobrevive à exclusão**. O que a protege
+é a anonimização do Perfil, mesmo mecanismo de `fixada_por` e `removida_por`.
+Provado em `presenca_retencao_test.dart`, não presumido.
+
+**Vazamento residual declarado**: `pode_registrar_presenca` é `security definer`
+porque `perfis_select_own` impede quem organiza a Ação de ler
+`consentimento_lgpd_versao` de quem participa. Ela devolve só booleano e exige
+que quem chama seja o criador daquela Ação e que a pessoa consultada tenha
+confirmação nela — mas, mesmo assim, **quem cria a Ação descobre que alguém do
+próprio evento está com o aceite defasado**. É um bit sobre um conjunto que essa
+pessoa já conhece, e não há como travar a coleta sem consultá-lo. Aceito e
+registrado aqui para não ser redescoberto como achado.
+
 ## Classificação de sensibilidade (LGPD art. 5º, II)
 
 - **`igreja_id` — provavelmente dado sensível.** Art. 5º, II lista

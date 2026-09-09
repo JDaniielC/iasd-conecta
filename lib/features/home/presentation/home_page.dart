@@ -6,6 +6,7 @@ import '../../../core/providers.dart';
 import '../../invite/invite_providers.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../news/news_providers.dart';
+import '../../legal/presentation/widgets/outdated_consent_banner.dart';
 
 /// Primeira tela do app: diz o que ele é, para quem, e como participar.
 ///
@@ -44,6 +45,12 @@ class HomePage extends ConsumerWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _HeroSection(),
+            // O aviso de texto legal defasado mora aqui, e não numa tela que a
+            // pessoa precise procurar: o art. 8º, §6º pede DESTAQUE, e a tela
+            // de Novidades não serve — o marcador de lido dela é por
+            // instalação, então quem reinstala nunca era alcançado
+            // (`PENDENCIAS.md` 2.29). Não bloqueia nada: some com "Agora não".
+            OutdatedConsentBanner(),
             _BelowHeroSection(),
           ],
         ),

@@ -432,6 +432,46 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'regra está nos Termos de Uso.',
             ),
 
+            // Change `presenca-em-acao`. Comparecimento é o PRIMEIRO dado do
+            // app escrito por terceiro sobre o titular, e a seção precisa
+            // dizer isso com todas as letras — junto com o contrapeso, que é
+            // a contestação. Ver MAPA-DE-DADOS.md, seção Comparecimento.
+            const LegalHeading('Quem esteve numa Ação'),
+            const LegalParagraph(
+              'Depois de uma Ação acontecer, quem a criou pode marcar quem '
+              'esteve lá. Guardamos, para cada pessoa que tinha confirmado '
+              'presença: se ela compareceu, quando essa marca foi feita e '
+              'quem a fez.',
+            ),
+            const LegalParagraph(
+              'Isto é diferente de tudo o mais nesta política: é a primeira '
+              'coisa que OUTRA PESSOA afirma sobre você dentro do app. O que '
+              'você escreve é seu; isto não é. Por isso você vê toda marca '
+              'feita sobre você e pode contestar qualquer uma — e uma marca '
+              'contestada deixa de contar em qualquer número, para sempre, '
+              'independentemente do que quem criou a Ação decidir. Você não '
+              'precisa ganhar a discussão para que ela pare de valer.',
+            ),
+            const LegalParagraph(
+              'Não estar marcado NÃO quer dizer que você faltou. Enquanto '
+              'quem criou a Ação não fechar a lista, o que não foi marcado '
+              'significa apenas que ninguém registrou — e a Ação inteira fica '
+              'fora de qualquer contagem. Só o fechamento, que é um ato de '
+              'uma pessoa, transforma o que sobrou em ausência. Nenhum prazo '
+              'faz isso sozinho.',
+            ),
+            const LegalParagraph(
+              'Para que serve: acompanhar o envolvimento da comunidade nas '
+              'atividades do distrito, para que a liderança saiba onde '
+              'investir tempo e a quem procurar. Vale para qualquer idade — '
+              'no caso de criança, com a autorização do responsável.',
+            ),
+            const LegalParagraph(
+              'Se você não aceitou a versão desta política que descreve esse '
+              'uso, sua presença simplesmente não é registrada: a marca é '
+              'recusada na hora. Não guardamos primeiro para filtrar depois.',
+            ),
+
             const LegalHeading('Com quem compartilhamos'),
             const LegalBullet(
               'Supabase — provedor que guarda o banco de dados e cuida do '
@@ -478,6 +518,15 @@ class PrivacyPolicyPage extends ConsumerWidget {
               'entrou ou saiu, quem confirmou presença ou desistiu — fica '
               'guardado por 90 dias e depois é apagado. Ele não guarda o que '
               'mudou de que para que, só que mudou.',
+            ),
+
+            const LegalParagraph(
+              'O registro de quem esteve numa Ação fica guardado por 2 anos, '
+              'contados da data da Ação, e depois é apagado — some quem '
+              'compareceu, quem marcou e a contestação, se houve. O que fica '
+              'para sempre é só a quantidade de pessoas que estiveram lá, sem '
+              'nome nenhum, porque é ela que serve de histórico ao '
+              'ministério.',
             ),
 
             const LegalHeading('Seus direitos e como usar cada um'),

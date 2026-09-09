@@ -9,6 +9,8 @@ import '../../chat/domain/pinned_message.dart';
 import '../domain/name_moderation.dart';
 import '../domain/profile.dart';
 import '../domain/profile_error_message.dart';
+import 'widgets/my_attendance_section.dart';
+import '../../legal/presentation/widgets/accepted_version_line.dart';
 
 /// Meu Perfil — ver e corrigir os próprios dados (LGPD art. 18, II e III).
 ///
@@ -289,7 +291,20 @@ class _MyProfilePageState extends ConsumerState<MyProfilePage> {
                   : () => _save(loaded),
               child: Text(_submitting ? 'Salvando…' : 'Salvar'),
             ),
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.md),
+              child: AcceptedVersionLine(),
+            ),
             const _PinnedMessagesSection(),
+            // Vizinha das mensagens fixadas de propósito: as duas respondem à
+            // mesma pergunta — "o que existe no app com o meu nome, e o que eu
+            // posso fazer a respeito". A diferença é que a mensagem fixada é
+            // texto SEU e o comparecimento é afirmação de OUTRA pessoa sobre
+            // você; por isso ali o botão é desfixar, e aqui é contestar.
+            const Padding(
+              padding: EdgeInsets.only(top: AppSpacing.lg),
+              child: MyAttendanceSection(),
+            ),
           ],
         ),
       ),

@@ -262,6 +262,30 @@ class TermsOfUsePage extends StatelessWidget {
               'haver ninguém lendo do outro lado.',
             ),
 
+            // Change `presenca-em-acao`. Nos Termos o que importa é o DEVER de
+            // quem marca — a Política já descreve o dado. Sem esta seção, a
+            // pessoa que fecha a lista não teria onde ler que o ato é dela e
+            // não do app.
+            const LegalHeading('Marcar quem esteve numa Ação'),
+            const LegalParagraph(
+              'Se você criou uma Ação, pode marcar quem esteve nela depois '
+              'que ela acontecer, e fechar a lista quando terminar. Fechar é '
+              'um ato seu: é ele que transforma quem não foi marcado em '
+              'ausente. Enquanto a lista estiver aberta, ninguém consta como '
+              'ausente e a Ação não entra em contagem nenhuma.',
+            ),
+            const LegalParagraph(
+              'Marque só o que você observou. Uma marca é uma afirmação sua '
+              'sobre outra pessoa, e ela vai vê-la. A lista fechada não '
+              'reabre — se precisar corrigir depois, o caminho é a '
+              'contestação de quem foi marcado.',
+            ),
+            const LegalParagraph(
+              'Quem foi marcado pode contestar, e você decide. Sua decisão '
+              'fica registrada junto com a contestação, e nenhuma das duas é '
+              'apagada. De qualquer forma, marca contestada deixa de contar.',
+            ),
+
             const LegalHeading('Disponibilidade do app'),
             const LegalParagraph(
               'Este app é mantido de forma independente. Fazemos o '

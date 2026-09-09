@@ -237,6 +237,19 @@ class _ProfileSignupPageState extends ConsumerState<ProfileSignupPage> {
                         'dados usados com a autorização de um dos pais ou do '
                         'responsável legal.',
                       ),
+                      const SizedBox(height: AppSpacing.sm),
+                      // Change `presenca-em-acao`: a autorização passa a citar
+                      // comparecimento POR NOME. Autorização genérica não
+                      // cobre tratamento que a pessoa que autoriza não sabe
+                      // que existe — e presença em atividade religiosa de
+                      // criança é justamente o que ela precisa saber.
+                      const Text(
+                        'Isso inclui o registro de que a criança esteve numa '
+                        'Ação: quem organiza pode marcar o comparecimento '
+                        'dela depois do encontro. Esse registro é apagado '
+                        'depois de 2 anos, e a criança nunca aparece em '
+                        'lista de quem deixou de participar.',
+                      ),
                       const SizedBox(height: AppSpacing.md),
                       TextFormField(
                         controller: _guardianNameController,

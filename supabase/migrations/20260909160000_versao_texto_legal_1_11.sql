@@ -1,0 +1,38 @@
+-- Change `presenca-em-acao` — a versão 1.11 do texto legal.
+--
+-- Gêmea da constante `LegalMetadata.version`, pelo mesmo motivo das anteriores:
+-- o texto está compilado no binário e a versão é metadado dele.
+-- `test/integration/versao_texto_legal_registro_test.dart` falha se divergirem.
+--
+-- POR QUE SOBE — e desta vez não é o caso das últimas cinco.
+--
+-- A 1.6 a 1.10 subiram sem dado pessoal novo: o que mudava era prazo, alcance
+-- ou uma afirmação que deixara de ser verdadeira. Aqui há **dado pessoal
+-- novo**, e de uma categoria que o app nunca teve: quem esteve numa Ação, quem
+-- afirmou isso, e quando. É o primeiro dado do app ESCRITO POR TERCEIRO SOBRE
+-- O TITULAR — `mensagens.texto` é do autor, `denuncias_mensagem.motivo` é de
+-- quem denuncia.
+--
+-- Presença em atividade religiosa é, muito provavelmente, dado sensível do
+-- art. 5º, II — mesma família de `igreja_id`, e `REVISAO-JURIDICA.md` já
+-- concluiu que "é a rede da própria igreja" NÃO muda a base legal, porque a
+-- LGPD não tem o equivalente ao GDPR art. 9(2)(d). Continua em aberto se o
+-- consentimento por versão basta como "específico e destacado" do art. 11, I,
+-- ou se exige caixa própria — ver `PENDENCIAS.md`.
+--
+-- ORDEM DE IMPLANTAÇÃO — ler antes de adiantar esta migration.
+--
+-- Esta linha é a ÚLTIMA coisa da change a entrar em produção, e não é
+-- preferência: a partir do instante em que ela vale, todo Perfil fica com
+-- aceite defasado, e a trava de coleta de `pode_registrar_presenca` recusa
+-- comparecimento de todo mundo. O aviso de versão defasada e o reaceite
+-- (`OutdatedConsentBanner`) precisam já estar na mão das pessoas. Invertido, o
+-- app recusa check-in para o distrito inteiro sem oferecer caminho de saída.
+--
+-- `vigente_desde` no futuro pelo mesmo desempate da 1.10: `versao_texto_legal_
+-- vigente()` compara `versao` como TEXTO quando `vigente_desde` empata, e
+-- '1.9' > '1.11' nessa comparação (o dígito '9' vence o '1'). Um instante
+-- realmente mais tarde resolve pelo desempate principal.
+insert into public.versoes_texto_legal (versao, vigente_desde)
+values ('1.11', timestamptz '2026-09-09 00:00:00-03')
+on conflict (versao) do nothing;

@@ -5,6 +5,8 @@ import '../group/group_providers.dart';
 import 'data/action_repository.dart';
 import 'data/actions_seen_repository.dart';
 import 'domain/action.dart';
+import 'data/attendance_repository.dart';
+import 'domain/attendance.dart';
 
 final actionRepositoryProvider = Provider<ActionRepository>((ref) {
   return ActionRepository(ref.watch(supabaseClientProvider));
@@ -133,3 +135,31 @@ class DismissedHighlights extends Notifier<Set<String>> {
 
 final dismissedHighlightsProvider =
     NotifierProvider<DismissedHighlights, Set<String>>(DismissedHighlights.new);
+
+/// --- Comparecimento (change `presenca-em-acao`) ---
+
+final attendanceRepositoryProvider = Provider<AttendanceRepository>((ref) {
+  return AttendanceRepository(ref.watch(supabaseClientProvider));
+});
+
+/// A lista de comparecimento de uma Ação, com o estado de fechamento junto.
+///
+/// `autoDispose`: marcar e fechar mudam o estado, e um provider que
+/// sobrevivesse à tela devolveria a lista velha na próxima abertura.
+final attendanceListProvider =
+    FutureProvider.autoDispose.family<AttendanceList, String>((ref, actionId) {
+  return ref.watch(attendanceRepositoryProvider).fetchAttendanceList(actionId);
+});
+
+/// O que afirmaram sobre a pessoa que está olhando.
+final myAttendanceProvider =
+    FutureProvider.autoDispose<List<MyAttendanceRecord>>((ref) {
+  ref.watch(authStateChangesProvider);
+  return ref.watch(attendanceRepositoryProvider).fetchMyAttendance();
+});
+
+/// Contestações esperando decisão de quem criou a Ação.
+final pendingDisputesProvider = FutureProvider.autoDispose
+    .family<List<PendingDispute>, String>((ref, actionId) {
+  return ref.watch(attendanceRepositoryProvider).fetchPendingDisputes(actionId);
+});

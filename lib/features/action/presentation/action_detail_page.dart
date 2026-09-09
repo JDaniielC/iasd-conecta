@@ -14,6 +14,7 @@ import '../action_providers.dart';
 import '../domain/action.dart';
 import '../../chat/chat_providers.dart';
 import '../../notification/presentation/notification_badge.dart';
+import 'attendance_section.dart';
 
 /// Detalhes de uma Ação avulsa: visível a Visitante e Usuário igualmente
 /// (FR-010). Confirmar/desistir exige Perfil (FR-003/FR-004/FR-011).
@@ -369,6 +370,18 @@ class ActionDetailPage extends ConsumerWidget {
                               ),
                             ),
                           ],
+                          // A seção de comparecimento vem DEPOIS da lista de
+                          // confirmados de propósito: confirmação é intenção,
+                          // comparecimento é fato, e ler nessa ordem é ler a
+                          // história do encontro. Ela se esconde sozinha
+                          // enquanto a Ação não aconteceu — não há o que
+                          // afirmar sobre presença futura.
+                          const SizedBox(height: AppSpacing.lg),
+                          if (action.dateTime.isBefore(DateTime.now()))
+                            AttendanceSection(
+                              actionId: actionId,
+                              isCreator: action.creatorId == uid,
+                            ),
                           const SizedBox(height: AppSpacing.lg),
                           ChangeLogSection.forAction(actionId: actionId),
                         ],
